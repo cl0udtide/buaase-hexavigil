@@ -1,5 +1,7 @@
 extends Node2D
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
+
 
 var unit_id: StringName
 var runtime_id := -1
@@ -29,6 +31,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	global_position = get_map_manager().cell_to_world(spawn_cell) if get_map_manager() != null else Vector2.ZERO
 	var label := get_node_or_null("%TitleLabel") as Label
 	if label != null:
+		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", unit_id))
 
 

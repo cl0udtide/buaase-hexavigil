@@ -1,9 +1,11 @@
 extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 
 func _ready() -> void:
+	AppTheme.apply(self)
 	var event_bus = AppRefs.event_bus()
 	var run_state = AppRefs.run_state()
 	if event_bus != null:

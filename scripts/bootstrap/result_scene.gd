@@ -1,9 +1,11 @@
 extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 
 func _ready() -> void:
+	AppTheme.apply(self)
 	var retry_button := get_node_or_null("%RetryButton") as BaseButton
 	if retry_button != null:
 		retry_button.pressed.connect(_on_retry_pressed)
