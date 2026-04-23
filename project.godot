@@ -27,6 +27,7 @@ SceneRouter="*uid://c23sbq6pp8uj8"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+window/main_scene="uid://cmig1vsmvy2ld"
 
 [physics]
 
