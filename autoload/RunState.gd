@@ -1,7 +1,8 @@
 extends Node
 
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 
-const DEFAULT_ACTION_POINTS := 3
+const DEFAULT_ACTION_POINTS := 10
 const DEFAULT_CORE_HP := 10
 const DEFAULT_DEPLOY_LIMIT := 4
 
@@ -112,6 +113,7 @@ func add_owned_unit(unit_id: StringName) -> void:
 	if owned_units.has(unit_id):
 		return
 	owned_units.append(unit_id)
+	EventBus.owned_units_changed.emit(owned_units.duplicate())
 
 
 func has_owned_unit(unit_id: StringName) -> bool:
@@ -134,9 +136,30 @@ func add_buff(buff_id: StringName) -> void:
 	buffs.append(buff_id)
 
 
+func has_buff(buff_id: StringName) -> bool:
+	return buffs.has(buff_id)
+
+
+func get_all_buffs() -> Array[StringName]:
+	return buffs.duplicate()
+
+
+func get_buff_effect_total(effect_type: StringName) -> float:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return 0.0
+	var total := 0.0
+	for buff_id in buffs:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		if StringName(cfg.get("effect_type", "")) == effect_type:
+			total += float(cfg.get("effect_value", 0.0))
+	return total
+
+
 func _emit_all_state() -> void:
 	EventBus.action_points_changed.emit(action_points)
 	EventBus.prestige_changed.emit(prestige)
 	EventBus.materials_changed.emit(wood, stone, mana)
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 	EventBus.deploy_limit_changed.emit(deployed_count, deploy_limit)
+	EventBus.owned_units_changed.emit(owned_units.duplicate())

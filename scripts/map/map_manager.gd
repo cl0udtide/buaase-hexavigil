@@ -12,6 +12,8 @@ var _spawn_cells: Array[Vector2i] = []
 var _core_cell := Vector2i.ZERO
 
 @onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
+@onready var _spawn_root: Node = get_node_or_null("../../World/SpawnRoot")
+@onready var _core_root: Node = get_node_or_null("../../World/CoreRoot")
 
 
 func generate_new_map(_seed: int) -> void:
@@ -66,17 +68,22 @@ func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]:
 
 func is_walkable(cell: Vector2i) -> bool:
 	var data := get_cell_data(cell)
-	return data != null and data.walkable and not data.occupied
+	return data != null and data.walkable and not data.occupied and data.unit_runtime_id < 0
 
 
 func is_buildable(cell: Vector2i) -> bool:
 	var data := get_cell_data(cell)
-	return data != null and data.buildable and not data.occupied and not data.is_core
+	return data != null and data.buildable and data.discovered and not data.occupied and data.unit_runtime_id < 0 and not data.is_core
 
 
 func has_building(cell: Vector2i) -> bool:
 	var data := get_cell_data(cell)
 	return data != null and data.occupied
+
+
+func has_unit(cell: Vector2i) -> bool:
+	var data := get_cell_data(cell)
+	return data != null and data.unit_runtime_id >= 0
 
 
 func set_building_occupy(cell: Vector2i, occupied: bool, building_runtime_id: int = -1) -> void:
@@ -85,6 +92,14 @@ func set_building_occupy(cell: Vector2i, occupied: bool, building_runtime_id: in
 		return
 	data.occupied = occupied
 	data.building_runtime_id = building_runtime_id if occupied else -1
+	refresh_all_layers()
+
+
+func set_unit_occupy(cell: Vector2i, occupied: bool, unit_runtime_id: int = -1) -> void:
+	var data := get_cell_data(cell)
+	if data == null:
+		return
+	data.unit_runtime_id = unit_runtime_id if occupied else -1
 	refresh_all_layers()
 
 
@@ -116,7 +131,7 @@ func get_random_discovered_empty_cell() -> Vector2i:
 	var candidates: Array[Vector2i] = []
 	for cell in _cells.keys():
 		var data: CellData = _cells[cell]
-		if data.discovered and not data.occupied and not data.is_core:
+		if data.discovered and not data.occupied and data.unit_runtime_id < 0 and not data.is_core:
 			candidates.append(cell)
 	if candidates.is_empty():
 		return Vector2i.ZERO
@@ -126,3 +141,19 @@ func get_random_discovered_empty_cell() -> Vector2i:
 func refresh_all_layers() -> void:
 	if _map_root != null and _map_root.has_method("refresh_from_map"):
 		_map_root.refresh_from_map(self)
+	_refresh_world_markers()
+
+
+func _refresh_world_markers() -> void:
+	if _core_root != null:
+		for child in _core_root.get_children():
+			if child is Node2D:
+				(child as Node2D).global_position = cell_to_world(_core_cell)
+	if _spawn_root == null:
+		return
+	for child in _spawn_root.get_children():
+		if not (child is Node2D):
+			continue
+		var spawn_key: StringName = child.get("spawn_key") if child.get("spawn_key") != null else StringName()
+		var spawn_cell := get_spawn_cell_by_key(spawn_key)
+		(child as Node2D).global_position = cell_to_world(spawn_cell)
