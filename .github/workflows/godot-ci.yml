@@ -7,7 +7,7 @@ on:
     branches: [ "dev", "main" ]
 
 env:
-  GODOT_VERSION: 4.3
+  GODOT_VERSION: 4.6.2
   EXPORT_NAME: HexaVigil
   PROJECT_PATH: . 
 
@@ -16,7 +16,7 @@ jobs:
     name: Windows Export
     runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:4.3
+      image: barichello/godot-ci:4.6.2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
     name: Web Export
     runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:4.3
+      image: barichello/godot-ci:4.6.2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
