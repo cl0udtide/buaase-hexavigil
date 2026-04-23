@@ -2,6 +2,8 @@ extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
+const DEBUG_SIZE := 40.0
+const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -15,6 +17,7 @@ var _blocked_by := -1
 
 func _ready() -> void:
 	add_to_group("enemies")
+	queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -40,6 +43,15 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	if label != null:
 		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", enemy_id))
+		label.position = Vector2(-30.0, -36.0)
+	queue_redraw()
+
+
+func _draw() -> void:
+	var rect := Rect2(Vector2.ONE * (-DEBUG_SIZE * 0.5), Vector2.ONE * DEBUG_SIZE)
+	draw_rect(rect, DEBUG_COLOR, false, 2.0)
+	draw_line(Vector2(-8.0, 0.0), Vector2(8.0, 0.0), DEBUG_COLOR, 1.5)
+	draw_line(Vector2(0.0, -8.0), Vector2(0.0, 8.0), DEBUG_COLOR, 1.5)
 
 
 func receive_damage(value: int, _damage_type: int) -> void:

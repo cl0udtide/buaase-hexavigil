@@ -21,4 +21,4 @@ func _on_build_button_pressed(building_id: StringName) -> void:
 		action_panel.set_mode_build(building_id)
 	var label := get_node_or_null("%BuildSelectionLabel") as Label
 	if label != null:
-		label.text = "Build: %s" % String(building_id)
+		label.text = "当前建造：%s" % String(building_id)

@@ -14,6 +14,7 @@ func _ready() -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.request_start_night.connect(_on_request_start_night)
+		event_bus.request_debug_set_day.connect(_on_request_debug_set_day)
 		event_bus.night_cleared.connect(_on_night_cleared)
 		event_bus.core_destroyed.connect(_on_core_destroyed)
 		event_bus.blessing_chosen.connect(_on_blessing_chosen)
@@ -92,9 +93,7 @@ func get_current_phase() -> int:
 
 
 func _bootstrap_run_if_needed() -> void:
-	var run_state = AppRefs.run_state()
-	if run_state != null and run_state.day <= 0:
-		start_new_run()
+	start_new_run()
 
 
 func _on_request_start_night() -> void:
@@ -108,7 +107,11 @@ func _on_request_start_night() -> void:
 
 func _on_night_cleared(_day: int) -> void:
 	var run_state = AppRefs.run_state()
-	if run_state != null and run_state.day >= 3:
+	if run_state == null:
+		return
+	if run_state.phase == GameEnums.PHASE_RESULT or run_state.core_hp <= 0:
+		return
+	if run_state.day >= 6:
 		end_run(true)
 	else:
 		enter_blessing()
@@ -125,3 +128,12 @@ func _on_blessing_chosen(buff_id: StringName) -> void:
 		buff_manager.apply_blessing(buff_id)
 	if run_state != null:
 		enter_day(run_state.day + 1)
+
+
+func _on_request_debug_set_day(day: int) -> void:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return
+	if run_state.phase == GameEnums.PHASE_NIGHT:
+		return
+	enter_day(clamp(day, 1, 6))
