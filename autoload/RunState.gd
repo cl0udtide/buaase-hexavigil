@@ -134,6 +134,7 @@ func add_buff(buff_id: StringName) -> void:
 	if buffs.has(buff_id):
 		return
 	buffs.append(buff_id)
+	EventBus.buffs_changed.emit(buffs.duplicate())
 
 
 func has_buff(buff_id: StringName) -> bool:
@@ -163,3 +164,4 @@ func _emit_all_state() -> void:
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 	EventBus.deploy_limit_changed.emit(deployed_count, deploy_limit)
 	EventBus.owned_units_changed.emit(owned_units.duplicate())
+	EventBus.buffs_changed.emit(buffs.duplicate())

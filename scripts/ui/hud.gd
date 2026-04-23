@@ -16,6 +16,7 @@ func _ready() -> void:
 		event_bus.action_points_changed.connect(refresh_action_points)
 		event_bus.core_hp_changed.connect(refresh_core_hp)
 		event_bus.deploy_limit_changed.connect(refresh_deploy_count)
+		event_bus.buffs_changed.connect(refresh_buffs)
 	if run_state != null:
 		refresh_phase(run_state.phase)
 		refresh_day(run_state.day)
@@ -24,6 +25,7 @@ func _ready() -> void:
 		refresh_action_points(run_state.action_points)
 		refresh_core_hp(run_state.core_hp, run_state.core_hp_max)
 		refresh_deploy_count(run_state.deployed_count, run_state.deploy_limit)
+		refresh_buffs(run_state.get_all_buffs())
 
 
 func refresh_phase(phase: int) -> void:
@@ -42,13 +44,13 @@ func refresh_phase(phase: int) -> void:
 func refresh_day(day: int) -> void:
 	var label := get_node_or_null("%DayLabel") as Label
 	if label != null:
-		label.text = "Day %d" % day
+		label.text = "Day %d/6" % day
 
 
 func refresh_resources(wood: int, stone: int, mana: int) -> void:
 	var label := get_node_or_null("%ResourcesLabel") as Label
 	if label != null:
-		label.text = "木:%d 石:%d 魔:%d" % [wood, stone, mana]
+		label.text = "木 %d 石 %d 魔 %d" % [wood, stone, mana]
 
 
 func refresh_prestige(value: int) -> void:
@@ -73,6 +75,21 @@ func refresh_deploy_count(current: int, max_value: int) -> void:
 	var label := get_node_or_null("%DeployLabel") as Label
 	if label != null:
 		label.text = "部署: %d/%d" % [current, max_value]
+
+
+func refresh_buffs(buff_ids: Array[StringName]) -> void:
+	var label := get_node_or_null("%BuffsLabel") as Label
+	if label == null:
+		return
+	if buff_ids.is_empty():
+		label.text = "Buff: None"
+		return
+	var data_repo = AppRefs.data_repo()
+	var buff_names: PackedStringArray = []
+	for buff_id in buff_ids:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
+		buff_names.append(String(cfg.get("name", buff_id)))
+	label.text = "Buff: %s" % ", ".join(buff_names)
 
 
 func show_message(text: String) -> void:

@@ -37,7 +37,7 @@ func start_wave_for_day(day: int) -> void:
 		_pending_spawns.clear()
 		_running = false
 		return
-	var cfg: Dictionary = data_repo.get_wave_cfg(day)
+	var cfg: Dictionary = _get_wave_cfg_with_fallback(data_repo, day)
 	_pending_spawns.clear()
 	for entry_variant: Variant in cfg.get("entries", []):
 		if typeof(entry_variant) == TYPE_DICTIONARY:
@@ -71,3 +71,13 @@ func _check_finish() -> void:
 		var run_state = AppRefs.run_state()
 		if event_bus != null and run_state != null:
 			event_bus.night_cleared.emit(run_state.day)
+
+
+func _get_wave_cfg_with_fallback(data_repo: Node, day: int) -> Dictionary:
+	var fallback_day := day
+	while fallback_day >= 1:
+		var cfg: Dictionary = data_repo.get_wave_cfg(fallback_day)
+		if not cfg.is_empty() and not (cfg.get("entries", []) as Array).is_empty():
+			return cfg
+		fallback_day -= 1
+	return {}

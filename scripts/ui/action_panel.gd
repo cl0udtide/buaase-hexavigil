@@ -99,13 +99,19 @@ func _refresh_mode_labels() -> void:
 	var mode_label := get_node_or_null("%ModeLabel") as Label
 	var selection_label := get_node_or_null("%SelectionLabel") as Label
 	if mode_label != null:
-		mode_label.text = "Mode: %s" % String(_current_mode)
+		var mode_text := {
+			&"idle": "待机",
+			&"explore": "探索",
+			&"build": "建造",
+			&"deploy": "部署"
+		}
+		mode_label.text = "模式：%s" % String(mode_text.get(_current_mode, _current_mode))
 	if selection_label == null:
 		return
 	match _current_mode:
 		&"build":
-			selection_label.text = "Selected: %s" % String(_current_building_id)
+			selection_label.text = "当前选择：%s" % String(_current_building_id)
 		&"deploy":
-			selection_label.text = "Selected: %s" % String(_current_unit_id)
+			selection_label.text = "当前选择：%s" % String(_current_unit_id)
 		_:
-			selection_label.text = "Selected: none"
+			selection_label.text = "当前选择：无"

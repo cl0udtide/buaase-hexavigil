@@ -20,14 +20,14 @@ func _ready() -> void:
 func refresh_owned_units(unit_ids: Array[StringName]) -> void:
 	var label := get_node_or_null("%OwnedUnitsLabel") as Label
 	if label != null:
-		label.text = "Owned: %s" % ", ".join(PackedStringArray(unit_ids))
+		label.text = "已拥有：%s" % ", ".join(PackedStringArray(unit_ids))
 	_rebuild_unit_buttons(unit_ids)
 
 
 func refresh_redeploy_state(unit_id: StringName, ready: bool, remain_sec: float) -> void:
 	var label := get_node_or_null("%RedeployLabel") as Label
 	if label != null:
-		label.text = "%s: %s %.1fs" % [unit_id, "ready" if ready else "cooldown", remain_sec]
+		label.text = "%s：%s %.1f秒" % [unit_id, "可部署" if ready else "冷却中", remain_sec]
 
 
 func set_visible_for_phase(phase: int) -> void:
@@ -45,7 +45,7 @@ func _on_deploy_limit_changed(_current: int, _max_value: int) -> void:
 	refresh_owned_units(run_state.owned_units)
 	var count_label := get_node_or_null("%DeployCountLabel") as Label
 	if count_label != null:
-		count_label.text = "Deploy: %d/%d" % [run_state.deployed_count, run_state.deploy_limit]
+		count_label.text = "部署：%d/%d" % [run_state.deployed_count, run_state.deploy_limit]
 
 
 func _rebuild_unit_buttons(unit_ids: Array[StringName]) -> void:
@@ -56,7 +56,7 @@ func _rebuild_unit_buttons(unit_ids: Array[StringName]) -> void:
 		child.queue_free()
 	for unit_id in unit_ids:
 		var button := Button.new()
-		button.text = "Deploy %s" % String(unit_id)
+		button.text = "部署 %s" % String(unit_id)
 		button.pressed.connect(_on_unit_selected.bind(unit_id))
 		container.add_child(button)
 
