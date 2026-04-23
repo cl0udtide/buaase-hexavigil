@@ -15,9 +15,11 @@ var _core_cell := Vector2i.ZERO
 
 
 func generate_new_map(_seed: int) -> void:
-	var generated := MapGenerator.generate(width, height)
+	var generated: Dictionary = MapGenerator.generate(width, height)
 	_cells = generated.get("cells", {})
-	_spawn_cells = generated.get("spawn_cells", [])
+	_spawn_cells.clear()
+	for cell_variant: Variant in generated.get("spawn_cells", []):
+		_spawn_cells.append(cell_variant as Vector2i)
 	_core_cell = generated.get("core_cell", Vector2i.ZERO)
 	refresh_all_layers()
 
