@@ -1,0 +1,27 @@
+name: "HexaVigil CI - Windows Check"
+
+on:
+  push:
+    branches: [ "dev", "main" ]
+  pull_request:
+    branches: [ "dev", "main" ]
+
+jobs:
+  build-check:
+    name: Windows Export Validation
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.6.2
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Export Templates
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Test Windows Build
+        run: |
+          mkdir -v -p build/windows
+          godot -v --export-release "Windows Desktop" build/windows/HexaVigil.exe
