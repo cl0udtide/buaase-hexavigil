@@ -5,8 +5,8 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 const CELL_SIZE := 64.0
 
-var width := 10
-var height := 6
+var width := 30
+var height := 30
 var _cells: Dictionary = {}
 var _spawn_cells: Array[Vector2i] = []
 var _core_cell := Vector2i.ZERO

@@ -11,14 +11,32 @@ const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_CORE := Color(0.25, 0.60, 0.95, 1.0)
 const COLOR_SPAWN := Color(0.82, 0.30, 0.26, 1.0)
 const COLOR_OCCUPIED := Color(0.60, 0.45, 0.22, 1.0)
+const VIEW_PADDING := 0.0
+const MAX_ZOOM_MULTIPLIER := 3.0
+const ZOOM_STEP := 0.9
 
 var _map_manager: Node
 var _hovered_cell := Vector2i(-1, -1)
 var _selected_cell := Vector2i(-1, -1)
+var _camera: Camera2D
+var _fit_zoom := 1.0
+var _zoom_scalar := 1.0
+var _is_dragging := false
 
 
 func _ready() -> void:
 	set_process(true)
+	_camera = get_node_or_null("MapCamera") as Camera2D
+	if _camera == null:
+		_camera = Camera2D.new()
+		_camera.name = "MapCamera"
+		_camera.position_smoothing_enabled = false
+		_camera.enabled = true
+		add_child(_camera)
+	var viewport := get_viewport()
+	if viewport != null and not viewport.size_changed.is_connected(_on_viewport_size_changed):
+		viewport.size_changed.connect(_on_viewport_size_changed)
+	call_deferred("_fit_camera_to_map")
 
 
 func _process(_delta: float) -> void:
@@ -28,33 +46,25 @@ func _process(_delta: float) -> void:
 	var hovered: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
 	if map_manager.is_inside(hovered) and hovered != _hovered_cell:
 		_hovered_cell = hovered
-		_update_info_label()
 		queue_redraw()
 	elif not map_manager.is_inside(hovered) and _hovered_cell != Vector2i(-1, -1):
 		_hovered_cell = Vector2i(-1, -1)
-		_update_info_label()
 		queue_redraw()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	var map_manager := _get_map_manager()
-	if map_manager == null:
+	if map_manager == null or _camera == null:
 		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		var cell: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
-		if not map_manager.is_inside(cell):
-			return
-		_selected_cell = cell
-		_update_info_label()
-		queue_redraw()
-		var event_bus = AppRefs.event_bus()
-		if event_bus != null:
-			event_bus.map_cell_clicked.emit(cell)
+	if event is InputEventMouseButton:
+		_handle_mouse_button(event, map_manager)
+	elif event is InputEventMouseMotion:
+		_handle_mouse_motion(event)
 
 
 func refresh_from_map(map_manager: Node) -> void:
 	_map_manager = map_manager
-	_update_info_label()
+	_fit_camera_to_map()
 	queue_redraw()
 
 
@@ -89,20 +99,118 @@ func _get_cell_color(data) -> Color:
 	return COLOR_PLAIN
 
 
-func _update_info_label() -> void:
-	var label := get_node_or_null("%InfoLabel") as Label
-	if label == null:
+func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> void:
+	match event.button_index:
+		MOUSE_BUTTON_WHEEL_UP:
+			if event.pressed:
+				_zoom_at_mouse(1.0 / ZOOM_STEP)
+		MOUSE_BUTTON_WHEEL_DOWN:
+			if event.pressed:
+				_zoom_at_mouse(ZOOM_STEP)
+		MOUSE_BUTTON_RIGHT:
+			_is_dragging = event.pressed
+		MOUSE_BUTTON_LEFT:
+			if event.pressed and not _is_dragging:
+				var cell: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
+				if not map_manager.is_inside(cell):
+					return
+				_selected_cell = cell
+				queue_redraw()
+				var event_bus = AppRefs.event_bus()
+				if event_bus != null:
+					event_bus.map_cell_clicked.emit(cell)
+
+
+func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
+	if not _is_dragging or _camera == null:
 		return
+	_camera.position -= event.relative / max(_zoom_scalar, 0.001)
+	_camera.position = _clamp_camera_center(_camera.position)
+
+
+func _zoom_at_mouse(factor: float) -> void:
+	if _camera == null:
+		return
+	var before_world := get_global_mouse_position()
+	var min_zoom := _fit_zoom
+	var max_zoom := _fit_zoom * MAX_ZOOM_MULTIPLIER
+	_zoom_scalar = clamp(_zoom_scalar * factor, min_zoom, max_zoom)
+	_apply_camera_zoom()
+	var after_world := get_global_mouse_position()
+	_camera.position += before_world - after_world
+	_camera.position = _clamp_camera_center(_camera.position)
+
+
+func _fit_camera_to_map() -> void:
+	var map_manager := _get_map_manager()
+	if map_manager == null or _camera == null:
+		return
+	var map_size := _get_map_size(map_manager)
+	if map_size.x <= 0.0 or map_size.y <= 0.0:
+		return
+	var viewport_size := get_viewport_rect().size - Vector2.ONE * VIEW_PADDING * 2.0
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	# Use "cover" scaling so the map always fills the viewport.
+	_fit_zoom = max(viewport_size.x / map_size.x, viewport_size.y / map_size.y)
+	_fit_zoom = max(_fit_zoom, 0.01)
+	_zoom_scalar = _fit_zoom
+	_apply_camera_zoom()
+	_camera.position = _get_map_center(map_manager)
+	_camera.position = _clamp_camera_center(_camera.position)
+
+
+func _apply_camera_zoom() -> void:
+	if _camera != null:
+		_camera.zoom = Vector2.ONE * _zoom_scalar
+
+
+func _clamp_camera_center(desired_center: Vector2) -> Vector2:
 	var map_manager := _get_map_manager()
 	if map_manager == null:
-		label.text = "Map not ready"
-		return
-	var text := "Map %dx%d  Core=%s" % [map_manager.width, map_manager.height, map_manager.get_core_cell()]
+		return desired_center
+	var map_rect := Rect2(Vector2.ZERO, _get_map_size(map_manager))
+	var visible_size: Vector2 = get_viewport_rect().size / max(_zoom_scalar, 0.001)
+	var clamped := desired_center
+	if visible_size.x >= map_rect.size.x:
+		clamped.x = map_rect.get_center().x
+	else:
+		clamped.x = clamp(clamped.x, map_rect.position.x + visible_size.x * 0.5, map_rect.end.x - visible_size.x * 0.5)
+	if visible_size.y >= map_rect.size.y:
+		clamped.y = map_rect.get_center().y
+	else:
+		clamped.y = clamp(clamped.y, map_rect.position.y + visible_size.y * 0.5, map_rect.end.y - visible_size.y * 0.5)
+	return clamped
+
+
+func _get_map_size(map_manager: Node) -> Vector2:
+	return Vector2(map_manager.width, map_manager.height) * CELL_SIZE
+
+
+func _get_map_center(map_manager: Node) -> Vector2:
+	return _get_map_size(map_manager) * 0.5
+
+
+func get_debug_info() -> String:
+	var map_manager := _get_map_manager()
+	if map_manager == null:
+		return "Map not ready"
+	var effective_cell_size: float = CELL_SIZE * _zoom_scalar
+	var text := "Map %dx%d  Core=%s  Cell~%.1fpx" % [
+		map_manager.width,
+		map_manager.height,
+		map_manager.get_core_cell(),
+		effective_cell_size
+	]
 	if _hovered_cell.x >= 0:
 		text += "  Hover=%s" % _hovered_cell
 	if _selected_cell.x >= 0:
 		text += "  Selected=%s" % _selected_cell
-	label.text = text
+	return text
+
+
+func _on_viewport_size_changed() -> void:
+	_fit_camera_to_map()
 
 
 func _get_map_manager() -> Node:

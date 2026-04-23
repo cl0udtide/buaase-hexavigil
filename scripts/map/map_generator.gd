@@ -16,7 +16,12 @@ static func generate(width: int, height: int) -> Dictionary:
 	var core_cell := Vector2i(width / 2, height / 2)
 	var core_data: CellData = cells[core_cell]
 	core_data.is_core = true
-	core_data.discovered = true
+	for y in range(core_cell.y - 2, core_cell.y + 3):
+		for x in range(core_cell.x - 2, core_cell.x + 3):
+			var reveal_cell := Vector2i(x, y)
+			if cells.has(reveal_cell):
+				var reveal_data: CellData = cells[reveal_cell]
+				reveal_data.discovered = true
 
 	var spawn_cells: Array[Vector2i] = [
 		Vector2i(0, 0),

@@ -21,12 +21,12 @@ text = "阶段: 菜单"
 [node name="DayLabel" type="Label" parent="VBoxContainer" unique_id=2003819903]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Day 0"
+text = "Day 0/6"
 
 [node name="ResourcesLabel" type="Label" parent="VBoxContainer" unique_id=3008156]
 unique_name_in_owner = true
 layout_mode = 2
-text = "木:0 石:0 魔:0"
+text = "木 0 石 0 魔 0"
 
 [node name="PrestigeLabel" type="Label" parent="VBoxContainer" unique_id=1644686493]
 unique_name_in_owner = true
@@ -47,6 +47,11 @@ text = "核心: 0/0"
 unique_name_in_owner = true
 layout_mode = 2
 text = "部署: 0/0"
+
+[node name="BuffsLabel" type="Label" parent="VBoxContainer" unique_id=1699912401]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Buff: None"
 
 [node name="MessageLabel" type="Label" parent="VBoxContainer" unique_id=184405746]
 unique_name_in_owner = true
