@@ -11,8 +11,22 @@ config_version=5
 [application]
 
 config/name="HexaVigil"
+run/main_scene="uid://cmig1vsmvy2ld"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+EventBus="*uid://b0506ing5d1c6"
+RunState="*uid://wdlxhaqoexyf"
+DataRepo="*uid://pg4imtmvx82a"
+SceneRouter="*uid://c23sbq6pp8uj8"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
 
 [physics]
 

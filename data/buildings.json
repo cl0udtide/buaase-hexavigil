@@ -1,0 +1,34 @@
+[
+  {
+    "id": "medical_station",
+    "name": "医疗站",
+    "building_type": "aura",
+    "max_hp": 150,
+    "cost_wood": 2,
+    "cost_stone": 1,
+    "cost_mana": 0,
+    "ap_cost": 1,
+    "blocks_path": false,
+    "effect_radius": 2,
+    "effect_type": "heal",
+    "effect_value": 8,
+    "place_rule": "plain_only",
+    "scene_key": "building_actor"
+  },
+  {
+    "id": "wood_wall",
+    "name": "木墙",
+    "building_type": "block",
+    "max_hp": 220,
+    "cost_wood": 2,
+    "cost_stone": 0,
+    "cost_mana": 0,
+    "ap_cost": 1,
+    "blocks_path": true,
+    "effect_radius": 0,
+    "effect_type": "none",
+    "effect_value": 0,
+    "place_rule": "plain_only",
+    "scene_key": "building_actor"
+  }
+]
