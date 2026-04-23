@@ -3,7 +3,7 @@ extends RefCounted
 
 
 static func generate(width: int, height: int) -> Dictionary:
-	var cells := {}
+	var cells: Dictionary = {}
 	for y in range(height):
 		for x in range(width):
 			var data := CellData.new()
@@ -18,7 +18,11 @@ static func generate(width: int, height: int) -> Dictionary:
 	core_data.is_core = true
 	core_data.discovered = true
 
-	var spawn_cells := [Vector2i(0, 0), Vector2i(width - 1, 0), Vector2i(0, height - 1)]
+	var spawn_cells: Array[Vector2i] = [
+		Vector2i(0, 0),
+		Vector2i(width - 1, 0),
+		Vector2i(0, height - 1)
+	]
 	for index in range(spawn_cells.size()):
 		var spawn_cell: Vector2i = spawn_cells[index]
 		if cells.has(spawn_cell):
