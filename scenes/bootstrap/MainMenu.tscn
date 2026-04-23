@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://cmig1vsmvy2ld"]
+
+[ext_resource type="Script" uid="uid://b34pdpjgqu06l" path="res://scripts/bootstrap/main_menu_scene.gd" id="1_3dsqt"]
+
+[node name="MainMenu" type="Control" unique_id=1052527302]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_3dsqt")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=750469912]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=2047200006]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=2078786049]
+layout_mode = 2
+text = "HexaVigil"
+
+[node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=2140411556]
+unique_name_in_owner = true
+layout_mode = 2
+text = "开始游戏"
