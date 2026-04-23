@@ -38,7 +38,10 @@ func start_wave_for_day(day: int) -> void:
 		_running = false
 		return
 	var cfg: Dictionary = data_repo.get_wave_cfg(day)
-	_pending_spawns = cfg.get("entries", []).duplicate(true)
+	_pending_spawns.clear()
+	for entry_variant: Variant in cfg.get("entries", []):
+		if typeof(entry_variant) == TYPE_DICTIONARY:
+			_pending_spawns.append((entry_variant as Dictionary).duplicate(true))
 	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
 	_elapsed = 0.0
 	_running = true

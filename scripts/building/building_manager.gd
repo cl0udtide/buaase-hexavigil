@@ -53,10 +53,10 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
 		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot 节点不存在")
 	var actor: Node = scene.instantiate()
+	_building_root.add_child(actor)
 	actor.runtime_id = _next_runtime_id
 	if actor.has_method("setup_from_cfg"):
 		actor.setup_from_cfg(building_id, cfg, cell)
-	_building_root.add_child(actor)
 
 	_buildings_by_runtime_id[_next_runtime_id] = actor
 	_buildings_by_cell[cell] = actor
