@@ -53,6 +53,8 @@ func try_deploy_unit(unit_id: StringName, cell: Vector2i, facing: Vector2i) -> D
 	if actor.has_method("setup_from_cfg"):
 		actor.setup_from_cfg(unit_id, cfg, cell, facing)
 	_units_by_runtime_id[_next_runtime_id] = actor
+	if _map_manager != null and _map_manager.has_method("set_unit_occupy"):
+		_map_manager.set_unit_occupy(cell, true, _next_runtime_id)
 	run_state.change_deployed_count(1)
 	if event_bus != null:
 		event_bus.unit_deployed.emit(_next_runtime_id, unit_id, cell)
@@ -108,6 +110,8 @@ func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	_units_by_runtime_id.erase(unit_runtime_id)
 	var run_state = AppRefs.run_state()
 	var event_bus = AppRefs.event_bus()
+	if _map_manager != null and _map_manager.has_method("set_unit_occupy"):
+		_map_manager.set_unit_occupy(unit.get_current_cell(), false)
 	if run_state != null:
 		run_state.change_deployed_count(-1)
 	if event_bus != null:
