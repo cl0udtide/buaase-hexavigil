@@ -29,10 +29,10 @@ func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i) -> int:
 		push_warning("EnemyRoot node is missing")
 		return -1
 	var actor: Node = scene.instantiate()
+	_enemy_root.add_child(actor)
 	actor.runtime_id = _next_runtime_id
 	if actor.has_method("setup_from_cfg"):
 		actor.setup_from_cfg(enemy_id, cfg, spawn_cell)
-	_enemy_root.add_child(actor)
 	_enemies_by_runtime_id[_next_runtime_id] = actor
 	if event_bus != null:
 		event_bus.enemy_spawned.emit(_next_runtime_id, enemy_id, spawn_cell)

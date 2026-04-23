@@ -48,10 +48,10 @@ func try_deploy_unit(unit_id: StringName, cell: Vector2i, facing: Vector2i) -> D
 	if _unit_root == null:
 		return ActionResult.err(&"WORLD_NOT_READY", "UnitRoot 节点不存在")
 	var actor: Node = scene.instantiate()
+	_unit_root.add_child(actor)
 	actor.runtime_id = _next_runtime_id
 	if actor.has_method("setup_from_cfg"):
 		actor.setup_from_cfg(unit_id, cfg, cell, facing)
-	_unit_root.add_child(actor)
 	_units_by_runtime_id[_next_runtime_id] = actor
 	run_state.change_deployed_count(1)
 	if event_bus != null:
