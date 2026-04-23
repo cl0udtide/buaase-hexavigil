@@ -1,0 +1,32 @@
+[
+  {
+    "id": "slime",
+    "name": "史莱姆",
+    "max_hp": 80,
+    "atk": 18,
+    "def": 2,
+    "res": 0,
+    "move_speed": 1.0,
+    "attack_interval": 1.2,
+    "damage_type": "physical",
+    "behavior_type": "normal",
+    "move_type": "ground",
+    "core_damage": 1,
+    "scene_key": "enemy_actor"
+  },
+  {
+    "id": "wolf",
+    "name": "荒原狼",
+    "max_hp": 60,
+    "atk": 22,
+    "def": 1,
+    "res": 0,
+    "move_speed": 1.4,
+    "attack_interval": 1.0,
+    "damage_type": "physical",
+    "behavior_type": "rush",
+    "move_type": "ground",
+    "core_damage": 1,
+    "scene_key": "enemy_actor"
+  }
+]

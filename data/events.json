@@ -1,0 +1,14 @@
+[
+  {
+    "id": "event_abandoned_cart",
+    "name": "废弃货车",
+    "desc": "获得 2 木材，但失去 1 声望。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 2,
+      "stone": 0,
+      "mana": 0,
+      "prestige": -1
+    }
+  }
+]

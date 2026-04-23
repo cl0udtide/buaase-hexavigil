@@ -1,0 +1,26 @@
+[
+  {
+    "id": "buff_atk_up_small",
+    "name": "战意高涨",
+    "desc": "所有已部署单位攻击力 +10%",
+    "effect_type": "unit_atk_percent",
+    "effect_value": 0.1,
+    "rarity": 1
+  },
+  {
+    "id": "buff_deploy_plus_one",
+    "name": "阵线扩编",
+    "desc": "部署上限 +1",
+    "effect_type": "deploy_limit_add",
+    "effect_value": 1,
+    "rarity": 1
+  },
+  {
+    "id": "buff_core_regen",
+    "name": "核心稳压",
+    "desc": "核心生命恢复 2 点",
+    "effect_type": "core_heal",
+    "effect_value": 2,
+    "rarity": 1
+  }
+]

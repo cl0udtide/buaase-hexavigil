@@ -1,0 +1,38 @@
+extends Node
+
+
+signal phase_changed(old_phase: int, new_phase: int)
+signal day_started(day: int)
+signal night_started(day: int)
+signal night_cleared(day: int)
+signal run_ended(win: bool)
+
+signal action_points_changed(value: int)
+signal prestige_changed(value: int)
+signal materials_changed(wood: int, stone: int, mana: int)
+signal core_hp_changed(current: int, max_value: int)
+signal deploy_limit_changed(current: int, max_value: int)
+signal shop_stock_changed(stock: Array[StringName])
+
+signal request_explore(cell: Vector2i)
+signal request_build(cell: Vector2i, building_id: StringName)
+signal request_interact_event(cell: Vector2i)
+signal request_start_night()
+signal request_buy_unit(unit_id: StringName)
+signal request_refresh_shop()
+signal request_deploy(unit_id: StringName, cell: Vector2i, facing: Vector2i)
+signal request_retreat(unit_runtime_id: int)
+signal request_cast_skill(unit_runtime_id: int)
+signal blessing_chosen(buff_id: StringName)
+
+signal fog_revealed(cells: Array[Vector2i])
+signal building_placed(building_runtime_id: int, building_id: StringName, cell: Vector2i)
+signal building_destroyed(building_runtime_id: int, building_id: StringName, cell: Vector2i)
+signal path_grid_changed()
+signal unit_deployed(unit_runtime_id: int, unit_id: StringName, cell: Vector2i)
+signal unit_removed(unit_runtime_id: int, reason: int)
+signal enemy_spawned(enemy_runtime_id: int, enemy_id: StringName, cell: Vector2i)
+signal enemy_died(enemy_runtime_id: int, enemy_id: StringName)
+signal random_event_triggered(event_id: StringName, cell: Vector2i)
+signal blessing_choices_ready(choice_ids: Array[StringName])
+signal core_destroyed()
