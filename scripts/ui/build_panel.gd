@@ -1,7 +1,10 @@
 extends Control
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
+
 
 func _ready() -> void:
+	AppTheme.apply(self)
 	_bind_button("%BuildMedicalButton", &"medical_station")
 	_bind_button("%BuildWallButton", &"wood_wall")
 

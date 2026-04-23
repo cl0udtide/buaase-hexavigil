@@ -1,6 +1,7 @@
 extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 
 var _current_mode: StringName = &"idle"
@@ -8,6 +9,7 @@ var _current_building_id: StringName = &""
 
 
 func _ready() -> void:
+	AppTheme.apply(self)
 	var idle_button := get_node_or_null("%IdleButton") as BaseButton
 	var explore_button := get_node_or_null("%ExploreButton") as BaseButton
 	var night_button := get_node_or_null("%StartNightButton") as BaseButton

@@ -1,5 +1,7 @@
 extends Node2D
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
+
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -36,6 +38,7 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	recalc_path()
 	var label := get_node_or_null("%TitleLabel") as Label
 	if label != null:
+		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", enemy_id))
 
 
