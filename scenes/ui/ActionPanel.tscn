@@ -18,31 +18,85 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin" unique_id=255313322]
+[node name="ContentScroll" type="ScrollContainer" parent="ContentMargin" unique_id=815805394]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin/ContentScroll" unique_id=255313322]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="ModeLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1780032100]
+[node name="ModeLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=1780032100]
 unique_name_in_owner = true
 layout_mode = 2
 text = "模式：待机"
 
-[node name="SelectionLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1718839064]
+[node name="SelectionLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=1718839064]
 unique_name_in_owner = true
 layout_mode = 2
+autowrap_mode = 2
 text = "当前选择：无"
 
-[node name="IdleButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=1068372288]
+[node name="FacingRow" type="HFlowContainer" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=294173018]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FacingLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer/FacingRow" unique_id=106871422]
+layout_mode = 2
+text = "部署朝向"
+
+[node name="FacingOption" type="OptionButton" parent="ContentMargin/ContentScroll/VBoxContainer/FacingRow" unique_id=140215779]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ActionButtonFlow" type="HFlowContainer" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=836670440]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="IdleButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/ActionButtonFlow" unique_id=1068372288]
 unique_name_in_owner = true
 layout_mode = 2
 text = "待机"
 
-[node name="ExploreButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=1093985431]
+[node name="ExploreButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/ActionButtonFlow" unique_id=1093985431]
 unique_name_in_owner = true
 layout_mode = 2
 text = "探索"
 
-[node name="StartNightButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=875692889]
+[node name="StartNightButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/ActionButtonFlow" unique_id=875692889]
 unique_name_in_owner = true
 layout_mode = 2
 text = "进入夜晚"
+
+[node name="CombatActionRow" type="HFlowContainer" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=929607420]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CastSkillButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/CombatActionRow" unique_id=608093700]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "释放技能"
+
+[node name="RetreatButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/CombatActionRow" unique_id=267950946]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "撤退"
+
+[node name="SkillInfoLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=137658732]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "选中场上干员后可查看技能、释放技能或撤退。"
+
+[node name="MessageLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=211247775]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = ""
