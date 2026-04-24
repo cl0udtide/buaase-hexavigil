@@ -16,6 +16,7 @@ const COLOR_OCCUPIED := Color(0.60, 0.45, 0.22, 1.0)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
+const PAN_OVERSCROLL_VIEWPORT_RATIO := 0.75
 
 var _map_manager: Node
 var _hovered_cell := Vector2i(-1, -1)
@@ -192,15 +193,10 @@ func _clamp_camera_center(desired_center: Vector2) -> Vector2:
 		return desired_center
 	var map_rect := Rect2(Vector2.ZERO, _get_map_size(map_manager))
 	var visible_size: Vector2 = get_viewport_rect().size / max(_zoom_scalar, 0.001)
+	var overscroll := visible_size * PAN_OVERSCROLL_VIEWPORT_RATIO
 	var clamped := desired_center
-	if visible_size.x >= map_rect.size.x:
-		clamped.x = map_rect.get_center().x
-	else:
-		clamped.x = clamp(clamped.x, map_rect.position.x + visible_size.x * 0.5, map_rect.end.x - visible_size.x * 0.5)
-	if visible_size.y >= map_rect.size.y:
-		clamped.y = map_rect.get_center().y
-	else:
-		clamped.y = clamp(clamped.y, map_rect.position.y + visible_size.y * 0.5, map_rect.end.y - visible_size.y * 0.5)
+	clamped.x = clamp(clamped.x, map_rect.position.x + visible_size.x * 0.5 - overscroll.x, map_rect.end.x - visible_size.x * 0.5 + overscroll.x)
+	clamped.y = clamp(clamped.y, map_rect.position.y + visible_size.y * 0.5 - overscroll.y, map_rect.end.y - visible_size.y * 0.5 + overscroll.y)
 	return clamped
 
 
