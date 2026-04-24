@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+const REFRESH_COST := 2
 
 var _stock: Array[StringName] = []
 
@@ -29,6 +30,9 @@ func refresh_shop() -> Dictionary:
 		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以刷新商店")
+	var spend_result: Dictionary = run_state.spend_prestige(REFRESH_COST)
+	if not spend_result.get("ok", false):
+		return spend_result
 	start_new_day_shop(run_state.day)
 	return ActionResult.ok({"stock": _stock})
 
