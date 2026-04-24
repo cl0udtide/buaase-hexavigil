@@ -18,6 +18,7 @@ func _ready() -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.request_build.connect(_on_request_build)
+		event_bus.day_started.connect(_on_day_started)
 
 
 func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
@@ -107,7 +108,34 @@ func remove_building(building_runtime_id: int) -> void:
 
 
 func collect_day_income() -> void:
-	pass
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return
+	var gained_wood := 0
+	var gained_stone := 0
+	var gained_mana := 0
+	for actor_variant in _buildings_by_runtime_id.values():
+		var actor := actor_variant as Node
+		if actor == null:
+			continue
+		var actor_cfg_variant: Variant = actor.get("cfg")
+		if typeof(actor_cfg_variant) != TYPE_DICTIONARY:
+			continue
+		var actor_cfg: Dictionary = actor_cfg_variant
+		var current_hp_variant: Variant = actor.get("current_hp")
+		if typeof(current_hp_variant) == TYPE_INT and int(current_hp_variant) <= 0:
+			continue
+		var effect_type := StringName(actor_cfg.get("effect_type", ""))
+		var effect_value := int(actor_cfg.get("effect_value", 0))
+		match effect_type:
+			&"collect_wood":
+				gained_wood += effect_value
+			&"collect_stone":
+				gained_stone += effect_value
+			&"collect_mana":
+				gained_mana += effect_value
+	if gained_wood > 0 or gained_stone > 0 or gained_mana > 0:
+		run_state.add_materials(gained_wood, gained_stone, gained_mana)
 
 
 func refresh_daytime_repair() -> void:
@@ -124,3 +152,7 @@ func get_building_by_runtime_id(building_runtime_id: int) -> Node:
 
 func _on_request_build(cell: Vector2i, building_id: StringName) -> void:
 	try_place_building(cell, building_id)
+
+
+func _on_day_started(_day: int) -> void:
+	collect_day_income()
