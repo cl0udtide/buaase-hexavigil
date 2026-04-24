@@ -15,12 +15,14 @@ func _ready() -> void:
 		event_bus.path_grid_changed.connect(_on_path_grid_changed)
 
 
-func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i) -> int:
+func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i, cfg_override: Dictionary = {}) -> int:
 	var data_repo = AppRefs.data_repo()
 	var event_bus = AppRefs.event_bus()
 	if data_repo == null:
 		return -1
 	var cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id)
+	for key in cfg_override.keys():
+		cfg[key] = cfg_override[key]
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
 		push_warning("Enemy scene missing for %s" % enemy_id)
