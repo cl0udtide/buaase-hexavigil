@@ -31,14 +31,29 @@ theme_override_constants/separation = 8
 [node name="BuildSelectionLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1435550204]
 unique_name_in_owner = true
 layout_mode = 2
-text = "当前建造：无"
+text = "Select a building"
+
+[node name="BuildLumberButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=204100001]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Lumber Station"
+
+[node name="BuildStoneButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=204100002]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Stone Quarry"
+
+[node name="BuildManaButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=204100003]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Mana Extractor"
 
 [node name="BuildMedicalButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=2098418681]
 unique_name_in_owner = true
 layout_mode = 2
-text = "医疗站"
+text = "Medical Station"
 
 [node name="BuildWallButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=1629567067]
 unique_name_in_owner = true
 layout_mode = 2
-text = "木墙"
+text = "Wood Wall"
