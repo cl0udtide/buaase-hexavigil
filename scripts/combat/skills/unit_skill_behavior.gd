@@ -4,15 +4,19 @@ extends Node
 
 var owner_unit: Node
 var active_timer := 0.0
+var _infinite_active := false
 
 
 func setup(unit: Node) -> void:
 	owner_unit = unit
 	active_timer = 0.0
+	_infinite_active = false
 
 
 func tick(delta: float) -> void:
 	if active_timer <= 0.0:
+		return
+	if _infinite_active:
 		return
 	active_timer = max(active_timer - delta, 0.0)
 	if active_timer == 0.0:
@@ -20,14 +24,15 @@ func tick(delta: float) -> void:
 
 
 func can_cast() -> bool:
-	return owner_unit != null and active_timer <= 0.0 and owner_unit.sp >= get_sp_max()
+	return owner_unit != null and not is_active() and owner_unit.sp >= get_sp_max()
 
 
 func cast() -> bool:
 	if not can_cast():
 		return false
 	owner_unit.sp = 0.0
-	active_timer = get_duration()
+	_infinite_active = bool(owner_unit.cfg.get("skill_infinite_duration", false))
+	active_timer = 1.0 if _infinite_active else get_duration()
 	_on_skill_start()
 	return true
 
@@ -53,7 +58,11 @@ func get_duration() -> float:
 
 
 func get_active_remaining() -> float:
-	return active_timer
+	return -1.0 if _infinite_active else active_timer
+
+
+func is_active() -> bool:
+	return active_timer > 0.0
 
 
 func get_attack_targets_override() -> Array:
@@ -64,11 +73,20 @@ func after_attack(_target: Node, _damage_value: int) -> void:
 	pass
 
 
+func modify_attack_damage(base_damage: int, _target: Node) -> int:
+	return base_damage
+
+
+func after_receive_damage(_source: Node, _final_damage: int) -> void:
+	pass
+
+
 func _on_skill_start() -> void:
 	pass
 
 
 func _on_skill_end() -> void:
+	_infinite_active = false
 	pass
 
 

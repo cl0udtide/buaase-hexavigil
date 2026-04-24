@@ -6,8 +6,15 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const CELL_SIZE := 64.0
 const BLOCK_RADIUS_TILES := 0.7071
 const SKILL_BEHAVIOR_REGISTRY := {
+	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
-	&"sniper_burst_dawn": "res://scripts/combat/skills/sniper_burst_dawn_skill.gd"
+	&"guard_decisive_swing": "res://scripts/combat/skills/guard_decisive_swing_skill.gd",
+	&"sniper_quintuple_shot": "res://scripts/combat/skills/sniper_quintuple_shot_skill.gd",
+	&"sniper_burst_dawn": "res://scripts/combat/skills/sniper_burst_dawn_skill.gd",
+	&"caster_overload_permanent": "res://scripts/combat/skills/caster_overload_permanent_skill.gd",
+	&"caster_chain_push": "res://scripts/combat/skills/caster_chain_push_skill.gd",
+	&"defender_fortify": "res://scripts/combat/skills/defender_fortify_skill.gd",
+	&"defender_counter_stance": "res://scripts/combat/skills/defender_counter_stance_skill.gd"
 }
 
 
@@ -93,16 +100,19 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	_update_status_view()
 
 
-func receive_damage(value: int, damage_type_value: int) -> void:
+func receive_damage(value: int, damage_type_value: int, source: Node = null) -> void:
 	var final_damage := value
 	if damage_type_value == GameEnums.DAMAGE_PHYSICAL:
 		final_damage = CombatMath.calc_physical_damage(value, defense)
 	elif damage_type_value == GameEnums.DAMAGE_MAGIC:
 		final_damage = CombatMath.calc_magic_damage(value, resistance)
+	var hp_before := current_hp
 	current_hp = max(current_hp - final_damage, 0)
 	_update_status_view()
 	_play_hit_effect()
 	_debug_log("单位 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type_value), value, final_damage, current_hp, max_hp])
+	if final_damage > 0 and current_hp < hp_before and _skill_behavior != null and _skill_behavior.has_method("after_receive_damage"):
+		_skill_behavior.after_receive_damage(source, final_damage)
 	if current_hp == 0 and not _is_dead:
 		_is_dead = true
 		_debug_log("单位 %s#%d 死亡" % [_debug_name(), runtime_id])
@@ -321,6 +331,8 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 		return
 	_current_target_runtime_id = target.get_runtime_id()
 	var damage_value := get_effective_atk()
+	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
+		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
 	_debug_log("单位 %s#%d 攻击敌人 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, target.enemy_id, target.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	if target.has_method("receive_damage"):
 		target.receive_damage(damage_value, damage_type)
