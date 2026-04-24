@@ -73,6 +73,13 @@ func get_all_unit_ids() -> Array[StringName]:
 	return ids
 
 
+func get_all_enemy_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for enemy_id in _tables["enemies"].keys():
+		ids.append(StringName(enemy_id))
+	return ids
+
+
 func get_all_buff_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for buff_id in _tables["buffs"].keys():
