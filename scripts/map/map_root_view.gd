@@ -6,6 +6,8 @@ const CELL_SIZE := 64.0
 const GRID_COLOR := Color(0.12, 0.18, 0.22, 0.85)
 const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
+const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
+const ATTACK_RANGE_BORDER := Color(0.30, 0.85, 1.0, 0.95)
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_CORE := Color(0.25, 0.60, 0.95, 1.0)
@@ -22,6 +24,7 @@ var _camera: Camera2D
 var _fit_zoom := 1.0
 var _zoom_scalar := 1.0
 var _is_dragging := false
+var _debug_attack_range_cells: Array[Vector2i] = []
 
 
 func _ready() -> void:
@@ -81,10 +84,28 @@ func _draw() -> void:
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
 			draw_rect(rect, _get_cell_color(data))
 			draw_rect(rect, GRID_COLOR, false, 1.0)
+			if _debug_attack_range_cells.has(cell):
+				_draw_attack_range_cell(rect)
 			if cell == _hovered_cell:
 				draw_rect(rect.grow(-2.0), HOVER_COLOR)
 			if cell == _selected_cell:
 				draw_rect(rect.grow(-6.0), SELECT_COLOR)
+
+
+func set_debug_attack_range(cells: Array[Vector2i]) -> void:
+	_debug_attack_range_cells = cells.duplicate()
+	queue_redraw()
+
+
+func clear_debug_attack_range() -> void:
+	_debug_attack_range_cells.clear()
+	queue_redraw()
+
+
+func _draw_attack_range_cell(rect: Rect2) -> void:
+	# 调试场景只需要清晰标识攻击范围，避免斜线纹路干扰格子阅读。
+	draw_rect(rect.grow(-4.0), ATTACK_RANGE_FILL)
+	draw_rect(rect.grow(-4.0), ATTACK_RANGE_BORDER, false, 2.0)
 
 
 func _get_cell_color(data) -> Color:

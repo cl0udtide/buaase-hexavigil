@@ -1,0 +1,208 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/combat_sandbox.gd" id="1_sandbox"]
+[ext_resource type="PackedScene" path="res://scenes/world/MapRoot.tscn" id="2_map"]
+[ext_resource type="PackedScene" path="res://scenes/world/SpawnPoint.tscn" id="3_spawn"]
+[ext_resource type="PackedScene" path="res://scenes/world/Core.tscn" id="4_core"]
+[ext_resource type="Script" path="res://scripts/map/map_manager.gd" id="5_map_manager"]
+[ext_resource type="Script" path="res://scripts/map/path_service.gd" id="6_path_service"]
+[ext_resource type="Script" path="res://scripts/combat/unit_manager.gd" id="7_unit_manager"]
+[ext_resource type="Script" path="res://scripts/enemy/enemy_manager.gd" id="8_enemy_manager"]
+
+[node name="CombatSandbox" type="Node"]
+script = ExtResource("1_sandbox")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="MapRoot" parent="World" instance=ExtResource("2_map")]
+
+[node name="SpawnRoot" type="Node2D" parent="World"]
+
+[node name="SpawnPointS1" parent="World/SpawnRoot" instance=ExtResource("3_spawn")]
+
+[node name="SpawnPointS2" parent="World/SpawnRoot" instance=ExtResource("3_spawn")]
+spawn_key = &"S2"
+
+[node name="SpawnPointS3" parent="World/SpawnRoot" instance=ExtResource("3_spawn")]
+spawn_key = &"S3"
+
+[node name="CoreRoot" type="Node2D" parent="World"]
+
+[node name="Core" parent="World/CoreRoot" instance=ExtResource("4_core")]
+
+[node name="BuildingRoot" type="Node2D" parent="World"]
+
+[node name="UnitRoot" type="Node2D" parent="World"]
+
+[node name="EnemyRoot" type="Node2D" parent="World"]
+
+[node name="ProjectileRoot" type="Node2D" parent="World"]
+
+[node name="EffectRoot" type="Node2D" parent="World"]
+
+[node name="Managers" type="Node" parent="."]
+
+[node name="MapManager" type="Node" parent="Managers"]
+script = ExtResource("5_map_manager")
+
+[node name="PathService" type="Node" parent="Managers"]
+script = ExtResource("6_path_service")
+
+[node name="UnitManager" type="Node" parent="Managers"]
+script = ExtResource("7_unit_manager")
+
+[node name="EnemyManager" type="Node" parent="Managers"]
+script = ExtResource("8_enemy_manager")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -560.0
+offset_bottom = 760.0
+grow_horizontal = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="UI/Panel/MarginContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+text = "Combat Sandbox"
+
+[node name="UnitRow" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="UnitLabel" type="Label" parent="UI/Panel/MarginContainer/VBox/UnitRow"]
+layout_mode = 2
+text = "单位"
+
+[node name="UnitOption" type="OptionButton" parent="UI/Panel/MarginContainer/VBox/UnitRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FacingRow" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="FacingLabel" type="Label" parent="UI/Panel/MarginContainer/VBox/FacingRow"]
+layout_mode = 2
+text = "朝向"
+
+[node name="FacingOption" type="OptionButton" parent="UI/Panel/MarginContainer/VBox/FacingRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnemyRow" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="EnemyLabel" type="Label" parent="UI/Panel/MarginContainer/VBox/EnemyRow"]
+layout_mode = 2
+text = "敌人"
+
+[node name="EnemyOption" type="OptionButton" parent="UI/Panel/MarginContainer/VBox/EnemyRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpawnRow" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="SpawnLabel" type="Label" parent="UI/Panel/MarginContainer/VBox/SpawnRow"]
+layout_mode = 2
+text = "刷怪点"
+
+[node name="SpawnOption" type="OptionButton" parent="UI/Panel/MarginContainer/VBox/SpawnRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CountRow" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="EnemyCountLabel" type="Label" parent="UI/Panel/MarginContainer/VBox/CountRow"]
+layout_mode = 2
+text = "数量"
+
+[node name="EnemyCountSpin" type="SpinBox" parent="UI/Panel/MarginContainer/VBox/CountRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnemyIntervalLabel" type="Label" parent="UI/Panel/MarginContainer/VBox/CountRow"]
+layout_mode = 2
+text = "间隔"
+
+[node name="EnemyIntervalSpin" type="SpinBox" parent="UI/Panel/MarginContainer/VBox/CountRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonRow1" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="StartSpawnButton" type="Button" parent="UI/Panel/MarginContainer/VBox/ButtonRow1"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "开始刷怪"
+
+[node name="CastSkillButton" type="Button" parent="UI/Panel/MarginContainer/VBox/ButtonRow1"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "释放技能"
+
+[node name="ButtonRow2" type="HBoxContainer" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+
+[node name="RetreatButton" type="Button" parent="UI/Panel/MarginContainer/VBox/ButtonRow2"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "撤退选中"
+
+[node name="ClearButton" type="Button" parent="UI/Panel/MarginContainer/VBox/ButtonRow2"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "清场"
+
+[node name="ResetButton" type="Button" parent="UI/Panel/MarginContainer/VBox/ButtonRow2"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "重置"
+
+[node name="StatusLabel" type="Label" parent="UI/Panel/MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "状态"
+
+[node name="SkillInfoLabel" type="Label" parent="UI/Panel/MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text = "技能：未选中单位"
+
+[node name="MessageLabel" type="Label" parent="UI/Panel/MarginContainer/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "点击地图格子部署或选择单位"
+
+[node name="LogTitleLabel" type="Label" parent="UI/Panel/MarginContainer/VBox"]
+layout_mode = 2
+text = "战斗日志"
+
+[node name="CombatLogText" type="TextEdit" parent="UI/Panel/MarginContainer/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+size_flags_vertical = 3
+text = ""
+editable = false
+wrap_mode = 1
