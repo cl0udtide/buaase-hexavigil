@@ -12,6 +12,10 @@ const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_CORE := Color(0.25, 0.60, 0.95, 1.0)
 const COLOR_SPAWN := Color(0.82, 0.30, 0.26, 1.0)
+const COLOR_OBSTACLE := Color(0.28, 0.30, 0.34, 1.0)
+const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
+const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
+const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
 const COLOR_OCCUPIED := Color(0.60, 0.45, 0.22, 1.0)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
@@ -116,8 +120,16 @@ func _get_cell_color(data) -> Color:
 		return COLOR_CORE
 	if data.spawn_key != StringName():
 		return COLOR_SPAWN
+	if data.terrain == &"obstacle":
+		return COLOR_OBSTACLE
 	if data.occupied or data.unit_runtime_id >= 0:
 		return COLOR_OCCUPIED
+	if data.resource_type == &"wood":
+		return COLOR_RESOURCE_WOOD
+	if data.resource_type == &"stone":
+		return COLOR_RESOURCE_STONE
+	if data.resource_type == &"mana":
+		return COLOR_RESOURCE_MANA
 	return COLOR_PLAIN
 
 
