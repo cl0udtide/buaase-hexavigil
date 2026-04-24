@@ -21,6 +21,7 @@ res://
 │  │  └─ SpawnPoint.tscn
 │  ├─ actors/                  [运行时实体模板]
 │  │  ├─ UnitActor.tscn
+│  │  ├─ units/                [特殊单位继承场景]
 │  │  ├─ EnemyActor.tscn
 │  │  ├─ BuildingActor.tscn
 │  │  └─ Projectile.tscn
@@ -336,6 +337,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 `PackedScene` 是 Godot 中“可实例化场景模板”的资源类型。  
 例如 `UnitActor.tscn` 被加载后，就是一个 `PackedScene`；当系统需要把某个单位放到 `UnitRoot` 下时，就用这个 `PackedScene` 创建一个真正的单位实例。
 
+对普通单位而言，`scene_key` 应默认指向 `unit_actor`。单位之间的数值、攻击范围、技能参数、技能行为、外观、音效和特效差异，不应优先拆成多个平级单位场景，而应通过 `units.json` 配置和 `UnitActor.tscn` 的公共挂点装配。
+
+只有当某个单位的节点结构、生命周期或交互方式确实不同于普通单位时，才允许使用 `scenes/actors/units/` 下的专用单位场景。专用单位场景必须继承 `UnitActor.tscn`，不能复制一份平级场景后独立维护。
+
 不负责：
 
 - 保存本局运行时状态
@@ -508,9 +513,11 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/combat/unit_manager.gd`
 - `scripts/combat/unit_actor.gd`
 - `scripts/combat/shop_manager.gd`
+- `scripts/combat/skills/unit_skill_behavior.gd`
 - `scripts/combat/combat_math.gd`
 - `scripts/combat/skill_runtime.gd`
 - `scenes/actors/UnitActor.tscn`
+- `scenes/actors/units/*.tscn`
 
 职责：
 
@@ -518,6 +525,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 干员实例槽位部署与撤退
 - 按槽位计算再部署冷却
 - 单位普攻、受伤、技能
+- 单位差异化行为装配
 - 统一伤害计算
 
 各文件作用：
@@ -525,7 +533,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `unit_manager.gd`
   单位运行时主控，管理干员槽位部署、撤退、再部署和场上单位列表。
 - `unit_actor.gd`
-  单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为。
+  单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为，并在初始化时按单位配置装配技能行为组件。
+- `skills/unit_skill_behavior.gd`
+  单位技能行为基类，定义技能启动、结束、攻击后回调和目标覆盖等扩展点。
 - `shop_manager.gd`
   商店主控，管理库存、购买和刷新逻辑；购买同一单位类型会新增独立槽位。
 - `combat_math.gd`
@@ -533,7 +543,15 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `skill_runtime.gd`
   技能运行时逻辑，处理技能释放与效果执行。
 - `UnitActor.tscn`
-  单位实例模板。
+  普通单位统一实例模板，保留 `TitleLabel`、`StatusView`、`VisualRoot`、`AudioRoot`、`EffectRoot`、`SkillBehavior` 等公共挂点。
+- `scenes/actors/units/*.tscn`
+  特殊单位继承场景。只有结构、生命周期或交互方式明显不同于普通单位时才使用，且必须继承 `UnitActor.tscn`。
+
+单位差异化原则：
+
+- 属性差异数据化：生命、攻击、防御、阻挡、攻速、范围、SP、技能参数等写入 `data/units.json`。
+- 行为差异组件化：不同技能通过 `skill_behavior_key` 映射到 `UnitSkillBehavior` 子类。
+- 结构差异场景化：外观、音效、特效优先挂到 `UnitActor.tscn` 的公共挂点；真正特殊的节点结构才使用继承场景。
 
 ### 4.5 敌人与波次模块
 
@@ -781,3 +799,169 @@ WaveManager -> GameController -> BuffManager 或 Result
 ```
 
 ---
+
+## 8. Unit 属性与差异化装载
+
+### 8.1 总体原则
+
+单位装载遵循以下分层：
+
+```text
+data/units.json
+-> DataRepo.get_unit_cfg(unit_id)
+-> UnitManager.try_deploy_unit(unit_id, cell, facing)
+-> DataRepo.get_scene_by_key(cfg.scene_key)
+-> UnitActor.tscn.instantiate()
+-> UnitActor.setup_from_cfg(unit_id, cfg, cell, facing)
+-> 按 cfg 写入运行时属性并装配行为/表现组件
+```
+
+其中：
+
+- `units.json` 保存静态配置，不保存运行时状态。
+- `UnitManager` 负责部署合法性、实例化、加入 `UnitRoot`、维护运行时字典和再部署状态。
+- `UnitActor` 负责把静态配置转换成单个单位实例上的运行时属性。
+- `UnitSkillBehavior` 子类负责技能行为差异。
+- `VisualRoot`、`AudioRoot`、`EffectRoot` 负责外观、音效和特效挂载点。
+
+### 8.2 字段归属
+
+单位字段按用途分为四类。
+
+#### 基础数值字段
+
+这类字段直接由 `UnitActor.setup_from_cfg()` 读取并写入运行时变量：
+
+| 字段 | 装载目标 | 说明 |
+|---|---|---|
+| `max_hp` | `max_hp` / `current_hp` | 最大生命，部署时当前生命回满 |
+| `atk` | `atk` | 基础攻击力 |
+| `def` | `defense` | 物理防御 |
+| `res` | `resistance` | 法术抗性 |
+| `block` | `block_count` | 阻挡数 |
+| `attack_interval` | `attack_interval` | 普攻间隔 |
+| `damage_type` | `damage_type` | 伤害类型，部署时解析成枚举 |
+| `target_type` | `target_type` | 目标类型，例如地面或飞行 |
+| `range_pattern` | `range_pattern` | 攻击范围格子偏移 |
+| `redeploy_sec` | `get_redeploy_sec()` | 撤退或死亡后的再部署冷却 |
+
+#### 技能字段
+
+技能字段分为“技能公共信息”和“具体技能参数”：
+
+| 字段 | 装载目标 | 说明 |
+|---|---|---|
+| `skill_id` | 技能标识 | 用于显示、日志或默认行为 key 回退 |
+| `skill_name` | 技能显示名 | UI 和调试日志读取 |
+| `skill_description` | 技能描述 | UI 展示读取 |
+| `skill_behavior_key` | `SkillBehavior` 脚本选择 | 映射到某个 `UnitSkillBehavior` 子类 |
+| `sp_max` | SP 上限 | 技能行为或 `UnitActor` 读取 |
+| `sp_recover_per_sec` | SP 回复速度 | 技能行为或 `UnitActor` 读取 |
+| `skill_duration` | 技能持续时间 | 技能行为读取 |
+
+具体技能参数由对应技能脚本按需读取。例如近卫技能读取 `skill_block_bonus`，狙击技能读取 `skill_range_pattern`、`skill_attack_multiplier`、`skill_splash_radius` 等。
+
+#### 表现资源字段
+
+表现字段不应直接写 `res://` 路径，而应写逻辑 key：
+
+| 字段 | 建议装载位置 | 说明 |
+|---|---|---|
+| `icon_key` | UI 面板 | 单位图标逻辑名 |
+| `visual_key` | `VisualRoot` | 单位外观资源逻辑名 |
+| `attack_sfx_key` | `AudioRoot` | 普攻音效逻辑名 |
+| `cast_sfx_key` | `AudioRoot` | 技能音效逻辑名 |
+| `cast_vfx_key` | `EffectRoot` | 技能释放特效逻辑名 |
+| `hit_vfx_key` | `EffectRoot` | 受击特效逻辑名 |
+
+资源 key 到实际资源路径的映射可以后续集中放入资源仓库或专门的表现配置表，避免单位表直接依赖具体文件路径。
+
+#### 场景字段
+
+| 字段 | 装载目标 | 说明 |
+|---|---|---|
+| `scene_key` | `DataRepo.get_scene_by_key()` | 普通单位默认使用 `unit_actor` |
+
+普通单位不应因为外观、音效、特效或技能不同而改成专用 `scene_key`。专用 `scene_key` 只用于结构非常特殊的单位，并且对应 `.tscn` 必须继承 `UnitActor.tscn`。
+
+### 8.3 详细例子：近卫单位装载
+
+假设 `data/units.json` 中有如下配置：
+
+```json
+{
+  "id": "guard_01",
+  "name": "近卫",
+  "class": "guard",
+  "cost_prestige": 1,
+  "max_hp": 120,
+  "atk": 30,
+  "def": 10,
+  "res": 0,
+  "block": 2,
+  "attack_interval": 1.0,
+  "damage_type": "physical",
+  "target_type": "ground",
+  "range_pattern": [[0, 0], [1, 0]],
+  "redeploy_sec": 12.0,
+  "sp_max": 18,
+  "sp_recover_per_sec": 1.0,
+  "skill_id": "guard_hold_line",
+  "skill_behavior_key": "guard_hold_line",
+  "skill_name": "战术咏唱·阵线压制",
+  "skill_description": "阻挡数+1，普通攻击同时攻击所有被自身阻挡的敌人，持续10秒。",
+  "skill_duration": 10.0,
+  "skill_block_bonus": 1,
+  "scene_key": "unit_actor",
+  "icon_key": "guard_01_icon",
+  "visual_key": "guard_visual",
+  "attack_sfx_key": "guard_attack",
+  "cast_vfx_key": "guard_hold_line_cast"
+}
+```
+
+部署时的装载流程如下：
+
+1. UI 发出部署请求：`request_deploy.emit(&"guard_01", cell, facing)`。
+2. `UnitManager` 调用 `DataRepo.get_unit_cfg(&"guard_01")` 取得配置副本。
+3. `UnitManager` 校验阶段、拥有状态、部署上限、再部署冷却和地图格子合法性。
+4. `UnitManager` 读取 `scene_key: "unit_actor"`，通过 `DataRepo.get_scene_by_key(&"unit_actor")` 取得 `UnitActor.tscn`。
+5. `UnitManager` 实例化 `UnitActor.tscn`，加入 `World/UnitRoot`，分配 `runtime_id`。
+6. `UnitManager` 调用 `actor.setup_from_cfg(&"guard_01", cfg, cell, facing)`。
+7. `UnitActor` 将基础字段写入运行时变量：
+   - `max_hp = 120`，`current_hp = 120`
+   - `atk = 30`
+   - `defense = 10`
+   - `resistance = 0`
+   - `block_count = 2`
+   - `attack_interval = 1.0`
+   - `damage_type = DAMAGE_PHYSICAL`
+   - `target_type = &"ground"`
+   - `range_pattern = [Vector2i(0, 0), Vector2i(1, 0)]`
+8. `UnitActor` 根据 `cell` 和地图坐标系统设置 `global_position`，根据 `facing` 记录攻击朝向。
+9. `UnitActor` 根据 `name` 更新 `TitleLabel`，根据生命和 SP 更新 `StatusView`。
+10. `UnitActor` 读取 `skill_behavior_key: "guard_hold_line"`，找到 `guard_hold_line_skill.gd`，挂到 `SkillBehavior` 节点。
+11. `SkillBehavior.setup(self)` 保存所属单位引用，后续可读取 `owner_unit.cfg` 中的技能参数。
+12. 夜战中单位自动回复 SP；当 SP 满且玩家释放技能时，`guard_hold_line_skill.gd` 读取：
+    - `skill_duration = 10.0`
+    - `skill_block_bonus = 1`
+13. 技能启动时，技能脚本临时把 `owner_unit.block_count` 从 `2` 改为 `3`，并让普攻目标覆盖为当前阻挡的所有敌人。
+14. 技能结束时，技能脚本恢复原始阻挡数。
+
+这个例子中，近卫没有使用专用 `Guard.tscn`，因为它的差异可以被“数值配置 + 技能行为脚本 + 公共挂点”表达。
+
+### 8.4 什么时候允许专用 Unit 场景
+
+如果未来出现特殊单位，例如部署后展开为多个可受击部件、拥有独立炮塔子节点、或需要特殊碰撞结构，则可以新增：
+
+```text
+scenes/actors/units/SpecialUnit.tscn
+```
+
+但该场景必须通过 Godot 的继承场景机制继承：
+
+```text
+SpecialUnit.tscn inherits UnitActor.tscn
+```
+
+这样公共节点、公共脚本和后续新增挂点仍然由 `UnitActor.tscn` 统一维护。专用场景只覆盖特殊结构或特殊资源，不复制公共生命周期逻辑。
