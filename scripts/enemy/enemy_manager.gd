@@ -36,6 +36,7 @@ func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i) -> int:
 	_enemies_by_runtime_id[_next_runtime_id] = actor
 	if event_bus != null:
 		event_bus.enemy_spawned.emit(_next_runtime_id, enemy_id, spawn_cell)
+	_debug_log("生成敌人 %s#%d 于格子 %s" % [String(cfg.get("name", enemy_id)), _next_runtime_id, spawn_cell])
 	_next_runtime_id += 1
 	return _next_runtime_id - 1
 
@@ -49,11 +50,16 @@ func remove_enemy(enemy_runtime_id: int) -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.enemy_died.emit(enemy_runtime_id, dead_enemy_id)
+	_debug_log("敌人离场 %s#%d" % [enemy.enemy_id, enemy_runtime_id])
 	enemy.queue_free()
 
 
 func get_enemy_by_runtime_id(enemy_runtime_id: int) -> Node:
 	return _enemies_by_runtime_id.get(enemy_runtime_id)
+
+
+func get_all_enemies() -> Array:
+	return _enemies_by_runtime_id.values()
 
 
 func get_alive_enemy_count() -> int:
@@ -67,6 +73,7 @@ func notify_enemy_reached_core(enemy_runtime_id: int) -> void:
 	var run_state = AppRefs.run_state()
 	if run_state != null:
 		run_state.damage_core(int(enemy.cfg.get("core_damage", 1)))
+		_debug_log("敌人 %s#%d 抵达核心，核心受到 %d 点伤害，HP %d/%d" % [enemy.enemy_id, enemy_runtime_id, int(enemy.cfg.get("core_damage", 1)), run_state.core_hp, run_state.core_hp_max])
 	remove_enemy(enemy_runtime_id)
 
 
@@ -74,3 +81,17 @@ func _on_path_grid_changed() -> void:
 	for enemy in _enemies_by_runtime_id.values():
 		if enemy.has_method("recalc_path"):
 			enemy.recalc_path()
+
+
+func clear_all_enemies() -> void:
+	for enemy_runtime_id in _enemies_by_runtime_id.keys().duplicate():
+		var enemy := get_enemy_by_runtime_id(int(enemy_runtime_id))
+		if enemy != null:
+			_enemies_by_runtime_id.erase(int(enemy_runtime_id))
+			enemy.queue_free()
+
+
+func _debug_log(message: String) -> void:
+	var tree := get_tree()
+	if tree != null:
+		tree.call_group("combat_debug_log", "append_combat_debug", message)
