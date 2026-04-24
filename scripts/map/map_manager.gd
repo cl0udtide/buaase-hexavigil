@@ -44,15 +44,49 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 		var core_data: CellData = _cells[_core_cell]
 		core_data.is_core = true
 		core_data.buildable = false
-	for spawn_key in spawn_defs.keys():
-		var spawn_cell: Vector2i = spawn_defs[spawn_key]
-		if not _cells.has(spawn_cell):
-			continue
-		var spawn_data: CellData = _cells[spawn_cell]
-		spawn_data.spawn_key = StringName(spawn_key)
-		spawn_data.buildable = false
-		_spawn_cells.append(spawn_cell)
+	_apply_debug_spawns(spawn_defs)
 	refresh_all_layers()
+
+
+func set_debug_spawns(spawn_defs: Dictionary) -> void:
+	_apply_debug_spawns(spawn_defs)
+	refresh_all_layers()
+	_emit_path_grid_changed()
+
+
+func upsert_debug_spawn(spawn_key: StringName, cell: Vector2i) -> bool:
+	if not is_inside(cell):
+		return false
+	var target_data := get_cell_data(cell)
+	if target_data == null or target_data.is_core or target_data.occupied or target_data.unit_runtime_id >= 0:
+		return false
+	if target_data.spawn_key != StringName() and target_data.spawn_key != spawn_key:
+		return false
+	_clear_debug_spawn(spawn_key)
+	target_data.spawn_key = spawn_key
+	target_data.buildable = false
+	if not _spawn_cells.has(cell):
+		_spawn_cells.append(cell)
+	refresh_all_layers()
+	_emit_path_grid_changed()
+	return true
+
+
+func remove_debug_spawn(spawn_key: StringName) -> bool:
+	var removed := _clear_debug_spawn(spawn_key)
+	if removed:
+		refresh_all_layers()
+		_emit_path_grid_changed()
+	return removed
+
+
+func get_debug_spawn_defs() -> Dictionary:
+	var result := {}
+	for cell in _spawn_cells:
+		var data := get_cell_data(cell)
+		if data != null and data.spawn_key != StringName():
+			result[String(data.spawn_key)] = cell
+	return result
 
 
 func reset_map() -> void:
@@ -160,6 +194,21 @@ func get_spawn_cell_by_key(spawn_key: StringName) -> Vector2i:
 	return Vector2i.ZERO
 
 
+func get_spawn_key_at_cell(cell: Vector2i) -> StringName:
+	var data := get_cell_data(cell)
+	if data == null:
+		return StringName()
+	return data.spawn_key
+
+
+func has_spawn_key(spawn_key: StringName) -> bool:
+	for cell in _spawn_cells:
+		var data := get_cell_data(cell)
+		if data != null and data.spawn_key == spawn_key:
+			return true
+	return false
+
+
 func get_core_cell() -> Vector2i:
 	return _core_cell
 
@@ -194,3 +243,41 @@ func _refresh_world_markers() -> void:
 		var spawn_key: StringName = child.get("spawn_key") if child.get("spawn_key") != null else StringName()
 		var spawn_cell := get_spawn_cell_by_key(spawn_key)
 		(child as Node2D).global_position = cell_to_world(spawn_cell)
+
+
+func _apply_debug_spawns(spawn_defs: Dictionary) -> void:
+	for cell in _spawn_cells:
+		var old_data := get_cell_data(cell)
+		if old_data != null:
+			old_data.spawn_key = StringName()
+			old_data.buildable = not old_data.is_core
+	_spawn_cells.clear()
+	for raw_key in spawn_defs.keys():
+		var spawn_key := StringName(raw_key)
+		var spawn_cell: Vector2i = spawn_defs[raw_key]
+		if not _cells.has(spawn_cell):
+			continue
+		var spawn_data: CellData = _cells[spawn_cell]
+		if spawn_data.is_core:
+			continue
+		spawn_data.spawn_key = spawn_key
+		spawn_data.buildable = false
+		if not _spawn_cells.has(spawn_cell):
+			_spawn_cells.append(spawn_cell)
+
+
+func _clear_debug_spawn(spawn_key: StringName) -> bool:
+	for cell in _spawn_cells.duplicate():
+		var data := get_cell_data(cell)
+		if data != null and data.spawn_key == spawn_key:
+			data.spawn_key = StringName()
+			data.buildable = not data.is_core
+			_spawn_cells.erase(cell)
+			return true
+	return false
+
+
+func _emit_path_grid_changed() -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.path_grid_changed.emit()

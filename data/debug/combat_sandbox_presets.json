@@ -1,0 +1,58 @@
+[
+	{
+		"id": "default",
+		"name": "默认一路调试",
+		"queues": {
+			"S1": [
+				{
+					"atk": 18,
+					"attack_interval": 1.2,
+					"core_damage": 1,
+					"damage_type": "physical",
+					"def": 20,
+					"delay": 0.0,
+					"enemy_id": "slime",
+					"max_hp": 300,
+					"move_speed": 1.0,
+					"name": "史莱姆",
+					"res": 0
+				},
+				{
+					"atk": 18,
+					"attack_interval": 1.2,
+					"core_damage": 1,
+					"damage_type": "physical",
+					"def": 2,
+					"delay": 0.5,
+					"enemy_id": "slime",
+					"max_hp": 80,
+					"move_speed": 1.0,
+					"name": "史莱姆",
+					"res": 0
+				},
+				{
+					"atk": 18,
+					"attack_interval": 1.2,
+					"core_damage": 1,
+					"damage_type": "physical",
+					"def": 2,
+					"delay": 0.5,
+					"enemy_id": "slime",
+					"max_hp": 80,
+					"move_speed": 1.0,
+					"name": "史莱姆",
+					"res": 0
+				}
+			]
+		},
+		"spawns": [
+			{
+				"cell": [
+					0,
+					3
+				],
+				"key": "S1"
+			}
+		]
+	}
+]
