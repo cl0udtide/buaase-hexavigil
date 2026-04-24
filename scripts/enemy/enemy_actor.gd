@@ -103,6 +103,30 @@ func receive_damage(value: int, damage_type: int) -> void:
 		get_enemy_manager().remove_enemy(runtime_id)
 
 
+func apply_push(direction: Vector2i, tiles: int) -> bool:
+	if _is_dead or _blocked_by != -1 or tiles <= 0:
+		return false
+	var push_dir := _normalize_push_direction(direction)
+	if push_dir == Vector2i.ZERO:
+		return false
+	var map_manager := get_map_manager()
+	if map_manager == null:
+		return false
+	var target_cell := current_cell
+	for _step in range(tiles):
+		var next_cell := target_cell + push_dir
+		if not _can_push_to_cell(next_cell):
+			break
+		target_cell = next_cell
+	if target_cell == current_cell:
+		return false
+	current_cell = target_cell
+	global_position = map_manager.cell_to_world(current_cell)
+	recalc_path()
+	_debug_log("敌人 %s#%d 被推动到格子 %s" % [_debug_name(), runtime_id, current_cell])
+	return true
+
+
 func get_runtime_id() -> int:
 	return runtime_id
 
@@ -197,7 +221,7 @@ func _process_blocked_attack(delta: float, blocker: Node) -> void:
 	var damage_type := _parse_damage_type(String(cfg.get("damage_type", "physical")))
 	var damage_value := int(cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
-	blocker.receive_damage(damage_value, damage_type)
+	blocker.receive_damage(damage_value, damage_type, self)
 	_attack_timer = max(float(cfg.get("attack_interval", 1.0)), 0.05)
 
 
@@ -240,6 +264,24 @@ func _get_current_move_direction() -> Vector2:
 	var from_pos: Vector2 = map_manager.cell_to_world(from_cell)
 	var to_pos: Vector2 = map_manager.cell_to_world(to_cell)
 	return to_pos - from_pos
+
+
+func _can_push_to_cell(cell: Vector2i) -> bool:
+	var map_manager := get_map_manager()
+	if map_manager == null or not map_manager.is_inside(cell):
+		return false
+	var cell_data = map_manager.get_cell_data(cell)
+	if cell_data == null or cell_data.is_core:
+		return false
+	return map_manager.is_walkable(cell)
+
+
+func _normalize_push_direction(direction: Vector2i) -> Vector2i:
+	if direction == Vector2i.ZERO:
+		return Vector2i.ZERO
+	if abs(direction.x) >= abs(direction.y):
+		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
+	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
 
 
 func _parse_damage_type(raw_type: String) -> int:

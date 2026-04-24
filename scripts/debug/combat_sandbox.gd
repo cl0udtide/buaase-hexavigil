@@ -979,10 +979,18 @@ func _create_default_preset() -> Dictionary:
 		"id": "default",
 		"name": "默认三路调试",
 		"operators": [
-			{"key": "G1", "unit_id": "guard_01", "name": "近卫A"},
-			{"key": "G2", "unit_id": "guard_01", "name": "近卫B"},
-			{"key": "S1", "unit_id": "archer_basic", "name": "狙击A"},
-			{"key": "S2", "unit_id": "archer_basic", "name": "狙击B"}
+			{"key": "G1", "unit_id": "guard_t1", "name": "一阶近卫"},
+			{"key": "G2", "unit_id": "guard_01", "name": "二阶近卫"},
+			{"key": "G3", "unit_id": "guard_t3", "name": "三阶近卫"},
+			{"key": "S1", "unit_id": "sniper_t1", "name": "一阶狙击"},
+			{"key": "S2", "unit_id": "sniper_t2", "name": "二阶狙击"},
+			{"key": "S3", "unit_id": "archer_basic", "name": "三阶狙击"},
+			{"key": "C1", "unit_id": "caster_t1", "name": "一阶术士"},
+			{"key": "C2", "unit_id": "caster_t2", "name": "二阶术士"},
+			{"key": "C3", "unit_id": "caster_t3", "name": "三阶术士"},
+			{"key": "D1", "unit_id": "defender_t1", "name": "一阶重装"},
+			{"key": "D2", "unit_id": "defender_t2", "name": "二阶重装"},
+			{"key": "D3", "unit_id": "defender_t3", "name": "三阶重装"}
 		],
 		"spawns": [
 			{"key": "S1", "cell": [0, 3]},
@@ -1371,6 +1379,10 @@ func _make_next_operator_key(unit_id: StringName) -> StringName:
 		prefix = "G"
 	elif raw_unit.begins_with("archer") or raw_unit.begins_with("sniper"):
 		prefix = "S"
+	elif raw_unit.begins_with("caster"):
+		prefix = "C"
+	elif raw_unit.begins_with("defender"):
+		prefix = "D"
 	var index := 1
 	while _has_operator_key(StringName("%s%d" % [prefix, index])):
 		index += 1

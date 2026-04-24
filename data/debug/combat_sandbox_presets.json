@@ -5,23 +5,63 @@
 		"operators": [
 			{
 				"key": "G1",
-				"name": "近卫A",
-				"unit_id": "guard_01"
+				"name": "一阶近卫",
+				"unit_id": "guard_t1"
 			},
 			{
 				"key": "G2",
-				"name": "近卫B",
+				"name": "二阶近卫",
 				"unit_id": "guard_01"
 			},
 			{
+				"key": "G3",
+				"name": "三阶近卫",
+				"unit_id": "guard_t3"
+			},
+			{
 				"key": "S1",
-				"name": "狙击A",
-				"unit_id": "archer_basic"
+				"name": "一阶狙击",
+				"unit_id": "sniper_t1"
 			},
 			{
 				"key": "S2",
-				"name": "狙击B",
+				"name": "二阶狙击",
+				"unit_id": "sniper_t2"
+			},
+			{
+				"key": "S3",
+				"name": "三阶狙击",
 				"unit_id": "archer_basic"
+			},
+			{
+				"key": "C1",
+				"name": "一阶术士",
+				"unit_id": "caster_t1"
+			},
+			{
+				"key": "C2",
+				"name": "二阶术士",
+				"unit_id": "caster_t2"
+			},
+			{
+				"key": "C3",
+				"name": "三阶术士",
+				"unit_id": "caster_t3"
+			},
+			{
+				"key": "D1",
+				"name": "一阶重装",
+				"unit_id": "defender_t1"
+			},
+			{
+				"key": "D2",
+				"name": "二阶重装",
+				"unit_id": "defender_t2"
+			},
+			{
+				"key": "D3",
+				"name": "三阶重装",
+				"unit_id": "defender_t3"
 			}
 		],
 		"queues": {
