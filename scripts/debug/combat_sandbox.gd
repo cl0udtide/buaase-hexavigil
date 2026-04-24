@@ -20,12 +20,14 @@ const DAMAGE_TYPE_LABELS := ["物理", "法术", "真实"]
 
 var _unit_ids: Array[StringName] = []
 var _enemy_ids: Array[StringName] = []
+var _operator_defs: Array[Dictionary] = []
 var _presets: Array[Dictionary] = []
 var _spawn_defs: Dictionary = {}
 var _spawn_queues: Dictionary = {}
 var _running_spawn_queues: Dictionary = {}
 var _selected_spawn_key := StringName()
 var _selected_queue_index := -1
+var _selected_operator_key := StringName()
 var _selected_unit_runtime_id := -1
 var _current_preset_id := ""
 var _current_preset_name := ""
@@ -36,6 +38,8 @@ var _refreshing_editor_ui := false
 var _editor_tabs: TabContainer
 var _preset_option: OptionButton
 var _preset_name_edit: LineEdit
+var _operator_list: ItemList
+var _operator_name_edit: LineEdit
 var _unit_option: OptionButton
 var _facing_option: OptionButton
 var _spawn_option: OptionButton
@@ -83,6 +87,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_tick_spawn_queues(delta)
+	_refresh_operator_list()
 	_refresh_status()
 	_refresh_skill_info(_get_selected_unit())
 	if _selected_unit_runtime_id >= 0:
@@ -136,11 +141,29 @@ func _build_editor_ui() -> void:
 
 
 func _build_combat_tab(tab: VBoxContainer) -> void:
-	var unit_row := _make_row(tab)
-	unit_row.add_child(_make_label("单位", 54.0))
-	_unit_option = _make_option(unit_row)
-	unit_row.add_child(_make_label("朝向", 54.0))
-	_facing_option = _make_option(unit_row)
+	var roster_label := _make_label("干员槽位", 0.0)
+	tab.add_child(roster_label)
+	_operator_list = ItemList.new()
+	_operator_list.custom_minimum_size = Vector2(0, 150)
+	_operator_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_operator_list.item_selected.connect(_on_operator_item_selected)
+	tab.add_child(_operator_list)
+
+	var add_row := _make_row(tab)
+	add_row.add_child(_make_label("类型", 54.0))
+	_unit_option = _make_option(add_row)
+	add_row.add_child(_make_label("名称", 54.0))
+	_operator_name_edit = LineEdit.new()
+	_operator_name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_row.add_child(_operator_name_edit)
+
+	var roster_action_row := _make_row(tab)
+	roster_action_row.add_child(_make_button("新增槽位", _on_add_operator_pressed))
+	roster_action_row.add_child(_make_button("删除槽位", _on_delete_operator_pressed))
+
+	var facing_row := _make_row(tab)
+	facing_row.add_child(_make_label("朝向", 54.0))
+	_facing_option = _make_option(facing_row)
 
 	var unit_action_row := _make_row(tab)
 	unit_action_row.add_child(_make_button("释放技能", _on_cast_skill_pressed))
@@ -302,6 +325,7 @@ func _populate_static_options() -> void:
 func _reset_sandbox() -> void:
 	_clear_debug_log()
 	_running_spawn_queues.clear()
+	_selected_operator_key = _get_first_operator_key()
 	_selected_unit_runtime_id = -1
 	_clear_attack_range_preview()
 	if _enemy_manager != null and _enemy_manager.has_method("clear_all_enemies"):
@@ -315,8 +339,13 @@ func _reset_sandbox() -> void:
 		run_state.set_phase(GameEnums.PHASE_DAY)
 		run_state.set_deploy_limit(99)
 		run_state.reset_action_points(999)
-		for unit_id in _unit_ids:
-			run_state.add_owned_unit(unit_id)
+		for operator_info in _operator_defs:
+			var operator_dict := operator_info as Dictionary
+			run_state.add_owned_operator_with_key(
+				StringName(operator_dict.get("key", "")),
+				StringName(operator_dict.get("unit_id", "")),
+				String(operator_dict.get("name", ""))
+			)
 	_apply_debug_map_from_state()
 	append_combat_debug("战斗编辑器已重置：预设 %s，出怪口 %d 个" % [_current_preset_name, _spawn_defs.size()])
 	_refresh_editor_controls()
@@ -406,14 +435,17 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 	var existing_unit = _unit_manager.get_unit_by_cell(cell) if _unit_manager.has_method("get_unit_by_cell") else null
 	if existing_unit != null:
 		_selected_unit_runtime_id = existing_unit.get_runtime_id()
+		_selected_operator_key = StringName(existing_unit.operator_key)
+		_select_operator_item(_selected_operator_key)
 		_refresh_attack_range_preview()
-		append_combat_debug("选中单位 %s#%d，预览攻击范围" % [existing_unit.unit_id, existing_unit.get_runtime_id()])
+		append_combat_debug("选中干员槽位 %s 的单位 %s#%d，预览攻击范围" % [_selected_operator_key, existing_unit.unit_id, existing_unit.get_runtime_id()])
 		_refresh_status()
 		return
-	var unit_id := _get_selected_unit_id()
-	if unit_id == StringName():
+	var operator_key := _get_selected_operator_key()
+	if operator_key == StringName():
+		_show_message("请先在干员槽位列表中选择一个可部署槽位")
 		return
-	var result: Dictionary = _unit_manager.try_deploy_unit(unit_id, cell, _get_selected_facing())
+	var result: Dictionary = _unit_manager.try_deploy_operator(operator_key, cell, _get_selected_facing())
 	_show_result_message(result, "部署完成", "部署失败")
 
 
@@ -680,8 +712,63 @@ func _on_reset_pressed() -> void:
 	_show_message("已重置战斗编辑器")
 
 
-func _on_unit_deployed(unit_runtime_id: int, _unit_id: StringName, _cell: Vector2i) -> void:
+func _on_operator_item_selected(index: int) -> void:
+	if _refreshing_editor_ui:
+		return
+	if index < 0 or index >= _operator_defs.size():
+		return
+	var operator_info: Dictionary = _operator_defs[index]
+	_selected_operator_key = StringName(operator_info.get("key", ""))
+	var deployed_unit = _unit_manager.get_unit_by_operator_key(_selected_operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+	_selected_unit_runtime_id = deployed_unit.get_runtime_id() if deployed_unit != null else -1
+	_refresh_attack_range_preview()
+	_refresh_operator_list()
+	_show_message("已选择干员槽位：%s" % _format_operator_label(operator_info))
+
+
+func _on_add_operator_pressed() -> void:
+	var unit_id := _get_selected_unit_id()
+	if unit_id == StringName():
+		return
+	var operator_info := _normalize_operator_def({
+		"key": String(_make_next_operator_key(unit_id)),
+		"unit_id": String(unit_id),
+		"name": _get_operator_name_from_input(unit_id)
+	})
+	_operator_defs.append(operator_info)
+	_selected_operator_key = StringName(operator_info.get("key", ""))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("add_owned_operator_with_key"):
+		run_state.add_owned_operator_with_key(_selected_operator_key, unit_id, String(operator_info.get("name", "")))
+	_refresh_operator_list()
+	_show_message("已新增干员槽位：%s" % _format_operator_label(operator_info))
+	append_combat_debug("新增干员槽位 %s，单位类型 %s" % [_selected_operator_key, unit_id])
+
+
+func _on_delete_operator_pressed() -> void:
+	var operator_key := _get_selected_operator_key()
+	if operator_key == StringName():
+		return
+	if _unit_manager != null and _unit_manager.has_method("get_operator_status") and StringName(_unit_manager.get_operator_status(operator_key)) != &"ready":
+		_show_message("该槽位已部署或正在再部署，不能直接删除")
+		return
+	for index in range(_operator_defs.size()):
+		if StringName((_operator_defs[index] as Dictionary).get("key", "")) == operator_key:
+			_operator_defs.remove_at(index)
+			break
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("remove_owned_operator"):
+		run_state.remove_owned_operator(operator_key)
+	_selected_operator_key = _get_first_operator_key()
+	_refresh_operator_list()
+	_show_message("已删除干员槽位：%s" % operator_key)
+	append_combat_debug("删除干员槽位 %s" % operator_key)
+
+
+func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
+	_selected_operator_key = operator_key
 	_selected_unit_runtime_id = unit_runtime_id
+	_select_operator_item(operator_key)
 	_refresh_attack_range_preview()
 
 
@@ -689,6 +776,7 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	if _selected_unit_runtime_id == unit_runtime_id:
 		_selected_unit_runtime_id = -1
 		_refresh_attack_range_preview()
+	_refresh_operator_list()
 
 
 func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bool:
@@ -717,6 +805,7 @@ func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bo
 func _refresh_editor_controls() -> void:
 	_refreshing_editor_ui = true
 	_populate_spawn_options()
+	_refresh_operator_list()
 	_refresh_queue_list()
 	_refresh_item_editor()
 	if _preset_name_edit != null:
@@ -736,13 +825,15 @@ func _refresh_status() -> void:
 	var selected_unit := _get_selected_unit()
 	if selected_unit != null:
 		selected_text = "%s HP %d/%d SP %.0f/%.0f CD %.1f" % [
-			selected_unit.unit_id,
+			_get_operator_display_name(StringName(selected_unit.operator_key)),
 			selected_unit.current_hp,
 			selected_unit.max_hp,
 			selected_unit.sp,
 			float(selected_unit.cfg.get("sp_max", 0.0)),
-			_unit_manager.get_redeploy_remaining(selected_unit.unit_id) if _unit_manager != null else 0.0
+			_unit_manager.get_operator_redeploy_remaining(StringName(selected_unit.operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
 		]
+	elif _selected_operator_key != StringName():
+		selected_text = "%s %s" % [_get_operator_display_name(_selected_operator_key), _get_operator_state_text(_selected_operator_key)]
 	var selected_spawn_text := String(_selected_spawn_key) if _selected_spawn_key != StringName() else "无"
 	_status_label.text = "单位 %d  敌人 %d  核心 %s  运行队列 %d\n预设：%s  出怪口：%s  选中单位：%s" % [
 		unit_count,
@@ -867,6 +958,7 @@ func _apply_preset_by_index(index: int) -> void:
 	var preset: Dictionary = _presets[index]
 	_current_preset_id = String(preset.get("id", "default"))
 	_current_preset_name = String(preset.get("name", "默认调试预设"))
+	_operator_defs = _parse_operator_defs(preset.get("operators", []))
 	_spawn_defs = _parse_spawn_defs(preset.get("spawns", []))
 	_spawn_queues = _parse_spawn_queues(preset.get("queues", {}))
 	for spawn_key in _spawn_defs.keys():
@@ -874,6 +966,7 @@ func _apply_preset_by_index(index: int) -> void:
 			_spawn_queues[String(spawn_key)] = []
 	var keys := _get_spawn_keys()
 	_selected_spawn_key = keys[0] if not keys.is_empty() else StringName()
+	_selected_operator_key = _get_first_operator_key()
 	_selected_queue_index = -1
 	_next_spawn_index = _calc_next_spawn_index()
 	_select_preset_option_by_id(_current_preset_id)
@@ -885,6 +978,12 @@ func _create_default_preset() -> Dictionary:
 	return {
 		"id": "default",
 		"name": "默认三路调试",
+		"operators": [
+			{"key": "G1", "unit_id": "guard_01", "name": "近卫A"},
+			{"key": "G2", "unit_id": "guard_01", "name": "近卫B"},
+			{"key": "S1", "unit_id": "archer_basic", "name": "狙击A"},
+			{"key": "S2", "unit_id": "archer_basic", "name": "狙击B"}
+		],
 		"spawns": [
 			{"key": "S1", "cell": [0, 3]},
 			{"key": "S2", "cell": [0, 1]},
@@ -899,6 +998,38 @@ func _create_default_preset() -> Dictionary:
 			],
 			"S3": []
 		}
+	}
+
+
+func _parse_operator_defs(raw_operators: Variant) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if typeof(raw_operators) == TYPE_ARRAY:
+		for entry_variant in raw_operators:
+			if typeof(entry_variant) != TYPE_DICTIONARY:
+				continue
+			var operator_info := _normalize_operator_def(entry_variant as Dictionary)
+			if not operator_info.is_empty():
+				result.append(operator_info)
+	if result.is_empty():
+		for entry in _create_default_preset().get("operators", []):
+			result.append(_normalize_operator_def(entry as Dictionary))
+	return result
+
+
+func _normalize_operator_def(raw_operator: Dictionary) -> Dictionary:
+	var unit_id := StringName(raw_operator.get("unit_id", _get_default_unit_id()))
+	if unit_id == StringName():
+		return {}
+	var operator_key := StringName(raw_operator.get("key", ""))
+	if operator_key == StringName():
+		operator_key = _make_next_operator_key(unit_id)
+	var name := String(raw_operator.get("name", "")).strip_edges()
+	if name.is_empty():
+		name = _make_operator_display_name(unit_id)
+	return {
+		"key": String(operator_key),
+		"unit_id": String(unit_id),
+		"name": name
 	}
 
 
@@ -962,9 +1093,22 @@ func _serialize_current_preset() -> Dictionary:
 	return {
 		"id": _current_preset_id,
 		"name": _current_preset_name,
+		"operators": _serialize_operator_defs(),
 		"spawns": spawns,
 		"queues": queues
 	}
+
+
+func _serialize_operator_defs() -> Array:
+	var serialized: Array = []
+	for operator_info in _operator_defs:
+		var operator_dict := operator_info as Dictionary
+		serialized.append({
+			"key": String(operator_dict.get("key", "")),
+			"unit_id": String(operator_dict.get("unit_id", "")),
+			"name": String(operator_dict.get("name", ""))
+		})
+	return serialized
 
 
 func _serialize_queue_item(item: Dictionary) -> Dictionary:
@@ -1092,6 +1236,46 @@ func _populate_unit_options() -> void:
 		_unit_option.add_item(String(cfg.get("name", unit_id)))
 
 
+func _refresh_operator_list() -> void:
+	if _operator_list == null:
+		return
+	_refreshing_editor_ui = true
+	var previous_selected := _selected_operator_key
+	_operator_list.clear()
+	for index in range(_operator_defs.size()):
+		var operator_info: Dictionary = _operator_defs[index]
+		var operator_key := StringName(operator_info.get("key", ""))
+		_operator_list.add_item(_format_operator_list_item(operator_info))
+		if operator_key == previous_selected:
+			_operator_list.select(index)
+	_refreshing_editor_ui = false
+
+
+func _select_operator_item(operator_key: StringName) -> void:
+	if _operator_list == null:
+		return
+	for index in range(_operator_defs.size()):
+		if StringName((_operator_defs[index] as Dictionary).get("key", "")) == operator_key:
+			_operator_list.select(index)
+			return
+
+
+func _format_operator_list_item(operator_info: Dictionary) -> String:
+	var operator_key := StringName(operator_info.get("key", ""))
+	var state_text := _get_operator_state_text(operator_key)
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var cd_text := ""
+	if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining"):
+		var remain := float(_unit_manager.get_operator_redeploy_remaining(operator_key))
+		if remain > 0.0:
+			cd_text = " %.1fs" % remain
+	return "%s  %s%s  [%s]" % [_format_operator_label(operator_info), state_text, cd_text, String(unit_id)]
+
+
+func _format_operator_label(operator_info: Dictionary) -> String:
+	return "%s(%s)" % [String(operator_info.get("name", operator_info.get("key", ""))), String(operator_info.get("key", ""))]
+
+
 func _populate_enemy_options() -> void:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
@@ -1132,6 +1316,91 @@ func _get_selected_unit_id() -> StringName:
 	if _unit_option == null or _unit_option.selected < 0 or _unit_option.selected >= _unit_ids.size():
 		return StringName()
 	return _unit_ids[_unit_option.selected]
+
+
+func _get_default_unit_id() -> StringName:
+	return _unit_ids[0] if not _unit_ids.is_empty() else StringName()
+
+
+func _get_selected_operator_key() -> StringName:
+	if _selected_operator_key != StringName():
+		return _selected_operator_key
+	if _operator_list != null and _operator_list.get_selected_items().size() > 0:
+		var index := int(_operator_list.get_selected_items()[0])
+		if index >= 0 and index < _operator_defs.size():
+			return StringName((_operator_defs[index] as Dictionary).get("key", ""))
+	return StringName()
+
+
+func _get_first_operator_key() -> StringName:
+	if _operator_defs.is_empty():
+		return StringName()
+	return StringName((_operator_defs[0] as Dictionary).get("key", ""))
+
+
+func _get_operator_info(operator_key: StringName) -> Dictionary:
+	for operator_info in _operator_defs:
+		if StringName((operator_info as Dictionary).get("key", "")) == operator_key:
+			return (operator_info as Dictionary)
+	return {}
+
+
+func _get_operator_display_name(operator_key: StringName) -> String:
+	var operator_info := _get_operator_info(operator_key)
+	if operator_info.is_empty():
+		return String(operator_key)
+	return String(operator_info.get("name", operator_key))
+
+
+func _get_operator_state_text(operator_key: StringName) -> String:
+	if _unit_manager == null or not _unit_manager.has_method("get_operator_status"):
+		return "可部署"
+	match StringName(_unit_manager.get_operator_status(operator_key)):
+		&"deployed":
+			return "已部署"
+		&"cooldown":
+			return "再部署"
+		_:
+			return "可部署"
+
+
+func _make_next_operator_key(unit_id: StringName) -> StringName:
+	var prefix := "O"
+	var raw_unit := String(unit_id).to_lower()
+	if raw_unit.begins_with("guard"):
+		prefix = "G"
+	elif raw_unit.begins_with("archer") or raw_unit.begins_with("sniper"):
+		prefix = "S"
+	var index := 1
+	while _has_operator_key(StringName("%s%d" % [prefix, index])):
+		index += 1
+	return StringName("%s%d" % [prefix, index])
+
+
+func _has_operator_key(operator_key: StringName) -> bool:
+	for operator_info in _operator_defs:
+		if StringName((operator_info as Dictionary).get("key", "")) == operator_key:
+			return true
+	return false
+
+
+func _get_operator_name_from_input(unit_id: StringName) -> String:
+	if _operator_name_edit != null:
+		var typed_name := _operator_name_edit.text.strip_edges()
+		if not typed_name.is_empty():
+			return typed_name
+	return _make_operator_display_name(unit_id)
+
+
+func _make_operator_display_name(unit_id: StringName) -> String:
+	var data_repo = AppRefs.data_repo()
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+	var base_name := String(cfg.get("name", unit_id))
+	var count := 0
+	for operator_info in _operator_defs:
+		if StringName((operator_info as Dictionary).get("unit_id", "")) == unit_id:
+			count += 1
+	return base_name if count == 0 else "%s%d" % [base_name, count + 1]
 
 
 func _get_selected_enemy_id() -> StringName:

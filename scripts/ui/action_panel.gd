@@ -6,7 +6,7 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 var _current_mode: StringName = &"idle"
 var _current_building_id: StringName = &""
-var _current_unit_id: StringName = &""
+var _current_operator_key: StringName = &""
 
 
 func _ready() -> void:
@@ -33,28 +33,28 @@ func _ready() -> void:
 func set_mode_idle() -> void:
 	_current_mode = &"idle"
 	_current_building_id = &""
-	_current_unit_id = &""
+	_current_operator_key = &""
 	_refresh_mode_labels()
 
 
 func set_mode_explore() -> void:
 	_current_mode = &"explore"
 	_current_building_id = &""
-	_current_unit_id = &""
+	_current_operator_key = &""
 	_refresh_mode_labels()
 
 
 func set_mode_build(building_id: StringName) -> void:
 	_current_mode = &"build"
 	_current_building_id = building_id
-	_current_unit_id = &""
+	_current_operator_key = &""
 	_refresh_mode_labels()
 
 
-func set_mode_deploy(unit_id: StringName) -> void:
+func set_mode_deploy(operator_key: StringName) -> void:
 	_current_mode = &"deploy"
 	_current_building_id = &""
-	_current_unit_id = unit_id
+	_current_operator_key = operator_key
 	_refresh_mode_labels()
 
 
@@ -71,7 +71,15 @@ func get_current_building_id() -> StringName:
 
 
 func get_current_unit_id() -> StringName:
-	return _current_unit_id
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_owned_operator"):
+		return StringName()
+	var operator_info: Dictionary = run_state.get_owned_operator(_current_operator_key)
+	return StringName(operator_info.get("unit_id", ""))
+
+
+func get_current_operator_key() -> StringName:
+	return _current_operator_key
 
 
 func _on_map_cell_clicked(cell: Vector2i) -> void:
@@ -86,8 +94,8 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 			if _current_building_id != StringName():
 				event_bus.request_build.emit(cell, _current_building_id)
 		&"deploy":
-			if _current_unit_id != StringName():
-				event_bus.request_deploy.emit(_current_unit_id, cell, Vector2i.RIGHT)
+			if _current_operator_key != StringName():
+				event_bus.request_deploy.emit(_current_operator_key, cell, Vector2i.RIGHT)
 
 
 func _on_phase_changed(_old_phase: int, new_phase: int) -> void:
@@ -112,6 +120,18 @@ func _refresh_mode_labels() -> void:
 		&"build":
 			selection_label.text = "当前选择：%s" % String(_current_building_id)
 		&"deploy":
-			selection_label.text = "当前选择：%s" % String(_current_unit_id)
+			selection_label.text = "当前选择：%s" % _get_operator_display_text(_current_operator_key)
 		_:
 			selection_label.text = "当前选择：无"
+
+
+func _get_operator_display_text(operator_key: StringName) -> String:
+	if operator_key == StringName():
+		return "无"
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_owned_operator"):
+		return String(operator_key)
+	var operator_info: Dictionary = run_state.get_owned_operator(operator_key)
+	if operator_info.is_empty():
+		return String(operator_key)
+	return "%s（%s）" % [String(operator_info.get("name", operator_key)), String(operator_info.get("unit_id", ""))]
