@@ -36,14 +36,23 @@ text = "部署：0/0"
 [node name="OwnedUnitsLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1485758970]
 unique_name_in_owner = true
 layout_mode = 2
+autowrap_mode = 2
 text = "已拥有："
 
-[node name="UnitButtonList" type="VBoxContainer" parent="ContentMargin/VBoxContainer" unique_id=731538533]
+[node name="UnitButtonScroll" type="ScrollContainer" parent="ContentMargin/VBoxContainer" unique_id=449603879]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="UnitButtonList" type="HFlowContainer" parent="ContentMargin/VBoxContainer/UnitButtonScroll" unique_id=731538533]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
 
 [node name="RedeployLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=2088822273]
 unique_name_in_owner = true
 layout_mode = 2
+autowrap_mode = 2
 text = "冷却信息"

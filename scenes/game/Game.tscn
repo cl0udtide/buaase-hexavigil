@@ -111,8 +111,8 @@ grow_vertical = 2
 anchors_preset = 2
 anchor_top = 1.0
 anchor_right = 0.0
-offset_top = -196.0
-offset_right = 240.0
+offset_top = -330.0
+offset_right = 380.0
 grow_horizontal = 1
 grow_vertical = 0
 
@@ -129,9 +129,9 @@ grow_vertical = 0
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -376.0
+offset_left = -720.0
 offset_right = 0.0
-offset_bottom = 212.0
+offset_bottom = 280.0
 grow_horizontal = 0
 
 [node name="DeployPanel" parent="UI" unique_id=2022132591 instance=ExtResource("27_xomle")]
@@ -139,9 +139,9 @@ anchors_preset = 6
 anchor_left = 1.0
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = -280.0
-offset_top = -115.0
-offset_bottom = 165.0
+offset_left = -320.0
+offset_top = -125.0
+offset_bottom = 205.0
 grow_horizontal = 0
 
 [node name="EventPanel" parent="UI" unique_id=239470582 instance=ExtResource("29_rpato")]

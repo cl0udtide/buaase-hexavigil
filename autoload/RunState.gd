@@ -31,7 +31,7 @@ func reset_for_new_run(seed: int) -> void:
 	phase = GameEnums.PHASE_MENU
 	day = 0
 	action_points = DEFAULT_ACTION_POINTS
-	prestige = 3
+	prestige = 30
 	wood = 3
 	stone = 2
 	mana = 1
