@@ -12,6 +12,8 @@ const SKILL_BEHAVIOR_REGISTRY := {
 
 
 var unit_id: StringName
+var operator_key: StringName
+var operator_name := ""
 var runtime_id := -1
 var current_cell := Vector2i.ZERO
 var facing := Vector2i.RIGHT
@@ -53,8 +55,10 @@ func _process(delta: float) -> void:
 	_tick_attack(delta)
 
 
-func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Vector2i, new_facing: Vector2i) -> void:
+func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Vector2i, new_facing: Vector2i, new_operator_key: StringName = StringName(), new_operator_name: String = "") -> void:
 	unit_id = new_unit_id
+	operator_key = new_operator_key if new_operator_key != StringName() else new_unit_id
+	operator_name = new_operator_name.strip_edges()
 	cfg = new_cfg.duplicate(true)
 	current_cell = spawn_cell
 	facing = new_facing
@@ -78,7 +82,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	var label := get_node_or_null("%TitleLabel") as Label
 	if label != null:
 		label.theme = AppTheme.get_theme()
-		label.text = String(cfg.get("name", unit_id))
+		label.text = _debug_name()
 		label.position = Vector2(-36.0, -58.0)
 	_configure_skill_behavior()
 	if _skill_behavior != null and _skill_behavior.has_method("setup"):
@@ -531,6 +535,8 @@ func _debug_log(message: String) -> void:
 
 
 func _debug_name() -> String:
+	if not operator_name.is_empty():
+		return operator_name
 	return String(cfg.get("name", unit_id))
 
 
