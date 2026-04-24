@@ -2,6 +2,28 @@
 	{
 		"id": "default",
 		"name": "默认一路调试",
+		"operators": [
+			{
+				"key": "G1",
+				"name": "近卫A",
+				"unit_id": "guard_01"
+			},
+			{
+				"key": "G2",
+				"name": "近卫B",
+				"unit_id": "guard_01"
+			},
+			{
+				"key": "S1",
+				"name": "狙击A",
+				"unit_id": "archer_basic"
+			},
+			{
+				"key": "S2",
+				"name": "狙击B",
+				"unit_id": "archer_basic"
+			}
+		],
 		"queues": {
 			"S1": [
 				{

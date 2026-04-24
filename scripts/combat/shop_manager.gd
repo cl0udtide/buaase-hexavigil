@@ -48,16 +48,15 @@ func try_buy_unit(unit_id: StringName) -> Dictionary:
 		return ActionResult.err(&"APP_REFS_MISSING", "全局单例尚未初始化")
 	if not _stock.has(unit_id):
 		return ActionResult.err(&"UNIT_NOT_IN_STOCK", "该单位不在当前商店库存中")
-	if run_state.has_owned_unit(unit_id):
-		return ActionResult.err(&"UNIT_OWNED", "该单位已经购买过")
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
 		return ActionResult.err(&"UNIT_NOT_FOUND", "找不到单位配置")
 	var spend_result: Dictionary = run_state.spend_prestige(int(cfg.get("cost_prestige", 0)))
 	if not spend_result.get("ok", false):
 		return spend_result
-	run_state.add_owned_unit(unit_id)
-	return ActionResult.ok({"unit_id": unit_id})
+	# 商店购买的是编队槽位，不再按 unit_id 去重；同类单位可拥有多名实例。
+	var operator_info: Dictionary = run_state.add_owned_operator(unit_id)
+	return ActionResult.ok({"unit_id": unit_id, "operator": operator_info})
 
 
 func _on_request_buy_unit(unit_id: StringName) -> void:

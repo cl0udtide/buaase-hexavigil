@@ -19,7 +19,11 @@ var deploy_limit: int = DEFAULT_DEPLOY_LIMIT
 var deployed_count: int = 0
 var random_seed: int = 0
 var owned_units: Array[StringName] = []
+# 干员槽位是真正的拥有列表；owned_units 只作为旧 UI / 旧调用路径的兼容视图。
+var owned_operators: Array[Dictionary] = []
 var buffs: Array[StringName] = []
+
+var _next_operator_serial := 1
 
 
 func reset_for_new_run(seed: int) -> void:
@@ -36,6 +40,8 @@ func reset_for_new_run(seed: int) -> void:
 	deploy_limit = DEFAULT_DEPLOY_LIMIT
 	deployed_count = 0
 	owned_units.clear()
+	owned_operators.clear()
+	_next_operator_serial = 1
 	buffs.clear()
 	_emit_all_state()
 
@@ -109,15 +115,76 @@ func heal_core(value: int) -> void:
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 
 
+func add_owned_operator(unit_id: StringName, display_name: String = "") -> Dictionary:
+	return add_owned_operator_with_key(_make_next_operator_key(), unit_id, display_name)
+
+
+func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, display_name: String = "") -> Dictionary:
+	if unit_id == StringName():
+		return {}
+	if operator_key == StringName():
+		operator_key = _make_next_operator_key()
+	if has_owned_operator(operator_key):
+		return {}
+	var normalized_name := String(display_name).strip_edges()
+	if normalized_name.is_empty():
+		normalized_name = _make_operator_name(unit_id)
+	var operator := {
+		"key": operator_key,
+		"unit_id": unit_id,
+		"name": normalized_name
+	}
+	owned_operators.append(operator)
+	_sync_next_operator_serial(operator_key)
+	_refresh_owned_units_view()
+	_emit_owned_roster()
+	return operator.duplicate(true)
+
+
+func get_owned_operator(operator_key: StringName) -> Dictionary:
+	for operator in owned_operators:
+		if StringName((operator as Dictionary).get("key", "")) == operator_key:
+			return (operator as Dictionary).duplicate(true)
+	return {}
+
+
+func get_owned_operators() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for operator in owned_operators:
+		result.append((operator as Dictionary).duplicate(true))
+	return result
+
+
+func has_owned_operator(operator_key: StringName) -> bool:
+	for operator in owned_operators:
+		if StringName((operator as Dictionary).get("key", "")) == operator_key:
+			return true
+	return false
+
+
+func remove_owned_operator(operator_key: StringName) -> bool:
+	for index in range(owned_operators.size()):
+		if StringName((owned_operators[index] as Dictionary).get("key", "")) == operator_key:
+			owned_operators.remove_at(index)
+			_refresh_owned_units_view()
+			_emit_owned_roster()
+			return true
+	return false
+
+
+func get_owned_unit_ids() -> Array[StringName]:
+	return owned_units.duplicate()
+
+
 func add_owned_unit(unit_id: StringName) -> void:
-	if owned_units.has(unit_id):
-		return
-	owned_units.append(unit_id)
-	EventBus.owned_units_changed.emit(owned_units.duplicate())
+	add_owned_operator(unit_id)
 
 
 func has_owned_unit(unit_id: StringName) -> bool:
-	return owned_units.has(unit_id)
+	for operator in owned_operators:
+		if StringName((operator as Dictionary).get("unit_id", "")) == unit_id:
+			return true
+	return false
 
 
 func set_deploy_limit(value: int) -> void:
@@ -163,5 +230,45 @@ func _emit_all_state() -> void:
 	EventBus.materials_changed.emit(wood, stone, mana)
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 	EventBus.deploy_limit_changed.emit(deployed_count, deploy_limit)
-	EventBus.owned_units_changed.emit(owned_units.duplicate())
+	_emit_owned_roster()
 	EventBus.buffs_changed.emit(buffs.duplicate())
+
+
+func _emit_owned_roster() -> void:
+	EventBus.owned_operators_changed.emit(get_owned_operators())
+	EventBus.owned_units_changed.emit(owned_units.duplicate())
+
+
+func _refresh_owned_units_view() -> void:
+	owned_units.clear()
+	for operator in owned_operators:
+		owned_units.append(StringName((operator as Dictionary).get("unit_id", "")))
+
+
+func _make_next_operator_key() -> StringName:
+	var operator_key := StringName("op_%04d" % _next_operator_serial)
+	while has_owned_operator(operator_key):
+		_next_operator_serial += 1
+		operator_key = StringName("op_%04d" % _next_operator_serial)
+	_next_operator_serial += 1
+	return operator_key
+
+
+func _sync_next_operator_serial(operator_key: StringName) -> void:
+	var key := String(operator_key)
+	if not key.begins_with("op_"):
+		return
+	var suffix := key.substr(3)
+	if suffix.is_valid_int():
+		_next_operator_serial = max(_next_operator_serial, int(suffix) + 1)
+
+
+func _make_operator_name(unit_id: StringName) -> String:
+	var data_repo = AppRefs.data_repo()
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+	var base_name := String(cfg.get("name", unit_id))
+	var same_unit_count := 0
+	for operator in owned_operators:
+		if StringName((operator as Dictionary).get("unit_id", "")) == unit_id:
+			same_unit_count += 1
+	return base_name if same_unit_count == 0 else "%s%d" % [base_name, same_unit_count + 1]

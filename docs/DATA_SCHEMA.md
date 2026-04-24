@@ -419,7 +419,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
     {"key": "G2", "unit_id": "guard_01", "name": "近卫B"},
     {"key": "S1", "unit_id": "archer_basic", "name": "狙击A"}
   ],
-  "spawn_points": [
+  "spawns": [
     {"key": "S1", "cell": [0, 3]}
   ],
   "queues": {
@@ -449,7 +449,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `id` | `String` | preset 唯一标识 |
 | `name` | `String` | preset 显示名 |
 | `operators` | `Array` | 沙盒开局拥有的干员槽位列表，结构同运行时干员槽位 |
-| `spawn_points` | `Array` | 出怪口列表；每项包含 `key` 与 `cell` |
+| `spawns` | `Array` | 出怪口列表；每项包含 `key` 与 `cell` |
 | `queues` | `Dictionary` | 按出怪口 key 分组的独立出怪队列 |
 
 `operators` 缺省时，沙盒可用内置默认编队兜底，避免旧 preset 立即失效。
