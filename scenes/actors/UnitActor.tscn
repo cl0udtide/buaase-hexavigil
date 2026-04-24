@@ -15,14 +15,14 @@ text = "Unit"
 unique_name_in_owner = true
 script = ExtResource("2_status")
 
-[node name="VisualRoot" type="Node2D" parent="."]
+[node name="VisualRoot" type="Node2D" parent="." unique_id=1883147352]
 unique_name_in_owner = true
 
-[node name="AudioRoot" type="Node" parent="."]
+[node name="AudioRoot" type="Node" parent="." unique_id=934460257]
 unique_name_in_owner = true
 
-[node name="EffectRoot" type="Node2D" parent="."]
+[node name="EffectRoot" type="Node2D" parent="." unique_id=1284737831]
 unique_name_in_owner = true
 
-[node name="SkillBehavior" type="Node" parent="."]
+[node name="SkillBehavior" type="Node" parent="." unique_id=1049653902]
 unique_name_in_owner = true
