@@ -83,7 +83,10 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	if label != null:
 		label.theme = AppTheme.get_theme()
 		label.text = _debug_name()
-		label.position = Vector2(-36.0, -58.0)
+		label.position = Vector2(-32.0, -64.0)
+		label.size = Vector2(64.0, 23.0)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_configure_skill_behavior()
 	if _skill_behavior != null and _skill_behavior.has_method("setup"):
 		_skill_behavior.setup(self)
