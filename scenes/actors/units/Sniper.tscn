@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/unit_actor.gd" id="1_unit"]
+[ext_resource type="Script" path="res://scripts/ui/actor_status_view.gd" id="2_status"]
+[ext_resource type="Script" path="res://scripts/combat/skills/sniper_burst_dawn_skill.gd" id="3_skill"]
+
+[node name="Sniper" type="Node2D"]
+script = ExtResource("1_unit")
+
+[node name="TitleLabel" type="Label" parent="."]
+unique_name_in_owner = true
+text = "狙击"
+
+[node name="StatusView" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_status")
+hp_fill_color = Color(0.35, 0.95, 0.48, 0.95)
+hit_effect_color = Color(0.85, 0.95, 1, 0.65)
+
+[node name="SkillBehavior" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_skill")

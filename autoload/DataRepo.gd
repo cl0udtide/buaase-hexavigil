@@ -12,6 +12,8 @@ const DATA_FILES := {
 
 const SCENE_REGISTRY := {
 	&"unit_actor": "res://scenes/actors/UnitActor.tscn",
+	&"guard_actor": "res://scenes/actors/units/Guard.tscn",
+	&"sniper_actor": "res://scenes/actors/units/Sniper.tscn",
 	&"enemy_actor": "res://scenes/actors/EnemyActor.tscn",
 	&"building_actor": "res://scenes/actors/BuildingActor.tscn",
 	&"projectile": "res://scenes/actors/Projectile.tscn",
