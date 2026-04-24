@@ -122,6 +122,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
     "sp_max": 20,
     "sp_recover_per_sec": 1.0,
     "skill_id": "guard_power_strike",
+    "skill_behavior_key": "guard_power_strike",
     "scene_key": "unit_actor",
     "icon_key": "guard_01_icon"
   }
@@ -155,6 +156,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `target_type` | `String` | 攻击目标类型 |
 | `sp_recover_per_sec` | `float` | 每秒回复 SP |
 | `skill_id` | `String` | 技能标识 |
+| `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |
 | `icon_key` | `String` | 图标逻辑名 |
 
 ---

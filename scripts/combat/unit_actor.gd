@@ -5,6 +5,10 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 const CELL_SIZE := 64.0
 const BLOCK_RADIUS_TILES := 0.7071
+const SKILL_BEHAVIOR_REGISTRY := {
+	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
+	&"sniper_burst_dawn": "res://scripts/combat/skills/sniper_burst_dawn_skill.gd"
+}
 
 
 var unit_id: StringName
@@ -76,6 +80,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", unit_id))
 		label.position = Vector2(-36.0, -58.0)
+	_configure_skill_behavior()
 	if _skill_behavior != null and _skill_behavior.has_method("setup"):
 		_skill_behavior.setup(self)
 	_update_status_view()
@@ -239,6 +244,28 @@ func get_unit_manager() -> Node:
 
 func get_enemy_manager() -> Node:
 	return get_node_or_null("../../../Managers/EnemyManager")
+
+
+func _configure_skill_behavior() -> void:
+	var behavior_key := StringName(cfg.get("skill_behavior_key", cfg.get("skill_id", "")))
+	if behavior_key == StringName():
+		return
+	if _skill_behavior != null and _skill_behavior.get_script() != null:
+		return
+	var script_path := String(SKILL_BEHAVIOR_REGISTRY.get(behavior_key, ""))
+	if script_path.is_empty() or not ResourceLoader.exists(script_path):
+		push_warning("Missing skill behavior script for %s: %s" % [unit_id, behavior_key])
+		return
+	if _skill_behavior == null:
+		_skill_behavior = Node.new()
+		_skill_behavior.name = "SkillBehavior"
+		_skill_behavior.unique_name_in_owner = true
+		add_child(_skill_behavior)
+	var behavior_script := load(script_path) as Script
+	if behavior_script == null:
+		push_warning("Failed to load skill behavior script: %s" % script_path)
+		return
+	_skill_behavior.set_script(behavior_script)
 
 
 func _recover_sp(delta: float) -> void:

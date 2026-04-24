@@ -21,7 +21,8 @@
     "skill_description": "阻挡数+1，普通攻击同时攻击所有被自身阻挡的敌人，持续10秒。",
     "skill_duration": 10.0,
     "skill_block_bonus": 1,
-    "scene_key": "guard_actor",
+    "scene_key": "unit_actor",
+    "skill_behavior_key": "guard_hold_line",
     "icon_key": "guard_01_icon"
   },
   {
@@ -51,7 +52,8 @@
     "skill_splash_radius": 2,
     "skill_splash_damage_multiplier": 2.2,
     "skill_splash_damage_type": "physical",
-    "scene_key": "sniper_actor",
+    "scene_key": "unit_actor",
+    "skill_behavior_key": "sniper_burst_dawn",
     "icon_key": "archer_basic_icon"
   }
 ]
