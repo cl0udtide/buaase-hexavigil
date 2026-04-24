@@ -159,6 +159,31 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |
 | `icon_key` | `String` | 图标逻辑名 |
 
+### 3.1 运行时干员槽位
+
+干员槽位不是独立配置表，而是 `RunState`、存档和调试 preset 中使用的运行时结构。
+它表示玩家拥有的一名可部署干员实例，而不是一个单位类型。
+
+结构示例：
+
+```json
+{
+  "key": "G1",
+  "unit_id": "guard_01",
+  "name": "近卫A"
+}
+```
+
+字段说明：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `key` | `String` | 槽位唯一标识；部署、撤退、再部署 CD 均按该值结算 |
+| `unit_id` | `String` | 引用 `units.json[].id`，决定基础数值、攻击范围、技能和再部署时间 |
+| `name` | `String` | UI 显示名；允许同类单位用不同槽位名区分 |
+
+同一个 `unit_id` 可以出现在多个槽位中。`units.json[].redeploy_sec` 是单位类型默认再部署时间，但实际冷却状态属于具体槽位。
+
 ---
 
 ## 4. `enemies.json`
@@ -379,23 +404,75 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 ---
 
-## 9. 配置表之间的引用关系
+## 9. 调试战斗预设
 
-### 9.1 单位
+`data/debug/combat_sandbox_presets.json` 用于保存战斗沙盒的可复现调试关卡。
+
+记录示例：
+
+```json
+{
+  "id": "default_lane",
+  "name": "默认一路调试",
+  "operators": [
+    {"key": "G1", "unit_id": "guard_01", "name": "近卫A"},
+    {"key": "G2", "unit_id": "guard_01", "name": "近卫B"},
+    {"key": "S1", "unit_id": "archer_basic", "name": "狙击A"}
+  ],
+  "spawn_points": [
+    {"key": "S1", "cell": [0, 3]}
+  ],
+  "queues": {
+    "S1": [
+      {
+        "enemy_id": "slime",
+        "delay": 0.0,
+        "name": "史莱姆",
+        "max_hp": 90,
+        "atk": 18,
+        "def": 2,
+        "res": 0,
+        "move_speed": 1.0,
+        "attack_interval": 1.2,
+        "damage_type": "physical",
+        "core_damage": 1
+      }
+    ]
+  }
+}
+```
+
+字段说明：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `id` | `String` | preset 唯一标识 |
+| `name` | `String` | preset 显示名 |
+| `operators` | `Array` | 沙盒开局拥有的干员槽位列表，结构同运行时干员槽位 |
+| `spawn_points` | `Array` | 出怪口列表；每项包含 `key` 与 `cell` |
+| `queues` | `Dictionary` | 按出怪口 key 分组的独立出怪队列 |
+
+`operators` 缺省时，沙盒可用内置默认编队兜底，避免旧 preset 立即失效。
+
+---
+
+## 10. 配置表之间的引用关系
+
+### 10.1 单位
 
 - `units.json[].skill_id` 引用技能逻辑标识
 - `units.json[].scene_key` 引用单位模板
 - `units.json[].icon_key` 引用单位图标
 
-### 9.2 敌人
+### 10.2 敌人
 
 - `enemies.json[].scene_key` 引用敌人模板
 
-### 9.3 建筑
+### 10.3 建筑
 
 - `buildings.json[].scene_key` 引用建筑模板
 
-### 9.4 波次
+### 10.4 波次
 
 - `waves.json[].entries[].enemy_id` 引用 `enemies.json[].id`
 - `waves.json[].entries[].spawn_key` 引用地图中的刷怪点逻辑名

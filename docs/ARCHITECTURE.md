@@ -155,9 +155,9 @@ Managers
 - `BuildingManager`
   管理建筑的建造、修复、销毁和运行时状态。
 - `UnitManager`
-  管理单位部署、撤退、再部署和单位运行时状态。
+  管理干员实例槽位的部署、撤退、死亡离场、再部署和场上单位运行时状态。
 - `ShopManager`
-  管理商店库存、刷新和购买逻辑。
+  管理商店库存、刷新和购买逻辑；每次购买会生成一个独立干员槽位。
 - `EnemyManager`
   管理敌人实例、敌人出生、死亡、抵达核心等运行时行为。
 - `WaveManager`
@@ -194,7 +194,7 @@ UI
 - `ShopPanel`
   商店面板，显示库存并发出购买、刷新请求。
 - `DeployPanel`
-  部署面板，显示可部署单位与再部署状态，并发出部署、撤退请求。
+  部署面板，按干员实例槽位显示可部署、已部署和再部署冷却状态，并发出部署请求。
 - `EventPanel`
   随机事件面板，展示事件内容并发出事件交互请求。
 - `BlessingPanel`
@@ -256,7 +256,7 @@ UI
 - 木材、石材、魔力
 - 核心生命
 - 已获得 Buff
-- 已拥有单位
+- 已拥有干员实例槽位
 - 部署上限
 - 当前已部署数量
 - 随机种子
@@ -515,19 +515,19 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 职责：
 
 - 商店刷新与购买
-- 单位部署与撤退
-- 再部署冷却
+- 干员实例槽位部署与撤退
+- 按槽位计算再部署冷却
 - 单位普攻、受伤、技能
 - 统一伤害计算
 
 各文件作用：
 
 - `unit_manager.gd`
-  单位运行时主控，管理部署、撤退、再部署和场上单位列表。
+  单位运行时主控，管理干员槽位部署、撤退、再部署和场上单位列表。
 - `unit_actor.gd`
   单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为。
 - `shop_manager.gd`
-  商店主控，管理库存、购买和刷新逻辑。
+  商店主控，管理库存、购买和刷新逻辑；购买同一单位类型会新增独立槽位。
 - `combat_math.gd`
   伤害与治疗计算工具。
 - `skill_runtime.gd`
@@ -677,10 +677,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 
 | 数据 | 拥有者 |
 |---|---|
-| 当前阶段、天数、行动力、声望、资源、核心生命、Buff、已拥有单位、部署上限 | `RunState` |
+| 当前阶段、天数、行动力、声望、资源、核心生命、Buff、已拥有干员槽位、部署上限 | `RunState` |
 | 地图格子、迷雾、可通行、可建造、占用信息、刷怪点、核心位置 | `MapManager` |
 | 场上建筑运行时状态 | `BuildingManager` |
-| 场上单位、再部署状态、技能运行时状态 | `UnitManager` |
+| 场上单位、槽位部署映射、再部署状态、技能运行时状态 | `UnitManager` |
 | 商店库存 | `ShopManager` |
 | 场上敌人运行时状态 | `EnemyManager` |
 | 波次进度与待生成队列 | `WaveManager` |
@@ -751,6 +751,9 @@ UI -> BuildingManager -> BuildValidator -> RunState -> MapManager -> PathService
 UI -> ShopManager -> RunState -> UnitManager/UI
 ```
 
+商店购买的结果不是解锁一个单位类型，而是在 `RunState` 中新增一个干员实例槽位。
+同一个 `unit_id` 可以被多次购买，每次购买都会得到不同的 `operator_key`，后续部署、撤退和再部署都按这个槽位独立结算。
+
 ### 7.4 进入夜晚
 
 ```text
@@ -762,6 +765,8 @@ UI -> GameController -> RunState -> NightManager -> WaveManager
 ```text
 UI -> UnitManager -> RunState -> UnitRoot
 ```
+
+部署请求使用 `operator_key` 指向一个已拥有干员槽位。`UnitManager` 负责检查该槽位是否已在场、是否处于再部署冷却、当前部署数是否达到上限，以及目标格是否合法。撤退或死亡后只让该槽位进入再部署冷却，不影响同类单位的其他槽位。
 
 ### 7.6 敌人攻击核心
 
