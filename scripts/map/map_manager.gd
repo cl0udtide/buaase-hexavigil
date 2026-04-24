@@ -26,6 +26,35 @@ func generate_new_map(_seed: int) -> void:
 	refresh_all_layers()
 
 
+func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary) -> void:
+	width = new_width
+	height = new_height
+	_cells.clear()
+	_spawn_cells.clear()
+	for y in range(height):
+		for x in range(width):
+			var data := CellData.new()
+			data.cell = Vector2i(x, y)
+			data.discovered = true
+			data.buildable = true
+			data.walkable = true
+			_cells[data.cell] = data
+	_core_cell = core_cell
+	if _cells.has(_core_cell):
+		var core_data: CellData = _cells[_core_cell]
+		core_data.is_core = true
+		core_data.buildable = false
+	for spawn_key in spawn_defs.keys():
+		var spawn_cell: Vector2i = spawn_defs[spawn_key]
+		if not _cells.has(spawn_cell):
+			continue
+		var spawn_data: CellData = _cells[spawn_cell]
+		spawn_data.spawn_key = StringName(spawn_key)
+		spawn_data.buildable = false
+		_spawn_cells.append(spawn_cell)
+	refresh_all_layers()
+
+
 func reset_map() -> void:
 	_cells.clear()
 	_spawn_cells.clear()
@@ -100,6 +129,14 @@ func set_unit_occupy(cell: Vector2i, occupied: bool, unit_runtime_id: int = -1) 
 	if data == null:
 		return
 	data.unit_runtime_id = unit_runtime_id if occupied else -1
+	refresh_all_layers()
+
+
+func clear_runtime_occupancy() -> void:
+	for data in _cells.values():
+		data.occupied = false
+		data.building_runtime_id = -1
+		data.unit_runtime_id = -1
 	refresh_all_layers()
 
 
