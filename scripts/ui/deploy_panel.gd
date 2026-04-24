@@ -95,7 +95,7 @@ func _on_unit_removed(_unit_runtime_id: int, _reason: int) -> void:
 
 
 func _rebuild_operator_buttons() -> void:
-	var container := get_node_or_null("%UnitButtonList") as VBoxContainer
+	var container := get_node_or_null("%UnitButtonList") as HFlowContainer
 	if container == null:
 		return
 	for child in container.get_children():
@@ -103,14 +103,14 @@ func _rebuild_operator_buttons() -> void:
 	for operator_info in _operators:
 		var button := Button.new()
 		button.set_meta("operator_key", operator_info.get("key", ""))
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.custom_minimum_size = Vector2(118, 44)
 		button.pressed.connect(_on_operator_selected.bind(StringName(operator_info.get("key", ""))))
 		container.add_child(button)
 	_update_operator_button_states()
 
 
 func _update_operator_button_states() -> void:
-	var container := get_node_or_null("%UnitButtonList") as VBoxContainer
+	var container := get_node_or_null("%UnitButtonList") as HFlowContainer
 	if container == null:
 		return
 	for child in container.get_children():
