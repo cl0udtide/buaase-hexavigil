@@ -15,6 +15,8 @@ res://
 │  │  └─ Result.tscn
 │  ├─ game/                    [游戏主场景]
 │  │  └─ Game.tscn
+│  ├─ debug/                   [调试与沙盒场景]
+│  │  └─ CombatSandbox.tscn
 │  ├─ world/                   [地图与世界部件]
 │  │  ├─ MapRoot.tscn
 │  │  ├─ Core.tscn
@@ -33,14 +35,19 @@ res://
 │     ├─ DeployPanel.tscn
 │     ├─ EventPanel.tscn
 │     ├─ BlessingPanel.tscn
-│     └─ ResultPanel.tscn
+│     ├─ ResultPanel.tscn
+│     └─ combat/               [作战 HUD 组件]
+│        ├─ CombatHud.tscn
+│        ├─ OperatorCard.tscn
+│        └─ UnitDetailPanel.tscn
 ├─ scripts/
 │  ├─ core/                    [阶段与全局控制]
 │  ├─ map/                     [地图与寻路]
 │  ├─ building/                [建筑]
 │  ├─ combat/                  [单位、技能、商店]
 │  ├─ enemy/                   [敌人、波次、Boss]
-│  ├─ ui/                      [界面逻辑]
+│  ├─ ui/                      [界面逻辑，含 ui/combat 作战 HUD]
+│  ├─ debug/                   [调试场景逻辑]
 │  └─ data/                    [数据说明辅助文件]
 ├─ data/                       [JSON 配置]
 ├─ assets/                     [图片、音频、字体]
@@ -60,6 +67,8 @@ res://
 - `Result.tscn` 负责展示胜负结果。
 
 白天、夜晚、祝福都在 `Game.tscn` 内切换，不切主场景。
+
+`CombatSandbox.tscn` 属于调试入口，不计入正式运行主场景。它复用 `World`、`Managers` 和 `UI` 三层结构，用于快速验证部署、刷怪、技能和作战 HUD 交互。
 
 ---
 
@@ -179,6 +188,7 @@ UI
 ├─ BuildPanel
 ├─ ShopPanel
 ├─ DeployPanel
+├─ CombatHud
 ├─ EventPanel
 ├─ BlessingPanel
 └─ ResultPanel
@@ -196,6 +206,8 @@ UI
   商店面板，显示库存并发出购买、刷新请求。
 - `DeployPanel`
   部署面板，按干员实例槽位显示可部署、已部署和再部署冷却状态，并发出部署请求。
+- `CombatHud`
+  场景化作战 HUD，当前由 `CombatSandbox` 使用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示、单位详情面板和调试抽屉入口。
 - `EventPanel`
   随机事件面板，展示事件内容并发出事件交互请求。
 - `BlessingPanel`
@@ -450,11 +462,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 管理刷怪点和核心位置
 - 提供格子坐标与可通行信息
 - 为敌人寻路提供底层支持
+- 为 UI 提供格子预览与作战范围绘制
 
 各文件作用：
 
 - `map_manager.gd`
-  地图真相数据中心，统一对外提供格子状态查询。
+  地图真相数据中心，统一对外提供格子状态查询。普通占用刷新不得重置玩家镜头；只有首次加载、生成新地图、重置地图或尺寸变化时才允许请求重置视角。
 - `path_service.gd`
   路径计算服务，负责根据地图阻挡情况重建路径网格。
 - `cell_data.gd`
@@ -462,7 +475,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `map_generator.gd`
   地图生成逻辑，负责按规则生成初始地图。
 - `MapRoot.tscn`
-  地图显示节点模板，对应 `World/MapRoot`。
+  地图显示节点模板，对应 `World/MapRoot`。除基础格子绘制外，还负责鼠标悬停、选中格、攻击范围、部署落点、非法格、朝向箭头等作战预览层。
 - `Core.tscn`
   核心建筑模板。
 - `SpawnPoint.tscn`
@@ -605,6 +618,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/ui/event_panel.gd`
 - `scripts/ui/blessing_panel.gd`
 - `scripts/ui/result_panel.gd`
+- `scripts/ui/combat/combat_hud.gd`
+- `scripts/ui/combat/operator_card.gd`
+- `scripts/ui/combat/unit_detail_panel.gd`
+- `scripts/ui/combat/combat_ui_style.gd`
 - `scenes/ui/HUD.tscn`
 - `scenes/ui/ActionPanel.tscn`
 - `scenes/ui/BuildPanel.tscn`
@@ -613,6 +630,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scenes/ui/EventPanel.tscn`
 - `scenes/ui/BlessingPanel.tscn`
 - `scenes/ui/ResultPanel.tscn`
+- `scenes/ui/combat/CombatHud.tscn`
+- `scenes/ui/combat/OperatorCard.tscn`
+- `scenes/ui/combat/UnitDetailPanel.tscn`
 
 职责：
 
@@ -633,6 +653,14 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   商店面板逻辑，显示 5 格干员卡牌、价格、阶级、刷新与购买反馈。
 - `deploy_panel.gd`
   部署面板逻辑。
+- `combat/combat_hud.gd`
+  作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示、单位详情面板和调试抽屉按钮。它只发出 UI 信号，不直接修改单位或地图真相数据。
+- `combat/operator_card.gd`
+  单个待部署干员卡片逻辑，展示可部署、已部署和冷却状态，并把按下事件转换为 `operator_key` 信号。
+- `combat/unit_detail_panel.gd`
+  已部署单位详情面板逻辑，展示 HP、SP、属性、技能描述、技能可用状态，并发出释放技能和撤退请求。
+- `combat/combat_ui_style.gd`
+  作战 HUD 的样式辅助函数，集中生成面板、按钮等 `StyleBox`，避免视觉参数散落在业务脚本中。
 - `event_panel.gd`
   事件面板逻辑。
 - `blessing_panel.gd`
@@ -649,6 +677,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   商店面板模板。
 - `DeployPanel.tscn`
   部署面板模板。
+- `CombatHud.tscn`
+  作战 HUD 场景模板。
+- `OperatorCard.tscn`
+  待部署干员卡片模板。
+- `UnitDetailPanel.tscn`
+  已部署单位详情面板模板。
 - `EventPanel.tscn`
   事件面板模板。
 - `BlessingPanel.tscn`
@@ -792,6 +826,14 @@ UI -> UnitManager -> RunState -> UnitRoot
 
 主场景中，`DeployPanel` 负责选择干员槽位，`ActionPanel` 负责选择部署朝向并在地图点击时调用部署逻辑。
 点击已部署单位所在格会选中该单位，显示 HP、SP、技能名、技能描述和技能持续状态，并可释放技能或撤退。
+点击没有单位的地图格会取消当前单位选中，清除攻击范围预览和详情面板，避免旧选中状态残留。
+
+`CombatSandbox` 使用新的场景化 `CombatHud` 验证作战交互。沙盒内部署采用两段式拖拽：
+
+1. 从底部待部署干员卡拖到地图格并松手，`UnitManager.validate_deploy_operator()` 只做合法性校验和预览，不创建单位。
+2. 落点锁定后，从落点向外拖拽选择上下左右朝向并松手确认，最终调用 `UnitManager.try_deploy_operator()` 完成部署。
+
+部署预览由 `MapRoot` 绘制，包含合法/非法落点、锁定落点、朝向箭头和攻击范围。普通地图刷新只重绘图层，不应把玩家镜头拉回地图中心。
 
 ### 7.6 敌人攻击核心
 
