@@ -23,7 +23,7 @@ func generate_new_map(_seed: int) -> void:
 	for cell_variant: Variant in generated.get("spawn_cells", []):
 		_spawn_cells.append(cell_variant as Vector2i)
 	_core_cell = generated.get("core_cell", Vector2i.ZERO)
-	refresh_all_layers()
+	refresh_all_layers(true)
 
 
 func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary) -> void:
@@ -45,7 +45,7 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 		core_data.is_core = true
 		core_data.buildable = false
 	_apply_debug_spawns(spawn_defs)
-	refresh_all_layers()
+	refresh_all_layers(true)
 
 
 func set_debug_spawns(spawn_defs: Dictionary) -> void:
@@ -93,7 +93,7 @@ func reset_map() -> void:
 	_cells.clear()
 	_spawn_cells.clear()
 	_core_cell = Vector2i.ZERO
-	refresh_all_layers()
+	refresh_all_layers(true)
 
 
 func is_inside(cell: Vector2i) -> bool:
@@ -224,9 +224,9 @@ func get_random_discovered_empty_cell() -> Vector2i:
 	return candidates.pick_random()
 
 
-func refresh_all_layers() -> void:
+func refresh_all_layers(reset_camera: bool = false) -> void:
 	if _map_root != null and _map_root.has_method("refresh_from_map"):
-		_map_root.refresh_from_map(self)
+		_map_root.refresh_from_map(self, reset_camera)
 	_refresh_world_markers()
 
 
