@@ -36,6 +36,8 @@ var _selected_cell := Vector2i(-1, -1)
 var _camera: Camera2D
 var _fit_zoom := 1.0
 var _zoom_scalar := 1.0
+var _camera_fit_initialized := false
+var _last_map_size := Vector2.ZERO
 var _is_dragging := false
 var _debug_attack_range_cells: Array[Vector2i] = []
 var _deploy_preview_cell := Vector2i(-1, -1)
@@ -83,9 +85,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_handle_mouse_motion(event)
 
 
-func refresh_from_map(map_manager: Node) -> void:
+func refresh_from_map(map_manager: Node, reset_camera: bool = false) -> void:
 	_map_manager = map_manager
-	_fit_camera_to_map()
+	var map_size := _get_map_size(map_manager)
+	var map_size_changed := not map_size.is_equal_approx(_last_map_size)
+	_last_map_size = map_size
+	_fit_camera_to_map(reset_camera or map_size_changed or not _camera_fit_initialized)
 	queue_redraw()
 
 
@@ -255,7 +260,7 @@ func _zoom_at_mouse(factor: float) -> void:
 	_camera.position = _clamp_camera_center(_camera.position)
 
 
-func _fit_camera_to_map() -> void:
+func _fit_camera_to_map(reset_view: bool = true) -> void:
 	var map_manager := _get_map_manager()
 	if map_manager == null or _camera == null:
 		return
@@ -265,13 +270,20 @@ func _fit_camera_to_map() -> void:
 	var viewport_size := get_viewport_rect().size - Vector2.ONE * VIEW_PADDING * 2.0
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
+	var previous_fit_zoom := _fit_zoom
+	var previous_zoom_scalar := _zoom_scalar
 	# Use "cover" scaling so the map always fills the viewport.
 	_fit_zoom = max(viewport_size.x / map_size.x, viewport_size.y / map_size.y)
 	_fit_zoom = max(_fit_zoom, 0.01)
-	_zoom_scalar = _fit_zoom
+	if reset_view:
+		_zoom_scalar = _fit_zoom
+		_camera.position = _get_map_center(map_manager)
+	else:
+		var zoom_ratio: float = previous_zoom_scalar / max(previous_fit_zoom, 0.001)
+		_zoom_scalar = clamp(_fit_zoom * zoom_ratio, _fit_zoom, _fit_zoom * MAX_ZOOM_MULTIPLIER)
 	_apply_camera_zoom()
-	_camera.position = _get_map_center(map_manager)
 	_camera.position = _clamp_camera_center(_camera.position)
+	_camera_fit_initialized = true
 
 
 func _apply_camera_zoom() -> void:
@@ -319,7 +331,7 @@ func get_debug_info() -> String:
 
 
 func _on_viewport_size_changed() -> void:
-	_fit_camera_to_map()
+	_fit_camera_to_map(false)
 
 
 func _get_map_manager() -> Node:
