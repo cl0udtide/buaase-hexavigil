@@ -27,7 +27,14 @@ func _process(delta: float) -> void:
 	tick_redeploy(delta)
 
 
+func validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dictionary:
+	return _validate_deploy_operator(operator_key, cell)
+
+
 func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vector2i) -> Dictionary:
+	var validation := _validate_deploy_operator(operator_key, cell)
+	if not bool(validation.get("ok", false)):
+		return validation
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	var event_bus = AppRefs.event_bus()
@@ -77,6 +84,38 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	_debug_log("部署干员 %s#%d 到格子 %s，朝向 %s" % [String(operator_info.get("name", cfg.get("name", unit_id))), _next_runtime_id, cell, _direction_text(facing)])
 	_next_runtime_id += 1
 	return ActionResult.ok({"runtime_id": _next_runtime_id - 1, "operator_key": operator_key, "unit_id": unit_id})
+
+
+func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	var data_repo = AppRefs.data_repo()
+	if run_state == null or data_repo == null:
+		return ActionResult.err(&"APP_REFS_MISSING", "全局单例尚未初始化")
+	var operator_info: Dictionary = run_state.get_owned_operator(operator_key) if run_state.has_method("get_owned_operator") else {}
+	if operator_info.is_empty():
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "尚未拥有该干员槽位")
+	if _runtime_by_operator_key.has(operator_key):
+		return ActionResult.err(&"OPERATOR_DEPLOYED", "该干员已经部署在场")
+	if is_operator_redeploying(operator_key):
+		return ActionResult.err(&"OPERATOR_COOLDOWN", "该干员仍在再部署冷却中")
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
+	if cfg.is_empty():
+		return ActionResult.err(&"UNIT_NOT_FOUND", "找不到单位配置")
+	if run_state.phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以部署")
+	if run_state.deployed_count >= run_state.deploy_limit:
+		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "已达到部署上限")
+	if _map_manager == null:
+		return ActionResult.err(&"MAP_UNAVAILABLE", "地图尚未初始化")
+	if not _map_manager.is_inside(cell):
+		return ActionResult.err(&"CELL_OUT_OF_RANGE", "目标格超出地图范围")
+	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
+	if cell_data != null and cell_data.is_core:
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "核心格不能部署单位")
+	if not _map_manager.is_walkable(cell):
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "该格子不能部署单位")
+	return ActionResult.ok({"operator_key": operator_key, "unit_id": unit_id})
 
 
 func try_deploy_unit(unit_id: StringName, cell: Vector2i, facing: Vector2i) -> Dictionary:
