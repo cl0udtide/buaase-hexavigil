@@ -396,6 +396,8 @@ func _handle_map_cell_selection(cell: Vector2i) -> void:
 	var existing_unit = _unit_manager.get_unit_by_cell(cell) if _unit_manager.has_method("get_unit_by_cell") else null
 	if existing_unit != null:
 		_select_deployed_unit(existing_unit)
+		return
+	_clear_selected_unit_selection()
 
 
 func _select_deployed_unit(unit: Node) -> void:
@@ -406,6 +408,21 @@ func _select_deployed_unit(unit: Node) -> void:
 	_refresh_attack_range_preview()
 	_refresh_detail_panel()
 	_show_message("已选中 %s" % _get_unit_display_name_for_ui(unit))
+
+
+func _clear_selected_unit_selection() -> void:
+	_selected_unit_runtime_id = -1
+	_clear_attack_range_preview()
+	_refresh_detail_panel()
+
+
+func _clear_unit_selection_if_click_misses_unit(cell: Vector2i) -> void:
+	if _selected_unit_runtime_id < 0 or _unit_manager == null or not _unit_manager.has_method("get_unit_by_cell"):
+		return
+	var clicked_unit = _unit_manager.get_unit_by_cell(cell)
+	if clicked_unit != null and is_instance_valid(clicked_unit) and clicked_unit.has_method("get_runtime_id") and int(clicked_unit.get_runtime_id()) == _selected_unit_runtime_id:
+		return
+	_clear_selected_unit_selection()
 
 
 func _refresh_detail_panel() -> void:
@@ -859,6 +876,7 @@ func _spawn_enemy_item(spawn_key: StringName, item: Dictionary) -> void:
 func _on_map_cell_clicked(cell: Vector2i) -> void:
 	if _deploy_drag_state != DRAG_NONE:
 		return
+	_clear_unit_selection_if_click_misses_unit(cell)
 	var clicked_spawn_key_new := _get_spawn_key_at_cell(cell)
 	if _debug_drawer_open and _is_tab_active("Spawns"):
 		if clicked_spawn_key_new != StringName():
