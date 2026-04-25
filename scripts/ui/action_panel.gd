@@ -125,6 +125,7 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 		if existing_unit != null:
 			_select_unit(existing_unit)
 			return
+	_clear_selected_unit()
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return
 	var event_bus = AppRefs.event_bus()
@@ -232,6 +233,12 @@ func _select_unit(unit: Node) -> void:
 	_refresh_mode_labels()
 	_refresh_attack_range_preview()
 	_show_message("已选中 %s#%d" % [String(unit.cfg.get("name", unit.unit_id)), _selected_unit_runtime_id])
+
+
+func _clear_selected_unit() -> void:
+	_selected_unit_runtime_id = -1
+	_clear_attack_range_preview()
+	_refresh_mode_labels()
 
 
 func _on_cast_skill_pressed() -> void:
