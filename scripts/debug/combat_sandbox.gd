@@ -21,13 +21,6 @@ const DRAG_CARD := &"drag_card"
 const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
-const UI_BG := Color(0.055, 0.075, 0.095, 0.88)
-const UI_BG_DARK := Color(0.025, 0.035, 0.045, 0.94)
-const UI_STROKE := Color(0.34, 0.48, 0.56, 0.65)
-const UI_ACCENT := Color(0.12, 0.78, 0.88, 0.95)
-const UI_AMBER := Color(1.0, 0.64, 0.18, 0.95)
-const UI_DANGER := Color(0.92, 0.18, 0.14, 0.95)
-const UI_MUTED := Color(0.56, 0.64, 0.68, 0.95)
 const DAMAGE_TYPE_LABELS := ["物理", "法术", "真实"]
 
 var _unit_ids: Array[StringName] = []
@@ -53,30 +46,9 @@ var _locked_deploy_cell := INVALID_CELL
 var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
-var _operator_card_buttons: Dictionary = {}
-
-var _combat_ui_root: Control
-var _top_core_label: Label
-var _top_deploy_label: Label
-var _top_queue_label: Label
-var _top_message_label: Label
-var _pause_button: Button
-var _speed_1_button: Button
-var _speed_2_button: Button
-var _deploy_deck: HBoxContainer
-var _detail_panel: PanelContainer
-var _detail_title_label: Label
-var _detail_stats_label: Label
-var _detail_skill_label: Label
-var _detail_hp_bar: ProgressBar
-var _detail_sp_bar: ProgressBar
-var _detail_cast_button: Button
-var _detail_retreat_button: Button
-var _drag_ghost: PanelContainer
-var _drag_ghost_label: Label
+var _combat_hud: Control
 var _debug_drawer_panel: Control
 var _debug_drawer_content: Control
-var _debug_drawer_toggle_button: Button
 
 var _editor_tabs: TabContainer
 var _preset_option: OptionButton
@@ -124,7 +96,7 @@ func _ready() -> void:
 		data_repo.load_all()
 	_load_presets_from_disk()
 	_build_editor_ui()
-	_build_combat_overlay()
+	_bind_combat_hud()
 	_populate_static_options()
 	_connect_events()
 	_apply_preset_by_index(0)
@@ -183,182 +155,28 @@ func _configure_pause_boundaries() -> void:
 		ui.process_mode = Node.PROCESS_MODE_ALWAYS
 
 
-func _build_combat_overlay() -> void:
-	var ui_layer := get_node_or_null("UI")
-	if ui_layer == null:
+func _bind_combat_hud() -> void:
+	_combat_hud = get_node_or_null("UI/CombatHud") as Control
+	if _combat_hud == null:
+		push_warning("CombatHud scene is missing from CombatSandbox.")
 		return
-	_combat_ui_root = Control.new()
-	_combat_ui_root.name = "CombatHUDOverlay"
-	_combat_ui_root.process_mode = Node.PROCESS_MODE_ALWAYS
-	_combat_ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_combat_ui_root.anchor_right = 1.0
-	_combat_ui_root.anchor_bottom = 1.0
-	ui_layer.add_child(_combat_ui_root)
-	AppTheme.apply(_combat_ui_root)
-	_build_top_hud()
-	_build_deploy_deck()
-	_build_detail_panel()
-	_build_drag_ghost()
+	if _combat_hud.has_signal("operator_card_pressed"):
+		_combat_hud.connect(&"operator_card_pressed", Callable(self, "_on_operator_card_pressed"))
+	if _combat_hud.has_signal("pause_pressed"):
+		_combat_hud.connect(&"pause_pressed", Callable(self, "_on_pause_pressed"))
+	if _combat_hud.has_signal("speed_1_pressed"):
+		_combat_hud.connect(&"speed_1_pressed", Callable(self, "_on_speed_1_pressed"))
+	if _combat_hud.has_signal("speed_2_pressed"):
+		_combat_hud.connect(&"speed_2_pressed", Callable(self, "_on_speed_2_pressed"))
+	if _combat_hud.has_signal("debug_drawer_toggle_pressed"):
+		_combat_hud.connect(&"debug_drawer_toggle_pressed", Callable(self, "_on_debug_drawer_toggle_pressed"))
+	if _combat_hud.has_signal("cast_skill_requested"):
+		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
+	if _combat_hud.has_signal("retreat_requested"):
+		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
 	_refresh_top_hud()
 	_rebuild_deploy_deck()
 	_refresh_detail_panel()
-
-
-func _build_top_hud() -> void:
-	var panel := PanelContainer.new()
-	panel.name = "CombatTopBar"
-	panel.process_mode = Node.PROCESS_MODE_ALWAYS
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.anchor_left = 0.0
-	panel.anchor_top = 0.0
-	panel.anchor_right = 1.0
-	panel.anchor_bottom = 0.0
-	panel.offset_left = 18.0
-	panel.offset_top = 16.0
-	panel.offset_right = -86.0
-	panel.offset_bottom = 72.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(UI_BG_DARK, UI_STROKE, 2.0, 8.0))
-	_combat_ui_root.add_child(panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	margin.add_child(row)
-
-	_top_core_label = _make_overlay_label("核心 --/--", 130.0, 18)
-	row.add_child(_top_core_label)
-	_top_deploy_label = _make_overlay_label("部署 0/0", 110.0, 18)
-	row.add_child(_top_deploy_label)
-	_top_queue_label = _make_overlay_label("队列 0", 110.0, 18)
-	row.add_child(_top_queue_label)
-	_top_message_label = _make_overlay_label("拖拽底部干员卡开始部署", 0.0, 18)
-	_top_message_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(_top_message_label)
-
-	_pause_button = _make_overlay_button("暂停", Vector2(78, 38), _on_pause_pressed)
-	row.add_child(_pause_button)
-	_speed_1_button = _make_overlay_button("1x", Vector2(58, 38), _on_speed_1_pressed)
-	row.add_child(_speed_1_button)
-	_speed_2_button = _make_overlay_button("2x", Vector2(58, 38), _on_speed_2_pressed)
-	row.add_child(_speed_2_button)
-	_debug_drawer_toggle_button = _make_overlay_button("调试", Vector2(78, 38), _on_debug_drawer_toggle_pressed)
-	row.add_child(_debug_drawer_toggle_button)
-
-
-func _build_deploy_deck() -> void:
-	var panel := PanelContainer.new()
-	panel.name = "DeployDeck"
-	panel.process_mode = Node.PROCESS_MODE_ALWAYS
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.anchor_left = 0.0
-	panel.anchor_top = 1.0
-	panel.anchor_right = 1.0
-	panel.anchor_bottom = 1.0
-	panel.offset_left = 18.0
-	panel.offset_top = -132.0
-	panel.offset_right = -430.0
-	panel.offset_bottom = -18.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(UI_BG_DARK, UI_STROKE, 2.0, 8.0))
-	_combat_ui_root.add_child(panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
-	panel.add_child(margin)
-
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(scroll)
-
-	_deploy_deck = HBoxContainer.new()
-	_deploy_deck.add_theme_constant_override("separation", 10)
-	_deploy_deck.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_deploy_deck)
-
-
-func _build_detail_panel() -> void:
-	_detail_panel = PanelContainer.new()
-	_detail_panel.name = "UnitDetailPanel"
-	_detail_panel.process_mode = Node.PROCESS_MODE_ALWAYS
-	_detail_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_detail_panel.anchor_left = 1.0
-	_detail_panel.anchor_top = 1.0
-	_detail_panel.anchor_right = 1.0
-	_detail_panel.anchor_bottom = 1.0
-	_detail_panel.offset_left = -402.0
-	_detail_panel.offset_top = -430.0
-	_detail_panel.offset_right = -18.0
-	_detail_panel.offset_bottom = -150.0
-	_detail_panel.add_theme_stylebox_override("panel", _make_panel_style(UI_BG, UI_ACCENT, 2.0, 8.0))
-	_combat_ui_root.add_child(_detail_panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	_detail_panel.add_child(margin)
-
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
-	margin.add_child(box)
-
-	_detail_title_label = _make_overlay_label("未选中", 0.0, 22)
-	_detail_title_label.add_theme_color_override("font_color", UI_ACCENT)
-	box.add_child(_detail_title_label)
-	_detail_hp_bar = _make_progress_bar()
-	box.add_child(_detail_hp_bar)
-	_detail_sp_bar = _make_progress_bar()
-	box.add_child(_detail_sp_bar)
-	_detail_stats_label = _make_overlay_label("", 0.0, 16)
-	_detail_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(_detail_stats_label)
-	_detail_skill_label = _make_overlay_label("", 0.0, 16)
-	_detail_skill_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_detail_skill_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(_detail_skill_label)
-
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 8)
-	box.add_child(actions)
-	_detail_cast_button = _make_overlay_button("技能", Vector2(150, 40), _on_cast_skill_pressed)
-	actions.add_child(_detail_cast_button)
-	_detail_retreat_button = _make_overlay_button("撤退", Vector2(100, 40), _on_retreat_pressed)
-	actions.add_child(_detail_retreat_button)
-	_detail_panel.visible = false
-
-
-func _build_drag_ghost() -> void:
-	_drag_ghost = PanelContainer.new()
-	_drag_ghost.name = "DeployDragGhost"
-	_drag_ghost.process_mode = Node.PROCESS_MODE_ALWAYS
-	_drag_ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_drag_ghost.custom_minimum_size = Vector2(150, 78)
-	_drag_ghost.add_theme_stylebox_override("panel", _make_panel_style(Color(0.08, 0.12, 0.15, 0.82), UI_AMBER, 2.0, 8.0))
-	_combat_ui_root.add_child(_drag_ghost)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	_drag_ghost.add_child(margin)
-	_drag_ghost_label = _make_overlay_label("", 0.0, 16)
-	_drag_ghost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_drag_ghost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	margin.add_child(_drag_ghost_label)
-	_drag_ghost.visible = false
 
 
 func _set_debug_drawer_open(open: bool) -> void:
@@ -373,8 +191,8 @@ func _set_debug_drawer_open(open: bool) -> void:
 		_debug_drawer_panel.offset_top = 82.0
 		_debug_drawer_panel.offset_right = -18.0
 		_debug_drawer_panel.offset_bottom = -18.0
-	if _debug_drawer_toggle_button != null:
-		_debug_drawer_toggle_button.text = "关闭" if open else "调试"
+	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
+		_combat_hud.set_debug_drawer_open(open)
 
 
 func _on_debug_drawer_toggle_pressed() -> void:
@@ -397,75 +215,41 @@ func _on_speed_2_pressed() -> void:
 
 
 func _refresh_time_controls() -> void:
-	if _pause_button != null:
-		_pause_button.text = "继续" if get_tree().paused else "暂停"
-	if _speed_1_button != null:
-		_speed_1_button.add_theme_stylebox_override("normal", _make_button_style(UI_ACCENT if is_equal_approx(Engine.time_scale, 1.0) else UI_STROKE))
-	if _speed_2_button != null:
-		_speed_2_button.add_theme_stylebox_override("normal", _make_button_style(UI_ACCENT if is_equal_approx(Engine.time_scale, 2.0) else UI_STROKE))
+	if _combat_hud != null and _combat_hud.has_method("set_time_controls"):
+		_combat_hud.set_time_controls(get_tree().paused, Engine.time_scale)
 
 
 func _refresh_top_hud() -> void:
 	var run_state = AppRefs.run_state()
-	if _top_core_label != null:
-		_top_core_label.text = "核心 %d/%d" % [run_state.core_hp, run_state.core_hp_max] if run_state != null else "核心 --/--"
-	if _top_deploy_label != null:
-		_top_deploy_label.text = "部署 %d/%d" % [run_state.deployed_count, run_state.deploy_limit] if run_state != null else "部署 0/0"
-	if _top_queue_label != null:
-		_top_queue_label.text = "队列 %d" % _running_spawn_queues.size()
+	var core_text := "核心 %d/%d" % [run_state.core_hp, run_state.core_hp_max] if run_state != null else "核心 --/--"
+	var deploy_text := "部署 %d/%d" % [run_state.deployed_count, run_state.deploy_limit] if run_state != null else "部署 0/0"
+	var queue_text := "队列 %d" % _running_spawn_queues.size()
+	if _combat_hud != null and _combat_hud.has_method("set_top_values"):
+		_combat_hud.set_top_values(core_text, deploy_text, queue_text)
 	_refresh_time_controls()
 
 
 func _rebuild_deploy_deck() -> void:
-	if _deploy_deck == null:
+	if _combat_hud == null or not _combat_hud.has_method("set_operators"):
 		return
-	for child in _deploy_deck.get_children():
-		child.queue_free()
-	_operator_card_buttons.clear()
-	for operator_info in _operator_defs:
-		var operator_dict := operator_info as Dictionary
-		var operator_key := StringName(operator_dict.get("key", ""))
-		var card := Button.new()
-		card.custom_minimum_size = Vector2(152.0, 86.0)
-		card.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		card.focus_mode = Control.FOCUS_NONE
-		card.mouse_filter = Control.MOUSE_FILTER_STOP
-		card.set_meta("operator_key", operator_key)
-		card.gui_input.connect(_on_operator_card_gui_input.bind(operator_key))
-		_deploy_deck.add_child(card)
-		_operator_card_buttons[operator_key] = card
-		_refresh_operator_card(operator_key)
+	_combat_hud.set_operators(_operator_defs)
+	_update_operator_card_states()
 
 
 func _update_operator_card_states() -> void:
-	for operator_key in _operator_card_buttons.keys():
-		_refresh_operator_card(StringName(operator_key))
+	for operator_info in _operator_defs:
+		_refresh_operator_card(StringName((operator_info as Dictionary).get("key", "")))
 
 
 func _refresh_operator_card(operator_key: StringName) -> void:
-	var card := _operator_card_buttons.get(operator_key) as Button
-	if card == null:
+	if _combat_hud == null or not _combat_hud.has_method("set_operator_card"):
 		return
 	var operator_info := _get_operator_info(operator_key)
 	var state := _get_operator_state(operator_key)
-	card.text = _format_operator_card_text(operator_info, state)
-	var accent := UI_ACCENT
-	if state == &"deployed":
-		accent = UI_AMBER
-	elif state == &"cooldown":
-		accent = UI_DANGER
-	card.add_theme_stylebox_override("normal", _make_button_style(accent, 0.28))
-	card.add_theme_stylebox_override("hover", _make_button_style(accent, 0.42))
-	card.add_theme_stylebox_override("pressed", _make_button_style(accent, 0.55))
-	card.add_theme_color_override("font_color", Color(0.90, 0.96, 0.98, 1.0))
+	_combat_hud.set_operator_card(operator_key, _format_operator_card_text(operator_info, state), state)
 
 
-func _on_operator_card_gui_input(event: InputEvent, operator_key: StringName) -> void:
-	if not (event is InputEventMouseButton):
-		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
-		return
+func _on_operator_card_pressed(operator_key: StringName) -> void:
 	var state := _get_operator_state(operator_key)
 	if state == &"ready":
 		_begin_operator_drag(operator_key)
@@ -475,7 +259,6 @@ func _on_operator_card_gui_input(event: InputEvent, operator_key: StringName) ->
 	else:
 		var remain: float = _unit_manager.get_operator_redeploy_remaining(operator_key) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
 		_show_message("再部署冷却 %.1fs" % remain)
-	get_viewport().set_input_as_handled()
 
 
 func _begin_operator_drag(operator_key: StringName) -> void:
@@ -486,10 +269,8 @@ func _begin_operator_drag(operator_key: StringName) -> void:
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
 	_current_drag_facing = Vector2i.RIGHT
-	if _drag_ghost != null:
-		_drag_ghost.visible = true
-	if _drag_ghost_label != null:
-		_drag_ghost_label.text = _format_operator_drag_text(operator_key)
+	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
+		_combat_hud.show_drag_ghost(_format_operator_drag_text(operator_key))
 	_show_message("拖到可部署格后松手锁定落点")
 
 
@@ -528,8 +309,8 @@ func _lock_deploy_cell(cell: Vector2i) -> void:
 	_deploy_drag_state = DRAG_LOCKED
 	_locked_deploy_cell = cell
 	_current_drag_facing = Vector2i.RIGHT
-	if _drag_ghost != null:
-		_drag_ghost.visible = false
+	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
+		_combat_hud.hide_drag_ghost()
 	_update_locked_deploy_preview(_current_drag_facing)
 	_show_message("从锁定格向外拖动，松手确认朝向")
 
@@ -565,8 +346,8 @@ func _cancel_deploy_flow(message: String = "") -> void:
 	_locked_deploy_cell = INVALID_CELL
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
-	if _drag_ghost != null:
-		_drag_ghost.visible = false
+	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
+		_combat_hud.hide_drag_ghost()
 	_clear_deploy_preview()
 	if not message.is_empty():
 		_show_message(message)
@@ -578,9 +359,8 @@ func _clear_deploy_preview() -> void:
 
 
 func _update_drag_ghost_position() -> void:
-	if _drag_ghost == null or not _drag_ghost.visible:
-		return
-	_drag_ghost.position = get_viewport().get_mouse_position() + Vector2(18.0, 18.0)
+	if _combat_hud != null and _combat_hud.has_method("move_drag_ghost"):
+		_combat_hud.move_drag_ghost(get_viewport().get_mouse_position())
 
 
 func _validate_drag_cell(operator_key: StringName, cell: Vector2i) -> Dictionary:
@@ -627,44 +407,20 @@ func _select_deployed_unit(unit: Node) -> void:
 
 
 func _refresh_detail_panel() -> void:
-	if _detail_panel == null:
+	if _combat_hud == null:
 		return
 	var unit := _get_selected_unit()
-	_detail_panel.visible = unit != null
 	if unit == null:
+		if _combat_hud.has_method("clear_unit_detail"):
+			_combat_hud.clear_unit_detail()
 		return
-	var sp_max := float(unit.cfg.get("sp_max", 0.0))
-	_detail_title_label.text = "%s  #%d" % [_get_unit_display_name_for_ui(unit), int(unit.get_runtime_id())]
-	_detail_hp_bar.max_value = max(float(unit.max_hp), 1.0)
-	_detail_hp_bar.value = clamp(float(unit.current_hp), 0.0, _detail_hp_bar.max_value)
-	_detail_hp_bar.tooltip_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
-	_detail_sp_bar.max_value = max(sp_max, 1.0)
-	_detail_sp_bar.value = clamp(float(unit.sp), 0.0, _detail_sp_bar.max_value)
-	_detail_sp_bar.tooltip_text = "SP %.0f/%.0f" % [float(unit.sp), sp_max]
-	_detail_stats_label.text = "HP %d/%d   SP %.0f/%.0f\nATK %d   DEF %d   RES %d   阻挡 %d\n攻速 %.2fs   伤害 %s   朝向 %s" % [
-		int(unit.current_hp),
-		int(unit.max_hp),
-		float(unit.sp),
-		sp_max,
-		int(unit.get_effective_atk()) if unit.has_method("get_effective_atk") else int(unit.atk),
-		int(unit.defense),
-		int(unit.resistance),
-		int(unit.block_count),
-		float(unit.attack_interval),
-		_damage_type_label(String(unit.cfg.get("damage_type", "physical"))),
-		_direction_label(unit.facing)
-	]
-	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
-	var active_text := ""
-	if active_remaining < 0.0:
-		active_text = "\n状态：常驻"
-	elif active_remaining > 0.0:
-		active_text = "\n状态：持续 %.1fs" % active_remaining
-	_detail_skill_label.text = "%s\n%s%s" % [unit.get_skill_name(), unit.get_skill_description(), active_text]
-	if _detail_cast_button != null:
-		_detail_cast_button.disabled = not unit.can_cast_skill()
-	if _detail_retreat_button != null:
-		_detail_retreat_button.disabled = false
+	if _combat_hud.has_method("show_unit_detail"):
+		_combat_hud.show_unit_detail(
+			unit,
+			_get_unit_display_name_for_ui(unit),
+			_damage_type_label(String(unit.cfg.get("damage_type", "physical"))),
+			_direction_label(unit.facing)
+		)
 
 
 func _get_operator_attack_range_cells(operator_key: StringName, origin: Vector2i, facing: Vector2i) -> Array[Vector2i]:
@@ -767,56 +523,6 @@ func _direction_label(direction: Vector2i) -> String:
 	if abs(direction.x) >= abs(direction.y):
 		return "右" if direction.x >= 0 else "左"
 	return "下" if direction.y >= 0 else "上"
-
-
-func _make_overlay_label(text: String, min_width: float, font_size: int) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.add_theme_font_size_override("font_size", font_size)
-	if min_width > 0.0:
-		label.custom_minimum_size = Vector2(min_width, 0.0)
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	return label
-
-
-func _make_overlay_button(text: String, min_size: Vector2, callable: Callable) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.custom_minimum_size = min_size
-	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_stylebox_override("normal", _make_button_style(UI_STROKE))
-	button.add_theme_stylebox_override("hover", _make_button_style(UI_ACCENT))
-	button.add_theme_stylebox_override("pressed", _make_button_style(UI_AMBER))
-	button.pressed.connect(callable)
-	return button
-
-
-func _make_progress_bar() -> ProgressBar:
-	var bar := ProgressBar.new()
-	bar.custom_minimum_size = Vector2(0.0, 16.0)
-	bar.show_percentage = false
-	bar.min_value = 0.0
-	bar.max_value = 1.0
-	return bar
-
-
-func _make_panel_style(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = border
-	style.border_width_left = int(border_width)
-	style.border_width_top = int(border_width)
-	style.border_width_right = int(border_width)
-	style.border_width_bottom = int(border_width)
-	style.corner_radius_top_left = int(radius)
-	style.corner_radius_top_right = int(radius)
-	style.corner_radius_bottom_left = int(radius)
-	style.corner_radius_bottom_right = int(radius)
-	return style
-
-
-func _make_button_style(border: Color, fill_alpha: float = 0.18) -> StyleBoxFlat:
-	return _make_panel_style(Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 1.0, 6.0)
 
 
 func _build_editor_ui() -> void:
@@ -2402,8 +2108,8 @@ func _normalize_direction(direction: Vector2i) -> Vector2i:
 func _show_message(text: String) -> void:
 	if _message_label != null:
 		_message_label.text = text
-	if _top_message_label != null:
-		_top_message_label.text = text
+	if _combat_hud != null and _combat_hud.has_method("show_message"):
+		_combat_hud.show_message(text)
 
 
 func append_combat_debug(text: String) -> void:
