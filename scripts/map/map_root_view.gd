@@ -8,6 +8,14 @@ const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
 const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
 const ATTACK_RANGE_BORDER := Color(0.30, 0.85, 1.0, 0.95)
+const DEPLOY_VALID_FILL := Color(0.18, 0.85, 0.65, 0.38)
+const DEPLOY_VALID_BORDER := Color(0.38, 1.0, 0.82, 0.95)
+const DEPLOY_INVALID_FILL := Color(1.0, 0.12, 0.10, 0.36)
+const DEPLOY_INVALID_BORDER := Color(1.0, 0.32, 0.26, 0.95)
+const DEPLOY_LOCKED_FILL := Color(1.0, 0.68, 0.18, 0.32)
+const DEPLOY_LOCKED_BORDER := Color(1.0, 0.84, 0.32, 0.95)
+const DEPLOY_RANGE_FILL := Color(0.95, 0.65, 0.18, 0.20)
+const DEPLOY_RANGE_BORDER := Color(1.0, 0.78, 0.26, 0.82)
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_CORE := Color(0.25, 0.60, 0.95, 1.0)
@@ -30,6 +38,11 @@ var _fit_zoom := 1.0
 var _zoom_scalar := 1.0
 var _is_dragging := false
 var _debug_attack_range_cells: Array[Vector2i] = []
+var _deploy_preview_cell := Vector2i(-1, -1)
+var _deploy_preview_valid := false
+var _deploy_locked_cell := Vector2i(-1, -1)
+var _deploy_preview_facing := Vector2i.ZERO
+var _deploy_range_preview_cells: Array[Vector2i] = []
 
 
 func _ready() -> void:
@@ -89,12 +102,20 @@ func _draw() -> void:
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
 			draw_rect(rect, _get_cell_color(data))
 			draw_rect(rect, GRID_COLOR, false, 1.0)
+			if _deploy_range_preview_cells.has(cell):
+				_draw_deploy_range_cell(rect)
 			if _debug_attack_range_cells.has(cell):
 				_draw_attack_range_cell(rect)
+			if cell == _deploy_preview_cell:
+				_draw_deploy_preview_cell(rect, _deploy_preview_valid)
+			if cell == _deploy_locked_cell:
+				_draw_deploy_locked_cell(rect)
 			if cell == _hovered_cell:
 				draw_rect(rect.grow(-2.0), HOVER_COLOR)
 			if cell == _selected_cell:
 				draw_rect(rect.grow(-6.0), SELECT_COLOR)
+	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
+		_draw_deploy_direction_arrow(map_manager)
 
 
 func set_debug_attack_range(cells: Array[Vector2i]) -> void:
@@ -107,10 +128,69 @@ func clear_debug_attack_range() -> void:
 	queue_redraw()
 
 
+func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = []) -> void:
+	_deploy_preview_cell = cell
+	_deploy_preview_valid = is_valid
+	_deploy_locked_cell = Vector2i(-1, -1)
+	_deploy_preview_facing = Vector2i.ZERO
+	_deploy_range_preview_cells = range_cells.duplicate()
+	queue_redraw()
+
+
+func set_deploy_direction_preview(cell: Vector2i, facing: Vector2i, range_cells: Array[Vector2i] = []) -> void:
+	_deploy_preview_cell = Vector2i(-1, -1)
+	_deploy_locked_cell = cell
+	_deploy_preview_facing = _normalize_direction(facing)
+	_deploy_range_preview_cells = range_cells.duplicate()
+	queue_redraw()
+
+
+func clear_deploy_preview() -> void:
+	_deploy_preview_cell = Vector2i(-1, -1)
+	_deploy_preview_valid = false
+	_deploy_locked_cell = Vector2i(-1, -1)
+	_deploy_preview_facing = Vector2i.ZERO
+	_deploy_range_preview_cells.clear()
+	queue_redraw()
+
+
 func _draw_attack_range_cell(rect: Rect2) -> void:
 	# 调试场景只需要清晰标识攻击范围，避免斜线纹路干扰格子阅读。
 	draw_rect(rect.grow(-4.0), ATTACK_RANGE_FILL)
 	draw_rect(rect.grow(-4.0), ATTACK_RANGE_BORDER, false, 2.0)
+
+
+func _draw_deploy_range_cell(rect: Rect2) -> void:
+	draw_rect(rect.grow(-6.0), DEPLOY_RANGE_FILL)
+	draw_rect(rect.grow(-6.0), DEPLOY_RANGE_BORDER, false, 1.5)
+
+
+func _draw_deploy_preview_cell(rect: Rect2, is_valid: bool) -> void:
+	draw_rect(rect.grow(-5.0), DEPLOY_VALID_FILL if is_valid else DEPLOY_INVALID_FILL)
+	draw_rect(rect.grow(-5.0), DEPLOY_VALID_BORDER if is_valid else DEPLOY_INVALID_BORDER, false, 3.0)
+
+
+func _draw_deploy_locked_cell(rect: Rect2) -> void:
+	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_FILL)
+	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_BORDER, false, 3.0)
+
+
+func _normalize_direction(direction: Vector2i) -> Vector2i:
+	if direction == Vector2i.ZERO:
+		return Vector2i.RIGHT
+	if abs(direction.x) >= abs(direction.y):
+		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
+	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
+
+
+func _draw_deploy_direction_arrow(map_manager: Node) -> void:
+	var start: Vector2 = map_manager.cell_to_world(_deploy_locked_cell)
+	var direction := Vector2(_deploy_preview_facing)
+	if direction.length_squared() <= 0.0:
+		return
+	var end: Vector2 = start + direction.normalized() * CELL_SIZE * 0.78
+	draw_line(start, end, DEPLOY_LOCKED_BORDER, 6.0, true)
+	draw_circle(end, 8.0, DEPLOY_LOCKED_BORDER)
 
 
 func _get_cell_color(data) -> Color:
