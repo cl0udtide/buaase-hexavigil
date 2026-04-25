@@ -300,7 +300,9 @@ func _update_card_drag_preview() -> void:
 	_current_drag_cell = cell
 	var validation := _validate_drag_cell(_drag_operator_key, cell)
 	_current_drag_cell_valid = bool(validation.get("ok", false))
-	var preview_range := _get_operator_attack_range_cells(_drag_operator_key, cell, Vector2i.RIGHT) if _current_drag_cell_valid else []
+	var preview_range: Array[Vector2i] = []
+	if _current_drag_cell_valid:
+		preview_range = _get_operator_attack_range_cells(_drag_operator_key, cell, Vector2i.RIGHT)
 	if _map_root != null and _map_root.has_method("set_deploy_preview"):
 		_map_root.set_deploy_preview(cell, _current_drag_cell_valid, preview_range)
 
