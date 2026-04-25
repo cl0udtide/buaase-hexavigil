@@ -1,0 +1,165 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/combat/combat_hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="2_detail"]
+
+[node name="CombatHud" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 18.0
+offset_top = 16.0
+offset_right = -86.0
+offset_bottom = 72.0
+grow_horizontal = 2
+mouse_filter = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
+
+[node name="Row" type="HBoxContainer" parent="TopBar/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="CoreLabel" type="Label" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "核心 --/--"
+
+[node name="DeployLabel" type="Label" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "部署 0/0"
+
+[node name="QueueLabel" type="Label" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "队列 0"
+
+[node name="MessageLabel" type="Label" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+text = "拖拽底部干员卡开始部署"
+
+[node name="PauseButton" type="Button" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(78, 38)
+layout_mode = 2
+focus_mode = 0
+text = "暂停"
+
+[node name="Speed1Button" type="Button" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(58, 38)
+layout_mode = 2
+focus_mode = 0
+text = "1x"
+
+[node name="Speed2Button" type="Button" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(58, 38)
+layout_mode = 2
+focus_mode = 0
+text = "2x"
+
+[node name="DebugButton" type="Button" parent="TopBar/MarginContainer/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(78, 38)
+layout_mode = 2
+focus_mode = 0
+text = "调试"
+
+[node name="DeployDeck" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = -132.0
+offset_right = -430.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="DeployDeck"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ScrollContainer" type="ScrollContainer" parent="DeployDeck/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 1
+vertical_scroll_mode = 0
+
+[node name="DeployDeckContainer" type="HBoxContainer" parent="DeployDeck/MarginContainer/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="UnitDetailPanel" parent="." instance=ExtResource("2_detail")]
+unique_name_in_owner = true
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -402.0
+offset_top = -430.0
+offset_right = -18.0
+offset_bottom = -150.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="DragGhost" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 78)
+offset_right = 150.0
+offset_bottom = 78.0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="DragGhost"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="DragGhostLabel" type="Label" parent="DragGhost/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
