@@ -37,6 +37,8 @@ var resistance := 0
 var block_count := 0
 var attack_interval := 1.0
 var attack_multiplier := 1.0
+var _external_attack_interval_multiplier := 1.0
+var _external_attack_bonus := 0
 var damage_type := GameEnums.DAMAGE_PHYSICAL
 var target_type: StringName = &"ground"
 var range_pattern: Array[Vector2i] = []
@@ -80,6 +82,8 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	block_count = int(cfg.get("block", 0))
 	attack_interval = max(float(cfg.get("attack_interval", 1.0)), 0.05)
 	attack_multiplier = 1.0
+	_external_attack_interval_multiplier = 1.0
+	_external_attack_bonus = 0
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
 	target_type = StringName(cfg.get("target_type", "ground"))
 	range_pattern = parse_range_pattern(cfg.get("range_pattern", []))
@@ -251,7 +255,19 @@ func get_effective_atk() -> int:
 	var buff_multiplier := 1.0
 	if run_state != null and run_state.has_method("get_buff_effect_total"):
 		buff_multiplier += float(run_state.get_buff_effect_total(&"unit_atk_percent"))
-	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)), 1)
+	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + _external_attack_bonus, 1)
+
+
+func get_effective_attack_interval() -> float:
+	return max(attack_interval * _external_attack_interval_multiplier, 0.05)
+
+
+func set_external_attack_interval_multiplier(value: float) -> void:
+	_external_attack_interval_multiplier = max(value, 0.1)
+
+
+func set_external_attack_bonus(value: int) -> void:
+	_external_attack_bonus = max(value, 0)
 
 
 func get_map_manager() -> Node:
@@ -357,6 +373,8 @@ func _play_hit_effect() -> void:
 
 
 func _tick_attack(delta: float) -> void:
+	var effective_attack_interval := get_effective_attack_interval()
+	_attack_timer = min(_attack_timer, effective_attack_interval)
 	_attack_timer = max(_attack_timer - delta, 0.0)
 	if _attack_timer > 0.0:
 		return
@@ -367,13 +385,13 @@ func _tick_attack(delta: float) -> void:
 		for enemy in override_targets:
 			_attack_target(enemy, false)
 		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
-		_attack_timer = attack_interval
+		_attack_timer = effective_attack_interval
 		return
 	var target := _select_attack_target()
 	if target == null:
 		return
 	_attack_target(target)
-	_attack_timer = attack_interval
+	_attack_timer = effective_attack_interval
 
 
 func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:

@@ -46,6 +46,7 @@ func _ready() -> void:
 		event_bus.phase_changed.connect(_on_phase_changed)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
+		event_bus.building_state_changed.connect(_on_building_state_changed)
 	set_process(true)
 	_refresh_mode_labels()
 	_refresh_combat_controls()
@@ -124,6 +125,14 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 		var existing_unit = unit_manager.get_unit_by_cell(cell)
 		if existing_unit != null:
 			_select_unit(existing_unit)
+			return
+	var building_manager := _get_building_manager()
+	if run_state.phase == GameEnums.PHASE_DAY and _current_mode == &"idle" and building_manager != null and building_manager.has_method("get_building_by_cell"):
+		var existing_building = building_manager.get_building_by_cell(cell)
+		if existing_building != null and existing_building.get("building_id") == &"war_shrine":
+			var event_bus = AppRefs.event_bus()
+			if event_bus != null:
+				event_bus.request_toggle_building.emit(int(existing_building.get("runtime_id")))
 			return
 	_clear_selected_unit()
 	if run_state.phase != GameEnums.PHASE_DAY:
@@ -376,6 +385,12 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	_refresh_combat_controls()
 
 
+func _on_building_state_changed(_building_runtime_id: int, building_id: StringName, enabled: bool) -> void:
+	if building_id != &"war_shrine":
+		return
+	_show_message("War Shrine %s" % ("enabled" if enabled else "disabled"))
+
+
 func _show_message(text: String) -> void:
 	var message_label := get_node_or_null("%MessageLabel") as Label
 	if message_label != null:
@@ -402,3 +417,7 @@ func _get_map_manager() -> Node:
 
 func _get_map_root() -> Node:
 	return get_node_or_null("../../World/MapRoot")
+
+
+func _get_building_manager() -> Node:
+	return get_node_or_null("../../Managers/BuildingManager")
