@@ -7,10 +7,44 @@ func modify_attack_damage(base_damage: int, _target: Node) -> int:
 	return _segment_damage(base_damage)
 
 
+func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array:
+	var payloads: Array[Dictionary] = []
+	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
+		return payloads
+	var hit_count: int = int(owner_unit.cfg.get("skill_hit_count", 5))
+	hit_count = max(hit_count, 1)
+	var owner_position: Vector2 = (owner_unit as Node2D).global_position if owner_unit is Node2D else Vector2.ZERO
+	var target_position: Vector2 = (target as Node2D).global_position if target is Node2D else owner_position
+	var facing_vec: Vector2 = Vector2(owner_unit.facing)
+	if facing_vec.length_squared() <= 0.001:
+		facing_vec = (target_position - owner_position).normalized()
+	if facing_vec.length_squared() <= 0.001:
+		facing_vec = Vector2.RIGHT
+	else:
+		facing_vec = facing_vec.normalized()
+	var side_vec: Vector2 = Vector2(-facing_vec.y, facing_vec.x)
+	var origin: Vector2 = owner_position + facing_vec * 18.0
+	var spread: float = 7.0
+	var base_speed: float = float(owner_unit.cfg.get("projectile_speed", 520.0))
+	var base_hit_radius: float = float(owner_unit.cfg.get("projectile_hit_radius", 8.0))
+	for index in range(hit_count):
+		var centered: float = float(index) - float(hit_count - 1) * 0.5
+		payloads.append({
+			"damage": damage_value,
+			"damage_type": owner_unit.damage_type,
+			"trigger_after_attack": false,
+			"origin": origin + side_vec * centered * spread - facing_vec * abs(centered) * 3.0,
+			"speed": base_speed * (1.0 + centered * 0.025),
+			"hit_radius": base_hit_radius,
+			"color": Color(1.0, 0.9 - min(abs(centered) * 0.06, 0.18), 0.36, 0.98)
+		})
+	return payloads
+
+
 func after_attack(target: Node, damage_value: int) -> void:
 	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
 		return
-	var hit_count := int(owner_unit.cfg.get("skill_hit_count", 5))
+	var hit_count: int = int(owner_unit.cfg.get("skill_hit_count", 5))
 	for _index in range(max(hit_count - 1, 0)):
 		if target == null or not is_instance_valid(target) or int(target.current_hp) <= 0:
 			break

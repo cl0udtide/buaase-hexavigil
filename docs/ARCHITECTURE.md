@@ -549,7 +549,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `unit_manager.gd`
   单位运行时主控，管理干员槽位部署、撤退、再部署和场上单位列表。
 - `unit_actor.gd`
-  单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为，并在初始化时按单位配置装配技能行为组件。即时攻击和飞行物攻击共用命中结算路径，技能 `after_attack()` 必须在真实命中后触发。
+  单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为，并在初始化时按单位配置装配技能行为组件。即时攻击和飞行物攻击共用命中结算路径，技能 `after_attack()` 必须在真实命中后触发；技能也可以通过 `get_attack_projectile_payloads()` 把一次攻击拆成多条可见弹道。
 - `projectile.gd`
   通用飞行物 Actor，负责追踪目标、命中半径、生命周期和命中信号，不承载职业或技能规则。
 - `skills/unit_skill_behavior.gd`
@@ -570,7 +570,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 单位差异化原则：
 
 - 属性差异数据化：生命、攻击、防御、阻挡、攻速、范围、SP、技能参数等写入 `data/units.json`。
-- 行为差异组件化：不同技能通过 `skill_behavior_key` 映射到 `UnitSkillBehavior` 子类。
+- 行为差异组件化：不同技能通过 `skill_behavior_key` 映射到 `UnitSkillBehavior` 子类；技能弹道表现通过返回飞行物 payload 扩展，而不是把技能规则写进 `Projectile`。
 - 结构差异场景化：外观、音效、特效优先挂到 `UnitActor.tscn` 的公共挂点；真正特殊的节点结构才使用继承场景。
 
 ### 4.5 敌人与波次模块
