@@ -69,6 +69,10 @@ func get_attack_targets_override() -> Array:
 	return []
 
 
+func get_attack_projectile_payloads(_target: Node, _damage_value: int) -> Array:
+	return []
+
+
 func after_attack(_target: Node, _damage_value: int) -> void:
 	pass
 

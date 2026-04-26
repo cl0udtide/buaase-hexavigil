@@ -1018,6 +1018,28 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node
   行为：在 `ProjectileRoot` 下创建飞行物并绑定命中回调；用于普攻和未来技能发射飞行物。
   返回：飞行物节点；创建失败时返回空值。
 
+#### `UnitSkillBehavior`
+
+作用：
+
+- 单位技能行为扩展点
+
+```gdscript
+func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array
+func after_attack(target: Node, damage_value: int) -> void
+```
+
+方法规格：
+
+- `get_attack_projectile_payloads(target, damage_value)`
+  输入：当前攻击目标与本次攻击伤害。
+  行为：可返回多个飞行物 payload，用于让技能把一次普攻拆成多条可见弹道；返回空数组时 `UnitActor` 使用默认单飞行物。
+  返回：`Array`，元素为 `Dictionary`。
+- `after_attack(target, damage_value)`
+  输入：真实命中的目标与伤害。
+  行为：在即时攻击或飞行物命中后触发，用于追加连击、溅射、连锁等效果。
+  返回：无。
+
 #### `Projectile`
 
 作用：
