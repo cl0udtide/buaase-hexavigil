@@ -4,6 +4,9 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
+const PATH_MODE_NORMAL: StringName = &"normal"
+const PATH_MODE_DEMOLISHER: StringName = &"demolisher"
+const PATH_MODE_FLYING: StringName = &"flying"
 const CELL_SIZE := 64.0
 const BLOCK_HOLD_DISTANCE := CELL_SIZE * 0.5
 const BLOCK_SPREAD_DISTANCE := CELL_SIZE * 0.22
@@ -18,6 +21,7 @@ var max_hp := 1
 var _path: Array[Vector2i] = []
 var _path_index := 0
 var _blocked_by := -1
+var _path_mode: StringName = PATH_MODE_NORMAL
 var _block_slot := 0
 var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
@@ -60,6 +64,7 @@ func _process(delta: float) -> void:
 func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: Vector2i) -> void:
 	enemy_id = new_enemy_id
 	cfg = new_cfg.duplicate(true)
+	_path_mode = _resolve_path_mode()
 	max_hp = int(cfg.get("max_hp", 1))
 	current_hp = max_hp
 	current_cell = spawn_cell
@@ -142,7 +147,7 @@ func recalc_path() -> void:
 		return
 	var core_cell: Vector2i = map_manager.get_core_cell()
 	if path_service != null:
-		_path = path_service.find_path(current_cell, core_cell)
+		_path = path_service.find_path(current_cell, core_cell, _path_mode)
 		_path_index = min(1, _path.size() - 1) if not _path.is_empty() else 0
 
 
@@ -312,3 +317,16 @@ func _damage_type_text(type_value: int) -> String:
 			return "真实"
 		_:
 			return "物理"
+
+
+func _resolve_path_mode() -> StringName:
+	var move_type: StringName = StringName(cfg.get("move_type", "ground"))
+	if move_type == PATH_MODE_FLYING:
+		return PATH_MODE_FLYING
+
+	var behavior_type: StringName = StringName(cfg.get("behavior_type", "normal"))
+	match behavior_type:
+		&"demolisher", &"siege", &"rush", &"breaker":
+			return PATH_MODE_DEMOLISHER
+		_:
+			return PATH_MODE_NORMAL

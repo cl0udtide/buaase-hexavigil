@@ -17,13 +17,14 @@ var _core_cell := Vector2i.ZERO
 
 
 func generate_new_map(_seed: int) -> void:
-	var generated: Dictionary = MapGenerator.generate(width, height)
+	var generated: Dictionary = MapGenerator.generate(width, height, _seed)
 	_cells = generated.get("cells", {})
 	_spawn_cells.clear()
 	for cell_variant: Variant in generated.get("spawn_cells", []):
 		_spawn_cells.append(cell_variant as Vector2i)
 	_core_cell = generated.get("core_cell", Vector2i.ZERO)
 	refresh_all_layers(true)
+	_emit_path_grid_changed()
 
 
 func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary) -> void:
@@ -46,6 +47,7 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 		core_data.buildable = false
 	_apply_debug_spawns(spawn_defs)
 	refresh_all_layers(true)
+	_emit_path_grid_changed()
 
 
 func set_debug_spawns(spawn_defs: Dictionary) -> void:
@@ -94,6 +96,7 @@ func reset_map() -> void:
 	_spawn_cells.clear()
 	_core_cell = Vector2i.ZERO
 	refresh_all_layers(true)
+	_emit_path_grid_changed()
 
 
 func is_inside(cell: Vector2i) -> bool:
