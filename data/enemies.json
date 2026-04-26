@@ -28,5 +28,20 @@
     "move_type": "ground",
     "core_damage": 1,
     "scene_key": "enemy_actor"
+  },
+  {
+    "id": "bat",
+    "name": "蝙蝠",
+    "max_hp": 45,
+    "atk": 16,
+    "def": 0,
+    "res": 10,
+    "move_speed": 1.8,
+    "attack_interval": 1.1,
+    "damage_type": "physical",
+    "behavior_type": "normal",
+    "move_type": "flying",
+    "core_damage": 1,
+    "scene_key": "enemy_actor"
   }
 ]

@@ -18,6 +18,7 @@ const DEPLOY_RANGE_FILL := Color(0.95, 0.65, 0.18, 0.20)
 const DEPLOY_RANGE_BORDER := Color(1.0, 0.78, 0.26, 0.82)
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
+const COLOR_BLOCKED := Color(0.33, 0.34, 0.38, 1.0)
 const COLOR_CORE := Color(0.25, 0.60, 0.95, 1.0)
 const COLOR_SPAWN := Color(0.82, 0.30, 0.26, 1.0)
 const COLOR_OBSTACLE := Color(0.28, 0.30, 0.34, 1.0)
@@ -160,7 +161,6 @@ func clear_deploy_preview() -> void:
 
 
 func _draw_attack_range_cell(rect: Rect2) -> void:
-	# 调试场景只需要清晰标识攻击范围，避免斜线纹路干扰格子阅读。
 	draw_rect(rect.grow(-4.0), ATTACK_RANGE_FILL)
 	draw_rect(rect.grow(-4.0), ATTACK_RANGE_BORDER, false, 2.0)
 
@@ -207,6 +207,8 @@ func _get_cell_color(data) -> Color:
 		return COLOR_SPAWN
 	if data.terrain == &"obstacle":
 		return COLOR_OBSTACLE
+	if data.terrain == &"blocked" or not data.walkable:
+		return COLOR_BLOCKED
 	if data.occupied or data.unit_runtime_id >= 0:
 		return COLOR_OCCUPIED
 	if data.resource_type == &"wood":
@@ -272,7 +274,6 @@ func _fit_camera_to_map(reset_view: bool = true) -> void:
 		return
 	var previous_fit_zoom := _fit_zoom
 	var previous_zoom_scalar := _zoom_scalar
-	# Use "cover" scaling so the map always fills the viewport.
 	_fit_zoom = max(viewport_size.x / map_size.x, viewport_size.y / map_size.y)
 	_fit_zoom = max(_fit_zoom, 0.01)
 	if reset_view:
