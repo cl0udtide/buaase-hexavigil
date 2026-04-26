@@ -2,7 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
-const DEFAULT_ACTION_POINTS := 10
+const DEFAULT_ACTION_POINTS := 40
 const DEFAULT_CORE_HP := 10
 const DEFAULT_DEPLOY_LIMIT := 4
 
