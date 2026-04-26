@@ -147,7 +147,7 @@ func request_start_night() -> Dictionary
   返回：无。
 - `try_explore(cell)`
   输入：`cell: Vector2i`。
-  行为：校验指定格子是否允许探索；成功时扣除行动力并触发揭雾/事件流程。
+  行为：校验指定格子是否允许探索；目标必须未探索，且上下左右至少邻接一个已探索格；成功时扣除 2 点行动力并触发揭雾/事件流程。
   成功结果：返回 `ActionResult(ok = true)`，并推进探索后续逻辑。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `try_trigger_event(cell)`
@@ -463,7 +463,9 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 func reset_map() -> void
 func is_inside(cell: Vector2i) -> bool
 func get_cell_data(cell: Vector2i) -> CellData
+func get_all_cells() -> Array[Vector2i]
 func is_discovered(cell: Vector2i) -> bool
+func has_discovered_neighbor(cell: Vector2i) -> bool
 func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]
 func is_walkable(cell: Vector2i) -> bool
 func is_buildable(cell: Vector2i) -> bool
@@ -504,9 +506,17 @@ func refresh_all_layers(reset_camera: bool = false) -> void
   输入：`cell: Vector2i`。
   行为：读取指定格子的完整数据对象。
   返回：`CellData`。
+- `get_all_cells()`
+  输入：无。
+  行为：读取当前地图全部格子坐标，用于寻路、调试或统计；调用方不得直接修改格子真相数据。
+  返回：`Array[Vector2i]`。
 - `is_discovered(cell)`
   输入：`cell: Vector2i`。
   行为：判断格子是否已探索。
+  返回：`bool`。
+- `has_discovered_neighbor(cell)`
+  输入：`cell: Vector2i`。
+  行为：判断指定格子的上下左右四向邻居中是否至少有一个已探索格。
   返回：`bool`。
 - `reveal_area(center, radius)`
   输入：中心格与揭示半径。
@@ -624,7 +634,8 @@ func get_debug_info() -> String
 
 ```gdscript
 func rebuild_from_map() -> void
-func get_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]
+func find_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]
+func get_cell_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]
 func has_path(start_cell: Vector2i, end_cell: Vector2i) -> bool
 func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
 ```
@@ -635,9 +646,13 @@ func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
   输入：无。
   行为：根据当前地图阻挡信息重建路径网格。
   返回：无。
-- `get_path(start_cell, end_cell)`
+- `find_path(start_cell, end_cell)`
   输入：起点格与终点格。
-  行为：计算路径。
+  行为：使用 A* 计算四向网格路径；保留给既有敌人逻辑调用。
+  返回：`Array[Vector2i]`。
+- `get_cell_path(start_cell, end_cell)`
+  输入：起点格与终点格。
+  行为：使用 A* 计算四向网格路径。
   返回：`Array[Vector2i]`。
 - `has_path(start_cell, end_cell)`
   输入：起点格与终点格。

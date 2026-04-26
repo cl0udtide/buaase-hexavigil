@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+const EXPLORE_AP_COST := 2
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _random_event_manager: Node = get_node_or_null("../RandomEventManager")
@@ -33,8 +34,10 @@ func try_explore(cell: Vector2i) -> Dictionary:
 		return ActionResult.err(&"OUT_OF_MAP", "目标格子不在地图内")
 	if _map_manager.is_discovered(cell):
 		return ActionResult.err(&"ALREADY_DISCOVERED", "该格子已经探索过")
+	if _map_manager.has_method("has_discovered_neighbor") and not _map_manager.has_discovered_neighbor(cell):
+		return ActionResult.err(&"NOT_ADJACENT_TO_DISCOVERED", "探索目标必须与已探索区域四向相邻")
 
-	var ap_result: Dictionary = run_state.consume_action_points(1)
+	var ap_result: Dictionary = run_state.consume_action_points(EXPLORE_AP_COST)
 	if not ap_result.get("ok", false):
 		return ap_result
 

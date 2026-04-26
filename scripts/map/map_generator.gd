@@ -7,20 +7,44 @@ const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.LEFT,
 	Vector2i.UP
 ]
-const OBSTACLE_RATIO := 0.0
-const MIN_OBSTACLE_COUNT := 0
-const MAX_OBSTACLE_COUNT := 0
+const OBSTACLE_RATIO := 0.11
+const MIN_OBSTACLE_COUNT := 45
+const MAX_OBSTACLE_COUNT := 95
 const CORE_SAFE_RADIUS := 3
 const SPAWN_SAFE_RADIUS := 1
+const SPAWN_COUNT := 3
+const EXTRA_RESOURCES_PER_TYPE := 4
 
 const STARTING_RESOURCE_OFFSETS := {
 	&"wood": Vector2i(-2, -2),
 	&"stone": Vector2i(2, -2),
 	&"mana": Vector2i(-2, 2)
 }
-const STARTING_OBSTACLE_OFFSET := Vector2i(2, 2)
+
 
 static func generate(width: int, height: int, seed: int = -1) -> Dictionary:
+	var cells := _create_plain_cells(width, height)
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	if seed >= 0:
+		rng.seed = seed
+	else:
+		rng.randomize()
+
+	var core_cell: Vector2i = Vector2i(width / 2, height / 2)
+	_setup_core_and_initial_fog(cells, core_cell)
+	var spawn_cells := _place_spawns(cells, width, height, core_cell, rng)
+	_place_starting_resources(cells, core_cell)
+	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, rng)
+	_place_extra_resources(cells, width, height, spawn_cells, core_cell, rng)
+
+	return {
+		"cells": cells,
+		"core_cell": core_cell,
+		"spawn_cells": spawn_cells
+	}
+
+
+static func _create_plain_cells(width: int, height: int) -> Dictionary:
 	var cells: Dictionary = {}
 	for y in range(height):
 		for x in range(width):
@@ -31,14 +55,10 @@ static func generate(width: int, height: int, seed: int = -1) -> Dictionary:
 			data.walkable = true
 			data.discovered = false
 			cells[data.cell] = data
+	return cells
 
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	if seed >= 0:
-		rng.seed = seed
-	else:
-		rng.randomize()
 
-	var core_cell: Vector2i = Vector2i(width / 2, height / 2)
+static func _setup_core_and_initial_fog(cells: Dictionary, core_cell: Vector2i) -> void:
 	var core_data: CellData = cells[core_cell]
 	core_data.is_core = true
 	core_data.terrain = &"core"
@@ -51,29 +71,41 @@ static func generate(width: int, height: int, seed: int = -1) -> Dictionary:
 				var reveal_data: CellData = cells[reveal_cell]
 				reveal_data.discovered = true
 
-	var spawn_cells: Array[Vector2i] = [
-		Vector2i(0, 0),
-		Vector2i(width - 1, 0),
-		Vector2i(0, height - 1)
-	]
-	for index in range(spawn_cells.size()):
-		var spawn_cell: Vector2i = spawn_cells[index]
-		if cells.has(spawn_cell):
-			var spawn_data: CellData = cells[spawn_cell]
-			spawn_data.spawn_key = StringName("S%d" % (index + 1))
-			spawn_data.terrain = &"spawn"
-			spawn_data.discovered = true
-			spawn_data.buildable = false
 
-	_place_starting_resources(cells, core_cell)
-	_place_starting_obstacle(cells, core_cell)
-	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, rng)
+static func _place_spawns(cells: Dictionary, width: int, height: int, core_cell: Vector2i, rng: RandomNumberGenerator) -> Array[Vector2i]:
+	var candidates := _get_edge_candidates(width, height)
+	_shuffle_cells(candidates, rng)
+	var spawn_cells: Array[Vector2i] = []
+	for candidate in candidates:
+		if spawn_cells.size() >= SPAWN_COUNT:
+			break
+		if _manhattan(candidate, core_cell) < 12:
+			continue
+		var far_from_existing := true
+		for spawn_cell in spawn_cells:
+			if _manhattan(candidate, spawn_cell) < 10:
+				far_from_existing = false
+				break
+		if not far_from_existing:
+			continue
+		var spawn_data: CellData = cells[candidate]
+		spawn_data.spawn_key = StringName("S%d" % (spawn_cells.size() + 1))
+		spawn_data.terrain = &"spawn"
+		spawn_data.discovered = false
+		spawn_data.buildable = false
+		spawn_cells.append(candidate)
+	return spawn_cells
 
-	return {
-		"cells": cells,
-		"core_cell": core_cell,
-		"spawn_cells": spawn_cells
-	}
+
+static func _get_edge_candidates(width: int, height: int) -> Array[Vector2i]:
+	var candidates: Array[Vector2i] = []
+	for x in range(width):
+		candidates.append(Vector2i(x, 0))
+		candidates.append(Vector2i(x, height - 1))
+	for y in range(1, height - 1):
+		candidates.append(Vector2i(0, y))
+		candidates.append(Vector2i(width - 1, y))
+	return candidates
 
 
 static func _place_starting_resources(cells: Dictionary, core_cell: Vector2i) -> void:
@@ -87,15 +119,43 @@ static func _place_starting_resources(cells: Dictionary, core_cell: Vector2i) ->
 		_set_resource_node(resource_data, resource_key)
 
 
-static func _place_starting_obstacle(cells: Dictionary, core_cell: Vector2i) -> void:
-	var obstacle_cell: Vector2i = core_cell + STARTING_OBSTACLE_OFFSET
-	if not cells.has(obstacle_cell):
-		return
-	var obstacle_data: CellData = cells[obstacle_cell]
-	obstacle_data.terrain = &"obstacle"
-	obstacle_data.resource_type = &""
-	obstacle_data.buildable = false
-	obstacle_data.walkable = false
+static func _place_extra_resources(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	rng: RandomNumberGenerator
+) -> void:
+	var candidates: Array[Vector2i] = []
+	for y in range(1, height - 1):
+		for x in range(1, width - 1):
+			var cell := Vector2i(x, y)
+			if _is_protected_cell(cell, core_cell, spawn_cells):
+				continue
+			var data: CellData = cells[cell]
+			if data == null or not data.walkable or data.resource_type != StringName() or data.spawn_key != StringName():
+				continue
+			candidates.append(cell)
+	_shuffle_cells(candidates, rng)
+
+	var resource_types: Array[StringName] = [&"wood", &"stone", &"mana"]
+	var placed_by_type: Dictionary = {}
+	for resource_type in resource_types:
+		placed_by_type[resource_type] = 0
+	for cell in candidates:
+		var resource_type: StringName = resource_types[rng.randi_range(0, resource_types.size() - 1)]
+		if int(placed_by_type.get(resource_type, 0)) >= EXTRA_RESOURCES_PER_TYPE:
+			var all_done := true
+			for type_key in resource_types:
+				if int(placed_by_type.get(type_key, 0)) < EXTRA_RESOURCES_PER_TYPE:
+					all_done = false
+					resource_type = type_key
+					break
+			if all_done:
+				break
+		_set_resource_node(cells[cell], resource_type)
+		placed_by_type[resource_type] = int(placed_by_type.get(resource_type, 0)) + 1
 
 
 static func _set_resource_node(data: CellData, resource_type: StringName) -> void:
@@ -118,6 +178,9 @@ static func _place_random_obstacles(
 		for x in range(width):
 			var cell: Vector2i = Vector2i(x, y)
 			if _is_protected_cell(cell, core_cell, spawn_cells):
+				continue
+			var data: CellData = cells[cell]
+			if data == null or data.resource_type != StringName() or data.spawn_key != StringName():
 				continue
 			candidates.append(cell)
 
@@ -204,3 +267,7 @@ static func _shuffle_cells(cells: Array[Vector2i], rng: RandomNumberGenerator) -
 		var temp: Vector2i = cells[i]
 		cells[i] = cells[swap_index]
 		cells[swap_index] = temp
+
+
+static func _manhattan(from_cell: Vector2i, to_cell: Vector2i) -> int:
+	return absi(from_cell.x - to_cell.x) + absi(from_cell.y - to_cell.y)
