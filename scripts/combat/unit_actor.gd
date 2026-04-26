@@ -5,6 +5,9 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 const CELL_SIZE := 64.0
 const BLOCK_RADIUS_TILES := 0.7071
+const DEFAULT_PROJECTILE_SPEED := 520.0
+const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
+const DEFAULT_PROJECTILE_LIFETIME := 3.0
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -263,6 +266,53 @@ func get_enemy_manager() -> Node:
 	return get_node_or_null("../../../Managers/EnemyManager")
 
 
+func get_projectile_root() -> Node:
+	return get_node_or_null("../../ProjectileRoot")
+
+
+func launch_projectile(target: Node, payload: Dictionary = {}) -> Node:
+	if target == null or not is_instance_valid(target):
+		return null
+	var projectile_root := get_projectile_root()
+	if projectile_root == null:
+		return null
+	var scene_key := StringName(payload.get("projectile_scene_key", payload.get("scene_key", cfg.get("projectile_scene_key", "projectile"))))
+	var data_repo = AppRefs.data_repo()
+	var projectile_scene: PackedScene = data_repo.get_scene_by_key(scene_key) if data_repo != null else null
+	if projectile_scene == null:
+		return null
+	var projectile := projectile_scene.instantiate()
+	projectile_root.add_child(projectile)
+	var projectile_payload := payload.duplicate()
+	projectile_payload["source"] = self
+	projectile_payload["target"] = target
+	if not projectile_payload.has("origin"):
+		projectile_payload["origin"] = _get_projectile_origin()
+	if not projectile_payload.has("speed"):
+		projectile_payload["speed"] = float(cfg.get("projectile_speed", DEFAULT_PROJECTILE_SPEED))
+	if not projectile_payload.has("hit_radius"):
+		projectile_payload["hit_radius"] = float(cfg.get("projectile_hit_radius", DEFAULT_PROJECTILE_HIT_RADIUS))
+	if not projectile_payload.has("max_lifetime"):
+		projectile_payload["max_lifetime"] = float(cfg.get("projectile_lifetime", DEFAULT_PROJECTILE_LIFETIME))
+	if projectile.has_signal("hit"):
+		projectile.hit.connect(_on_projectile_hit)
+	if projectile.has_method("setup"):
+		projectile.setup(projectile_payload)
+	elif projectile is Node2D:
+		var origin_variant: Variant = projectile_payload.get("origin", global_position)
+		if origin_variant is Vector2:
+			(projectile as Node2D).global_position = origin_variant
+	return projectile
+
+
+func _uses_projectile_attack() -> bool:
+	return StringName(cfg.get("attack_delivery", "instant")) == &"projectile"
+
+
+func _get_projectile_origin() -> Vector2:
+	return global_position + Vector2(facing).normalized() * 18.0
+
+
 func _configure_skill_behavior() -> void:
 	var behavior_key := StringName(cfg.get("skill_behavior_key", cfg.get("skill_id", "")))
 	if behavior_key == StringName():
@@ -334,12 +384,39 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
 	_debug_log("单位 %s#%d 攻击敌人 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, target.enemy_id, target.get_runtime_id(), _damage_type_text(damage_type), damage_value])
-	if target.has_method("receive_damage"):
-		target.receive_damage(damage_value, damage_type)
-	if _skill_behavior != null and _skill_behavior.has_method("after_attack"):
-		_skill_behavior.after_attack(target, damage_value)
+	if _uses_projectile_attack():
+		var projectile := launch_projectile(target, {
+			"damage": damage_value,
+			"damage_type": damage_type,
+			"trigger_after_attack": true
+		})
+		if projectile != null:
+			if gain_sp_on_attack:
+				gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+			return
+	_resolve_attack_hit(target, damage_value, damage_type, true)
 	if gain_sp_on_attack:
 		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+
+
+func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	if target.has_method("receive_damage"):
+		target.receive_damage(damage_value, damage_type_value)
+	if trigger_after_attack and _skill_behavior != null and _skill_behavior.has_method("after_attack"):
+		_skill_behavior.after_attack(target, damage_value)
+
+
+func _on_projectile_hit(_projectile: Node, target: Node, projectile_payload: Dictionary) -> void:
+	if _is_dead:
+		return
+	_resolve_attack_hit(
+		target,
+		int(projectile_payload.get("damage", get_effective_atk())),
+		int(projectile_payload.get("damage_type", damage_type)),
+		bool(projectile_payload.get("trigger_after_attack", true))
+	)
 
 
 func _select_attack_target() -> Node:

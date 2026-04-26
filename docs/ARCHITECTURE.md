@@ -526,10 +526,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/combat/unit_manager.gd`
 - `scripts/combat/unit_actor.gd`
 - `scripts/combat/shop_manager.gd`
+- `scripts/combat/projectile.gd`
 - `scripts/combat/skills/unit_skill_behavior.gd`
 - `scripts/combat/combat_math.gd`
 - `scripts/combat/skill_runtime.gd`
 - `scenes/actors/UnitActor.tscn`
+- `scenes/actors/Projectile.tscn`
 - `scenes/actors/units/*.tscn`
 
 职责：
@@ -538,6 +540,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 干员实例槽位部署与撤退
 - 按槽位计算再部署冷却
 - 单位普攻、受伤、技能
+- 飞行物发射、追踪和命中触发
 - 单位差异化行为装配
 - 统一伤害计算
 
@@ -546,7 +549,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `unit_manager.gd`
   单位运行时主控，管理干员槽位部署、撤退、再部署和场上单位列表。
 - `unit_actor.gd`
-  单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为，并在初始化时按单位配置装配技能行为组件。
+  单个单位实例脚本，处理攻击、受伤、技能、朝向、阻挡等单体行为，并在初始化时按单位配置装配技能行为组件。即时攻击和飞行物攻击共用命中结算路径，技能 `after_attack()` 必须在真实命中后触发。
+- `projectile.gd`
+  通用飞行物 Actor，负责追踪目标、命中半径、生命周期和命中信号，不承载职业或技能规则。
 - `skills/unit_skill_behavior.gd`
   单位技能行为基类，定义技能启动、结束、攻击后回调和目标覆盖等扩展点。
 - `shop_manager.gd`
@@ -557,6 +562,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   技能运行时逻辑，处理技能释放与效果执行。
 - `UnitActor.tscn`
   普通单位统一实例模板，保留 `TitleLabel`、`StatusView`、`VisualRoot`、`AudioRoot`、`EffectRoot`、`SkillBehavior` 等公共挂点。
+- `Projectile.tscn`
+  通用飞行物模板，由 `World/ProjectileRoot` 承载。默认使用轻量占位绘制，后续可以通过 `projectile_scene_key` 替换为专用箭矢、法球或炸弹场景。
 - `scenes/actors/units/*.tscn`
   特殊单位继承场景。只有结构、生命周期或交互方式明显不同于普通单位时才使用，且必须继承 `UnitActor.tscn`。
 
@@ -892,6 +899,11 @@ data/units.json
 | `damage_type` | `damage_type` | 伤害类型，部署时解析成枚举 |
 | `target_type` | `target_type` | 目标类型，例如地面或飞行 |
 | `range_pattern` | `range_pattern` | 攻击范围格子偏移 |
+| `attack_delivery` | 普攻结算路径 | `instant` 即时命中；`projectile` 通过飞行物命中 |
+| `projectile_scene_key` | `launch_projectile()` | 飞行物场景逻辑名 |
+| `projectile_speed` | `Projectile.speed` | 飞行物追踪速度 |
+| `projectile_hit_radius` | `Projectile.hit_radius` | 飞行物命中半径 |
+| `projectile_lifetime` | `Projectile.max_lifetime` | 飞行物最大存活时间 |
 | `redeploy_sec` | `get_redeploy_sec()` | 撤退或死亡后的再部署冷却 |
 
 #### 技能字段

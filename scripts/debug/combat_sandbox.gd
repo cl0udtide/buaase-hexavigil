@@ -85,6 +85,7 @@ var _log_text: TextEdit
 @onready var _enemy_manager: Node = get_node_or_null("Managers/EnemyManager")
 @onready var _map_root: Node = get_node_or_null("World/MapRoot")
 @onready var _spawn_root: Node = get_node_or_null("World/SpawnRoot")
+@onready var _projectile_root: Node = get_node_or_null("World/ProjectileRoot")
 
 
 func _ready() -> void:
@@ -788,6 +789,7 @@ func _reset_sandbox() -> void:
 		_enemy_manager.clear_all_enemies()
 	if _unit_manager != null and _unit_manager.has_method("clear_all_units"):
 		_unit_manager.clear_all_units()
+	_clear_projectiles()
 	var run_state = AppRefs.run_state()
 	if run_state != null:
 		run_state.reset_for_new_run(1)
@@ -816,6 +818,7 @@ func _clear_battlefield() -> void:
 		_enemy_manager.clear_all_enemies()
 	if _unit_manager != null and _unit_manager.has_method("clear_all_units"):
 		_unit_manager.clear_all_units()
+	_clear_projectiles()
 	if _map_manager != null and _map_manager.has_method("clear_runtime_occupancy"):
 		_map_manager.clear_runtime_occupancy()
 	var run_state = AppRefs.run_state()
@@ -825,6 +828,13 @@ func _clear_battlefield() -> void:
 		EventBus.deploy_limit_changed.emit(run_state.deployed_count, run_state.deploy_limit)
 		EventBus.core_hp_changed.emit(run_state.core_hp, run_state.core_hp_max)
 	append_combat_debug("清场完成：移除所有单位、敌人与运行中的刷怪队列，编辑器队列保留")
+
+
+func _clear_projectiles() -> void:
+	if _projectile_root == null:
+		return
+	for child in _projectile_root.get_children():
+		child.queue_free()
 
 
 func _tick_spawn_queues(delta: float) -> void:
