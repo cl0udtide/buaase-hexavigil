@@ -24,36 +24,48 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin" unique_id=1214841030]
+[node name="MainHBox" type="HBoxContainer" parent="ContentMargin" unique_id=1214841030]
 layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="CategoryPanel" type="VBoxContainer" parent="ContentMargin/MainHBox" unique_id=1214841031]
+layout_mode = 2
+custom_minimum_size = Vector2(150, 0)
 theme_override_constants/separation = 8
 
-[node name="BuildSelectionLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1435550204]
-unique_name_in_owner = true
+[node name="CategoryLabel" type="Label" parent="ContentMargin/MainHBox/CategoryPanel" unique_id=1435550203]
 layout_mode = 2
-text = "Select a building"
+text = "建筑分类"
 
-[node name="BuildLumberButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=204100001]
+[node name="ResourceCategoryButton" type="Button" parent="ContentMargin/MainHBox/CategoryPanel" unique_id=204100010]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Lumber Station"
+text = "采集类"
 
-[node name="BuildStoneButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=204100002]
+[node name="AuraCategoryButton" type="Button" parent="ContentMargin/MainHBox/CategoryPanel" unique_id=204100011]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Stone Quarry"
+text = "增益类"
 
-[node name="BuildManaButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=204100003]
-unique_name_in_owner = true
+[node name="CardPanel" type="VBoxContainer" parent="ContentMargin/MainHBox" unique_id=1214841032]
 layout_mode = 2
-text = "Mana Extractor"
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
-[node name="BuildMedicalButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=2098418681]
+[node name="BuildSelectionLabel" type="Label" parent="ContentMargin/MainHBox/CardPanel" unique_id=1435550204]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Medical Station"
+text = "当前选择：无"
 
-[node name="BuildWallButton" type="Button" parent="ContentMargin/VBoxContainer" unique_id=1629567067]
+[node name="BuildCardScroll" type="ScrollContainer" parent="ContentMargin/MainHBox/CardPanel" unique_id=204100012]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 1
+vertical_scroll_mode = 0
+
+[node name="BuildCardList" type="HBoxContainer" parent="ContentMargin/MainHBox/CardPanel/BuildCardScroll" unique_id=204100013]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Wood Wall"
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
