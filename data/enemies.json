@@ -43,5 +43,44 @@
     "move_type": "flying",
     "core_damage": 1,
     "scene_key": "enemy_actor"
+  },
+  {
+    "id": "milk_dragon_chief",
+    "name": "奶龙酋长·厚鳞形态",
+    "max_hp": 1800,
+    "atk": 45,
+    "def": 55,
+    "res": 10,
+    "move_speed": 0.45,
+    "attack_interval": 0.95,
+    "attack_range": 1,
+    "damage_type": "physical",
+    "behavior_type": "boss",
+    "move_type": "ground",
+    "core_damage": 3,
+    "phase_transition_sec": 2.0,
+    "phases": [
+      {
+        "phase": 2,
+        "name": "奶龙酋长·暴怒形态",
+        "max_hp": 1100,
+        "atk": 160,
+        "def": 12,
+        "res": 8,
+        "move_speed": 0.45,
+        "attack_interval": 2.4,
+        "attack_range": 3,
+        "damage_type": "physical",
+        "behavior_type": "boss",
+        "move_type": "ground",
+        "core_damage": 4,
+        "phase_enter_area_damage": {
+          "radius": 1,
+          "damage": 80,
+          "damage_type": "magic"
+        }
+      }
+    ],
+    "scene_key": "enemy_actor"
   }
 ]
