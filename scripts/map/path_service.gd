@@ -67,8 +67,10 @@ func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName =
 
 	var open_set: Array[Vector2i] = [start_cell]
 	var came_from: Dictionary = {}
-	var g_score: Dictionary = {start_cell: 0}
-	var f_score: Dictionary = {start_cell: _estimate_cost(start_cell, end_cell)}
+	var g_score: Dictionary = {}
+	var f_score: Dictionary = {}
+	g_score[start_cell] = 0
+	f_score[start_cell] = _estimate_cost(start_cell, end_cell)
 
 	while not open_set.is_empty():
 		var current: Vector2i = _pop_best_open_cell(open_set, end_cell, f_score)
@@ -94,6 +96,10 @@ func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName =
 				open_set.append(neighbor)
 
 	return []
+
+
+func get_cell_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL) -> Array[Vector2i]:
+	return find_path(start_cell, end_cell, path_mode)
 
 
 func has_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL) -> bool:
