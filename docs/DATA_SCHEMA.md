@@ -241,6 +241,10 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `damage_type` | `String` | 伤害类型 |
+| `attack_range` | `int` | 攻击范围，按棋盘格切比雪夫距离计算；未配置或小于等于 0 时只攻击阻挡单位 |
+| `phase_transition_sec` | `float` | Boss 第一管血耗尽后的无敌转阶段时长，期间不移动也不攻击 |
+| `phases` | `Array` | Boss 后续阶段配置；当前 `enemy_actor` 支持 `phase: 2` 覆盖基础数值 |
+| `phase_enter_area_damage` | `Dictionary` | 进入该阶段时触发的区域伤害，支持 `radius`、`damage`、`damage_type` |
 
 ---
 

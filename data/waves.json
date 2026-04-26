@@ -21,5 +21,11 @@
       { "time": 4.0, "enemy_id": "bat", "spawn_key": "S3", "count": 2, "interval": 0.5 },
       { "time": 7.0, "enemy_id": "slime", "spawn_key": "S2", "count": 4, "interval": 0.6 }
     ]
+  },
+  {
+    "day": 6,
+    "entries": [
+      { "time": 0.0, "enemy_id": "milk_dragon_chief", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+    ]
   }
 ]

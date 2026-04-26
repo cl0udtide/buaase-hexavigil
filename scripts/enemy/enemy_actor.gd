@@ -27,6 +27,10 @@ var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
 var _attack_timer := 0.0
 var _is_dead := false
+var _boss_phase := 1
+var _phase_transitioning := false
+var _phase_transition_timer := 0.0
+var _phase_two_cfg: Dictionary = {}
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 
@@ -39,6 +43,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _is_dead:
 		return
+	if _phase_transitioning:
+		_process_phase_transition(delta)
+		return
 	if _blocked_by != -1:
 		var blocker := _get_blocker()
 		if blocker == null or not is_instance_valid(blocker):
@@ -46,6 +53,8 @@ func _process(delta: float) -> void:
 			return
 		_process_blocked_motion(delta, blocker)
 		_process_blocked_attack(delta, blocker)
+		return
+	if _process_range_attack(delta):
 		return
 	if _path.is_empty():
 		return
@@ -74,6 +83,10 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	_block_anchor_dir = Vector2.ZERO
 	_attack_timer = 0.0
 	_is_dead = false
+	_boss_phase = 1
+	_phase_transitioning = false
+	_phase_transition_timer = 0.0
+	_phase_two_cfg = _get_phase_cfg(2)
 	global_position = get_map_manager().cell_to_world(spawn_cell)
 	recalc_path()
 	var label := get_node_or_null("%TitleLabel") as Label
@@ -93,6 +106,9 @@ func _draw() -> void:
 
 
 func receive_damage(value: int, damage_type: int) -> void:
+	if _phase_transitioning or bool(cfg.get("invulnerable", false)):
+		_debug_log("敌人 %s#%d 处于无敌状态，免疫本次伤害" % [_debug_name(), runtime_id])
+		return
 	var final_damage := value
 	if damage_type == GameEnums.DAMAGE_PHYSICAL:
 		final_damage = CombatMath.calc_physical_damage(value, int(cfg.get("def", 0)))
@@ -103,6 +119,9 @@ func receive_damage(value: int, damage_type: int) -> void:
 	_play_hit_effect()
 	_debug_log("敌人 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type), value, final_damage, current_hp, max_hp])
 	if current_hp == 0 and not _is_dead:
+		if _should_enter_next_boss_phase():
+			_start_phase_transition()
+			return
 		_is_dead = true
 		_debug_log("敌人 %s#%d 死亡" % [_debug_name(), runtime_id])
 		get_enemy_manager().remove_enemy(runtime_id)
@@ -138,6 +157,10 @@ func get_runtime_id() -> int:
 
 func get_current_cell() -> Vector2i:
 	return current_cell
+
+
+func get_attack_range_tiles() -> int:
+	return int(cfg.get("attack_range", 0))
 
 
 func recalc_path() -> void:
@@ -205,6 +228,10 @@ func get_unit_manager() -> Node:
 	return get_node_or_null("../../../Managers/UnitManager")
 
 
+func get_building_manager() -> Node:
+	return get_node_or_null("../../../Managers/BuildingManager")
+
+
 func _get_blocker() -> Node:
 	var unit_manager := get_unit_manager()
 	return unit_manager.get_unit_by_runtime_id(_blocked_by) if unit_manager != null else null
@@ -228,6 +255,141 @@ func _process_blocked_attack(delta: float, blocker: Node) -> void:
 	_debug_log("敌人 %s#%d 攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	blocker.receive_damage(damage_value, damage_type, self)
 	_attack_timer = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+
+
+func _process_range_attack(delta: float) -> bool:
+	var attack_range := get_attack_range_tiles()
+	if attack_range <= 0:
+		return false
+	var target := _find_attack_target_in_range(attack_range)
+	if target == null:
+		return false
+	_attack_timer = max(_attack_timer - delta, 0.0)
+	if _attack_timer > 0.0:
+		return true
+	var damage_type := _parse_damage_type(String(cfg.get("damage_type", "physical")))
+	var damage_value := int(cfg.get("atk", 1))
+	_debug_log("敌人 %s#%d 远程攻击 %s，%s伤害 %d" % [_debug_name(), runtime_id, _target_debug_name(target), _damage_type_text(damage_type), damage_value])
+	if target.has_method("receive_damage"):
+		if target.is_in_group("units"):
+			target.receive_damage(damage_value, damage_type, self)
+		else:
+			target.receive_damage(damage_value, damage_type)
+	_attack_timer = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+	return true
+
+
+func _find_attack_target_in_range(attack_range: int) -> Node:
+	var unit_manager := get_unit_manager()
+	var building_manager := get_building_manager()
+	var best_target: Node = null
+	var best_distance := 999999
+	for y in range(current_cell.y - attack_range, current_cell.y + attack_range + 1):
+		for x in range(current_cell.x - attack_range, current_cell.x + attack_range + 1):
+			var cell := Vector2i(x, y)
+			var distance := max(abs(cell.x - current_cell.x), abs(cell.y - current_cell.y))
+			if distance > attack_range or distance >= best_distance:
+				continue
+			var unit: Node = null
+			if unit_manager != null and unit_manager.has_method("get_unit_by_cell"):
+				unit = unit_manager.get_unit_by_cell(cell)
+			if unit != null and is_instance_valid(unit):
+				best_target = unit
+				best_distance = distance
+				continue
+			var building: Node = null
+			if building_manager != null and building_manager.has_method("get_building_by_cell"):
+				building = building_manager.get_building_by_cell(cell)
+			if building != null and is_instance_valid(building):
+				best_target = building
+				best_distance = distance
+	return best_target
+
+
+func _process_phase_transition(delta: float) -> void:
+	_phase_transition_timer = max(_phase_transition_timer - delta, 0.0)
+	if _phase_transition_timer > 0.0:
+		return
+	_enter_boss_phase_two()
+
+
+func _should_enter_next_boss_phase() -> bool:
+	return _boss_phase == 1 and not _phase_two_cfg.is_empty()
+
+
+func _start_phase_transition() -> void:
+	_boss_phase = 2
+	_phase_transitioning = true
+	_phase_transition_timer = max(float(cfg.get("phase_transition_sec", 1.5)), 0.0)
+	current_hp = 0
+	clear_blocked()
+	_update_status_view()
+	_debug_log("敌人 %s#%d 第一管血耗尽，进入 %.1f 秒无敌转阶段" % [_debug_name(), runtime_id, _phase_transition_timer])
+	if _phase_transition_timer <= 0.0:
+		_enter_boss_phase_two()
+
+
+func _enter_boss_phase_two() -> void:
+	_phase_transitioning = false
+	cfg.merge(_phase_two_cfg, true)
+	_path_mode = _resolve_path_mode()
+	max_hp = int(cfg.get("max_hp", max_hp))
+	current_hp = max_hp
+	_attack_timer = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+	_recalc_path_after_phase_change()
+	_update_title_label()
+	_update_status_view()
+	_cast_phase_enter_area_damage()
+	_debug_log("敌人 %s#%d 转入第二形态，HP %d/%d" % [_debug_name(), runtime_id, current_hp, max_hp])
+
+
+func _recalc_path_after_phase_change() -> void:
+	if _blocked_by == -1:
+		recalc_path()
+
+
+func _cast_phase_enter_area_damage() -> void:
+	var area_cfg: Dictionary = cfg.get("phase_enter_area_damage", {})
+	if area_cfg.is_empty():
+		return
+	var radius := int(area_cfg.get("radius", 1))
+	var damage := int(area_cfg.get("damage", 0))
+	if radius < 0 or damage <= 0:
+		return
+	var damage_type := _parse_damage_type(String(area_cfg.get("damage_type", cfg.get("damage_type", "physical"))))
+	var unit_manager := get_unit_manager()
+	var building_manager := get_building_manager()
+	for y in range(current_cell.y - radius, current_cell.y + radius + 1):
+		for x in range(current_cell.x - radius, current_cell.x + radius + 1):
+			var cell := Vector2i(x, y)
+			if unit_manager != null and unit_manager.has_method("get_unit_by_cell"):
+				var unit := unit_manager.get_unit_by_cell(cell)
+				if unit != null and unit.has_method("receive_damage"):
+					unit.receive_damage(damage, damage_type, self)
+			if building_manager != null and building_manager.has_method("get_building_by_cell"):
+				var building := building_manager.get_building_by_cell(cell)
+				if building != null and building.has_method("receive_damage"):
+					building.receive_damage(damage, damage_type)
+	_debug_log("敌人 %s#%d 点燃周围 %dx%d 区域，造成%s伤害 %d" % [_debug_name(), runtime_id, radius * 2 + 1, radius * 2 + 1, _damage_type_text(damage_type), damage])
+
+
+func _get_phase_cfg(phase: int) -> Dictionary:
+	var phases: Array = cfg.get("phases", [])
+	for phase_cfg in phases:
+		if typeof(phase_cfg) != TYPE_DICTIONARY:
+			continue
+		var phase_dict := phase_cfg as Dictionary
+		if int(phase_dict.get("phase", 0)) == phase:
+			return phase_dict.duplicate(true)
+	return {}
+
+
+func _update_title_label() -> void:
+	var label := get_node_or_null("%TitleLabel") as Label
+	if label != null:
+		label.theme = AppTheme.get_theme()
+		label.text = String(cfg.get("name", enemy_id))
+		label.position = Vector2(-30.0, -58.0)
 
 
 func _get_block_hold_position(blocker: Node) -> Vector2:
@@ -307,6 +469,16 @@ func _debug_log(message: String) -> void:
 
 func _debug_name() -> String:
 	return String(cfg.get("name", enemy_id))
+
+
+func _target_debug_name(target: Node) -> String:
+	if target == null:
+		return "未知目标"
+	if target.is_in_group("units"):
+		return "单位 %s#%d" % [String(target.get("unit_id")), int(target.get("runtime_id"))]
+	if target.is_in_group("buildings"):
+		return "建筑 %s#%d" % [String(target.get("building_id")), int(target.get("runtime_id"))]
+	return String(target.name)
 
 
 func _damage_type_text(type_value: int) -> String:
