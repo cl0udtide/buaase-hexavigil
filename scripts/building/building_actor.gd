@@ -10,6 +10,9 @@ var max_hp := 1
 var current_hp := 1
 var effect_radius := 0
 var cfg: Dictionary = {}
+var _is_destroyed := false
+
+@onready var _status_view: Node = get_node_or_null("%StatusView")
 
 
 func _ready() -> void:
@@ -23,19 +26,33 @@ func setup_from_cfg(new_building_id: StringName, new_cfg: Dictionary, cell: Vect
 	max_hp = int(cfg.get("max_hp", 1))
 	current_hp = max_hp
 	effect_radius = int(cfg.get("effect_radius", 0))
+	_is_destroyed = false
 	global_position = get_map_manager().cell_to_world(cell) if get_map_manager() != null else Vector2.ZERO
-	var label := get_node_or_null("%TitleLabel") as Label
+	var label: Label = get_node_or_null("%TitleLabel") as Label
 	if label != null:
 		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", building_id))
+	_update_status_view()
 
 
 func receive_damage(value: int, _damage_type: int) -> void:
+	if _is_destroyed:
+		return
 	current_hp = max(current_hp - value, 0)
+	_update_status_view()
+	_play_hit_effect()
+	if current_hp == 0:
+		_is_destroyed = true
 
 
 func repair_full() -> void:
 	current_hp = max_hp
+	_is_destroyed = false
+	_update_status_view()
+
+
+func is_destroyed() -> bool:
+	return _is_destroyed
 
 
 func get_runtime_id() -> int:
@@ -48,6 +65,16 @@ func get_current_cell() -> Vector2i:
 
 func get_effect_radius() -> int:
 	return effect_radius
+
+
+func _update_status_view() -> void:
+	if _status_view != null and _status_view.has_method("set_hp"):
+		_status_view.set_hp(current_hp, max_hp)
+
+
+func _play_hit_effect() -> void:
+	if _status_view != null and _status_view.has_method("play_hit_effect"):
+		_status_view.play_hit_effect()
 
 
 func get_map_manager() -> Node:
