@@ -117,12 +117,16 @@ grow_horizontal = 1
 grow_vertical = 0
 
 [node name="BuildPanel" parent="UI" unique_id=150429329 instance=ExtResource("23_esr4c")]
-anchors_preset = 3
-anchor_left = 1.0
+anchors_preset = 7
+anchor_left = 0.5
 anchor_top = 1.0
-offset_left = -240.0
-offset_top = -160.0
-grow_horizontal = 0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -460.0
+offset_top = -240.0
+offset_right = 460.0
+offset_bottom = -24.0
+grow_horizontal = 2
 grow_vertical = 0
 
 [node name="ShopPanel" parent="UI" unique_id=1580141559 instance=ExtResource("25_ioi2n")]
