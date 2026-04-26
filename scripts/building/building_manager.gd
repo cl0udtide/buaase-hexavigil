@@ -86,6 +86,8 @@ func damage_building(building_runtime_id: int, value: int, damage_type: int) -> 
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor != null:
 		actor.receive_damage(value, damage_type)
+		if _is_building_destroyed(actor):
+			remove_building(building_runtime_id)
 
 
 func remove_building(building_runtime_id: int) -> void:
@@ -148,6 +150,15 @@ func get_building_by_cell(cell: Vector2i) -> Node:
 
 func get_building_by_runtime_id(building_runtime_id: int) -> Node:
 	return _buildings_by_runtime_id.get(building_runtime_id)
+
+
+func _is_building_destroyed(actor: Node) -> bool:
+	if actor == null:
+		return false
+	if actor.has_method("is_destroyed"):
+		return bool(actor.is_destroyed())
+	var current_hp_variant: Variant = actor.get("current_hp")
+	return typeof(current_hp_variant) == TYPE_INT and int(current_hp_variant) <= 0
 
 
 func _on_request_build(cell: Vector2i, building_id: StringName) -> void:
