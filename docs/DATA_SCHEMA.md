@@ -154,6 +154,11 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `target_type` | `String` | 攻击目标类型 |
+| `attack_delivery` | `String` | 普攻命中形式；`instant` 为即时命中，`projectile` 为飞行物命中，未配置默认 `instant` |
+| `projectile_scene_key` | `String` | 飞行物场景逻辑名，未配置默认 `projectile` |
+| `projectile_speed` | `float` | 飞行物追踪速度 |
+| `projectile_hit_radius` | `float` | 飞行物命中半径 |
+| `projectile_lifetime` | `float` | 飞行物最大存活时间，未配置默认 3 秒 |
 | `sp_recover_per_sec` | `float` | 每秒回复 SP |
 | `skill_id` | `String` | 技能标识 |
 | `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |

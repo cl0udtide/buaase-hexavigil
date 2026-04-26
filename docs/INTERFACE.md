@@ -968,6 +968,7 @@ func get_runtime_id() -> int
 func get_current_cell() -> Vector2i
 func get_block_count() -> int
 func get_attack_targets() -> Array
+func launch_projectile(target: Node, payload: Dictionary = {}) -> Node
 ```
 
 方法规格：
@@ -1012,6 +1013,37 @@ func get_attack_targets() -> Array
   输入：无。
   行为：获取当前可攻击目标列表。
   返回：`Array`。
+- `launch_projectile(target, payload)`
+  输入：目标节点与飞行物 payload。payload 可覆盖 `projectile_scene_key`、`speed`、`hit_radius`、`damage`、`damage_type` 等字段。
+  行为：在 `ProjectileRoot` 下创建飞行物并绑定命中回调；用于普攻和未来技能发射飞行物。
+  返回：飞行物节点；创建失败时返回空值。
+
+#### `Projectile`
+
+作用：
+
+- 通用飞行物 Actor
+
+```gdscript
+signal hit(projectile: Node, target: Node, payload: Dictionary)
+signal expired(projectile: Node, reason: StringName, payload: Dictionary)
+
+func setup(payload: Dictionary) -> void
+```
+
+方法规格：
+
+- `setup(payload)`
+  输入：飞行物初始化 payload，至少包含 `source` 和 `target`；常用字段包括 `origin`、`damage`、`damage_type`、`speed`、`hit_radius`、`max_lifetime`、`color`。
+  行为：初始化来源、目标、运动参数和表现参数，随后在 `_process()` 中追踪目标。
+  返回：无。
+
+信号规格：
+
+- `hit(projectile, target, payload)`
+  行为：飞行物命中有效目标时发出。伤害结算由发射方监听后执行，确保不同单位和技能可以复用飞行物表现。
+- `expired(projectile, reason, payload)`
+  行为：目标失效或生命周期结束时发出。此时不造成伤害。
 
 ### 3.5 敌人与波次模块
 
