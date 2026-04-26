@@ -16,8 +16,8 @@ var _core_cell := Vector2i.ZERO
 @onready var _core_root: Node = get_node_or_null("../../World/CoreRoot")
 
 
-func generate_new_map(_seed: int) -> void:
-	var generated: Dictionary = MapGenerator.generate(width, height, _seed)
+func generate_new_map(seed: int) -> void:
+	var generated: Dictionary = MapGenerator.generate(width, height, seed)
 	_cells = generated.get("cells", {})
 	_spawn_cells.clear()
 	for cell_variant: Variant in generated.get("spawn_cells", []):
@@ -107,9 +107,23 @@ func get_cell_data(cell: Vector2i) -> CellData:
 	return _cells.get(cell)
 
 
+func get_all_cells() -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for cell_variant in _cells.keys():
+		result.append(cell_variant as Vector2i)
+	return result
+
+
 func is_discovered(cell: Vector2i) -> bool:
 	var data := get_cell_data(cell)
 	return data != null and data.discovered
+
+
+func has_discovered_neighbor(cell: Vector2i) -> bool:
+	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		if is_discovered(cell + offset):
+			return true
+	return false
 
 
 func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]:
@@ -246,6 +260,7 @@ func _refresh_world_markers() -> void:
 		var spawn_key: StringName = child.get("spawn_key") if child.get("spawn_key") != null else StringName()
 		var spawn_cell := get_spawn_cell_by_key(spawn_key)
 		(child as Node2D).global_position = cell_to_world(spawn_cell)
+		(child as Node2D).visible = is_discovered(spawn_cell)
 
 
 func _apply_debug_spawns(spawn_defs: Dictionary) -> void:
