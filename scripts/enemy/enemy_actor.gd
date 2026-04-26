@@ -31,6 +31,7 @@ var _boss_phase := 1
 var _phase_transitioning := false
 var _phase_transition_timer := 0.0
 var _phase_two_cfg: Dictionary = {}
+var _external_move_speed_multiplier: float = 1.0
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 
@@ -66,7 +67,7 @@ func _process(delta: float) -> void:
 	if _process_range_attack(delta):
 		return
 	var target_pos: Vector2 = get_map_manager().cell_to_world(_path[_path_index])
-	global_position = global_position.move_toward(target_pos, float(cfg.get("move_speed", 1.0)) * CELL_SIZE * delta)
+	global_position = global_position.move_toward(target_pos, get_effective_move_speed() * CELL_SIZE * delta)
 	if global_position.distance_to(target_pos) < 2.0:
 		current_cell = _path[_path_index]
 		_path_index += 1
@@ -91,6 +92,7 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	_phase_transitioning = false
 	_phase_transition_timer = 0.0
 	_phase_two_cfg = _get_phase_cfg(2)
+	_external_move_speed_multiplier = 1.0
 	global_position = get_map_manager().cell_to_world(spawn_cell)
 	recalc_path()
 	var label: Label = get_node_or_null("%TitleLabel") as Label
@@ -208,6 +210,14 @@ func get_path_progress_score() -> float:
 	if map_manager != null:
 		core_distance = float(get_current_cell().distance_squared_to(map_manager.get_core_cell()))
 	return float(_path_index) * 100000.0 - core_distance
+
+
+func get_effective_move_speed() -> float:
+	return max(float(cfg.get("move_speed", 1.0)) * _external_move_speed_multiplier, 0.05)
+
+
+func set_external_move_speed_multiplier(value: float) -> void:
+	_external_move_speed_multiplier = max(value, 0.1)
 
 
 func _update_status_view() -> void:
