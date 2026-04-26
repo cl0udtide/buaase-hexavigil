@@ -385,12 +385,19 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
 	_debug_log("单位 %s#%d 攻击敌人 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, target.enemy_id, target.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	if _uses_projectile_attack():
-		var projectile := launch_projectile(target, {
-			"damage": damage_value,
-			"damage_type": damage_type,
-			"trigger_after_attack": true
-		})
-		if projectile != null:
+		var launched_count := 0
+		for raw_payload in _get_attack_projectile_payloads(target, damage_value):
+			var projectile_payload := (raw_payload as Dictionary).duplicate(true)
+			if not projectile_payload.has("damage"):
+				projectile_payload["damage"] = damage_value
+			if not projectile_payload.has("damage_type"):
+				projectile_payload["damage_type"] = damage_type
+			if not projectile_payload.has("trigger_after_attack"):
+				projectile_payload["trigger_after_attack"] = true
+			var projectile := launch_projectile(target, projectile_payload)
+			if projectile != null:
+				launched_count += 1
+		if launched_count > 0:
 			if gain_sp_on_attack:
 				gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
 			return
@@ -417,6 +424,21 @@ func _on_projectile_hit(_projectile: Node, target: Node, projectile_payload: Dic
 		int(projectile_payload.get("damage_type", damage_type)),
 		bool(projectile_payload.get("trigger_after_attack", true))
 	)
+
+
+func _get_attack_projectile_payloads(target: Node, damage_value: int) -> Array[Dictionary]:
+	var payloads: Array[Dictionary] = []
+	if _skill_behavior != null and _skill_behavior.has_method("get_attack_projectile_payloads"):
+		for payload_variant in _skill_behavior.get_attack_projectile_payloads(target, damage_value):
+			if typeof(payload_variant) == TYPE_DICTIONARY:
+				payloads.append((payload_variant as Dictionary).duplicate(true))
+	if payloads.is_empty():
+		payloads.append({
+			"damage": damage_value,
+			"damage_type": damage_type,
+			"trigger_after_attack": true
+		})
+	return payloads
 
 
 func _select_attack_target() -> Node:
