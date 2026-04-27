@@ -25,6 +25,7 @@ const COLOR_OBSTACLE := Color(0.28, 0.30, 0.34, 1.0)
 const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
 const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
 const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
+const COLOR_EVENT := Color(0.72, 0.48, 0.88, 1.0)
 const COLOR_OCCUPIED := Color(0.60, 0.45, 0.22, 1.0)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
@@ -251,6 +252,8 @@ func _get_cell_color(data) -> Color:
 		return COLOR_RESOURCE_STONE
 	if data.resource_type == &"mana":
 		return COLOR_RESOURCE_MANA
+	if data.event_id != StringName() and not data.event_triggered:
+		return COLOR_EVENT
 	return COLOR_PLAIN
 
 

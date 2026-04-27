@@ -11,7 +11,8 @@ data/
 ├─ buildings.json
 ├─ buffs.json
 ├─ events.json
-└─ waves.json
+├─ waves.json
+└─ map_generation.json
 ```
 
 各文件用途：
@@ -28,6 +29,8 @@ data/
   随机事件静态配置。
 - `waves.json`
   夜晚波次配置。
+- `map_generation.json`
+  地图生成与探索相关调参配置。
 
 这些文件只保存静态配置，不保存一局游戏的运行时状态。
 
@@ -37,8 +40,9 @@ data/
 
 ### 2.1 顶层结构
 
-- 每个 JSON 文件顶层统一使用数组。
+- 配置表 JSON 文件顶层统一使用数组。
 - 数组中的每一项代表一条记录。
+- 全局调参文件可以使用对象结构，例如 `map_generation.json`。
 
 ### 2.2 `id`
 
@@ -476,28 +480,93 @@ Boss 多阶段规则：
 
 ---
 
-## 10. 配置表之间的引用关系
+## 10. `map_generation.json`
 
-### 10.1 单位
+作用：
+
+- 集中配置地图生成参数，便于快速调整资源点、事件点、障碍、刷怪点等数量和安全半径。
+- 该文件只描述地图生成侧的数量、距离和安全区参数，不保存单局运行时状态。
+
+字段说明：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `width` | `int` | 地图宽度 |
+| `height` | `int` | 地图高度 |
+| `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
+| `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
+| `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
+| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json` |
+| `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
+| `min_obstacle_count` | `int` | 障碍最小生成数量 |
+| `max_obstacle_count` | `int` | 障碍最大生成数量 |
+| `core_safe_radius` | `int` | 核心周围不会随机生成障碍、额外资源、事件点的安全半径 |
+| `spawn_safe_radius` | `int` | 刷怪点周围不会随机生成障碍、额外资源、事件点的安全半径 |
+| `min_spawn_core_distance` | `int` | 刷怪点到核心的最小曼哈顿距离 |
+| `min_spawn_distance` | `int` | 刷怪点之间的最小曼哈顿距离 |
+
+当前推荐配置：
+
+```json
+{
+  "width": 30,
+  "height": 30,
+  "spawn_count": 3,
+  "resources_per_type": 12,
+  "near_resources_per_type": 2,
+  "event_point_count": 8,
+  "obstacle_ratio": 0.11,
+  "min_obstacle_count": 45,
+  "max_obstacle_count": 95,
+  "core_safe_radius": 3,
+  "spawn_safe_radius": 1,
+  "min_spawn_core_distance": 12,
+  "min_spawn_distance": 10
+}
+```
+
+生成规则说明：
+
+- 地图默认生成 30×30 网格，核心位于地图中心，初始只揭开核心周围 5×5 区域。
+- 初始 5×5 可见区内不再固定塞资源点；资源保底改为放在可见区外侧的近探索圈，避免开局过空。
+- `resources_per_type` 表示每种资源的目标总数；当前木材、石材、魔力各 12 个。
+- `near_resources_per_type` 表示每种资源在近探索圈内的保底数量；当前木材、石材、魔力各至少 2 个靠近开局区域。
+- 障碍数量先按 `width * height * obstacle_ratio` 估算，再被 `min_obstacle_count` 与 `max_obstacle_count` 限制。
+- 障碍放置后会校验刷怪点到核心仍存在地面路径，避免随机地图把夜晚路径彻底堵死。
+- 刷怪点优先从地图边缘选择，受核心距离和刷怪点互相距离限制。
+
+事件点说明：
+
+- 随机事件点是地图格子属性，存储在 `CellData.event_id`。
+- 随机事件点与资源点互斥，同一个格子不会同时是资源点和事件点。
+- `MapGenerator` 只负责放置事件点并引用已有事件 ID，不负责新增事件内容。
+- 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。
+- 地图侧只负责“这个格子是否有事件”；探索发现后的展示、行动力消耗和事件效果结算属于白天流程与随机事件模块。
+
+---
+
+## 11. 配置表之间的引用关系
+
+### 11.1 单位
 
 - `units.json[].skill_id` 引用技能逻辑标识
 - `units.json[].scene_key` 引用单位模板
 - `units.json[].icon_key` 引用单位图标
 
-### 10.2 敌人
+### 11.2 敌人
 
 - `enemies.json[].scene_key` 引用敌人模板
 
-### 10.3 建筑
+### 11.3 建筑
 
 - `buildings.json[].scene_key` 引用建筑模板
 
-### 10.4 波次
+### 11.4 波次
 
 - `waves.json[].entries[].enemy_id` 引用 `enemies.json[].id`
 - `waves.json[].entries[].spawn_key` 引用地图中的刷怪点逻辑名
 
-### 9.5 Buff 与事件
+### 11.5 Buff 与事件
 
 - `buffs.json[].effect_type` 决定 Buff 的结算逻辑
 - `events.json[].effect_type` 决定事件的结算逻辑
