@@ -607,6 +607,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/enemy/enemy_actor.gd`
 - `scripts/enemy/wave_manager.gd`
 - `scripts/enemy/boss_controller.gd`
+- `scripts/enemy/enemy_movement_controller.gd`
+- `scripts/enemy/enemy_attack_controller.gd`
 - `scenes/actors/EnemyActor.tscn`
 
 职责：
@@ -621,11 +623,15 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `enemy_manager.gd`
   敌人运行时主控，管理场上所有敌人实例。
 - `enemy_actor.gd`
-  单个敌人实例脚本，处理移动、受伤、被阻挡、攻击核心、远程攻击和路径建筑攻击。它是普通敌人和 Boss 的运行时门面；当敌人配置为 Boss 或带有 `phases` 时，会按需启用 `BossController`，自身只负责应用阶段配置、更新 HP/标题/状态条和重新计算路径。
+  单个敌人实例脚本，处理受伤、死亡和子控制器调度。它是普通敌人和 Boss 的运行时门面；当敌人配置为 Boss 或带有 `phases` 时，会按需启用 `BossController`；移动、寻路、阻挡贴位、击退和移速倍率交给 `EnemyMovementController`；阻挡攻击、远程攻击和路径建筑攻击交给 `EnemyAttackController`。
 - `wave_manager.gd`
   波次执行器，负责按配置在正确时间生成敌人。
 - `boss_controller.gd`
   通用多阶段 Boss 控制器。它读取 `enemies.json[].phases`，管理阶段编号、转阶段无敌计时、阶段配置切换和阶段进入效果。该脚本不硬编码具体 Boss；多个 Boss 的共性阶段机制走配置，特殊 Boss 机制后续可通过 `boss_behavior_key` 挂专用行为组件。
+- `enemy_movement_controller.gd`
+  单个敌人的移动控制器，由 `EnemyActor` 按需创建并调度。它维护路径缓存、路径进度、路径模式、阻挡状态、阻挡贴位、击退和外部移速倍率；不负责攻击结算、死亡移除或 Boss 阶段流转。
+- `enemy_attack_controller.gd`
+  单个敌人的攻击控制器，由 `EnemyActor` 按需创建并调度。它维护攻击计时，处理阻挡单位攻击、远程索敌攻击和路径建筑攻击；不负责移动、寻路、死亡移除或 Boss 阶段流转。
 - `EnemyActor.tscn`
   敌人实例模板。
 

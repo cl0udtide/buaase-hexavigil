@@ -245,8 +245,8 @@ scripts/enemy/boss_behaviors/
 
 等 Boss 状态机迁出后，再评估 `enemy_actor.gd` 的剩余体量。如果仍然偏大，再按以下顺序拆：
 
-1. `enemy_movement_controller.gd`
-2. `enemy_attack_controller.gd`
+1. `enemy_movement_controller.gd`：已拆出路径缓存、路径进度、路径模式、阻挡贴位、击退和外部移速倍率。
+2. `enemy_attack_controller.gd`：已拆出攻击计时、阻挡单位攻击、远程索敌攻击和路径建筑攻击。
 3. `enemy_targeting.gd`
 
 这一步不应和 BossController 迁移混在同一个 PR 中。
