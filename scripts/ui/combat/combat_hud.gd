@@ -1,5 +1,6 @@
 extends Control
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 signal operator_card_pressed(operator_key: StringName)
@@ -34,6 +35,7 @@ var _cards_by_operator_key: Dictionary = {}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	AppTheme.apply(self)
 	_top_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_style_top_cards()
 	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
