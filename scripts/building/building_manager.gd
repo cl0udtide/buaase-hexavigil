@@ -2,8 +2,6 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
-const DIRECT_DEMOLISH_BUILDINGS: Array[StringName] = [&"wood_wall"]
-
 var _next_runtime_id := 1
 var _buildings_by_runtime_id: Dictionary = {}
 var _buildings_by_cell: Dictionary = {}
@@ -130,8 +128,6 @@ func try_demolish_building(building_runtime_id: int) -> Dictionary:
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor == null:
 		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
-	if not _can_demolish_directly(actor):
-		return ActionResult.err(&"BUILDING_NOT_DEMOLISHABLE", "只有损毁建筑或木墙可以直接拆除")
 	var building_id: StringName = actor.building_id
 	var cell: Vector2i = actor.get_current_cell()
 	remove_building(building_runtime_id)
@@ -246,14 +242,6 @@ func _is_building_destroyed(actor: Node) -> bool:
 		return bool(actor.is_destroyed())
 	var current_hp_variant: Variant = actor.get("current_hp")
 	return typeof(current_hp_variant) == TYPE_INT and int(current_hp_variant) <= 0
-
-
-func _can_demolish_directly(actor: Node) -> bool:
-	if actor == null:
-		return false
-	if _is_building_destroyed(actor):
-		return true
-	return DIRECT_DEMOLISH_BUILDINGS.has(StringName(actor.get("building_id")))
 
 
 func _is_path_blocking_cfg(cfg: Dictionary) -> bool:
