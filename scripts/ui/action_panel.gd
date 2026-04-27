@@ -78,6 +78,7 @@ func _bind_events() -> void:
 		return
 	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
 	event_bus.phase_changed.connect(_on_phase_changed)
+	event_bus.building_placed.connect(_on_building_placed)
 	event_bus.building_destroyed.connect(_on_building_changed)
 	event_bus.building_state_changed.connect(_on_building_state_changed)
 
@@ -88,13 +89,6 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 		return
 	var event_bus = AppRefs.event_bus()
 	if event_bus == null:
-		return
-	var existing_building := _get_building_by_cell(cell)
-	if existing_building != null:
-		_select_building(existing_building)
-		return
-	_clear_selected_building()
-	if _current_mode == &"idle" and _try_toggle_idle_building(cell):
 		return
 	if _current_mode == &"explore":
 		event_bus.request_explore.emit(cell)
@@ -168,8 +162,14 @@ func _apply_visual_style() -> void:
 	for button in [_idle_button, _explore_button, _start_night_button, _repair_building_button, _demolish_building_button, _toggle_building_button]:
 		if button != null:
 			button.custom_minimum_size = Vector2(58.0, 28.0)
+	var building_action_flow := get_node_or_null("%BuildingActionFlow") as Control
+	if building_action_flow == null:
+		building_action_flow = get_node_or_null("ContentMargin/VBoxContainer/BuildingActionFlow") as Control
+	if building_action_flow != null:
+		building_action_flow.visible = false
 	if _building_info_label != null:
 		_building_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+		_building_info_label.visible = false
 
 
 func _style_action_button(button: Button, selected: bool) -> void:
@@ -296,6 +296,11 @@ func _on_building_changed(building_runtime_id: int, _building_id: StringName, _c
 		_refresh_building_controls()
 
 
+func _on_building_placed(_building_runtime_id: int, building_id: StringName, _cell: Vector2i) -> void:
+	if _current_mode == &"build" and building_id == _current_building_id:
+		set_mode_idle()
+
+
 func _on_building_state_changed(building_runtime_id: int, _building_id: StringName, _enabled: bool) -> void:
 	if building_runtime_id == _selected_building_runtime_id:
 		_refresh_building_controls()
@@ -326,8 +331,4 @@ func _is_building_destroyed(building: Node) -> bool:
 
 
 func _can_demolish_building(building: Node) -> bool:
-	if building == null:
-		return false
-	if _is_building_destroyed(building):
-		return true
-	return StringName(building.get("building_id")) == &"wood_wall"
+	return building != null
