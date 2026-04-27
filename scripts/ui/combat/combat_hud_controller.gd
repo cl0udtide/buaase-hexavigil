@@ -143,7 +143,7 @@ func _on_operator_card_pressed(operator_key: StringName) -> void:
 	var state := _get_operator_state(operator_key)
 	if state == &"ready":
 		if not _can_deploy_now():
-			_show_message("只有白天可以部署干员")
+			_show_message("当前阶段不能部署干员")
 			return
 		_begin_operator_drag(operator_key)
 	elif state == &"deployed":
@@ -419,7 +419,7 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var cfg := _get_unit_cfg(unit_id)
 	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
 	var class_text := _class_label(str(cfg.get("class", "")))
-	var state_text := "READY"
+	var state_text := "可部署"
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
@@ -428,10 +428,10 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 			state_text = "已部署"
 	elif state == &"cooldown":
 		var remain := float(_unit_manager.get_operator_redeploy_remaining(operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
-		state_text = "CD %.1fs" % remain
+		state_text = "冷却 %.1f秒" % remain
 	elif not _can_deploy_now():
-		state_text = "等待白天"
-	return "%s\n%s  COST %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
+		state_text = "当前阶段不可部署"
+	return "%s\n%s  费用 %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
 
 
 func _format_operator_drag_text(operator_key: StringName) -> String:
@@ -554,7 +554,7 @@ func _get_operator_state(operator_key: StringName) -> StringName:
 
 func _can_deploy_now() -> bool:
 	var run_state = AppRefs.run_state()
-	return run_state == null or int(run_state.phase) == GameEnums.PHASE_DAY
+	return run_state == null or int(run_state.phase) == GameEnums.PHASE_DAY or int(run_state.phase) == GameEnums.PHASE_NIGHT
 
 
 func _get_operator_info(operator_key: StringName) -> Dictionary:
