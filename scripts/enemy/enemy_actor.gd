@@ -1,6 +1,7 @@
 extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const BossController = preload("res://scripts/enemy/boss_controller.gd")
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
@@ -27,10 +28,7 @@ var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
 var _attack_timer := 0.0
 var _is_dead := false
-var _boss_phase := 1
-var _phase_transitioning := false
-var _phase_transition_timer := 0.0
-var _phase_two_cfg: Dictionary = {}
+var _boss_controller: Node = null
 var _external_move_speed_multiplier: float = 1.0
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
@@ -44,8 +42,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _is_dead:
 		return
-	if _phase_transitioning:
-		_process_phase_transition(delta)
+	if _boss_controller != null and _boss_controller.is_transitioning():
+		var phase_cfg: Dictionary = _boss_controller.tick(delta)
+		if not phase_cfg.is_empty():
+			_apply_phase_cfg(phase_cfg)
+			_boss_controller.apply_phase_enter_effects()
 		return
 	if _blocked_by != -1:
 		var blocker: Node = _get_blocker()
@@ -88,11 +89,8 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	_block_anchor_dir = Vector2.ZERO
 	_attack_timer = 0.0
 	_is_dead = false
-	_boss_phase = 1
-	_phase_transitioning = false
-	_phase_transition_timer = 0.0
-	_phase_two_cfg = _get_phase_cfg(2)
 	_external_move_speed_multiplier = 1.0
+	_setup_boss_controller()
 	global_position = get_map_manager().cell_to_world(spawn_cell)
 	recalc_path()
 	var label: Label = get_node_or_null("%TitleLabel") as Label
@@ -112,7 +110,7 @@ func _draw() -> void:
 
 
 func receive_damage(value: int, damage_type: int) -> void:
-	if _phase_transitioning or bool(cfg.get("invulnerable", false)):
+	if (_boss_controller != null and _boss_controller.is_transitioning()) or bool(cfg.get("invulnerable", false)):
 		_debug_log("敌人 %s#%d 处于无敌状态，免疫本次伤害" % [_debug_name(), runtime_id])
 		return
 	var final_damage: int = value
@@ -125,8 +123,9 @@ func receive_damage(value: int, damage_type: int) -> void:
 	_play_hit_effect()
 	_debug_log("敌人 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type), value, final_damage, current_hp, max_hp])
 	if current_hp == 0 and not _is_dead:
-		if _should_enter_next_boss_phase():
-			_start_phase_transition()
+		if _boss_controller != null and _boss_controller.try_consume_death_for_phase_transition():
+			clear_blocked()
+			_update_status_view()
 			return
 		_is_dead = true
 		_debug_log("敌人 %s#%d 死亡" % [_debug_name(), runtime_id])
@@ -390,32 +389,24 @@ func _is_wall_building(building: Node) -> bool:
 	return bool(building_cfg.get("blocks_path", false))
 
 
-func _process_phase_transition(delta: float) -> void:
-	_phase_transition_timer = max(_phase_transition_timer - delta, 0.0)
-	if _phase_transition_timer > 0.0:
+func _setup_boss_controller() -> void:
+	if _boss_controller != null and is_instance_valid(_boss_controller):
+		_boss_controller.queue_free()
+	_boss_controller = null
+	var phases: Array = cfg.get("phases", [])
+	var should_enable := StringName(cfg.get("behavior_type", "normal")) == &"boss" or not phases.is_empty()
+	if not should_enable:
 		return
-	_enter_boss_phase_two()
+	_boss_controller = BossController.new()
+	add_child(_boss_controller)
+	_boss_controller.setup(self, cfg)
+	if not _boss_controller.is_enabled():
+		_boss_controller.queue_free()
+		_boss_controller = null
 
 
-func _should_enter_next_boss_phase() -> bool:
-	return _boss_phase == 1 and not _phase_two_cfg.is_empty()
-
-
-func _start_phase_transition() -> void:
-	_boss_phase = 2
-	_phase_transitioning = true
-	_phase_transition_timer = max(float(cfg.get("phase_transition_sec", 1.5)), 0.0)
-	current_hp = 0
-	clear_blocked()
-	_update_status_view()
-	_debug_log("敌人 %s#%d 第一管血耗尽，进入 %.1f 秒无敌转阶段" % [_debug_name(), runtime_id, _phase_transition_timer])
-	if _phase_transition_timer <= 0.0:
-		_enter_boss_phase_two()
-
-
-func _enter_boss_phase_two() -> void:
-	_phase_transitioning = false
-	cfg.merge(_phase_two_cfg, true)
+func _apply_phase_cfg(phase_cfg: Dictionary) -> void:
+	cfg.merge(phase_cfg, true)
 	_path_mode = _resolve_path_mode()
 	max_hp = int(cfg.get("max_hp", max_hp))
 	current_hp = max_hp
@@ -423,49 +414,12 @@ func _enter_boss_phase_two() -> void:
 	_recalc_path_after_phase_change()
 	_update_title_label()
 	_update_status_view()
-	_cast_phase_enter_area_damage()
-	_debug_log("敌人 %s#%d 转入第二形态，HP %d/%d" % [_debug_name(), runtime_id, current_hp, max_hp])
+	_debug_log("敌人 %s#%d 转入第%d阶段，HP %d/%d" % [_debug_name(), runtime_id, int(phase_cfg.get("phase", 0)), current_hp, max_hp])
 
 
 func _recalc_path_after_phase_change() -> void:
 	if _blocked_by == -1:
 		recalc_path()
-
-
-func _cast_phase_enter_area_damage() -> void:
-	var area_cfg: Dictionary = cfg.get("phase_enter_area_damage", {})
-	if area_cfg.is_empty():
-		return
-	var radius: int = int(area_cfg.get("radius", 1))
-	var damage: int = int(area_cfg.get("damage", 0))
-	if radius < 0 or damage <= 0:
-		return
-	var damage_type: int = _parse_damage_type(String(area_cfg.get("damage_type", cfg.get("damage_type", "physical"))))
-	var unit_manager: Node = get_unit_manager()
-	var building_manager: Node = get_building_manager()
-	for y in range(current_cell.y - radius, current_cell.y + radius + 1):
-		for x in range(current_cell.x - radius, current_cell.x + radius + 1):
-			var cell: Vector2i = Vector2i(x, y)
-			if unit_manager != null and unit_manager.has_method("get_unit_by_cell"):
-				var unit: Node = unit_manager.get_unit_by_cell(cell)
-				if unit != null and unit.has_method("receive_damage"):
-					unit.receive_damage(damage, damage_type, self)
-			if building_manager != null and building_manager.has_method("get_building_by_cell"):
-				var building: Node = building_manager.get_building_by_cell(cell)
-				if building != null and building.has_method("receive_damage"):
-					_damage_building(building, damage, damage_type)
-	_debug_log("敌人 %s#%d 点燃周围 %dx%d 区域，造成%s伤害 %d" % [_debug_name(), runtime_id, radius * 2 + 1, radius * 2 + 1, _damage_type_text(damage_type), damage])
-
-
-func _get_phase_cfg(phase: int) -> Dictionary:
-	var phases: Array = cfg.get("phases", [])
-	for phase_cfg in phases:
-		if typeof(phase_cfg) != TYPE_DICTIONARY:
-			continue
-		var phase_dict: Dictionary = phase_cfg as Dictionary
-		if int(phase_dict.get("phase", 0)) == phase:
-			return phase_dict.duplicate(true)
-	return {}
 
 
 func _update_title_label() -> void:

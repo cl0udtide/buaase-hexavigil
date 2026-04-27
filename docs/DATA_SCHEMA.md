@@ -251,8 +251,8 @@ building_actor -> scenes/actors/BuildingActor.tscn
 Boss 多阶段规则：
 
 - 普通敌人不配置 `phases`。
-- 目标运行时中，`behavior_type: "boss"` 或存在非空 `phases` 时启用 `BossController`。
-- 迁移完成后，`BossController` 负责读取 `phases`、转阶段无敌计时和阶段进入效果。
+- 运行时中，`behavior_type: "boss"` 或存在非空 `phases` 时启用 `BossController`。
+- `BossController` 负责读取 `phases`、转阶段无敌计时和阶段进入效果。
 - 阶段配置项可以覆盖 `name`、`max_hp`、`atk`、`def`、`res`、`move_speed`、`attack_interval`、`attack_range`、`damage_type`、`behavior_type`、`move_type`、`core_damage` 等基础字段。
 - 多个 Boss 的共性阶段机制优先通过 `phases` 数据表达，不在代码中按 `enemy_id` 写分支。
 - `boss_behavior_key` 只用于数据表达不了的 Boss 专属机制；当前可先预留，不要求已有实现。
