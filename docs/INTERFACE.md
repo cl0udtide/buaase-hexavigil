@@ -1037,15 +1037,55 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node
 
 作用：
 
-- 单位技能行为扩展点
+- 单位技能行为扩展点。单位技能差异不走中心化 controller 分发，而是在 `UnitActor.setup_from_cfg()` 中按 `skill_behavior_key` 动态装配到 `SkillBehavior` 节点。
 
 ```gdscript
+func setup(unit: Node) -> void
+func tick(delta: float) -> void
+func can_cast() -> bool
+func cast() -> bool
+func get_skill_name() -> String
+func get_skill_description() -> String
+func get_sp_max() -> float
+func get_sp_recover_per_sec() -> float
+func get_duration() -> float
+func get_active_remaining() -> float
+func is_active() -> bool
+func get_attack_targets_override() -> Array
 func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array
 func after_attack(target: Node, damage_value: int) -> void
+func modify_attack_damage(base_damage: int, target: Node) -> int
+func after_receive_damage(source: Node, final_damage: int) -> void
 ```
 
 方法规格：
 
+- `setup(unit)`
+  输入：所属单位实例。
+  行为：绑定技能行为的 owner，初始化技能内部计时和状态。
+  返回：无。
+- `tick(delta)`
+  输入：帧间隔。
+  行为：推进技能持续时间；持续时间结束时恢复临时效果。
+  返回：无。
+- `can_cast()`
+  输入：无。
+  行为：判断技能是否满足 SP、未激活等释放条件。
+  返回：`bool`。
+- `cast()`
+  输入：无。
+  行为：执行技能启动逻辑，扣除 SP，并进入持续或永久激活状态。
+  返回：是否成功释放。
+- `get_skill_name()` / `get_skill_description()`
+  行为：读取技能显示信息，供 HUD 和详情面板展示。
+  返回：`String`。
+- `get_sp_max()` / `get_sp_recover_per_sec()` / `get_duration()` / `get_active_remaining()` / `is_active()`
+  行为：读取技能 SP、回复、持续时间和激活状态。
+  返回：对应数值或状态。
+- `get_attack_targets_override()`
+  输入：无。
+  行为：可覆盖本次攻击目标列表，例如让近卫攻击所有被自身阻挡的敌人。
+  返回：目标节点数组；空数组表示使用 `UnitActor` 默认索敌。
 - `get_attack_projectile_payloads(target, damage_value)`
   输入：当前攻击目标与本次攻击伤害。
   行为：可返回多个飞行物 payload，用于让技能把一次普攻拆成多条可见弹道；返回空数组时 `UnitActor` 使用默认单飞行物。
@@ -1053,6 +1093,14 @@ func after_attack(target: Node, damage_value: int) -> void
 - `after_attack(target, damage_value)`
   输入：真实命中的目标与伤害。
   行为：在即时攻击或飞行物命中后触发，用于追加连击、溅射、连锁等效果。
+  返回：无。
+- `modify_attack_damage(base_damage, target)`
+  输入：基础伤害和目标。
+  行为：在普攻伤害结算前修正伤害，例如攻击倍率提升。
+  返回：修正后的伤害。
+- `after_receive_damage(source, final_damage)`
+  输入：伤害来源和最终伤害。
+  行为：在单位受击后触发，用于反击、减伤反馈等技能效果。
   返回：无。
 
 #### `Projectile`
@@ -1204,7 +1252,8 @@ func clear_blocked() -> void
 
 作用：
 
-- Boss 扩展控制
+- Boss 扩展控制的预留接口，用于未来把复杂 Boss 行为从 `EnemyActor` 中拆出。
+- 当前实际运行的二阶段 Boss 不依赖该脚本，而是由 `EnemyActor` 读取 `enemies.json[].phases` 并在自身内部完成转阶段。
 
 ```gdscript
 func on_hp_threshold_crossed(percent: float) -> void
@@ -1226,6 +1275,18 @@ func cast_boss_skill(skill_id: StringName) -> void
   输入：技能 ID。
   行为：释放指定 Boss 技能。
   返回：无。
+
+当前已落地 Boss 链路：
+
+```text
+waves.json -> WaveManager -> EnemyManager.spawn_enemy()
+-> DataRepo.get_enemy_cfg()
+-> EnemyActor.setup_from_cfg()
+-> EnemyActor.receive_damage()
+-> EnemyActor 内部根据 phases 转阶段
+```
+
+当 Boss 配置存在 `phases` 且第一阶段 HP 降为 0 时，`EnemyActor` 会进入 `phase_transition_sec` 秒无敌转阶段；转阶段结束后把第二阶段配置 merge 到当前 `cfg`，重置 `max_hp/current_hp`，重新计算寻路，并执行 `phase_enter_area_damage` 等入场效果。
 
 ### 3.6 UI 模块
 
@@ -1500,6 +1561,8 @@ func hide_panel() -> void
 | `core_hp_changed` | `current: int, max_value: int` | `RunState` | CombatHudController、ResultPanel | 核心血量变化 |
 | `deploy_limit_changed` | `current: int, max_value: int` | `RunState` | CombatHudController、CombatSandbox | 部署数量变化 |
 | `owned_operators_changed` | `operators: Array[Dictionary]` | `RunState` | CombatHudController、CombatSandbox | 已拥有干员槽位变化 |
+| `owned_units_changed` | `unit_ids: Array[StringName]` | `RunState` | 兼容旧调用、调试工具 | 已拥有单位类型集合变化，兼容旧的按 `unit_id` 读取方式 |
+| `buffs_changed` | `buff_ids: Array[StringName]` | `RunState` | 调试工具、后续 UI | 已获得 Buff 列表变化 |
 | `shop_stock_changed` | `stock_slots: Array[Dictionary]` | `ShopManager` | BuildPanel | 商店槽位库存变化 |
 | `shop_action_result` | `action: StringName, result: Dictionary` | `ShopManager` | BuildPanel | 商店购买或刷新结果 |
 
@@ -1509,10 +1572,12 @@ func hide_panel() -> void
 |---|---|---|---|---|
 | `request_explore` | `cell: Vector2i` | UI | `DayManager` | 请求探索 |
 | `request_build` | `cell: Vector2i, building_id: StringName` | UI | `BuildingManager` / `DayManager` | 请求建造 |
+| `request_toggle_building` | `building_runtime_id: int` | UI / ActionPanel | `BuildingManager` | 请求切换可开关建筑的启用状态 |
 | `request_interact_event` | `cell: Vector2i` | UI | `DayManager` / `RandomEventManager` | 请求处理事件 |
 | `request_start_night` | 无 | UI | `GameController` / `DayManager` | 请求结束白天 |
 | `request_buy_shop_slot` | `slot_index: int` | UI | `ShopManager` | 请求购买指定商店槽位 |
 | `request_refresh_shop` | 无 | UI | `ShopManager` | 请求刷新商店 |
+| `request_debug_set_day` | `day: int` | DebugPanel | `GameController` | 调试请求直接切换到指定天数 |
 | `blessing_chosen` | `buff_id: StringName` | UI | `GameController`、`BuffManager` | 选择某个祝福 |
 
 ### 4.4 世界事件信号
@@ -1520,8 +1585,10 @@ func hide_panel() -> void
 | 信号名 | 参数 | 发出方 | 监听方 | 说明 |
 |---|---|---|---|---|
 | `fog_revealed` | `cells: Array[Vector2i]` | `MapManager` | UI、调试工具 | 迷雾被揭开 |
+| `map_cell_clicked` | `cell: Vector2i` | `MapRoot` | ActionPanel、CombatHudController、CombatSandbox | 地图格点击事件，承载场景根据当前模式解释点击含义 |
 | `building_placed` | `building_runtime_id: int, building_id: StringName, cell: Vector2i` | `BuildingManager` | `MapManager`、`PathService` | 建筑已放置 |
 | `building_destroyed` | `building_runtime_id: int, building_id: StringName, cell: Vector2i` | `BuildingManager` | `MapManager`、`PathService` | 建筑已摧毁 |
+| `building_state_changed` | `building_runtime_id: int, building_id: StringName, enabled: bool` | `BuildingManager` | ActionPanel、调试工具 | 建筑启用/停用状态已变化 |
 | `path_grid_changed` | 无 | `BuildingManager` / `MapManager` | `PathService`、`EnemyManager` | 寻路网格需重建 |
 | `unit_deployed` | `unit_runtime_id: int, operator_key: StringName, unit_id: StringName, cell: Vector2i` | `UnitManager` | CombatHudController、CombatSandbox | 干员槽位已部署 |
 | `unit_removed` | `unit_runtime_id: int, reason: int` | `UnitManager` | CombatHudController、CombatSandbox | 单位离场 |
@@ -1539,11 +1606,15 @@ func hide_panel() -> void
 
 - 探索：`EventBus.request_explore.emit(cell)`
 - 建造：`EventBus.request_build.emit(cell, building_id)`
+- 切换建筑开关：`EventBus.request_toggle_building.emit(building_runtime_id)`
 - 处理事件：`EventBus.request_interact_event.emit(cell)`
 - 结束白天：`EventBus.request_start_night.emit()`
 - 购买商店槽位：`EventBus.request_buy_shop_slot.emit(slot_index)`
 - 刷新商店：`EventBus.request_refresh_shop.emit()`
 - 选择祝福：`EventBus.blessing_chosen.emit(buff_id)`
+- 调试切换天数：`EventBus.request_debug_set_day.emit(day)`
+
+地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`、`CombatHudController` 或 `CombatSandbox` 根据当前模式解释为探索、建造、选中单位或部署流程。
 
 作战 UI 组件本身仍只发出信号。例如 `CombatHud` 发出干员卡片、暂停、倍速、技能和撤退信号；主场景由 `CombatHudController` 调用 `UnitManager`、`MapRoot` 或修改 `SceneTree.paused`，调试场景由 `CombatSandbox` 做同样转接。
 
@@ -1556,6 +1627,7 @@ func hide_panel() -> void
 监听：
 
 - `request_start_night`
+- `request_debug_set_day`
 - `night_cleared`
 - `core_destroyed`
 - `blessing_chosen`
@@ -1581,12 +1653,14 @@ func hide_panel() -> void
 
 - `fog_revealed`
 - `path_grid_changed`
+- `map_cell_clicked`
 
 ### 6.3 建筑模块
 
 监听：
 
 - `request_build`
+- `request_toggle_building`
 - `day_started`
 - `night_started`
 
@@ -1594,6 +1668,7 @@ func hide_panel() -> void
 
 - `building_placed`
 - `building_destroyed`
+- `building_state_changed`
 - `path_grid_changed`
 
 ### 6.4 单位与商店模块
@@ -1643,6 +1718,8 @@ func hide_panel() -> void
 - `blessing_choices_ready`
 - `random_event_triggered`
 - `deploy_limit_changed`
+- `owned_operators_changed`
+- `map_cell_clicked`
 
 对外广播：
 
