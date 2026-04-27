@@ -136,6 +136,8 @@ func _is_path_blocking_building(data: CellData) -> bool:
 	var building: Node = _building_manager.get_building_by_runtime_id(data.building_runtime_id)
 	if building == null:
 		return false
+	if _is_building_destroyed(building):
+		return false
 	if building.get("building_id") == &"wood_wall":
 		return true
 	var cfg_variant: Variant = building.get("cfg")
@@ -143,6 +145,15 @@ func _is_path_blocking_building(data: CellData) -> bool:
 		return false
 	var cfg: Dictionary = cfg_variant
 	return bool(cfg.get("blocks_path", false))
+
+
+func _is_building_destroyed(building: Node) -> bool:
+	if building == null:
+		return false
+	if building.has_method("is_destroyed"):
+		return bool(building.is_destroyed())
+	var current_hp_variant: Variant = building.get("current_hp")
+	return current_hp_variant != null and int(current_hp_variant) <= 0
 
 
 func _pop_best_open_cell(open_set: Array[Vector2i], end_cell: Vector2i, f_score: Dictionary) -> Vector2i:

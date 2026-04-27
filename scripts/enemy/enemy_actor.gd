@@ -328,7 +328,7 @@ func _find_attack_target_in_range(attack_range: int) -> Node:
 			var building: Node = null
 			if building_manager != null and building_manager.has_method("get_building_by_cell"):
 				building = building_manager.get_building_by_cell(cell)
-			if building != null and is_instance_valid(building):
+			if building != null and is_instance_valid(building) and not _is_destroyed_building(building):
 				best_target = building
 				best_distance = distance
 	return best_target
@@ -352,17 +352,30 @@ func _get_blocking_building_on_path() -> Node:
 	var building: Node = building_manager.get_building_by_cell(next_cell)
 	if building == null or not is_instance_valid(building):
 		return null
+	if _is_destroyed_building(building):
+		return null
 	if not _should_attack_path_building(building):
 		return null
 	return building
 
 
 func _should_attack_path_building(building: Node) -> bool:
+	if _is_destroyed_building(building):
+		return false
 	if _path_mode == PATH_MODE_DEMOLISHER:
 		return true
 	if _path_mode != PATH_MODE_NORMAL:
 		return false
 	return not _is_wall_building(building)
+
+
+func _is_destroyed_building(building: Node) -> bool:
+	if building == null:
+		return false
+	if building.has_method("is_destroyed"):
+		return bool(building.is_destroyed())
+	var current_hp_variant: Variant = building.get("current_hp")
+	return current_hp_variant != null and int(current_hp_variant) <= 0
 
 
 func _is_wall_building(building: Node) -> bool:

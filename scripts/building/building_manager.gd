@@ -112,10 +112,12 @@ func try_toggle_building(building_runtime_id: int) -> Dictionary:
 
 func damage_building(building_runtime_id: int, value: int, damage_type: int) -> void:
 	var actor := get_building_by_runtime_id(building_runtime_id)
-	if actor != null:
-		actor.receive_damage(value, damage_type)
-		if _is_building_destroyed(actor):
-			remove_building(building_runtime_id)
+	if actor == null:
+		return
+	var was_destroyed := _is_building_destroyed(actor)
+	actor.receive_damage(value, damage_type)
+	if not was_destroyed and _is_building_destroyed(actor):
+		_mark_building_destroyed(actor)
 
 
 func remove_building(building_runtime_id: int) -> void:
@@ -180,6 +182,18 @@ func _is_building_destroyed(actor: Node) -> bool:
 		return bool(actor.is_destroyed())
 	var current_hp_variant: Variant = actor.get("current_hp")
 	return typeof(current_hp_variant) == TYPE_INT and int(current_hp_variant) <= 0
+
+
+func _mark_building_destroyed(actor: Node) -> void:
+	var cell: Vector2i = actor.get_current_cell()
+	var cfg: Dictionary = actor.cfg
+	if bool(cfg.get("blocks_path", false)) and _path_service != null:
+		_path_service.set_cell_blocked(cell, false)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.building_destroyed.emit(int(actor.get_runtime_id()), actor.building_id, cell)
+		event_bus.building_state_changed.emit(int(actor.get_runtime_id()), actor.building_id, false)
+		event_bus.path_grid_changed.emit()
 
 
 func _apply_aura_effects(delta: float) -> void:
