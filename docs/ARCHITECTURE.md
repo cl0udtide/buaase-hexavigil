@@ -28,14 +28,13 @@ res://
 │  │  ├─ BuildingActor.tscn
 │  │  └─ Projectile.tscn
 │  └─ ui/                      [界面模板]
-│     ├─ HUD.tscn
 │     ├─ ActionPanel.tscn
 │     ├─ BuildPanel.tscn
-│     ├─ ShopPanel.tscn
-│     ├─ DeployPanel.tscn
+│     ├─ BuildListCard.tscn
 │     ├─ EventPanel.tscn
 │     ├─ BlessingPanel.tscn
 │     ├─ ResultPanel.tscn
+│     ├─ DebugPanel.tscn
 │     └─ combat/               [作战 HUD 组件]
 │        ├─ CombatHud.tscn
 │        ├─ OperatorCard.tscn
@@ -183,37 +182,34 @@ Managers
 
 ```text
 UI
-├─ HUD
 ├─ ActionPanel
 ├─ BuildPanel
-├─ ShopPanel
-├─ DeployPanel
 ├─ CombatHud
+├─ CombatHudController
 ├─ EventPanel
 ├─ BlessingPanel
-└─ ResultPanel
+├─ ResultPanel
+└─ DebugPanel
 ```
 
 各节点作用如下：
 
-- `HUD`
-  常驻信息栏，显示阶段、天数、资源、声望、核心生命、部署数量等全局信息。
 - `ActionPanel`
-  主操作与作战控制面板，负责探索、建造、部署朝向、场上单位选中、技能释放和撤退。
+  白天行动面板，只负责待机、探索、进入夜晚，以及建造模式下的地图点击转发。
 - `BuildPanel`
-  建造面板，显示可建建筑并发出建造请求。
-- `ShopPanel`
-  商店面板，显示库存并发出购买、刷新请求。
-- `DeployPanel`
-  部署面板，按干员实例槽位显示可部署、已部署和再部署冷却状态，并发出部署请求。
+  左侧建筑/商店复合面板。建筑模式下显示资源/增益类建筑；商店模式下显示招募槽位、价格和刷新入口。
 - `CombatHud`
-  场景化作战 HUD，当前由 `CombatSandbox` 使用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示、单位详情面板和调试抽屉入口。
+  作战 HUD，主场景夜晚和 `CombatSandbox` 共用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示、单位详情面板和调试抽屉入口。
+- `CombatHudController`
+  主场景作战 UI 适配器，连接 `CombatHud`、`MapRoot`、`UnitManager` 和 `EnemyManager`，处理拖拽部署、二段朝向、单位选中、技能、撤退、暂停和倍速。
 - `EventPanel`
   随机事件面板，展示事件内容并发出事件交互请求。
 - `BlessingPanel`
   祝福面板，展示三选一祝福并发出选择请求。
 - `ResultPanel`
   结算信息面板，用于在游戏结束时展示胜负结果和统计信息。
+- `DebugPanel`
+  正式主场景中的调试入口，默认仅用于开发验证。
 
 ### 2.4 固定命名
 
@@ -617,26 +613,24 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 
 文件：
 
-- `scripts/ui/hud.gd`
 - `scripts/ui/action_panel.gd`
 - `scripts/ui/build_panel.gd`
-- `scripts/ui/shop_panel.gd`
-- `scripts/ui/deploy_panel.gd`
+- `scripts/ui/build_list_card.gd`
+- `scripts/ui/game_ui_style.gd`
 - `scripts/ui/event_panel.gd`
 - `scripts/ui/blessing_panel.gd`
 - `scripts/ui/result_panel.gd`
 - `scripts/ui/combat/combat_hud.gd`
+- `scripts/ui/combat/combat_hud_controller.gd`
 - `scripts/ui/combat/operator_card.gd`
 - `scripts/ui/combat/unit_detail_panel.gd`
-- `scripts/ui/combat/combat_ui_style.gd`
-- `scenes/ui/HUD.tscn`
 - `scenes/ui/ActionPanel.tscn`
 - `scenes/ui/BuildPanel.tscn`
-- `scenes/ui/ShopPanel.tscn`
-- `scenes/ui/DeployPanel.tscn`
+- `scenes/ui/BuildListCard.tscn`
 - `scenes/ui/EventPanel.tscn`
 - `scenes/ui/BlessingPanel.tscn`
 - `scenes/ui/ResultPanel.tscn`
+- `scenes/ui/DebugPanel.tscn`
 - `scenes/ui/combat/CombatHud.tscn`
 - `scenes/ui/combat/OperatorCard.tscn`
 - `scenes/ui/combat/UnitDetailPanel.tscn`
@@ -650,40 +644,34 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 
 各文件作用：
 
-- `hud.gd`
-  HUD 逻辑，负责全局状态显示刷新。
 - `action_panel.gd`
-  主操作面板逻辑，处理地图点击后的探索、建造、按朝向部署，以及选中场上单位后的技能释放、撤退和攻击范围预览。
+  白天行动面板逻辑，处理待机、探索、进入夜晚，以及建造模式下的地图点击转发。
 - `build_panel.gd`
-  建造面板逻辑。
-- `shop_panel.gd`
-  商店面板逻辑，显示 5 格干员卡牌、价格、阶级、刷新与购买反馈。
-- `deploy_panel.gd`
-  部署面板逻辑。
+  建筑/商店复合面板逻辑。建筑选择写入 `ActionPanel` 的建造模式；商店购买和刷新通过 `EventBus` 请求 `ShopManager`。
+- `build_list_card.gd`
+  左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
+- `game_ui_style.gd`
+  共用 UI 样式辅助函数，集中生成暗色玻璃面板、按钮和进度条等 `StyleBox`。
 - `combat/combat_hud.gd`
   作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示、单位详情面板和调试抽屉按钮。它只发出 UI 信号，不直接修改单位或地图真相数据。
+- `combat/combat_hud_controller.gd`
+  主场景作战 UI 适配器，负责把 `CombatHud` 信号转成部署、选中、技能、撤退、暂停、倍速和预览绘制。
 - `combat/operator_card.gd`
   单个待部署干员卡片逻辑，展示可部署、已部署和冷却状态，并把按下事件转换为 `operator_key` 信号。
 - `combat/unit_detail_panel.gd`
   已部署单位详情面板逻辑，展示 HP、SP、属性、技能描述、技能可用状态，并发出释放技能和撤退请求。
-- `combat/combat_ui_style.gd`
-  作战 HUD 的样式辅助函数，集中生成面板、按钮等 `StyleBox`，避免视觉参数散落在业务脚本中。
 - `event_panel.gd`
   事件面板逻辑。
 - `blessing_panel.gd`
   祝福面板逻辑。
 - `result_panel.gd`
   结算面板逻辑。
-- `HUD.tscn`
-  HUD 模板。
 - `ActionPanel.tscn`
-  主操作面板模板。
+  白天行动面板模板。
 - `BuildPanel.tscn`
-  建造面板模板。
-- `ShopPanel.tscn`
-  商店面板模板。
-- `DeployPanel.tscn`
-  部署面板模板。
+  建筑/商店复合面板模板。
+- `BuildListCard.tscn`
+  建筑/商店列表项模板。
 - `CombatHud.tscn`
   作战 HUD 场景模板。
 - `OperatorCard.tscn`
@@ -771,7 +759,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 用于跨模块广播，例如：
 
 - UI 发出请求
-- HUD 响应状态变化
+- UI 控制器和面板响应状态变化
 - 建筑变化通知寻路重建
 
 ### 6.3 Group
@@ -831,14 +819,12 @@ UI -> UnitManager -> RunState -> UnitRoot
 
 部署请求使用 `operator_key` 指向一个已拥有干员槽位。`UnitManager` 负责检查该槽位是否已在场、是否处于再部署冷却、当前部署数是否达到上限，以及目标格是否合法。撤退或死亡后只让该槽位进入再部署冷却，不影响同类单位的其他槽位。
 
-主场景中，`DeployPanel` 负责选择干员槽位，`ActionPanel` 负责选择部署朝向并在地图点击时调用部署逻辑。
-点击已部署单位所在格会选中该单位，显示 HP、SP、技能名、技能描述和技能持续状态，并可释放技能或撤退。
-点击没有单位的地图格会取消当前单位选中，清除攻击范围预览和详情面板，避免旧选中状态残留。
-
-`CombatSandbox` 使用新的场景化 `CombatHud` 验证作战交互。沙盒内部署采用两段式拖拽：
+主场景和 `CombatSandbox` 统一使用场景化 `CombatHud` 验证作战交互。主场景由 `CombatHudController` 转接 UI 信号；沙盒由 `combat_sandbox.gd` 转接同一套 HUD 信号并保留调试抽屉。部署采用两段式拖拽：
 
 1. 从底部待部署干员卡拖到地图格并松手，`UnitManager.validate_deploy_operator()` 只做合法性校验和预览，不创建单位。
 2. 落点锁定后，从落点向外拖拽选择上下左右朝向并松手确认，最终调用 `UnitManager.try_deploy_operator()` 完成部署。
+
+点击已部署单位所在格会选中该单位，显示 HP、SP、技能名、技能描述和技能持续状态，并可释放技能或撤退。点击没有单位的地图格会取消当前单位选中，清除攻击范围预览和详情面板，避免旧选中状态残留。
 
 部署预览由 `MapRoot` 绘制，包含合法/非法落点、锁定落点、朝向箭头和攻击范围。普通地图刷新只重绘图层，不应把玩家镜头拉回地图中心。
 
@@ -983,7 +969,7 @@ data/units.json
 
 部署时的装载流程如下：
 
-1. UI 发出部署请求：`request_deploy.emit(&"guard_01", cell, facing)`。
+1. `CombatHudController` 或 `CombatSandbox` 调用 `UnitManager.try_deploy_operator(&"guard_01", cell, facing)`。
 2. `UnitManager` 调用 `DataRepo.get_unit_cfg(&"guard_01")` 取得配置副本。
 3. `UnitManager` 校验阶段、拥有状态、部署上限、再部署冷却和地图格子合法性。
 4. `UnitManager` 读取 `scene_key: "unit_actor"`，通过 `DataRepo.get_scene_by_key(&"unit_actor")` 取得 `UnitActor.tscn`。

@@ -1,6 +1,6 @@
 extends Control
 
-const CombatUiStyle = preload("res://scripts/ui/combat/combat_ui_style.gd")
+const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 signal operator_card_pressed(operator_key: StringName)
 signal pause_pressed
@@ -19,6 +19,7 @@ var _cards_by_operator_key: Dictionary = {}
 @onready var _deploy_label: Label = %DeployLabel
 @onready var _queue_label: Label = %QueueLabel
 @onready var _message_label: Label = %MessageLabel
+@onready var _resource_label: Label = %ResourceLabel
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
@@ -33,9 +34,11 @@ var _cards_by_operator_key: Dictionary = {}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_top_bar.add_theme_stylebox_override("panel", CombatUiStyle.panel(CombatUiStyle.BG_DARK, CombatUiStyle.STROKE, 2.0, 8.0))
-	_deck_panel.add_theme_stylebox_override("panel", CombatUiStyle.panel(CombatUiStyle.BG_DARK, CombatUiStyle.STROKE, 2.0, 8.0))
-	_drag_ghost.add_theme_stylebox_override("panel", CombatUiStyle.panel(Color(0.08, 0.12, 0.15, 0.82), CombatUiStyle.AMBER, 2.0, 8.0))
+	_top_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_style_top_cards()
+	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.08, 0.10, 0.11, 0.88), GameUiStyle.AMBER, 2.0, 6.0))
+	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
 	_speed_2_button.pressed.connect(func() -> void: speed_2_pressed.emit())
@@ -44,10 +47,10 @@ func _ready() -> void:
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
 		_detail_panel.retreat_requested.connect(func() -> void: retreat_requested.emit())
-	_style_button(_pause_button, CombatUiStyle.STROKE)
-	_style_button(_speed_1_button, CombatUiStyle.STROKE)
-	_style_button(_speed_2_button, CombatUiStyle.STROKE)
-	_style_button(_debug_button, CombatUiStyle.STROKE)
+	_style_button(_pause_button, GameUiStyle.STROKE)
+	_style_button(_speed_1_button, GameUiStyle.STROKE)
+	_style_button(_speed_2_button, GameUiStyle.STROKE)
+	_style_button(_debug_button, GameUiStyle.STROKE)
 	_drag_ghost.visible = false
 
 
@@ -61,10 +64,15 @@ func show_message(text_value: String) -> void:
 	_message_label.text = text_value
 
 
+func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
+	_resource_label.text = resource_text
+	_resource_label.tooltip_text = tooltip_text_value
+
+
 func set_time_controls(paused: bool, speed: float) -> void:
 	_pause_button.text = "继续" if paused else "暂停"
-	_style_button(_speed_1_button, CombatUiStyle.ACCENT if is_equal_approx(speed, 1.0) else CombatUiStyle.STROKE)
-	_style_button(_speed_2_button, CombatUiStyle.ACCENT if is_equal_approx(speed, 2.0) else CombatUiStyle.STROKE)
+	_style_button(_speed_1_button, GameUiStyle.ACCENT if is_equal_approx(speed, 1.0) else GameUiStyle.STROKE)
+	_style_button(_speed_2_button, GameUiStyle.ACCENT if is_equal_approx(speed, 2.0) else GameUiStyle.STROKE)
 
 
 func set_debug_drawer_open(open: bool) -> void:
@@ -115,7 +123,35 @@ func clear_unit_detail() -> void:
 		_detail_panel.clear_unit()
 
 
+func set_left_reserved_width(width: float) -> void:
+	_deck_panel.offset_left = max(18.0, width + 14.0)
+
+
 func _style_button(button: Button, accent: Color) -> void:
-	button.add_theme_stylebox_override("normal", CombatUiStyle.button(accent))
-	button.add_theme_stylebox_override("hover", CombatUiStyle.button(CombatUiStyle.ACCENT))
-	button.add_theme_stylebox_override("pressed", CombatUiStyle.button(CombatUiStyle.AMBER))
+	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent))
+	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER))
+	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.08))
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+
+
+func _style_top_cards() -> void:
+	for card_path in [
+		"TopBar/TopMargin/Row/StageCard",
+		"TopBar/TopMargin/Row/CoreCard",
+		"TopBar/TopMargin/Row/DeployCard",
+		"TopBar/TopMargin/Row/MessageCard",
+		"TopBar/TopMargin/Row/TimeCard",
+		"TopBar/TopMargin/Row/ResourceCard"
+	]:
+		var card := get_node_or_null(card_path) as PanelContainer
+		if card != null:
+			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
+	for label in [_core_label, _deploy_label, _queue_label, _message_label, _resource_label]:
+		label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.55))
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
