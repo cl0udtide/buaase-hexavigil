@@ -1252,11 +1252,10 @@ func clear_blocked() -> void
 
 作用：
 
-- 通用多阶段 Boss 控制器的目标接口。
-- 迁移完成后，只在 `behavior_type == "boss"` 或配置存在 `phases` 时启用。
+- 通用多阶段 Boss 控制器接口。
+- 只在 `behavior_type == "boss"` 或配置存在非空 `phases` 时启用。
 - 负责阶段流转、转阶段无敌计时、阶段配置读取和阶段进入效果；不负责普通移动、普通攻击、刷怪或死亡移除。
 - 不硬编码具体 Boss ID。多个 Boss 的共性阶段机制通过 `enemies.json[].phases` 表达；特殊机制后续通过 `boss_behavior_key` 对应的行为组件扩展。
-- 当前代码中 `boss_controller.gd` 尚未实现该接口，现有 Boss 阶段逻辑仍在 `EnemyActor` 内；本节描述的是迁移目标。
 
 ```gdscript
 func setup(owner_actor: Node, initial_cfg: Dictionary) -> void
@@ -1304,7 +1303,7 @@ func apply_phase_enter_effects() -> void
   行为：执行阶段进入效果，例如 `phase_enter_area_damage`。
   返回：无。
 
-目标 Boss 阶段链路：
+Boss 阶段链路：
 
 ```text
 waves.json -> WaveManager -> EnemyManager.spawn_enemy()
@@ -1317,7 +1316,7 @@ waves.json -> WaveManager -> EnemyManager.spawn_enemy()
 -> EnemyActor 应用下一阶段配置
 ```
 
-迁移完成后，当 Boss 配置存在 `phases` 且当前阶段 HP 降为 0 时，`BossController` 会进入 `phase_transition_sec` 秒无敌转阶段；转阶段结束后向 `EnemyActor` 返回下一阶段配置。`EnemyActor` 负责 merge 配置、重置 `max_hp/current_hp`、重新计算寻路并更新显示，然后由 `BossController` 执行阶段进入效果。
+当 Boss 配置存在 `phases` 且当前阶段 HP 降为 0 时，`BossController` 会进入 `phase_transition_sec` 秒无敌转阶段；转阶段结束后向 `EnemyActor` 返回下一阶段配置。`EnemyActor` 负责 merge 配置、重置 `max_hp/current_hp`、重新计算寻路并更新显示，然后由 `BossController` 执行阶段进入效果。
 
 ### 3.6 UI 模块
 
