@@ -17,7 +17,12 @@ var _core_cell := Vector2i.ZERO
 
 
 func generate_new_map(seed: int) -> void:
-	var generated: Dictionary = MapGenerator.generate(width, height, seed)
+	var data_repo = AppRefs.data_repo()
+	var cfg: Dictionary = data_repo.get_map_generation_cfg() if data_repo != null and data_repo.has_method("get_map_generation_cfg") else {}
+	width = int(cfg.get("width", width))
+	height = int(cfg.get("height", height))
+	var event_ids: Array[StringName] = data_repo.get_all_event_ids() if data_repo != null and data_repo.has_method("get_all_event_ids") else []
+	var generated: Dictionary = MapGenerator.generate(width, height, seed, cfg, event_ids)
 	_cells = generated.get("cells", {})
 	_spawn_cells.clear()
 	for cell_variant: Variant in generated.get("spawn_cells", []):
@@ -124,6 +129,20 @@ func has_discovered_neighbor(cell: Vector2i) -> bool:
 		if is_discovered(cell + offset):
 			return true
 	return false
+
+
+func get_event_id_at_cell(cell: Vector2i) -> StringName:
+	var data := get_cell_data(cell)
+	if data == null or data.event_triggered:
+		return StringName()
+	return data.event_id
+
+
+func mark_event_triggered(cell: Vector2i) -> void:
+	var data := get_cell_data(cell)
+	if data != null:
+		data.event_triggered = true
+		refresh_all_layers()
 
 
 func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]:

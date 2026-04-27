@@ -147,12 +147,12 @@ func request_start_night() -> Dictionary
   返回：无。
 - `try_explore(cell)`
   输入：`cell: Vector2i`。
-  行为：校验指定格子是否允许探索；目标必须未探索，且上下左右至少邻接一个已探索格；成功时扣除 2 点行动力并触发揭雾/事件流程。
+  行为：校验指定格子是否允许探索；目标必须未探索，且上下左右至少邻接一个已探索格；成功时扣除 2 点行动力并揭开 3×3 迷雾。若探索中心格带有随机事件 ID，则进入“发现事件”流程，但地图侧不负责结算事件效果。
   成功结果：返回 `ActionResult(ok = true)`，并推进探索后续逻辑。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `try_trigger_event(cell)`
   输入：`cell: Vector2i`。
-  行为：校验并处理指定格子的事件交互。
+  行为：校验并处理指定格子的事件交互；按玩法设计，处理 `?` 事件节点应消耗 1 点行动力，具体扣点与结算由白天流程/随机事件模块负责。
   成功结果：返回 `ActionResult(ok = true)`，并完成事件结算。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `request_start_night()`
@@ -230,6 +230,7 @@ func get_all_buffs() -> Array[StringName]
 ```gdscript
 func roll_event_for_cell(cell: Vector2i) -> StringName
 func apply_event(event_id: StringName) -> Dictionary
+func apply_event_for_cell(cell: Vector2i) -> Dictionary
 func get_event_cfg(event_id: StringName) -> Dictionary
 ```
 
@@ -237,11 +238,16 @@ func get_event_cfg(event_id: StringName) -> Dictionary
 
 - `roll_event_for_cell(cell)`
   输入：`cell: Vector2i`。
-  行为：为指定格子抽取随机事件。
+  行为：读取指定地图格上的随机事件 ID；当前地图模块已在生成阶段决定事件点位置，不在探索时临时随机抽取。
   返回：事件 `id`；无事件时返回空值或约定空标识。
 - `apply_event(event_id)`
   输入：`event_id: StringName`。
   行为：结算指定事件。
+  成功结果：返回 `ActionResult(ok = true)`，事件结算完成。
+  失败结果：返回 `ActionResult(ok = false)`，不修改状态。
+- `apply_event_for_cell(cell)`
+  输入：`cell: Vector2i`。
+  行为：读取指定地图格上的事件 ID，结算事件并标记该格事件已触发。
   成功结果：返回 `ActionResult(ok = true)`，事件结算完成。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `get_event_cfg(event_id)`
@@ -379,6 +385,7 @@ func get_building_cfg(building_id: StringName) -> Dictionary
 func get_buff_cfg(buff_id: StringName) -> Dictionary
 func get_event_cfg(event_id: StringName) -> Dictionary
 func get_wave_cfg(day: int) -> Dictionary
+func get_map_generation_cfg() -> Dictionary
 func get_scene_by_key(scene_key: StringName) -> PackedScene
 ```
 
@@ -411,6 +418,10 @@ func get_scene_by_key(scene_key: StringName) -> PackedScene
 - `get_wave_cfg(day)`
   输入：`day: int`。
   行为：查询指定天数波次配置。
+  返回：`Dictionary`。
+- `get_map_generation_cfg()`
+  输入：无。
+  行为：读取地图生成调参配置，包括地图尺寸、资源点数量、事件点数量、障碍数量和安全半径。
   返回：`Dictionary`。
 - `get_scene_by_key(scene_key)`
   输入：`scene_key: StringName`。
@@ -466,6 +477,8 @@ func get_cell_data(cell: Vector2i) -> CellData
 func get_all_cells() -> Array[Vector2i]
 func is_discovered(cell: Vector2i) -> bool
 func has_discovered_neighbor(cell: Vector2i) -> bool
+func get_event_id_at_cell(cell: Vector2i) -> StringName
+func mark_event_triggered(cell: Vector2i) -> void
 func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]
 func is_walkable(cell: Vector2i) -> bool
 func is_buildable(cell: Vector2i) -> bool
@@ -518,6 +531,14 @@ func refresh_all_layers(reset_camera: bool = false) -> void
   输入：`cell: Vector2i`。
   行为：判断指定格子的上下左右四向邻居中是否至少有一个已探索格。
   返回：`bool`。
+- `get_event_id_at_cell(cell)`
+  输入：`cell: Vector2i`。
+  行为：读取指定格上的未触发随机事件 ID；无事件或已触发时返回空值。
+  返回：`StringName`。
+- `mark_event_triggered(cell)`
+  输入：`cell: Vector2i`。
+  行为：标记指定格上的随机事件已触发，并刷新地图显示。
+  返回：无。
 - `reveal_area(center, radius)`
   输入：中心格与揭示半径。
   行为：揭开指定范围内迷雾。
@@ -1624,7 +1645,7 @@ func hide_panel() -> void
 | `unit_removed` | `unit_runtime_id: int, reason: int` | `UnitManager` | CombatHudController、CombatSandbox | 单位离场 |
 | `enemy_spawned` | `enemy_runtime_id: int, enemy_id: StringName, cell: Vector2i` | `EnemyManager` | CombatHudController、调试工具 | 敌人出生 |
 | `enemy_died` | `enemy_runtime_id: int, enemy_id: StringName` | `EnemyManager` | `WaveManager`、`BuffManager` | 敌人死亡 |
-| `random_event_triggered` | `event_id: StringName, cell: Vector2i` | `RandomEventManager` | `EventPanel` | 随机事件触发 |
+| `random_event_triggered` | `event_id: StringName, cell: Vector2i` | `RandomEventManager` | `EventPanel` | 随机事件被发现或进入展示流程 |
 | `blessing_choices_ready` | `choice_ids: Array[StringName]` | `BuffManager` | `BlessingPanel` | 祝福选项已生成 |
 | `core_destroyed` | 无 | `RunState` | `GameController`、`ResultPanel` | 核心归零 |
 
