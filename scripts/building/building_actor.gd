@@ -40,12 +40,12 @@ func receive_damage(value: int, _damage_type: int) -> void:
 	_update_status_view()
 	_play_hit_effect()
 	if current_hp == 0:
-		_is_destroyed = true
+		_set_destroyed(true)
 
 
 func repair_full() -> void:
 	current_hp = max_hp
-	_is_destroyed = false
+	_set_destroyed(false)
 	_update_status_view()
 
 
@@ -102,6 +102,8 @@ func _refresh_title_label() -> void:
 		return
 	label.theme = AppTheme.get_theme()
 	var title := String(cfg.get("name", building_id))
+	if _is_destroyed:
+		title += " [已毁]"
 	if can_toggle_enabled():
 		title += " [ON]" if _enabled else " [OFF]"
 	label.text = title
@@ -115,3 +117,9 @@ func _update_status_view() -> void:
 func _play_hit_effect() -> void:
 	if _status_view != null and _status_view.has_method("play_hit_effect"):
 		_status_view.play_hit_effect()
+
+
+func _set_destroyed(value: bool) -> void:
+	_is_destroyed = value
+	modulate = Color(0.55, 0.55, 0.55, 0.78) if _is_destroyed else Color.WHITE
+	_refresh_title_label()
