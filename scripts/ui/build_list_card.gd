@@ -1,6 +1,7 @@
 class_name BuildListCard
 extends PanelContainer
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 signal pressed
@@ -22,6 +23,7 @@ var _hovered := false
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	AppTheme.apply(self)
 	if _accent_bar != null:
 		_accent_bar.visible = false
 	gui_input.connect(_on_gui_input)

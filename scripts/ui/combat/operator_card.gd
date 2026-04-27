@@ -1,5 +1,6 @@
 extends PanelContainer
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 signal operator_card_pressed(operator_key: StringName)
@@ -21,6 +22,7 @@ var _hovered := false
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	AppTheme.apply(self)
 	custom_minimum_size = Vector2(154.0, 136.0)
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	if _accent_bar != null:
