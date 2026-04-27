@@ -284,11 +284,13 @@ UI
 
 - 读取并缓存 `data/` 下的配置表
 - 管理 `scene_key` 到 `PackedScene` 的映射
+- 在 Autoload 生命周期中加载静态配置，并通过 `data_loaded` 通知依赖方
 
 具体职责：
 
-- 启动时读取 `units.json`、`enemies.json`、`buildings.json`、`buffs.json`、`events.json`、`waves.json`
+- Autoload `_ready()` 时读取 `units.json`、`enemies.json`、`buildings.json`、`buffs.json`、`events.json`、`waves.json` 和应用级配置
 - 按 `id` 索引这些配置，供其他模块查询
+- 提供按建筑类别读取建筑 ID 的接口，供 `BuildPanel` 从 `buildings.json[].building_type` 动态生成建筑列表
 - 维护一张场景注册表，把逻辑名映射到实际场景资源
 
 `data/` 目录中的这些 JSON 文件是配置表，只保存静态配置，不保存一局游戏里的运行时状态。
@@ -354,6 +356,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 
 - 保存本局运行时状态
 - 管理场上对象
+- 在每局开始时重复承担运行时初始化职责
 
 ### 3.4 `SceneRouter.gd`
 
@@ -408,7 +411,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 初始化一局游戏
 - 切换阶段
 - 维护全局状态
-- 加载配置
+- 在 `DataRepo` Autoload 生命周期内加载静态配置
 - 管理主场景切换
 
 各文件作用：
@@ -699,7 +702,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `actor_status_view.gd`
   单位、敌人和建筑 Actor 复用的轻量状态显示脚本，负责 HP 状态和受击反馈。
 - `build_panel.gd`
-  建筑/商店复合面板逻辑。建筑选择写入 `ActionPanel` 的建造模式；商店购买和刷新通过 `EventBus` 请求 `ShopManager`。
+  建筑/商店复合面板逻辑。建筑页从 `DataRepo.get_building_ids_by_type()` 读取 `buildings.json` 中的动态分类、排序、说明和占位图标文本；商店页读取 `ShopManager` 库存。建筑选择写入 `ActionPanel` 的建造模式；商店购买和刷新通过 `EventBus` 请求 `ShopManager`。所有状态变化统一通过 `refresh_from_state()` 刷新，避免初始化和切换标签走不同路径。
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`

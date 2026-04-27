@@ -1,5 +1,8 @@
 extends Node
 
+signal data_loaded
+signal data_reload_failed(message: String)
+
 
 const DATA_FILES := {
 	"units": "res://data/units.json",
@@ -37,12 +40,30 @@ var _configs: Dictionary = {
 	"map_generation": {}
 }
 
+var _loaded := false
+
+
+func _ready() -> void:
+	load_all()
+
 
 func load_all() -> void:
+	var loaded_tables: Dictionary = {}
 	for table_name: String in DATA_FILES.keys():
-		_tables[table_name] = _load_table(DATA_FILES[table_name], table_name == "waves")
+		loaded_tables[table_name] = _load_table(DATA_FILES[table_name], table_name == "waves")
+	_tables = loaded_tables
+
+	var loaded_configs: Dictionary = {}
 	for config_name: String in CONFIG_FILES.keys():
-		_configs[config_name] = _load_config(CONFIG_FILES[config_name])
+		loaded_configs[config_name] = _load_config(CONFIG_FILES[config_name])
+	_configs = loaded_configs
+
+	_loaded = true
+	data_loaded.emit()
+
+
+func is_loaded() -> bool:
+	return _loaded
 
 
 func get_unit_cfg(unit_id: StringName) -> Dictionary:
@@ -108,14 +129,37 @@ func get_all_event_ids() -> Array[StringName]:
 	return ids
 
 
+func get_all_building_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for building_id in _tables["buildings"].keys():
+		ids.append(StringName(building_id))
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool:
+		return _compare_building_order(a, b)
+	)
+	return ids
+
+
+func get_building_ids_by_type(building_type: StringName) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for building_id in get_all_building_ids():
+		var cfg := get_building_cfg(building_id)
+		if bool(cfg.get("hidden_in_build_panel", false)):
+			continue
+		if StringName(cfg.get("building_type", "")) == building_type:
+			ids.append(building_id)
+	return ids
+
+
 func _load_table(path: String, use_day_key: bool) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		push_warning("Missing data file: %s" % path)
+		data_reload_failed.emit("Missing data file: %s" % path)
 		return {}
 	var file := FileAccess.open(path, FileAccess.READ)
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	if typeof(parsed) != TYPE_ARRAY:
 		push_warning("Data file is not an array: %s" % path)
+		data_reload_failed.emit("Data file is not an array: %s" % path)
 		return {}
 
 	var indexed: Dictionary = {}
@@ -135,10 +179,22 @@ func _load_table(path: String, use_day_key: bool) -> Dictionary:
 func _load_config(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		push_warning("Missing config file: %s" % path)
+		data_reload_failed.emit("Missing config file: %s" % path)
 		return {}
 	var file := FileAccess.open(path, FileAccess.READ)
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	if typeof(parsed) != TYPE_DICTIONARY:
 		push_warning("Config file is not a dictionary: %s" % path)
+		data_reload_failed.emit("Config file is not a dictionary: %s" % path)
 		return {}
 	return (parsed as Dictionary).duplicate(true)
+
+
+func _compare_building_order(a: StringName, b: StringName) -> bool:
+	var cfg_a := get_building_cfg(a)
+	var cfg_b := get_building_cfg(b)
+	var order_a := int(cfg_a.get("sort_order", 0))
+	var order_b := int(cfg_b.get("sort_order", 0))
+	if order_a == order_b:
+		return String(a) < String(b)
+	return order_a < order_b
