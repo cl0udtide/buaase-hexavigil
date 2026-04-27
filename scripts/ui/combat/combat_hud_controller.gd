@@ -1,0 +1,637 @@
+extends Node
+
+const AppRefs = preload("res://scripts/common/app_refs.gd")
+
+const DRAG_NONE := &"none"
+const DRAG_CARD := &"drag_card"
+const DRAG_LOCKED := &"locked"
+const DRAG_FACING := &"facing"
+const INVALID_CELL := Vector2i(-9999, -9999)
+const DAMAGE_TYPE_LABELS := ["物理", "法术", "真实"]
+
+var _operator_defs: Array[Dictionary] = []
+var _selected_unit_runtime_id := -1
+var _selected_operator_key := StringName()
+var _deploy_drag_state: StringName = DRAG_NONE
+var _drag_operator_key := StringName()
+var _locked_deploy_cell := INVALID_CELL
+var _current_drag_cell := INVALID_CELL
+var _current_drag_cell_valid := false
+var _current_drag_facing := Vector2i.RIGHT
+var _debug_panel_open := false
+
+@onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
+@onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
+@onready var _debug_panel: Control = get_node_or_null("../DebugPanel") as Control
+@onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
+@onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
+@onready var _unit_manager: Node = get_node_or_null("../../Managers/UnitManager")
+@onready var _enemy_manager: Node = get_node_or_null("../../Managers/EnemyManager")
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process(true)
+	set_process_unhandled_input(true)
+	if _debug_panel != null:
+		_debug_panel_open = _debug_panel.visible
+	_bind_combat_hud()
+	if _combat_hud != null and _combat_hud.has_method("set_left_reserved_width"):
+		_combat_hud.set_left_reserved_width(238.0)
+	_connect_events()
+	call_deferred("_bootstrap_hud")
+
+
+func _process(_delta: float) -> void:
+	_update_deploy_drag()
+	_update_operator_cards()
+	_refresh_top_hud()
+	_refresh_detail_panel()
+	if _selected_unit_runtime_id >= 0:
+		_refresh_attack_range_preview()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		_cancel_deploy_flow("Canceled")
+		return
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed and _deploy_drag_state != DRAG_NONE:
+			_cancel_deploy_flow("Canceled")
+			return
+		if _deploy_drag_state == DRAG_LOCKED and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			if _get_mouse_cell() == _locked_deploy_cell:
+				_deploy_drag_state = DRAG_FACING
+				_current_drag_facing = Vector2i.RIGHT
+				_show_message("拖拽选择朝向")
+
+
+func _exit_tree() -> void:
+	if get_tree() != null:
+		get_tree().paused = false
+	Engine.time_scale = 1.0
+
+
+func _bind_combat_hud() -> void:
+	if _combat_hud == null:
+		push_warning("CombatHud node is missing from Game UI.")
+		return
+	if _combat_hud.has_signal("operator_card_pressed"):
+		_combat_hud.connect(&"operator_card_pressed", Callable(self, "_on_operator_card_pressed"))
+	if _combat_hud.has_signal("pause_pressed"):
+		_combat_hud.connect(&"pause_pressed", Callable(self, "_on_pause_pressed"))
+	if _combat_hud.has_signal("speed_1_pressed"):
+		_combat_hud.connect(&"speed_1_pressed", Callable(self, "_on_speed_1_pressed"))
+	if _combat_hud.has_signal("speed_2_pressed"):
+		_combat_hud.connect(&"speed_2_pressed", Callable(self, "_on_speed_2_pressed"))
+	if _combat_hud.has_signal("debug_drawer_toggle_pressed"):
+		_combat_hud.connect(&"debug_drawer_toggle_pressed", Callable(self, "_on_debug_toggle_pressed"))
+	if _combat_hud.has_signal("cast_skill_requested"):
+		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
+	if _combat_hud.has_signal("retreat_requested"):
+		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
+
+
+func _connect_events() -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus == null:
+		return
+	event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
+	event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
+	event_bus.core_hp_changed.connect(_on_core_hp_changed)
+	event_bus.phase_changed.connect(_on_phase_changed)
+	event_bus.unit_deployed.connect(_on_unit_deployed)
+	event_bus.unit_removed.connect(_on_unit_removed)
+	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+
+
+func _bootstrap_hud() -> void:
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_owned_operators"):
+		_on_owned_operators_changed(run_state.get_owned_operators())
+	_refresh_top_hud()
+	_refresh_time_controls()
+	_show_message("拖拽底部干员卡开始部署")
+
+
+func _on_owned_operators_changed(operators: Array[Dictionary]) -> void:
+	_operator_defs.clear()
+	for operator_info in operators:
+		_operator_defs.append((operator_info as Dictionary).duplicate(true))
+	if _combat_hud != null and _combat_hud.has_method("set_operators"):
+		_combat_hud.set_operators(_operator_defs)
+	_update_operator_cards()
+
+
+func _on_deploy_limit_changed(_current: int, _max_value: int) -> void:
+	_refresh_top_hud()
+	_update_operator_cards()
+
+
+func _on_core_hp_changed(_current: int, _max_value: int) -> void:
+	_refresh_top_hud()
+
+
+func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
+	_cancel_deploy_flow("")
+	_refresh_top_hud()
+	_update_operator_cards()
+
+
+func _on_operator_card_pressed(operator_key: StringName) -> void:
+	var state := _get_operator_state(operator_key)
+	if state == &"ready":
+		if not _can_deploy_now():
+			_show_message("只有白天可以部署干员")
+			return
+		_begin_operator_drag(operator_key)
+	elif state == &"deployed":
+		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		if unit != null:
+			_select_unit(unit)
+	else:
+		var remain: float = _unit_manager.get_operator_redeploy_remaining(operator_key) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
+		_show_message("再部署冷却 %.1f 秒" % remain)
+
+
+func _begin_operator_drag(operator_key: StringName) -> void:
+	_cancel_deploy_flow("")
+	_clear_selected_unit()
+	_drag_operator_key = operator_key
+	_selected_operator_key = operator_key
+	_deploy_drag_state = DRAG_CARD
+	_current_drag_cell = INVALID_CELL
+	_current_drag_cell_valid = false
+	if _action_panel != null and _action_panel.has_method("clear_mode"):
+		_action_panel.clear_mode()
+	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
+		_combat_hud.show_drag_ghost(_format_operator_drag_text(operator_key))
+	_show_message("拖拽到可部署格后松手锁定落点")
+
+
+func _update_deploy_drag() -> void:
+	match _deploy_drag_state:
+		DRAG_CARD:
+			_update_drag_ghost_position()
+			_update_card_drag_preview()
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				if _current_drag_cell_valid:
+					_lock_deploy_cell(_current_drag_cell)
+				else:
+					_cancel_deploy_flow("部署位置无效")
+		DRAG_FACING:
+			_current_drag_facing = _get_facing_from_mouse(_locked_deploy_cell)
+			_update_locked_deploy_preview(_current_drag_facing)
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				_confirm_locked_deploy()
+
+
+func _update_card_drag_preview() -> void:
+	var cell := _get_mouse_cell()
+	_current_drag_cell = cell
+	var validation := _validate_drag_cell(_drag_operator_key, cell)
+	_current_drag_cell_valid = bool(validation.get("ok", false))
+	var preview_range: Array[Vector2i] = []
+	if _current_drag_cell_valid:
+		preview_range = _get_operator_attack_range_cells(_drag_operator_key, cell, Vector2i.RIGHT)
+	if _map_root != null and _map_root.has_method("set_deploy_preview"):
+		_map_root.set_deploy_preview(cell, _current_drag_cell_valid, preview_range)
+
+
+func _lock_deploy_cell(cell: Vector2i) -> void:
+	_deploy_drag_state = DRAG_LOCKED
+	_locked_deploy_cell = cell
+	_current_drag_facing = Vector2i.RIGHT
+	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
+		_combat_hud.hide_drag_ghost()
+	_update_locked_deploy_preview(_current_drag_facing)
+	_show_message("从锁定格向外拖拽选择朝向")
+
+
+func _update_locked_deploy_preview(facing: Vector2i) -> void:
+	var preview_range := _get_operator_attack_range_cells(_drag_operator_key, _locked_deploy_cell, facing)
+	if _map_root != null and _map_root.has_method("set_deploy_direction_preview"):
+		_map_root.set_deploy_direction_preview(_locked_deploy_cell, facing, preview_range)
+
+
+func _confirm_locked_deploy() -> void:
+	if _unit_manager == null or not _unit_manager.has_method("try_deploy_operator"):
+		_cancel_deploy_flow("Canceled")
+		return
+	var result: Dictionary = _unit_manager.try_deploy_operator(_drag_operator_key, _locked_deploy_cell, _current_drag_facing)
+	if result.get("ok", false):
+		var runtime_id := int(result.get("payload", {}).get("runtime_id", -1))
+		var unit = _unit_manager.get_unit_by_runtime_id(runtime_id) if _unit_manager.has_method("get_unit_by_runtime_id") else null
+		_cancel_deploy_flow("")
+		if unit != null:
+			_select_unit(unit)
+		_show_message("部署完成")
+	else:
+		_cancel_deploy_flow(String(result.get("message", "部署失败")))
+
+
+func _cancel_deploy_flow(message: String = "") -> void:
+	_deploy_drag_state = DRAG_NONE
+	_drag_operator_key = StringName()
+	_locked_deploy_cell = INVALID_CELL
+	_current_drag_cell = INVALID_CELL
+	_current_drag_cell_valid = false
+	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
+		_combat_hud.hide_drag_ghost()
+	_clear_deploy_preview()
+	if not message.is_empty():
+		_show_message(message)
+
+
+func _clear_deploy_preview() -> void:
+	if _map_root != null and _map_root.has_method("clear_deploy_preview"):
+		_map_root.clear_deploy_preview()
+
+
+func _update_drag_ghost_position() -> void:
+	if _combat_hud != null and _combat_hud.has_method("move_drag_ghost"):
+		_combat_hud.move_drag_ghost(get_viewport().get_mouse_position())
+
+
+func _on_map_cell_clicked(cell: Vector2i) -> void:
+	if _deploy_drag_state != DRAG_NONE:
+		return
+	var unit = _unit_manager.get_unit_by_cell(cell) if _unit_manager != null and _unit_manager.has_method("get_unit_by_cell") else null
+	if unit != null:
+		_select_unit(unit)
+	else:
+		_clear_selected_unit()
+
+
+func _select_unit(unit: Node) -> void:
+	if unit == null or not is_instance_valid(unit):
+		return
+	_cancel_deploy_flow("")
+	_selected_unit_runtime_id = int(unit.get_runtime_id()) if unit.has_method("get_runtime_id") else -1
+	_selected_operator_key = StringName(unit.operator_key) if unit.get("operator_key") != null else StringName()
+	_refresh_attack_range_preview()
+	_refresh_detail_panel()
+	_show_message("已选中 %s#%d" % [_get_unit_display_name(unit), _selected_unit_runtime_id])
+
+
+func _clear_selected_unit() -> void:
+	_selected_unit_runtime_id = -1
+	_clear_attack_range_preview()
+	if _combat_hud != null and _combat_hud.has_method("clear_unit_detail"):
+		_combat_hud.clear_unit_detail()
+
+
+func _refresh_detail_panel() -> void:
+	var unit := _get_selected_unit()
+	if _combat_hud == null:
+		return
+	if unit == null:
+		if _combat_hud.has_method("clear_unit_detail"):
+			_combat_hud.clear_unit_detail()
+		return
+	if _combat_hud.has_method("show_unit_detail"):
+		_combat_hud.show_unit_detail(unit, _get_unit_display_name(unit), _damage_type_label(int(unit.damage_type)), _direction_label(unit.facing))
+
+
+func _refresh_attack_range_preview() -> void:
+	var unit := _get_selected_unit()
+	if _map_root == null or not _map_root.has_method("set_debug_attack_range"):
+		return
+	if unit == null:
+		_clear_attack_range_preview()
+		return
+	_map_root.set_debug_attack_range(_get_unit_attack_range_cells(unit))
+
+
+func _clear_attack_range_preview() -> void:
+	if _map_root != null and _map_root.has_method("clear_debug_attack_range"):
+		_map_root.clear_debug_attack_range()
+
+
+func _on_cast_skill_pressed() -> void:
+	var unit := _get_selected_unit()
+	if unit == null or _unit_manager == null:
+		_show_message("未选中单位")
+		return
+	var result: Dictionary = _unit_manager.try_cast_skill(unit.get_runtime_id())
+	_show_result_message(result, "技能已释放", "技能释放失败")
+	_refresh_detail_panel()
+
+
+func _on_retreat_pressed() -> void:
+	var unit := _get_selected_unit()
+	if unit == null or _unit_manager == null:
+		_show_message("未选中单位")
+		return
+	var result: Dictionary = _unit_manager.try_retreat_unit(unit.get_runtime_id())
+	if result.get("ok", false):
+		_clear_selected_unit()
+	_show_result_message(result, "已撤退", "撤退失败")
+
+
+func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
+	_selected_operator_key = operator_key
+	var unit = _unit_manager.get_unit_by_runtime_id(unit_runtime_id) if _unit_manager != null and _unit_manager.has_method("get_unit_by_runtime_id") else null
+	if unit != null:
+		_select_unit(unit)
+	_update_operator_cards()
+
+
+func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
+	if _selected_unit_runtime_id == unit_runtime_id:
+		_clear_selected_unit()
+	_update_operator_cards()
+
+
+func _on_pause_pressed() -> void:
+	get_tree().paused = not get_tree().paused
+	_refresh_time_controls()
+
+
+func _on_speed_1_pressed() -> void:
+	Engine.time_scale = 1.0
+	_refresh_time_controls()
+
+
+func _on_speed_2_pressed() -> void:
+	Engine.time_scale = 2.0
+	_refresh_time_controls()
+
+
+func _on_debug_toggle_pressed() -> void:
+	if _debug_panel == null:
+		_show_message("调试面板不可用")
+		return
+	_debug_panel_open = not _debug_panel_open
+	_debug_panel.visible = _debug_panel_open
+	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
+		_combat_hud.set_debug_drawer_open(_debug_panel_open)
+
+
+func _refresh_top_hud() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_top_values"):
+		return
+	var run_state = AppRefs.run_state()
+	var core_text := "核心生命\n--/--"
+	var deploy_text := "部署上限\n0/0"
+	var resource_text := "资源\n--"
+	var resource_tooltip := ""
+	var phase_text := "准备"
+	if run_state != null:
+		core_text = "核心生命\n%d/%d" % [int(run_state.core_hp), int(run_state.core_hp_max)]
+		deploy_text = "部署上限\n%d/%d" % [int(run_state.deployed_count), int(run_state.deploy_limit)]
+		var buff_ids: Array[StringName] = run_state.get_all_buffs() if run_state.has_method("get_all_buffs") else []
+		resource_text = "行动 %d/%d  声望 %d\n木 %d  石 %d  魔 %d  祝福 %d" % [
+			int(run_state.action_points),
+			int(run_state.DEFAULT_ACTION_POINTS),
+			int(run_state.prestige),
+			int(run_state.wood),
+			int(run_state.stone),
+			int(run_state.mana),
+			buff_ids.size()
+		]
+		resource_tooltip = _format_resource_tooltip(buff_ids)
+		phase_text = "Day %d %s" % [int(run_state.day), _phase_label(int(run_state.phase))]
+	var enemy_count: int = int(_enemy_manager.get_alive_enemy_count()) if _enemy_manager != null and _enemy_manager.has_method("get_alive_enemy_count") else 0
+	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s    敌人 %d" % [phase_text, enemy_count])
+	if _combat_hud.has_method("set_resource_values"):
+		_combat_hud.set_resource_values(resource_text, resource_tooltip)
+
+
+func _refresh_time_controls() -> void:
+	if _combat_hud != null and _combat_hud.has_method("set_time_controls"):
+		_combat_hud.set_time_controls(get_tree().paused, Engine.time_scale)
+
+
+func _update_operator_cards() -> void:
+	if _combat_hud == null:
+		return
+	for operator_info in _operator_defs:
+		var operator_key := StringName((operator_info as Dictionary).get("key", ""))
+		var state := _get_operator_state(operator_key)
+		_combat_hud.set_operator_card(operator_key, _format_operator_card_text(operator_info, state), state)
+
+
+func _format_operator_card_text(operator_info: Dictionary, state: StringName) -> String:
+	var operator_key := StringName(operator_info.get("key", ""))
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var cfg := _get_unit_cfg(unit_id)
+	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
+	var class_text := _class_label(str(cfg.get("class", "")))
+	var state_text := "READY"
+	if state == &"deployed":
+		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		if unit != null:
+			state_text = "HP %d/%d  SP %.0f/%.0f" % [int(unit.current_hp), int(unit.max_hp), float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+		else:
+			state_text = "已部署"
+	elif state == &"cooldown":
+		var remain := float(_unit_manager.get_operator_redeploy_remaining(operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
+		state_text = "CD %.1fs" % remain
+	elif not _can_deploy_now():
+		state_text = "等待白天"
+	return "%s\n%s  COST %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
+
+
+func _format_operator_drag_text(operator_key: StringName) -> String:
+	var operator_info := _get_operator_info(operator_key)
+	if operator_info.is_empty():
+		return String(operator_key)
+	return "%s\n%s" % [String(operator_info.get("name", operator_key)), String(operator_info.get("unit_id", ""))]
+
+
+func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
+	var lines := PackedStringArray([
+		"行动力用于探索和建造。",
+		"声望用于招募和刷新商店。"
+	])
+	if buff_ids.is_empty():
+		lines.append("当前祝福：无")
+		return "\n".join(lines)
+	var data_repo = AppRefs.data_repo()
+	var buff_names := PackedStringArray()
+	for buff_id in buff_ids:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
+		buff_names.append(String(cfg.get("name", buff_id)))
+	lines.append("Buffs: %s" % ", ".join(buff_names))
+	return "\n".join(lines)
+
+
+func _validate_drag_cell(operator_key: StringName, cell: Vector2i) -> Dictionary:
+	if _unit_manager == null or not _unit_manager.has_method("validate_deploy_operator"):
+		return ActionResult.err(&"UNIT_MANAGER_MISSING", "UNIT_MANAGER_MISSING")
+	return _unit_manager.validate_deploy_operator(operator_key, cell)
+
+
+func _get_mouse_cell() -> Vector2i:
+	if _map_root == null or _map_manager == null:
+		return INVALID_CELL
+	return _map_manager.world_to_cell(_map_root.get_global_mouse_position())
+
+
+func _get_facing_from_mouse(origin_cell: Vector2i) -> Vector2i:
+	if _map_root == null or _map_manager == null:
+		return Vector2i.RIGHT
+	var origin_world: Vector2 = _map_manager.cell_to_world(origin_cell)
+	var delta: Vector2 = _map_root.get_global_mouse_position() - origin_world
+	if delta.length_squared() <= 16.0:
+		return _current_drag_facing
+	if abs(delta.x) >= abs(delta.y):
+		return Vector2i.RIGHT if delta.x >= 0.0 else Vector2i.LEFT
+	return Vector2i.DOWN if delta.y >= 0.0 else Vector2i.UP
+
+
+func _get_operator_attack_range_cells(operator_key: StringName, origin: Vector2i, facing: Vector2i) -> Array[Vector2i]:
+	var operator_info := _get_operator_info(operator_key)
+	var cfg := _get_unit_cfg(StringName(operator_info.get("unit_id", "")))
+	return _get_range_cells_from_pattern(origin, facing, _parse_range_pattern(cfg.get("range_pattern", [])))
+
+
+func _get_unit_attack_range_cells(unit: Node) -> Array[Vector2i]:
+	if unit == null:
+		return []
+	return _get_range_cells_from_pattern(unit.get_current_cell(), unit.facing, unit.range_pattern)
+
+
+func _get_range_cells_from_pattern(origin: Vector2i, facing: Vector2i, pattern: Array[Vector2i]) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if _map_manager == null:
+		return cells
+	for offset: Vector2i in pattern:
+		var cell := origin + _rotate_offset(offset, facing)
+		if _map_manager.is_inside(cell) and not cells.has(cell):
+			cells.append(cell)
+	return cells
+
+
+func _parse_range_pattern(raw_pattern: Variant) -> Array[Vector2i]:
+	var parsed: Array[Vector2i] = []
+	if typeof(raw_pattern) != TYPE_ARRAY:
+		return parsed
+	for entry: Variant in raw_pattern:
+		if typeof(entry) == TYPE_ARRAY and (entry as Array).size() >= 2:
+			var pair := entry as Array
+			parsed.append(Vector2i(int(pair[0]), int(pair[1])))
+		elif entry is Vector2i:
+			parsed.append(entry)
+	return parsed
+
+
+func _rotate_offset(offset: Vector2i, direction: Vector2i) -> Vector2i:
+	var normalized := _normalize_direction(direction)
+	if normalized == Vector2i.LEFT:
+		return Vector2i(-offset.x, -offset.y)
+	if normalized == Vector2i.UP:
+		return Vector2i(offset.y, -offset.x)
+	if normalized == Vector2i.DOWN:
+		return Vector2i(-offset.y, offset.x)
+	return offset
+
+
+func _normalize_direction(direction: Vector2i) -> Vector2i:
+	if abs(direction.x) >= abs(direction.y):
+		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
+	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
+
+
+func _get_selected_unit() -> Node:
+	if _selected_unit_runtime_id < 0 or _unit_manager == null:
+		return null
+	var unit = _unit_manager.get_unit_by_runtime_id(_selected_unit_runtime_id) if _unit_manager.has_method("get_unit_by_runtime_id") else null
+	if unit == null or not is_instance_valid(unit):
+		_selected_unit_runtime_id = -1
+		_clear_attack_range_preview()
+		return null
+	return unit
+
+
+func _get_operator_state(operator_key: StringName) -> StringName:
+	if _unit_manager == null or not _unit_manager.has_method("get_operator_status"):
+		return &"ready"
+	return StringName(_unit_manager.get_operator_status(operator_key))
+
+
+func _can_deploy_now() -> bool:
+	var run_state = AppRefs.run_state()
+	return run_state == null or int(run_state.phase) == GameEnums.PHASE_DAY
+
+
+func _get_operator_info(operator_key: StringName) -> Dictionary:
+	for operator_info in _operator_defs:
+		if StringName((operator_info as Dictionary).get("key", "")) == operator_key:
+			return (operator_info as Dictionary)
+	return {}
+
+
+func _get_unit_cfg(unit_id: StringName) -> Dictionary:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return {}
+	return data_repo.get_unit_cfg(unit_id)
+
+
+func _get_unit_display_name(unit: Node) -> String:
+	if unit == null:
+		return "未知单位"
+	if unit.get("operator_name") != null and not String(unit.operator_name).is_empty():
+		return String(unit.operator_name)
+	return String(unit.cfg.get("name", unit.unit_id))
+
+
+func _class_label(raw_class: String) -> String:
+	match raw_class:
+		"guard":
+			return "近卫"
+		"sniper":
+			return "狙击"
+		"caster":
+			return "术士"
+		"defender":
+			return "重装"
+		_:
+			return raw_class
+
+
+func _damage_type_label(type_value: int) -> String:
+	if type_value >= 0 and type_value < DAMAGE_TYPE_LABELS.size():
+		return DAMAGE_TYPE_LABELS[type_value]
+	return "未知"
+
+
+func _direction_label(direction: Vector2i) -> String:
+	var normalized := _normalize_direction(direction)
+	if normalized == Vector2i.LEFT:
+		return "左"
+	if normalized == Vector2i.UP:
+		return "上"
+	if normalized == Vector2i.DOWN:
+		return "下"
+	return "右"
+
+
+func _phase_label(phase: int) -> String:
+	match phase:
+		GameEnums.PHASE_DAY:
+			return "白天"
+		GameEnums.PHASE_NIGHT:
+			return "夜晚"
+		GameEnums.PHASE_BLESSING:
+			return "祝福"
+		GameEnums.PHASE_RESULT:
+			return "结算"
+		_:
+			return "准备"
+
+
+func _show_message(text: String) -> void:
+	if _combat_hud != null and _combat_hud.has_method("show_message"):
+		_combat_hud.show_message(text)
+
+
+func _show_result_message(result: Dictionary, success_text: String, failure_text: String) -> void:
+	var message := String(result.get("message", ""))
+	if message.is_empty():
+		message = success_text if result.get("ok", false) else failure_text
+	_show_message(message)
+
