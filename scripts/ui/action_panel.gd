@@ -8,6 +8,7 @@ var _current_mode: StringName = &"idle"
 var _current_building_id: StringName = &""
 var _current_operator_key: StringName = &""
 var _selected_unit_runtime_id := -1
+var _selected_building_runtime_id := -1
 var _selected_facing := Vector2i.RIGHT
 
 
@@ -37,6 +38,18 @@ func _ready() -> void:
 	if retreat_button != null:
 		retreat_button.custom_minimum_size = Vector2(90, 36)
 		retreat_button.pressed.connect(_on_retreat_pressed)
+	var repair_button := get_node_or_null("%RepairBuildingButton") as BaseButton
+	if repair_button != null:
+		repair_button.custom_minimum_size = Vector2(90, 36)
+		repair_button.pressed.connect(_on_repair_building_pressed)
+	var demolish_button := get_node_or_null("%DemolishBuildingButton") as BaseButton
+	if demolish_button != null:
+		demolish_button.custom_minimum_size = Vector2(90, 36)
+		demolish_button.pressed.connect(_on_demolish_building_pressed)
+	var toggle_button := get_node_or_null("%ToggleBuildingButton") as BaseButton
+	if toggle_button != null:
+		toggle_button.custom_minimum_size = Vector2(90, 36)
+		toggle_button.pressed.connect(_on_toggle_building_pressed)
 	for path in ["%IdleButton", "%ExploreButton", "%StartNightButton"]:
 		var action_button := get_node_or_null(path) as BaseButton
 		if action_button != null:
@@ -50,10 +63,12 @@ func _ready() -> void:
 	set_process(true)
 	_refresh_mode_labels()
 	_refresh_combat_controls()
+	_refresh_building_controls()
 
 
 func _process(_delta: float) -> void:
 	_refresh_combat_controls()
+	_refresh_building_controls()
 
 
 func set_mode_idle() -> void:
@@ -61,6 +76,7 @@ func set_mode_idle() -> void:
 	_current_building_id = &""
 	_current_operator_key = &""
 	_selected_unit_runtime_id = -1
+	_selected_building_runtime_id = -1
 	_clear_attack_range_preview()
 	_refresh_mode_labels()
 
@@ -70,6 +86,7 @@ func set_mode_explore() -> void:
 	_current_building_id = &""
 	_current_operator_key = &""
 	_selected_unit_runtime_id = -1
+	_selected_building_runtime_id = -1
 	_clear_attack_range_preview()
 	_refresh_mode_labels()
 
@@ -79,6 +96,7 @@ func set_mode_build(building_id: StringName) -> void:
 	_current_building_id = building_id
 	_current_operator_key = &""
 	_selected_unit_runtime_id = -1
+	_selected_building_runtime_id = -1
 	_clear_attack_range_preview()
 	_refresh_mode_labels()
 
@@ -88,6 +106,7 @@ func set_mode_deploy(operator_key: StringName) -> void:
 	_current_building_id = &""
 	_current_operator_key = operator_key
 	_selected_unit_runtime_id = -1
+	_selected_building_runtime_id = -1
 	_clear_attack_range_preview()
 	_refresh_mode_labels()
 
@@ -127,13 +146,12 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 			_select_unit(existing_unit)
 			return
 	var building_manager := _get_building_manager()
-	if run_state.phase == GameEnums.PHASE_DAY and _current_mode == &"idle" and building_manager != null and building_manager.has_method("get_building_by_cell"):
+	if building_manager != null and building_manager.has_method("get_building_by_cell"):
 		var existing_building = building_manager.get_building_by_cell(cell)
-		if existing_building != null and existing_building.get("building_id") == &"war_shrine":
-			var event_bus = AppRefs.event_bus()
-			if event_bus != null:
-				event_bus.request_toggle_building.emit(int(existing_building.get("runtime_id")))
+		if existing_building != null:
+			_select_building(existing_building)
 			return
+	_clear_selected_building()
 	_clear_selected_unit()
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return
@@ -178,8 +196,16 @@ func _refresh_mode_labels() -> void:
 			if selected_unit != null:
 				selection_label.text = "当前选择：%s#%d" % [String(selected_unit.cfg.get("name", selected_unit.unit_id)), int(selected_unit.get_runtime_id())]
 			else:
-				selection_label.text = "当前选择：无"
+				var selected_building := _get_selected_building()
+				if selected_building != null:
+					selection_label.text = "当前选择：%s#%d" % [
+						String(selected_building.cfg.get("name", selected_building.building_id)),
+						int(selected_building.get_runtime_id())
+					]
+				else:
+					selection_label.text = "当前选择：无"
 	_refresh_combat_controls()
+	_refresh_building_controls()
 
 
 func _get_operator_display_text(operator_key: StringName) -> String:
@@ -236,6 +262,7 @@ func _select_unit(unit: Node) -> void:
 	if unit == null or not is_instance_valid(unit):
 		return
 	_selected_unit_runtime_id = int(unit.get_runtime_id()) if unit.has_method("get_runtime_id") else -1
+	_selected_building_runtime_id = -1
 	_current_operator_key = StringName(unit.operator_key) if unit.get("operator_key") != null else StringName()
 	_current_mode = &"idle"
 	_current_building_id = &""
@@ -247,6 +274,24 @@ func _select_unit(unit: Node) -> void:
 func _clear_selected_unit() -> void:
 	_selected_unit_runtime_id = -1
 	_clear_attack_range_preview()
+	_refresh_mode_labels()
+
+
+func _select_building(building: Node) -> void:
+	if building == null or not is_instance_valid(building):
+		return
+	_selected_building_runtime_id = int(building.get_runtime_id()) if building.has_method("get_runtime_id") else -1
+	_selected_unit_runtime_id = -1
+	_current_mode = &"idle"
+	_current_building_id = &""
+	_current_operator_key = &""
+	_clear_attack_range_preview()
+	_refresh_mode_labels()
+	_show_message("已选中 %s#%d" % [String(building.cfg.get("name", building.building_id)), _selected_building_runtime_id])
+
+
+func _clear_selected_building() -> void:
+	_selected_building_runtime_id = -1
 	_refresh_mode_labels()
 
 
@@ -288,6 +333,25 @@ func _refresh_combat_controls() -> void:
 		retreat_button.disabled = unit == null
 
 
+func _refresh_building_controls() -> void:
+	var building := _get_selected_building()
+	var info_label := get_node_or_null("%BuildingInfoLabel") as Label
+	var repair_button := get_node_or_null("%RepairBuildingButton") as BaseButton
+	var demolish_button := get_node_or_null("%DemolishBuildingButton") as BaseButton
+	var toggle_button := get_node_or_null("%ToggleBuildingButton") as BaseButton
+	var run_state: Node = AppRefs.run_state()
+	var is_day: bool = run_state != null and run_state.phase == GameEnums.PHASE_DAY
+	var is_destroyed: bool = _is_building_destroyed(building)
+	if info_label != null:
+		info_label.text = _format_building_info(building)
+	if repair_button != null:
+		repair_button.disabled = building == null or not is_day or not is_destroyed
+	if demolish_button != null:
+		demolish_button.disabled = building == null or not is_day or not is_destroyed
+	if toggle_button != null:
+		toggle_button.disabled = building == null or not is_day or is_destroyed or building.get("building_id") != &"war_shrine"
+
+
 func _format_skill_info(unit: Node) -> String:
 	if unit == null:
 		return "选中场上干员后可查看技能、释放技能或撤退。"
@@ -311,6 +375,29 @@ func _format_skill_info(unit: Node) -> String:
 	]
 
 
+func _format_building_info(building: Node) -> String:
+	if building == null:
+		return "选中建筑后可查看耐久。"
+	var state_text := "已毁" if _is_building_destroyed(building) else "运作中"
+	var text := "%s#%d  HP %d/%d  %s" % [
+		String(building.cfg.get("name", building.building_id)),
+		int(building.get_runtime_id()),
+		int(building.current_hp),
+		int(building.max_hp),
+		state_text
+	]
+	if _is_building_destroyed(building):
+		var cost := _get_destroyed_repair_cost(building)
+		text += "\n修复消耗：木%d 石%d 魔%d" % [
+			int(cost.get("wood", 0)),
+			int(cost.get("stone", 0)),
+			int(cost.get("mana", 0))
+		]
+	elif building.has_method("can_toggle_enabled") and building.can_toggle_enabled():
+		text += "\n状态：%s" % ("开启" if building.is_enabled() else "关闭")
+	return text
+
+
 func _get_selected_unit() -> Node:
 	if _selected_unit_runtime_id < 0:
 		return null
@@ -323,6 +410,19 @@ func _get_selected_unit() -> Node:
 		_clear_attack_range_preview()
 		return null
 	return unit
+
+
+func _get_selected_building() -> Node:
+	if _selected_building_runtime_id < 0:
+		return null
+	var building_manager := _get_building_manager()
+	if building_manager == null or not building_manager.has_method("get_building_by_runtime_id"):
+		return null
+	var building = building_manager.get_building_by_runtime_id(_selected_building_runtime_id)
+	if building == null or not is_instance_valid(building):
+		_selected_building_runtime_id = -1
+		return null
+	return building
 
 
 func _refresh_attack_range_preview() -> void:
@@ -374,6 +474,7 @@ func _normalize_direction(direction: Vector2i) -> Vector2i:
 
 func _on_unit_deployed(unit_runtime_id: int, _operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
 	_selected_unit_runtime_id = unit_runtime_id
+	_selected_building_runtime_id = -1
 	_refresh_attack_range_preview()
 	_refresh_combat_controls()
 
@@ -389,6 +490,66 @@ func _on_building_state_changed(_building_runtime_id: int, building_id: StringNa
 	if building_id != &"war_shrine":
 		return
 	_show_message("War Shrine %s" % ("enabled" if enabled else "disabled"))
+	_refresh_building_controls()
+
+
+func _on_repair_building_pressed() -> void:
+	var building := _get_selected_building()
+	var building_manager := _get_building_manager()
+	if building == null or building_manager == null or not building_manager.has_method("try_repair_building"):
+		_show_message("请先选择一个已毁建筑")
+		return
+	var result: Dictionary = building_manager.try_repair_building(building.get_runtime_id())
+	_show_result_message(result, "建筑已修复", "修复失败")
+	_refresh_mode_labels()
+
+
+func _on_demolish_building_pressed() -> void:
+	var building := _get_selected_building()
+	var building_manager := _get_building_manager()
+	if building == null or building_manager == null or not building_manager.has_method("try_demolish_building"):
+		_show_message("请先选择一个已毁建筑")
+		return
+	var result: Dictionary = building_manager.try_demolish_building(building.get_runtime_id())
+	if result.get("ok", false):
+		_selected_building_runtime_id = -1
+	_show_result_message(result, "建筑已拆除", "拆除失败")
+	_refresh_mode_labels()
+
+
+func _on_toggle_building_pressed() -> void:
+	var building := _get_selected_building()
+	var building_manager := _get_building_manager()
+	if building == null or building_manager == null or not building_manager.has_method("try_toggle_building"):
+		_show_message("请先选择一个可切换建筑")
+		return
+	var result: Dictionary = building_manager.try_toggle_building(building.get_runtime_id())
+	_show_result_message(result, "建筑状态已切换", "切换失败")
+	_refresh_mode_labels()
+
+
+func _get_destroyed_repair_cost(building: Node) -> Dictionary:
+	var cfg: Dictionary = building.cfg if building != null else {}
+	return {
+		"wood": _half_repair_cost(int(cfg.get("cost_wood", 0))),
+		"stone": _half_repair_cost(int(cfg.get("cost_stone", 0))),
+		"mana": _half_repair_cost(int(cfg.get("cost_mana", 0)))
+	}
+
+
+func _half_repair_cost(value: int) -> int:
+	if value <= 0:
+		return 0
+	return int(ceil(float(value) * 0.5))
+
+
+func _is_building_destroyed(building: Node) -> bool:
+	if building == null:
+		return false
+	if building.has_method("is_destroyed"):
+		return bool(building.is_destroyed())
+	var current_hp_variant: Variant = building.get("current_hp")
+	return current_hp_variant != null and int(current_hp_variant) <= 0
 
 
 func _show_message(text: String) -> void:
