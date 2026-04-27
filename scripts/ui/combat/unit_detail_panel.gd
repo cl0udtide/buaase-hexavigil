@@ -1,5 +1,6 @@
 extends PanelContainer
 
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 signal cast_skill_requested
@@ -24,6 +25,7 @@ signal retreat_requested
 
 
 func _ready() -> void:
+	AppTheme.apply(self)
 	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
 	_skill_card.custom_minimum_size = Vector2(0.0, 128.0)
 	_skill_card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
