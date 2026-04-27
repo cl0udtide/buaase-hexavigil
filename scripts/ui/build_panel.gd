@@ -47,6 +47,7 @@ func _bind_events() -> void:
 		event_bus.prestige_changed.connect(_on_prestige_changed)
 		event_bus.shop_stock_changed.connect(_on_shop_stock_changed)
 		event_bus.shop_action_result.connect(_on_shop_action_result)
+		event_bus.building_placed.connect(_on_building_placed)
 	var data_repo = AppRefs.data_repo()
 	if data_repo != null and data_repo.has_signal("data_loaded"):
 		data_repo.data_loaded.connect(_on_data_loaded)
@@ -325,6 +326,13 @@ func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 	_message_label.text = "购买成功" if action == &"buy" and result.get("ok", false) else String(result.get("message", "操作失败"))
 	if action == &"refresh" and result.get("ok", false):
 		_message_label.text = "商店已刷新"
+
+
+func _on_building_placed(_building_runtime_id: int, building_id: StringName, _cell: Vector2i) -> void:
+	if _current_mode != MODE_BUILD or building_id != _selected_building_id:
+		return
+	_selected_building_id = &""
+	refresh_from_state()
 
 
 func _on_prestige_changed(value: int) -> void:

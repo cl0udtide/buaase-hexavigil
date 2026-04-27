@@ -135,6 +135,8 @@ func get_current_phase() -> int
 ```gdscript
 func start_day(day: int) -> void
 func try_explore(cell: Vector2i) -> Dictionary
+func try_collect_resource(cell: Vector2i) -> Dictionary
+func is_resource_collected_today(cell: Vector2i) -> bool
 func try_trigger_event(cell: Vector2i) -> Dictionary
 func request_start_night() -> Dictionary
 ```
@@ -150,6 +152,15 @@ func request_start_night() -> Dictionary
   行为：校验指定格子是否允许探索；目标必须未探索，且上下左右至少邻接一个已探索格；成功时扣除 2 点行动力并揭开 3×3 迷雾。若探索中心格带有随机事件 ID，则进入“发现事件”流程，但地图侧不负责结算事件效果。
   成功结果：返回 `ActionResult(ok = true)`，并推进探索后续逻辑。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
+- `try_collect_resource(cell)`
+  输入：`cell: Vector2i`。
+  行为：校验指定格子是否为白天、已探索资源点；每点每天最多手动采集一次；成功时扣除 1 点行动力并获得 1 个对应资源。资源点已有正常建筑时仍允许手动采集，建筑每日产出独立结算。
+  成功结果：返回 `ActionResult(ok = true)`，材料和行动力已更新。
+  失败结果：返回 `ActionResult(ok = false)`，材料和行动力不变。
+- `is_resource_collected_today(cell)`
+  输入：`cell: Vector2i`。
+  行为：查询该资源点当天是否已经手动采集。
+  返回：布尔值。
 - `try_trigger_event(cell)`
   输入：`cell: Vector2i`。
   行为：校验并处理指定格子的事件交互；按玩法设计，处理 `?` 事件节点应消耗 1 点行动力，具体扣点与结算由白天流程/随机事件模块负责。
@@ -738,6 +749,7 @@ func can_repair_building(building_runtime_id: int) -> Dictionary
 ```gdscript
 func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary
 func try_repair_building(building_runtime_id: int) -> Dictionary
+func try_demolish_building(building_runtime_id: int) -> Dictionary
 func damage_building(building_runtime_id: int, value: int, damage_type: int) -> void
 func remove_building(building_runtime_id: int) -> void
 func collect_day_income() -> void
@@ -757,6 +769,11 @@ func get_building_by_runtime_id(building_runtime_id: int) -> Node
   输入：建筑运行时 ID。
   行为：尝试修复建筑。
   成功结果：返回 `ActionResult(ok = true)`，建筑状态已更新。
+  失败结果：返回 `ActionResult(ok = false)`，建筑状态不变。
+- `try_demolish_building(building_runtime_id)`
+  输入：建筑运行时 ID。
+  行为：白天拆除任意建筑，并清理地图占用与寻路状态。
+  成功结果：返回 `ActionResult(ok = true)`，建筑已移除。
   失败结果：返回 `ActionResult(ok = false)`，建筑状态不变。
 - `damage_building(building_runtime_id, value, damage_type)`
   输入：建筑运行时 ID、伤害值、伤害类型。
@@ -1640,6 +1657,7 @@ func hide_panel() -> void
 | `buffs_changed` | `buff_ids: Array[StringName]` | `RunState` | 调试工具、后续 UI | 已获得 Buff 列表变化 |
 | `shop_stock_changed` | `stock_slots: Array[Dictionary]` | `ShopManager` | BuildPanel | 商店槽位库存变化 |
 | `shop_action_result` | `action: StringName, result: Dictionary` | `ShopManager` | BuildPanel | 商店购买或刷新结果 |
+| `resource_collected` | `cell: Vector2i, resource_type: StringName, amount: int` | `DayManager` | MapInteractionPopup | 资源点手动采集完成 |
 
 ### 4.3 玩家请求信号
 
@@ -1689,7 +1707,7 @@ func hide_panel() -> void
 - 选择祝福：`EventBus.blessing_chosen.emit(buff_id)`
 - 调试切换天数：`EventBus.request_debug_set_day.emit(day)`
 
-地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`、`CombatHudController` 或 `CombatSandbox` 根据当前模式解释为探索、建造、选中单位或部署流程。
+地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`、`MapInteractionPopup`、`CombatHudController` 或 `CombatSandbox` 根据当前模式解释为探索、建造、地图对象交互、选中单位或部署流程。
 
 作战 UI 组件本身仍只发出信号。例如 `CombatHud` 发出干员卡片、暂停、倍速、技能和撤退信号；主场景由 `CombatHudController` 调用 `UnitManager`、`MapRoot` 或修改 `SceneTree.paused`，调试场景由 `CombatSandbox` 做同样转接。
 
