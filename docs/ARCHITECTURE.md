@@ -629,7 +629,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `boss_controller.gd`
   通用多阶段 Boss 控制器。它读取 `enemies.json[].phases`，管理阶段编号、转阶段无敌计时、阶段配置切换和阶段进入效果。该脚本不硬编码具体 Boss；多个 Boss 的共性阶段机制走配置，特殊 Boss 机制后续可通过 `boss_behavior_key` 挂专用行为组件。
 - `enemy_movement_controller.gd`
-  单个敌人的移动控制器，由 `EnemyActor` 按需创建并调度。它维护路径缓存、路径进度、路径模式、阻挡状态、阻挡贴位、击退和外部移速倍率；不负责攻击结算、死亡移除或 Boss 阶段流转。
+  单个敌人的移动控制器，由 `EnemyActor` 按需创建并调度。它维护路径缓存、路径进度、路径模式、阻挡状态、阻挡贴位、击退和外部移速倍率；不负责攻击结算、死亡移除或 Boss 阶段流转。普通路径模式默认避开挡路建筑；当正常路径不存在且核心所在连通区域被未损毁的挡路建筑封闭时，当前路径临时按拆除模式重算，让敌人在路线上拆除城墙。
 - `enemy_attack_controller.gd`
   单个敌人的攻击控制器，由 `EnemyActor` 按需创建并调度。它维护攻击计时，处理阻挡单位攻击、远程索敌攻击和路径建筑攻击；不负责移动、寻路、死亡移除或 Boss 阶段流转。
 - `EnemyActor.tscn`
