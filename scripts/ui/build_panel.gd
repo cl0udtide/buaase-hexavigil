@@ -3,6 +3,7 @@ extends PanelContainer
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 
 const MODE_BUILD: StringName = &"build"
@@ -163,10 +164,10 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 	var cfg := _get_building_cfg(building_id)
 	var selected := building_id == _selected_building_id
 	return {
-		"title": str(cfg.get("name", building_id)),
+		"title": UiDisplayText.config_name(cfg, building_id),
 		"subtitle": _format_building_cost(cfg),
 		"detail": _format_building_detail(cfg),
-		"icon_text": _resolve_building_icon_text(cfg),
+		"icon_text": UiDisplayText.icon_text(cfg),
 		"accent": GameUiStyle.STROKE_SOFT,
 		"title_color": GameUiStyle.TEXT,
 		"state": "已选择" if selected else "",
@@ -181,22 +182,22 @@ func _make_shop_card(slot: Dictionary) -> Control:
 	var unit_id := StringName(slot.get("unit_id", ""))
 	var sold := bool(slot.get("sold", false))
 	var slot_index := int(slot.get("slot_index", -1))
-	var accent := _tier_color(unit_id)
+	var cfg := _get_unit_cfg(unit_id)
+	var cost := int(cfg.get("cost_prestige", 0))
+	var accent := UiDisplayText.tier_color(cost)
 	if sold or unit_id == StringName():
 		accent = GameUiStyle.STROKE_SOFT
 	var title := ""
 	var subtitle := ""
 	var detail := ""
 	var state := ""
-	var title_color := _tier_color(unit_id)
+	var title_color := UiDisplayText.tier_color(cost)
 	if unit_id == StringName():
 		title = "空槽位"
 		title_color = GameUiStyle.TEXT_MUTED
 	else:
-		var cfg := _get_unit_cfg(unit_id)
-		var cost := int(cfg.get("cost_prestige", 0))
-		title = str(cfg.get("name", unit_id))
-		subtitle = "%s  %s" % [_class_text(str(cfg.get("class", ""))), _tier_text(cost)]
+		title = UiDisplayText.config_name(cfg, unit_id)
+		subtitle = "%s  %s" % [UiDisplayText.class_label(str(cfg.get("class", ""))), UiDisplayText.tier_label(cost)]
 		detail = "%d 声望" % cost
 		if sold:
 			state = "已购买"
@@ -242,10 +243,7 @@ func _format_building_cost(cfg: Dictionary) -> String:
 
 
 func _format_building_detail(cfg: Dictionary) -> String:
-	var detail := str(cfg.get("desc", "")).strip_edges()
-	if not detail.is_empty():
-		return detail
-	return _format_effect_text(cfg)
+	return UiDisplayText.config_desc(cfg, _format_effect_text(cfg))
 
 
 func _format_effect_text(cfg: Dictionary) -> String:
@@ -305,7 +303,7 @@ func _refresh_selection_label() -> void:
 		_selection_label.text = "当前选择：无"
 		return
 	var cfg := _get_building_cfg(_selected_building_id)
-	_selection_label.text = "当前选择：%s" % str(cfg.get("name", _selected_building_id))
+	_selection_label.text = "当前选择：%s" % UiDisplayText.config_name(cfg, _selected_building_id)
 
 
 func _on_shop_stock_changed(stock_slots: Array[Dictionary]) -> void:
@@ -350,68 +348,10 @@ func _get_unit_cfg(unit_id: StringName) -> Dictionary:
 	return data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
 
 
-func _tier_text(cost: int) -> String:
-	match cost:
-		1:
-			return "一阶"
-		3:
-			return "二阶"
-		7:
-			return "三阶"
-		_:
-			return "特殊"
-
-
-func _class_text(value: String) -> String:
-	match value:
-		"guard":
-			return "近卫"
-		"sniper":
-			return "狙击"
-		"caster":
-			return "术士"
-		"defender":
-			return "重装"
-		_:
-			return value
-
-
-func _resolve_building_icon_text(cfg: Dictionary) -> String:
-	var icon_text := String(cfg.get("icon_text", "")).strip_edges()
-	if not icon_text.is_empty():
-		return icon_text.substr(0, 1)
-	var name := String(cfg.get("name", "")).strip_edges()
-	if not name.is_empty():
-		return name.substr(0, 1)
-	return "*"
-
-
 func _unit_icon_text(unit_id: StringName) -> String:
-	var class_value := str(_get_unit_cfg(unit_id).get("class", ""))
-	match class_value:
-		"guard":
-			return "近"
-		"sniper":
-			return "狙"
-		"caster":
-			return "术"
-		"defender":
-			return "重"
-		_:
-			return "*"
-
-
-func _tier_color(unit_id: StringName) -> Color:
-	var cost := int(_get_unit_cfg(unit_id).get("cost_prestige", 0))
-	match cost:
-		1:
-			return Color(0.86, 0.93, 0.88)
-		3:
-			return Color(0.72, 0.88, 1.0)
-		7:
-			return Color(1.0, 0.82, 0.38)
-		_:
-			return GameUiStyle.TEXT
+	var cfg := _get_unit_cfg(unit_id)
+	var class_icon := UiDisplayText.class_label(str(cfg.get("class", "")))
+	return UiDisplayText.icon_text(cfg, class_icon)
 
 
 func set_visible_for_phase(phase: int) -> void:

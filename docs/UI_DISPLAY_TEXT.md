@@ -70,12 +70,14 @@ cfg.skill_description
 
 ```text
 cfg.icon_text
+-> 调用方传入的类型兜底图标字
 -> cfg.name 的第一个字符
--> 类型兜底图标字
 -> "*"
 ```
 
 `icon_key` 保留给未来真实图标资源映射，不直接在 UI 脚本里拼路径。
+
+其中 `fallback_text` 用于承载调用方已经知道的类型占位图标，例如单位职业图标“近/狙/术/重”。这样可以在单位名为“一阶近卫”“二阶狙击”等格式时继续保持原 UI 的职业占位图标表现；没有传入类型兜底时，才回退到 `name` 首字。
 
 ### 4.3 阶级与稀有度
 
@@ -94,7 +96,7 @@ cfg.icon_text
 
 ## 5. 建议接口
 
-后续实现可先覆盖这些静态方法：
+当前实现覆盖这些静态方法：
 
 ```gdscript
 static func config_name(cfg: Dictionary, fallback_id: Variant = "") -> String
@@ -144,10 +146,10 @@ static func icon_key(cfg: Dictionary) -> StringName
 
 建议分阶段迁移，降低改动风险：
 
-1. 新增 `UiDisplayText`，先迁移纯函数映射：职业、阶级、伤害类型、方向、阶段。
-2. 将 `BuildPanel` 中单位职业、阶级、阶级颜色和单位占位图标改为调用工具。
-3. 将 `CombatHudController` 中职业、伤害类型、方向、阶段文本改为调用工具。
-4. 将 `UnitDetailPanel` 中默认技能说明兜底与标题格式逐步收口。
+1. 已新增 `UiDisplayText`，迁移纯函数映射：职业、阶级、伤害类型、方向、阶段。
+2. 已将 `BuildPanel` 中单位职业、阶级、阶级颜色、建筑/单位占位图标、配置名称和说明兜底改为调用工具。
+3. 已将 `CombatHudController` 中职业、伤害类型、方向、阶段文本改为调用工具。
+4. `UnitDetailPanel` 中默认技能说明兜底与标题格式仍可后续逐步收口。
 5. 后续如数据表新增 `tier`、`rarity`、`icon_text`，由工具统一兼容旧字段和新字段。
 
 迁移完成后，UI 脚本应更偏向“取数据、调用工具格式化、传给组件显示”，而不是在各自文件中维护重复映射。

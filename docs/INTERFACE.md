@@ -1465,7 +1465,7 @@ func configure(config: Dictionary) -> void
   输入：标题、说明、状态、图标文本、强调色、禁用态和最小高度。
   行为：刷新列表项显示。
 
-#### `UiDisplayText`（规划）
+#### `UiDisplayText`
 
 作用：
 
@@ -1496,7 +1496,7 @@ static func phase_label(phase: int) -> String
   返回：`String`。
 - `icon_text(cfg, fallback_text)`
   输入：配置字典和兜底图标字。
-  行为：优先返回 `cfg.icon_text`，其次取 `cfg.name` 首字，最后返回兜底图标字。
+  行为：优先返回 `cfg.icon_text`；传入非默认兜底图标字时，其次返回兜底图标字；否则取 `cfg.name` 首字；最后返回 `*`。
   返回：`String`。
 - `class_label(class_key)`
   输入：单位职业 key。

@@ -1,13 +1,13 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 const DRAG_NONE := &"none"
 const DRAG_CARD := &"drag_card"
 const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
-const DAMAGE_TYPE_LABELS := ["物理", "法术", "真实"]
 
 var _operator_defs: Array[Dictionary] = []
 var _selected_unit_runtime_id := -1
@@ -291,7 +291,7 @@ func _refresh_detail_panel() -> void:
 			_combat_hud.clear_unit_detail()
 		return
 	if _combat_hud.has_method("show_unit_detail"):
-		_combat_hud.show_unit_detail(unit, _get_unit_display_name(unit), _damage_type_label(int(unit.damage_type)), _direction_label(unit.facing))
+		_combat_hud.show_unit_detail(unit, _get_unit_display_name(unit), UiDisplayText.damage_type_label(int(unit.damage_type)), UiDisplayText.direction_label(unit.facing))
 
 
 func _refresh_attack_range_preview() -> void:
@@ -392,7 +392,7 @@ func _refresh_top_hud() -> void:
 			buff_ids.size()
 		]
 		resource_tooltip = _format_resource_tooltip(buff_ids)
-		phase_text = "Day %d %s" % [int(run_state.day), _phase_label(int(run_state.phase))]
+		phase_text = "Day %d %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
 	var enemy_count: int = int(_enemy_manager.get_alive_enemy_count()) if _enemy_manager != null and _enemy_manager.has_method("get_alive_enemy_count") else 0
 	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s    敌人 %d" % [phase_text, enemy_count])
 	if _combat_hud.has_method("set_resource_values"):
@@ -418,7 +418,7 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var unit_id := StringName(operator_info.get("unit_id", ""))
 	var cfg := _get_unit_cfg(unit_id)
 	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
-	var class_text := _class_label(str(cfg.get("class", "")))
+	var class_text := UiDisplayText.class_label(str(cfg.get("class", "")))
 	var state_text := "可部署"
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
@@ -579,51 +579,6 @@ func _get_unit_display_name(unit: Node) -> String:
 	return String(unit.cfg.get("name", unit.unit_id))
 
 
-func _class_label(raw_class: String) -> String:
-	match raw_class:
-		"guard":
-			return "近卫"
-		"sniper":
-			return "狙击"
-		"caster":
-			return "术士"
-		"defender":
-			return "重装"
-		_:
-			return raw_class
-
-
-func _damage_type_label(type_value: int) -> String:
-	if type_value >= 0 and type_value < DAMAGE_TYPE_LABELS.size():
-		return DAMAGE_TYPE_LABELS[type_value]
-	return "未知"
-
-
-func _direction_label(direction: Vector2i) -> String:
-	var normalized := _normalize_direction(direction)
-	if normalized == Vector2i.LEFT:
-		return "左"
-	if normalized == Vector2i.UP:
-		return "上"
-	if normalized == Vector2i.DOWN:
-		return "下"
-	return "右"
-
-
-func _phase_label(phase: int) -> String:
-	match phase:
-		GameEnums.PHASE_DAY:
-			return "白天"
-		GameEnums.PHASE_NIGHT:
-			return "夜晚"
-		GameEnums.PHASE_BLESSING:
-			return "祝福"
-		GameEnums.PHASE_RESULT:
-			return "结算"
-		_:
-			return "准备"
-
-
 func _show_message(text: String) -> void:
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
 		_combat_hud.show_message(text)
@@ -634,4 +589,3 @@ func _show_result_message(result: Dictionary, success_text: String, failure_text
 	if message.is_empty():
 		message = success_text if result.get("ok", false) else failure_text
 	_show_message(message)
-
