@@ -89,6 +89,34 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "撤退"
 
+[node name="BuildingActionRow" type="HFlowContainer" parent="ContentMargin/ContentScroll/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RepairBuildingButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/BuildingActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "修复"
+
+[node name="DemolishBuildingButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/BuildingActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "拆除"
+
+[node name="ToggleBuildingButton" type="Button" parent="ContentMargin/ContentScroll/VBoxContainer/BuildingActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "开关"
+
+[node name="BuildingInfoLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "选中建筑后可查看耐久。"
+
 [node name="SkillInfoLabel" type="Label" parent="ContentMargin/ContentScroll/VBoxContainer" unique_id=137658732]
 unique_name_in_owner = true
 layout_mode = 2
