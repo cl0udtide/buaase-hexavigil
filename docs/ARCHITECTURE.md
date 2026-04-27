@@ -40,14 +40,15 @@ res://
 │        ├─ OperatorCard.tscn
 │        └─ UnitDetailPanel.tscn
 ├─ scripts/
+│  ├─ common/                  [跨模块轻量辅助]
+│  ├─ bootstrap/               [菜单与结算入口脚本]
 │  ├─ core/                    [阶段与全局控制]
 │  ├─ map/                     [地图与寻路]
 │  ├─ building/                [建筑]
 │  ├─ combat/                  [单位、技能、商店]
 │  ├─ enemy/                   [敌人、波次、Boss]
 │  ├─ ui/                      [界面逻辑，含 ui/combat 作战 HUD]
-│  ├─ debug/                   [调试场景逻辑]
-│  └─ data/                    [数据说明辅助文件]
+│  └─ debug/                   [调试场景逻辑]
 ├─ data/                       [JSON 配置]
 ├─ assets/                     [图片、音频、字体]
 └─ docs/                       [架构与规范文档]
@@ -376,6 +377,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 目录：
 
 - `autoload/`
+- `scripts/common/`
+- `scripts/bootstrap/`
 - `scripts/core/`
 - `scenes/bootstrap/`
 - `scenes/game/`
@@ -386,6 +389,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `autoload/RunState.gd`
 - `autoload/DataRepo.gd`
 - `autoload/SceneRouter.gd`
+- `scripts/common/action_result.gd`
+- `scripts/common/app_refs.gd`
+- `scripts/bootstrap/main_menu_scene.gd`
+- `scripts/bootstrap/result_scene.gd`
 - `scripts/core/game_controller.gd`
 - `scripts/core/day_manager.gd`
 - `scripts/core/night_manager.gd`
@@ -414,6 +421,14 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   配置仓库，负责读取 JSON 配置表并提供场景模板映射。
 - `SceneRouter.gd`
   主场景切换器，负责菜单、游戏、结算之间的场景跳转。
+- `action_result.gd`
+  `try_` 类接口的统一返回结构辅助，提供成功和失败结果的构造方法。
+- `app_refs.gd`
+  全局单例访问辅助，集中封装 `/root/EventBus`、`/root/RunState`、`/root/DataRepo` 和 `/root/SceneRouter` 的查找。
+- `main_menu_scene.gd`
+  主菜单场景脚本，负责开始游戏入口与主题应用。
+- `result_scene.gd`
+  结算场景脚本，负责展示结算面板并处理重开或返回菜单。
 - `game_controller.gd`
   整局流程主控，负责开始新一局、切换白天夜晚祝福、结束结算。
 - `day_manager.gd`
@@ -446,6 +461,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/map/path_service.gd`
 - `scripts/map/cell_data.gd`
 - `scripts/map/map_generator.gd`
+- `scripts/map/map_root_view.gd`
+- `scripts/map/core_view.gd`
+- `scripts/map/spawn_point_view.gd`
 - `scenes/world/MapRoot.tscn`
 - `scenes/world/Core.tscn`
 - `scenes/world/SpawnPoint.tscn`
@@ -470,6 +488,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   单格数据结构，描述地形、发现状态、可建造、占用等属性。
 - `map_generator.gd`
   地图生成逻辑，负责按规则生成初始地图。
+- `map_root_view.gd`
+  `MapRoot.tscn` 的显示与输入脚本，负责图层绘制、鼠标点击转发、攻击范围和部署预览。
+- `core_view.gd`
+  核心建筑显示脚本，负责核心节点的占位绘制与标签表现。
+- `spawn_point_view.gd`
+  刷怪点显示脚本，负责刷怪口节点的占位绘制与标签表现。
 - `MapRoot.tscn`
   地图显示节点模板，对应 `World/MapRoot`。除基础格子绘制外，还负责鼠标悬停、选中格、攻击范围、部署落点、非法格、朝向箭头等作战预览层。
 - `Core.tscn`
@@ -524,8 +548,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/combat/shop_manager.gd`
 - `scripts/combat/projectile.gd`
 - `scripts/combat/skills/unit_skill_behavior.gd`
+- `scripts/combat/skills/*_skill.gd`
 - `scripts/combat/combat_math.gd`
-- `scripts/combat/skill_runtime.gd`
 - `scenes/actors/UnitActor.tscn`
 - `scenes/actors/Projectile.tscn`
 - `scenes/actors/units/*.tscn`
@@ -549,13 +573,13 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `projectile.gd`
   通用飞行物 Actor，负责追踪目标、命中半径、生命周期和命中信号，不承载职业或技能规则。
 - `skills/unit_skill_behavior.gd`
-  单位技能行为基类，定义技能启动、结束、攻击后回调和目标覆盖等扩展点。
+  单位技能行为基类，定义技能启动、结束、攻击后回调、目标覆盖、伤害修正、受击回调和飞行物 payload 等扩展点。
+- `skills/*_skill.gd`
+  具体单位技能行为脚本。`UnitActor` 根据 `data/units.json` 中的 `skill_behavior_key` 从注册表选择脚本，并动态挂到 `SkillBehavior` 节点；不同技能的差异优先写在这些组件里。
 - `shop_manager.gd`
   商店主控，管理 5 格卡牌库存、购买和刷新逻辑；购买同一单位类型会新增独立槽位。
 - `combat_math.gd`
   伤害与治疗计算工具。
-- `skill_runtime.gd`
-  技能运行时逻辑，处理技能释放与效果执行。
 - `UnitActor.tscn`
   普通单位统一实例模板，保留 `TitleLabel`、`StatusView`、`VisualRoot`、`AudioRoot`、`EffectRoot`、`SkillBehavior` 等公共挂点。
 - `Projectile.tscn`
@@ -566,7 +590,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 单位差异化原则：
 
 - 属性差异数据化：生命、攻击、防御、阻挡、攻速、范围、SP、技能参数等写入 `data/units.json`。
-- 行为差异组件化：不同技能通过 `skill_behavior_key` 映射到 `UnitSkillBehavior` 子类；技能弹道表现通过返回飞行物 payload 扩展，而不是把技能规则写进 `Projectile`。
+- 行为差异组件化：不同技能通过 `skill_behavior_key` 映射到 `UnitSkillBehavior` 子类，由 `UnitActor` 在部署初始化时动态装配到 `SkillBehavior` 节点；技能弹道表现通过返回飞行物 payload 扩展，而不是把技能规则写进 `Projectile`。
+- 技能不使用中心化 controller 统一分发。`UnitManager` 只负责请求释放技能，`UnitActor` 负责调用当前装配的技能行为组件，具体技能脚本负责自己的状态、持续时间、伤害修正、追加效果和结束恢复。
 - 结构差异场景化：外观、音效、特效优先挂到 `UnitActor.tscn` 的公共挂点；真正特殊的节点结构才使用继承场景。
 
 ### 4.5 敌人与波次模块
@@ -596,11 +621,11 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `enemy_manager.gd`
   敌人运行时主控，管理场上所有敌人实例。
 - `enemy_actor.gd`
-  单个敌人实例脚本，处理移动、受伤、被阻挡、攻击核心等单体行为。
+  单个敌人实例脚本，处理移动、受伤、被阻挡、攻击核心、远程攻击、路径建筑攻击，以及当前已落地的 Boss 配置化转阶段逻辑。
 - `wave_manager.gd`
   波次执行器，负责按配置在正确时间生成敌人。
 - `boss_controller.gd`
-  Boss 专属扩展控制，用于多阶段 Boss 行为。
+  Boss 专属扩展控制的预留脚本，面向未来更复杂的 Boss 行为。当前运行链路尚未使用该脚本；已落地的二阶段 Boss 由 `EnemyActor` 读取 `enemies.json[].phases` 后在自身内部完成转阶段。
 - `EnemyActor.tscn`
   敌人实例模板。
 
@@ -614,6 +639,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 文件：
 
 - `scripts/ui/action_panel.gd`
+- `scripts/ui/app_theme.gd`
+- `scripts/ui/actor_status_view.gd`
 - `scripts/ui/build_panel.gd`
 - `scripts/ui/build_list_card.gd`
 - `scripts/ui/game_ui_style.gd`
@@ -646,6 +673,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 
 - `action_panel.gd`
   白天行动面板逻辑，处理待机、探索、进入夜晚，以及建造模式下的地图点击转发。
+- `app_theme.gd`
+  全局 UI 主题辅助，集中加载中文字体并生成控件主题。
+- `actor_status_view.gd`
+  单位、敌人和建筑 Actor 复用的轻量状态显示脚本，负责 HP 状态和受击反馈。
 - `build_panel.gd`
   建筑/商店复合面板逻辑。建筑选择写入 `ActionPanel` 的建造模式；商店购买和刷新通过 `EventBus` 请求 `ShopManager`。
 - `build_list_card.gd`
