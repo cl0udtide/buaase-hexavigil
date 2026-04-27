@@ -46,8 +46,8 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
 		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
-	if run_state.phase != GameEnums.PHASE_DAY:
-		return ActionResult.err(&"INVALID_PHASE", "只有白天可以部署")
+	if not _is_deploy_phase(int(run_state.phase)):
+		return ActionResult.err(&"INVALID_PHASE", "当前阶段不能部署")
 	if run_state.deployed_count >= run_state.deploy_limit:
 		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "DEPLOY_LIMIT_REACHED")
 	if _map_manager == null:
@@ -97,8 +97,8 @@ func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dict
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
 		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
-	if run_state.phase != GameEnums.PHASE_DAY:
-		return ActionResult.err(&"INVALID_PHASE", "只有白天可以部署")
+	if not _is_deploy_phase(int(run_state.phase)):
+		return ActionResult.err(&"INVALID_PHASE", "当前阶段不能部署")
 	if run_state.deployed_count >= run_state.deploy_limit:
 		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "DEPLOY_LIMIT_REACHED")
 	if _map_manager == null:
@@ -111,6 +111,10 @@ func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dict
 	if not _map_manager.is_walkable(cell):
 		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
 	return ActionResult.ok({"operator_key": operator_key, "unit_id": unit_id})
+
+
+func _is_deploy_phase(phase: int) -> bool:
+	return phase == GameEnums.PHASE_DAY or phase == GameEnums.PHASE_NIGHT
 
 
 func try_retreat_unit(unit_runtime_id: int) -> Dictionary:
