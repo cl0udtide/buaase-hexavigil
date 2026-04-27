@@ -25,9 +25,7 @@ func _process(delta: float) -> void:
 	while not _pending_spawns.is_empty() and float(_pending_spawns[0].get("time", 0.0)) <= _elapsed:
 		var entry: Dictionary = _pending_spawns.pop_front()
 		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(StringName(entry.get("spawn_key", "")))
-		var count := int(entry.get("count", 1))
-		for _i in range(count):
-			_enemy_manager.spawn_enemy(StringName(entry.get("enemy_id", "")), spawn_cell)
+		_enemy_manager.spawn_enemy(StringName(entry.get("enemy_id", "")), spawn_cell)
 	_check_finish()
 
 
@@ -41,7 +39,7 @@ func start_wave_for_day(day: int) -> void:
 	_pending_spawns.clear()
 	for entry_variant: Variant in cfg.get("entries", []):
 		if typeof(entry_variant) == TYPE_DICTIONARY:
-			_pending_spawns.append((entry_variant as Dictionary).duplicate(true))
+			_append_expanded_spawn_entries(entry_variant as Dictionary)
 	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
 	_elapsed = 0.0
 	_running = true
@@ -71,6 +69,17 @@ func _check_finish() -> void:
 		var run_state = AppRefs.run_state()
 		if event_bus != null and run_state != null:
 			event_bus.night_cleared.emit(run_state.day)
+
+
+func _append_expanded_spawn_entries(entry: Dictionary) -> void:
+	var count: int = max(int(entry.get("count", 1)), 0)
+	var interval: float = max(float(entry.get("interval", 0.0)), 0.0)
+	var start_time: float = float(entry.get("time", 0.0))
+	for index in range(count):
+		var spawn_entry := entry.duplicate(true)
+		spawn_entry["time"] = start_time + interval * float(index)
+		spawn_entry["count"] = 1
+		_pending_spawns.append(spawn_entry)
 
 
 func _get_wave_cfg_with_fallback(data_repo: Node, day: int) -> Dictionary:

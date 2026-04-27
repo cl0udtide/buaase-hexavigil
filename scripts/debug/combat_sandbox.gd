@@ -1578,19 +1578,19 @@ func _serialize_operator_defs() -> Array:
 
 
 func _serialize_queue_item(item: Dictionary) -> Dictionary:
-	return {
-		"enemy_id": String(item.get("enemy_id", "")),
-		"delay": float(item.get("delay", 0.0)),
-		"name": String(item.get("name", "")),
-		"max_hp": int(item.get("max_hp", 1)),
-		"atk": int(item.get("atk", 1)),
-		"def": int(item.get("def", 0)),
-		"res": int(item.get("res", 0)),
-		"move_speed": float(item.get("move_speed", 1.0)),
-		"attack_interval": float(item.get("attack_interval", 1.0)),
-		"damage_type": String(item.get("damage_type", "physical")),
-		"core_damage": int(item.get("core_damage", 1))
-	}
+	var serialized := item.duplicate(true)
+	serialized["enemy_id"] = String(item.get("enemy_id", ""))
+	serialized["delay"] = float(item.get("delay", 0.0))
+	serialized["name"] = String(item.get("name", ""))
+	serialized["max_hp"] = int(item.get("max_hp", 1))
+	serialized["atk"] = int(item.get("atk", 1))
+	serialized["def"] = int(item.get("def", 0))
+	serialized["res"] = int(item.get("res", 0))
+	serialized["move_speed"] = float(item.get("move_speed", 1.0))
+	serialized["attack_interval"] = float(item.get("attack_interval", 1.0))
+	serialized["damage_type"] = String(item.get("damage_type", "physical"))
+	serialized["core_damage"] = int(item.get("core_damage", 1))
+	return serialized
 
 
 func _normalize_queue_item(raw_item: Dictionary) -> Dictionary:
