@@ -96,6 +96,25 @@ building_actor -> scenes/actors/BuildingActor.tscn
 如果某条配置需要在 UI 中显示图标，则使用 `icon_key`。  
 `icon_key` 是图标资源的逻辑名，不直接写贴图路径。
 
+### 2.7 UI 显示字段与统一显示工具
+
+配置表中对象自身的显示信息优先写在数据里：
+
+- `name`：显示名称。
+- `desc`：说明文本。
+- `icon_key`：真实图标资源逻辑名。
+- `icon_text`：无真实图标时的占位图标文本。
+
+跨 UI 复用的显示规则不应散落在各 UI 脚本中，例如：
+
+- `class` 到职业中文名。
+- `cost_prestige` 到临时阶级名和阶级颜色。
+- 伤害类型枚举到中文标签。
+- 阶段枚举到中文标签。
+- 朝向向量到中文标签。
+
+这些规则规划由 `scripts/ui/ui_display_text.gd` 统一提供。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
+
 ---
 
 ## 3. `units.json`

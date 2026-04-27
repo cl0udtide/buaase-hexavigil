@@ -668,6 +668,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/ui/build_panel.gd`
 - `scripts/ui/build_list_card.gd`
 - `scripts/ui/game_ui_style.gd`
+- `scripts/ui/ui_display_text.gd`（规划）
 - `scripts/ui/event_panel.gd`
 - `scripts/ui/blessing_panel.gd`
 - `scripts/ui/result_panel.gd`
@@ -707,6 +708,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
   共用 UI 样式辅助函数，集中生成暗色玻璃面板、按钮和进度条等 `StyleBox`。
+- `ui_display_text.gd`（规划）
+  统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
 - `combat/combat_hud.gd`
   作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示、单位详情面板和调试抽屉按钮。它只发出 UI 信号，不直接修改单位或地图真相数据。
 - `combat/combat_hud_controller.gd`

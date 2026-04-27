@@ -1465,6 +1465,62 @@ func configure(config: Dictionary) -> void
   输入：标题、说明、状态、图标文本、强调色、禁用态和最小高度。
   行为：刷新列表项显示。
 
+#### `UiDisplayText`（规划）
+
+作用：
+
+- 统一 UI 层显示文本与占位图标文本映射。
+- 避免职业、阶级、伤害类型、方向、阶段等映射散落在多个 UI 脚本。
+
+```gdscript
+static func config_name(cfg: Dictionary, fallback_id: Variant = "") -> String
+static func config_desc(cfg: Dictionary, fallback_text: String = "暂无说明") -> String
+static func icon_text(cfg: Dictionary, fallback_text: String = "*") -> String
+static func class_label(class_key: String) -> String
+static func tier_label(cost_prestige: int) -> String
+static func tier_color(cost_prestige: int) -> Color
+static func damage_type_label(type_value: int) -> String
+static func direction_label(direction: Vector2i) -> String
+static func phase_label(phase: int) -> String
+```
+
+方法规格：
+
+- `config_name(cfg, fallback_id)`
+  输入：配置字典和兜底 ID。
+  行为：优先返回 `cfg.name`，为空时返回兜底 ID。
+  返回：`String`。
+- `config_desc(cfg, fallback_text)`
+  输入：配置字典和兜底说明。
+  行为：优先返回 `cfg.desc`，为空时返回兜底说明。
+  返回：`String`。
+- `icon_text(cfg, fallback_text)`
+  输入：配置字典和兜底图标字。
+  行为：优先返回 `cfg.icon_text`，其次取 `cfg.name` 首字，最后返回兜底图标字。
+  返回：`String`。
+- `class_label(class_key)`
+  输入：单位职业 key。
+  行为：将 `guard`、`sniper`、`caster`、`defender` 等职业 key 映射为 UI 中文标签。
+  返回：`String`。
+- `tier_label(cost_prestige)` / `tier_color(cost_prestige)`
+  输入：声望价格。
+  行为：按当前商店价格规则映射阶级文本和颜色；后续存在显式 `tier` 或 `rarity` 字段时应优先使用显式字段。
+  返回：`String` / `Color`。
+- `damage_type_label(type_value)`
+  输入：伤害类型枚举值。
+  行为：映射为物理、法术、真实等中文标签。
+  返回：`String`。
+- `direction_label(direction)`
+  输入：四向朝向。
+  行为：映射为上、下、左、右。
+  返回：`String`。
+- `phase_label(phase)`
+  输入：阶段枚举值。
+  行为：映射为白天、夜晚、祝福、结算等中文阶段标签。
+  返回：`String`。
+
+详细设计见 `docs/UI_DISPLAY_TEXT.md`。该工具只做显示转换，不加载配置、不保存 UI 状态、不修改玩法数据。
+
 #### `CombatHud`
 
 作用：
