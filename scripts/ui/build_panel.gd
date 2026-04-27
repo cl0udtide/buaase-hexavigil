@@ -12,23 +12,6 @@ const CATEGORY_AURA: StringName = &"aura"
 const CATEGORY_BLOCK: StringName = &"block"
 const REFRESH_COST := 2
 
-const CATEGORY_BUILDINGS := {
-	CATEGORY_RESOURCE: [
-		&"lumber_station",
-		&"stone_quarry",
-		&"mana_extractor"
-	],
-	CATEGORY_AURA: [
-		&"medical_station",
-		&"gravity_tower",
-		&"inspiring_monolith",
-		&"war_shrine"
-	],
-	CATEGORY_BLOCK: [
-		&"wood_wall"
-	]
-}
-
 var _current_mode: StringName = MODE_BUILD
 var _current_category: StringName = CATEGORY_RESOURCE
 var _selected_building_id: StringName = &""
@@ -53,25 +36,20 @@ func _ready() -> void:
 	_apply_visual_style()
 	_bind_events()
 	_bind_buttons()
-	var run_state = AppRefs.run_state()
-	if run_state != null:
-		_current_phase = int(run_state.phase)
-		_current_prestige = int(run_state.prestige)
-		set_visible_for_phase(_current_phase)
-	else:
-		set_visible_for_phase(GameEnums.PHASE_MENU)
 	_sync_shop_stock_from_manager()
-	_select_mode(MODE_BUILD)
+	refresh_from_state()
 
 
 func _bind_events() -> void:
 	var event_bus = AppRefs.event_bus()
-	if event_bus == null:
-		return
-	event_bus.phase_changed.connect(_on_phase_changed)
-	event_bus.prestige_changed.connect(_on_prestige_changed)
-	event_bus.shop_stock_changed.connect(_on_shop_stock_changed)
-	event_bus.shop_action_result.connect(_on_shop_action_result)
+	if event_bus != null:
+		event_bus.phase_changed.connect(_on_phase_changed)
+		event_bus.prestige_changed.connect(_on_prestige_changed)
+		event_bus.shop_stock_changed.connect(_on_shop_stock_changed)
+		event_bus.shop_action_result.connect(_on_shop_action_result)
+	var data_repo = AppRefs.data_repo()
+	if data_repo != null and data_repo.has_signal("data_loaded"):
+		data_repo.data_loaded.connect(_on_data_loaded)
 
 
 func _bind_buttons() -> void:
@@ -88,19 +66,33 @@ func _select_mode(mode: StringName) -> void:
 	_selected_building_id = &""
 	if _current_mode == MODE_SHOP:
 		_sync_shop_stock_from_manager()
-	_refresh_mode_buttons()
-	_refresh_bottom_controls()
-	_refresh_selection_label()
-	_rebuild_cards()
+	refresh_from_state()
 
 
 func _select_category(category: StringName) -> void:
 	_current_category = category
 	_selected_building_id = &""
+	refresh_from_state()
+
+
+func refresh_from_state() -> void:
+	_sync_runtime_state()
+	visible = _current_phase == GameEnums.PHASE_DAY
+	_refresh_mode_buttons()
 	_refresh_category_buttons()
+	_refresh_bottom_controls()
 	_refresh_selection_label()
-	if _current_mode == MODE_BUILD:
-		_rebuild_cards()
+	_rebuild_cards()
+
+
+func _sync_runtime_state() -> void:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		_current_phase = GameEnums.PHASE_MENU
+		_current_prestige = 0
+		return
+	_current_phase = int(run_state.phase)
+	_current_prestige = int(run_state.prestige)
 
 
 func _refresh_mode_buttons() -> void:
@@ -139,6 +131,8 @@ func _rebuild_cards() -> void:
 func _rebuild_building_cards() -> void:
 	for building_id in _get_category_buildings():
 		_card_list.add_child(_make_building_card(building_id))
+	if _card_list.get_child_count() == 0:
+		_card_list.add_child(_make_empty_state("暂无可建造建筑"))
 
 
 func _rebuild_shop_cards() -> void:
@@ -150,39 +144,36 @@ func _rebuild_shop_cards() -> void:
 
 
 func _get_category_buildings() -> Array[StringName]:
-	var result: Array[StringName] = []
-	var source: Array = CATEGORY_BUILDINGS.get(_current_category, [])
-	for building_id in source:
-		result.append(StringName(building_id))
-	return result
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_building_ids_by_type"):
+		return []
+	return data_repo.get_building_ids_by_type(_current_category)
 
 
 func _make_building_card(building_id: StringName) -> Control:
-	var cfg := _get_building_cfg(building_id)
-	var name := str(cfg.get("name", building_id))
-	var cost_text := "木 %d   石 %d   魔 %d" % [
-		int(cfg.get("cost_wood", 0)),
-		int(cfg.get("cost_stone", 0)),
-		int(cfg.get("cost_mana", 0))
-	]
-	var effect_text := str(cfg.get("desc", "")).strip_edges()
-	if effect_text.is_empty():
-		effect_text = _format_effect_text(cfg)
+	var card_model := _make_building_card_model(building_id)
 	var card := BuildListCardScene.instantiate() as Control
-	card.call("configure", {
-		"title": name,
-		"subtitle": cost_text,
-		"detail": effect_text,
-		"icon_text": _building_icon_text(building_id),
-		"accent": GameUiStyle.STROKE_SOFT,
-		"title_color": GameUiStyle.TEXT,
-		"state": "已选择" if building_id == _selected_building_id else "",
-		"state_color": GameUiStyle.AMBER,
-		"selected": building_id == _selected_building_id,
-		"min_height": 96.0
-	})
+	card.call("configure", card_model)
 	card.connect(&"pressed", _on_building_card_pressed.bind(building_id))
 	return card
+
+
+func _make_building_card_model(building_id: StringName) -> Dictionary:
+	var cfg := _get_building_cfg(building_id)
+	var selected := building_id == _selected_building_id
+	return {
+		"title": str(cfg.get("name", building_id)),
+		"subtitle": _format_building_cost(cfg),
+		"detail": _format_building_detail(cfg),
+		"icon_text": _resolve_building_icon_text(cfg),
+		"accent": GameUiStyle.STROKE_SOFT,
+		"title_color": GameUiStyle.TEXT,
+		"state": "已选择" if selected else "",
+		"state_color": GameUiStyle.AMBER,
+		"selected": selected,
+		"disabled": cfg.is_empty(),
+		"min_height": 108.0
+	}
 
 
 func _make_shop_card(slot: Dictionary) -> Control:
@@ -229,13 +220,31 @@ func _make_empty_state(text_value: String) -> Control:
 	var card := BuildListCardScene.instantiate() as Control
 	card.call("configure", {
 		"title": text_value,
-		"icon_text": "路",
+		"icon_text": "-",
 		"accent": GameUiStyle.STROKE_SOFT,
 		"title_color": GameUiStyle.TEXT_DIM,
 		"disabled": true,
 		"min_height": 96.0
 	})
 	return card
+
+
+func _format_building_cost(cfg: Dictionary) -> String:
+	if cfg.is_empty():
+		return "配置未加载"
+	return "木 %d   石 %d   魔 %d   行动 %d" % [
+		int(cfg.get("cost_wood", 0)),
+		int(cfg.get("cost_stone", 0)),
+		int(cfg.get("cost_mana", 0)),
+		int(cfg.get("ap_cost", 0))
+	]
+
+
+func _format_building_detail(cfg: Dictionary) -> String:
+	var detail := str(cfg.get("desc", "")).strip_edges()
+	if not detail.is_empty():
+		return detail
+	return _format_effect_text(cfg)
 
 
 func _format_effect_text(cfg: Dictionary) -> String:
@@ -269,8 +278,7 @@ func _format_effect_text(cfg: Dictionary) -> String:
 
 func _on_building_card_pressed(building_id: StringName) -> void:
 	_selected_building_id = building_id
-	_refresh_selection_label()
-	_rebuild_cards()
+	refresh_from_state()
 	var action_panel := get_node_or_null("../ActionPanel")
 	if action_panel != null and action_panel.has_method("set_mode_build"):
 		action_panel.set_mode_build(building_id)
@@ -303,8 +311,7 @@ func _on_shop_stock_changed(stock_slots: Array[Dictionary]) -> void:
 	_stock_slots.clear()
 	for slot in stock_slots:
 		_stock_slots.append((slot as Dictionary).duplicate(true))
-	if _current_mode == MODE_SHOP:
-		_rebuild_cards()
+	refresh_from_state()
 
 
 func _sync_shop_stock_from_manager() -> void:
@@ -322,10 +329,7 @@ func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 
 func _on_prestige_changed(value: int) -> void:
 	_current_prestige = value
-	_refresh_bottom_controls()
-	_refresh_selection_label()
-	if _current_mode == MODE_SHOP:
-		_rebuild_cards()
+	refresh_from_state()
 
 
 func _get_building_cfg(building_id: StringName) -> Dictionary:
@@ -364,26 +368,14 @@ func _class_text(value: String) -> String:
 			return value
 
 
-func _building_icon_text(building_id: StringName) -> String:
-	match building_id:
-		&"lumber_station":
-			return "木"
-		&"stone_quarry":
-			return "石"
-		&"mana_extractor":
-			return "魔"
-		&"medical_station":
-			return "疗"
-		&"gravity_tower":
-			return "缓"
-		&"inspiring_monolith":
-			return "速"
-		&"war_shrine":
-			return "攻"
-		&"wood_wall":
-			return "墙"
-		_:
-			return "*"
+func _resolve_building_icon_text(cfg: Dictionary) -> String:
+	var icon_text := String(cfg.get("icon_text", "")).strip_edges()
+	if not icon_text.is_empty():
+		return icon_text.substr(0, 1)
+	var name := String(cfg.get("name", "")).strip_edges()
+	if not name.is_empty():
+		return name.substr(0, 1)
+	return "*"
 
 
 func _unit_icon_text(unit_id: StringName) -> String:
@@ -416,14 +408,15 @@ func _tier_color(unit_id: StringName) -> Color:
 
 func set_visible_for_phase(phase: int) -> void:
 	_current_phase = phase
-	visible = phase == GameEnums.PHASE_DAY
-	_refresh_bottom_controls()
-	if _current_mode == MODE_SHOP:
-		_rebuild_cards()
+	refresh_from_state()
 
 
 func _on_phase_changed(_old_phase: int, new_phase: int) -> void:
 	set_visible_for_phase(new_phase)
+
+
+func _on_data_loaded() -> void:
+	refresh_from_state()
 
 
 func _apply_visual_style() -> void:

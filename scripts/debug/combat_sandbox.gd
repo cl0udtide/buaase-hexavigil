@@ -93,7 +93,7 @@ func _ready() -> void:
 	add_to_group("combat_debug_log")
 	_configure_pause_boundaries()
 	var data_repo = AppRefs.data_repo()
-	if data_repo != null:
+	if data_repo != null and (not data_repo.has_method("is_loaded") or not data_repo.is_loaded()):
 		data_repo.load_all()
 	_load_presets_from_disk()
 	_build_editor_ui()

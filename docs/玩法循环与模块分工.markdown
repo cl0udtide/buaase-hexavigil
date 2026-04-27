@@ -226,7 +226,7 @@
 #### 功能
 
 - `CombatHud`（顶部状态、底部待部署区、单位详情、暂停/倍速）
-- `BuildPanel`（建筑/商店复合面板）
+- `BuildPanel`（建筑/商店复合面板；建筑列表由 `buildings.json` 的 `building_type` 和 `sort_order` 驱动，商店列表由 `ShopManager` 库存驱动）
 - `ActionPanel`（白天待机、探索、建造入口和进入夜晚）
 - 随机事件 UI
 - 肉鸽三选一界面

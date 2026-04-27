@@ -103,7 +103,7 @@ func get_current_phase() -> int
 
 - `start_new_run(seed)`
   输入：`seed: int`，`-1` 表示内部生成随机种子。
-  行为：重置本局状态，加载配置，并启动新一局流程。
+  行为：确认 `DataRepo` 已加载静态配置后，重置本局运行时状态，生成地图，并启动新一局流程。配置加载属于 `DataRepo` 的 Autoload 生命周期，不属于每局开局流程。
   返回：无。
 - `enter_day(day)`
   输入：`day: int`。
@@ -376,9 +376,14 @@ func change_deployed_count(delta: int) -> void
 
 - 查询配置表
 - 查询场景模板
+- 广播静态配置加载完成状态
 
 ```gdscript
+signal data_loaded
+signal data_reload_failed(message: String)
+
 func load_all() -> void
+func is_loaded() -> bool
 func get_unit_cfg(unit_id: StringName) -> Dictionary
 func get_enemy_cfg(enemy_id: StringName) -> Dictionary
 func get_building_cfg(building_id: StringName) -> Dictionary
@@ -387,14 +392,20 @@ func get_event_cfg(event_id: StringName) -> Dictionary
 func get_wave_cfg(day: int) -> Dictionary
 func get_map_generation_cfg() -> Dictionary
 func get_scene_by_key(scene_key: StringName) -> PackedScene
+func get_all_building_ids() -> Array[StringName]
+func get_building_ids_by_type(building_type: StringName) -> Array[StringName]
 ```
 
 方法规格：
 
 - `load_all()`
   输入：无。
-  行为：读取并缓存全部配置表。
+  行为：读取并缓存全部配置表和应用级配置。`DataRepo` 作为 Autoload 会在 `_ready()` 中自动调用；调试工具可以在需要热重载时显式调用。
   返回：无。
+- `is_loaded()`
+  输入：无。
+  行为：读取静态配置是否已完成至少一次加载。
+  返回：`bool`。
 - `get_unit_cfg(unit_id)`
   输入：`unit_id: StringName`。
   行为：查询单位配置。
@@ -427,6 +438,14 @@ func get_scene_by_key(scene_key: StringName) -> PackedScene
   输入：`scene_key: StringName`。
   行为：将逻辑场景名解析为场景模板。
   返回：`PackedScene`。
+- `get_all_building_ids()`
+  输入：无。
+  行为：按 `sort_order` 读取全部建筑配置 ID。
+  返回：`Array[StringName]`。
+- `get_building_ids_by_type(building_type)`
+  输入：`building_type: StringName`。
+  行为：按 `buildings.json[].building_type` 读取未被 `hidden_in_build_panel` 隐藏的建筑 ID，并按 `sort_order` 排序。
+  返回：`Array[StringName]`。
 
 #### `SceneRouter`
 
@@ -1391,13 +1410,18 @@ func get_current_building_id() -> StringName
 
 ```gdscript
 func set_visible_for_phase(phase: int) -> void
+func refresh_from_state() -> void
 ```
 
 方法规格：
 
 - `set_visible_for_phase(phase)`
   输入：阶段枚举值。
-  行为：根据当前阶段切换面板显隐。
+  行为：记录阶段并调用 `refresh_from_state()`，根据当前阶段切换面板显隐并刷新当前标签页。
+  返回：无。
+- `refresh_from_state()`
+  输入：无。
+  行为：从 `RunState`、`ShopManager` 缓存和 `DataRepo` 统一刷新按钮状态、选择提示和卡片列表。建筑页通过 `DataRepo.get_building_ids_by_type()` 动态读取配置；商店页展示 `shop_stock_changed` 推送的库存。
   返回：无。
 - 建筑卡点击
   行为：调用兄弟 `ActionPanel.set_mode_build(building_id)` 进入建造模式。
