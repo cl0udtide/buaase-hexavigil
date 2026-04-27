@@ -2,14 +2,14 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+@onready var _map_manager: Node = get_node_or_null("../MapManager")
+
 
 func roll_event_for_cell(cell: Vector2i) -> StringName:
-	var data_repo = AppRefs.data_repo()
-	if data_repo == null:
-		return StringName()
-	var event_ids: Array[StringName] = data_repo.get_all_event_ids()
-	if cell.x % 2 == 0 and not event_ids.is_empty():
-		return event_ids[0]
+	if _map_manager != null and _map_manager.has_method("get_event_id_at_cell"):
+		var map_event_id: StringName = _map_manager.get_event_id_at_cell(cell)
+		if map_event_id != StringName():
+			return map_event_id
 	return StringName()
 
 
@@ -24,6 +24,16 @@ func apply_event(event_id: StringName) -> Dictionary:
 	run_state.add_materials(int(payload.get("wood", 0)), int(payload.get("stone", 0)), int(payload.get("mana", 0)))
 	run_state.add_prestige(int(payload.get("prestige", 0)))
 	return ActionResult.ok({"event_id": event_id})
+
+
+func apply_event_for_cell(cell: Vector2i) -> Dictionary:
+	var event_id := roll_event_for_cell(cell)
+	if event_id == StringName():
+		return ActionResult.err(&"NO_EVENT", "该格子没有可触发事件")
+	var result := apply_event(event_id)
+	if result.get("ok", false) and _map_manager != null and _map_manager.has_method("mark_event_triggered"):
+		_map_manager.mark_event_triggered(cell)
+	return result
 
 
 func get_event_cfg(event_id: StringName) -> Dictionary:

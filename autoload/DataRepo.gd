@@ -10,6 +10,10 @@ const DATA_FILES := {
 	"waves": "res://data/waves.json"
 }
 
+const CONFIG_FILES := {
+	"map_generation": "res://data/map_generation.json"
+}
+
 const SCENE_REGISTRY := {
 	&"unit_actor": "res://scenes/actors/UnitActor.tscn",
 	&"enemy_actor": "res://scenes/actors/EnemyActor.tscn",
@@ -29,10 +33,16 @@ var _tables: Dictionary = {
 	"waves": {}
 }
 
+var _configs: Dictionary = {
+	"map_generation": {}
+}
+
 
 func load_all() -> void:
 	for table_name: String in DATA_FILES.keys():
 		_tables[table_name] = _load_table(DATA_FILES[table_name], table_name == "waves")
+	for config_name: String in CONFIG_FILES.keys():
+		_configs[config_name] = _load_config(CONFIG_FILES[config_name])
 
 
 func get_unit_cfg(unit_id: StringName) -> Dictionary:
@@ -57,6 +67,10 @@ func get_event_cfg(event_id: StringName) -> Dictionary:
 
 func get_wave_cfg(day: int) -> Dictionary:
 	return _tables["waves"].get(day, {}).duplicate(true)
+
+
+func get_map_generation_cfg() -> Dictionary:
+	return _configs["map_generation"].duplicate(true)
 
 
 func get_scene_by_key(scene_key: StringName) -> PackedScene:
@@ -116,3 +130,15 @@ func _load_table(path: String, use_day_key: bool) -> Dictionary:
 			if id_value != StringName():
 				indexed[id_value] = entry_dict
 	return indexed
+
+
+func _load_config(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		push_warning("Missing config file: %s" % path)
+		return {}
+	var file := FileAccess.open(path, FileAccess.READ)
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		push_warning("Config file is not a dictionary: %s" % path)
+		return {}
+	return (parsed as Dictionary).duplicate(true)

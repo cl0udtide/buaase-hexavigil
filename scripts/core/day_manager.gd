@@ -52,7 +52,11 @@ func try_explore(cell: Vector2i) -> Dictionary:
 
 
 func try_trigger_event(cell: Vector2i) -> Dictionary:
-	if _random_event_manager == null or not _random_event_manager.has_method("roll_event_for_cell"):
+	if _random_event_manager == null:
+		return ActionResult.err(&"EVENT_UNAVAILABLE", "事件系统尚未初始化")
+	if _random_event_manager.has_method("apply_event_for_cell"):
+		return _random_event_manager.apply_event_for_cell(cell)
+	if not _random_event_manager.has_method("roll_event_for_cell"):
 		return ActionResult.err(&"EVENT_UNAVAILABLE", "事件系统尚未初始化")
 	var event_id: StringName = _random_event_manager.roll_event_for_cell(cell)
 	if event_id == StringName():

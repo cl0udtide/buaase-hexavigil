@@ -13,16 +13,14 @@ const MAX_OBSTACLE_COUNT := 95
 const CORE_SAFE_RADIUS := 3
 const SPAWN_SAFE_RADIUS := 1
 const SPAWN_COUNT := 3
-const EXTRA_RESOURCES_PER_TYPE := 4
-
-const STARTING_RESOURCE_OFFSETS := {
-	&"wood": Vector2i(-2, -2),
-	&"stone": Vector2i(2, -2),
-	&"mana": Vector2i(-2, 2)
-}
+const RESOURCES_PER_TYPE := 12
+const NEAR_RESOURCES_PER_TYPE := 2
+const EVENT_POINT_COUNT := 8
+const MIN_SPAWN_CORE_DISTANCE := 12
+const MIN_SPAWN_DISTANCE := 10
 
 
-static func generate(width: int, height: int, seed: int = -1) -> Dictionary:
+static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = {}, event_ids: Array[StringName] = []) -> Dictionary:
 	var cells := _create_plain_cells(width, height)
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	if seed >= 0:
@@ -32,10 +30,10 @@ static func generate(width: int, height: int, seed: int = -1) -> Dictionary:
 
 	var core_cell: Vector2i = Vector2i(width / 2, height / 2)
 	_setup_core_and_initial_fog(cells, core_cell)
-	var spawn_cells := _place_spawns(cells, width, height, core_cell, rng)
-	_place_starting_resources(cells, core_cell)
-	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, rng)
-	_place_extra_resources(cells, width, height, spawn_cells, core_cell, rng)
+	var spawn_cells := _place_spawns(cells, width, height, core_cell, rng, cfg)
+	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, rng, cfg)
+	_place_resources(cells, width, height, spawn_cells, core_cell, rng, cfg)
+	_place_event_points(cells, width, height, spawn_cells, core_cell, rng, cfg, event_ids)
 
 	return {
 		"cells": cells,
@@ -72,18 +70,21 @@ static func _setup_core_and_initial_fog(cells: Dictionary, core_cell: Vector2i) 
 				reveal_data.discovered = true
 
 
-static func _place_spawns(cells: Dictionary, width: int, height: int, core_cell: Vector2i, rng: RandomNumberGenerator) -> Array[Vector2i]:
+static func _place_spawns(cells: Dictionary, width: int, height: int, core_cell: Vector2i, rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Vector2i]:
 	var candidates := _get_edge_candidates(width, height)
 	_shuffle_cells(candidates, rng)
 	var spawn_cells: Array[Vector2i] = []
+	var spawn_count: int = int(cfg.get("spawn_count", SPAWN_COUNT))
+	var min_core_distance: int = int(cfg.get("min_spawn_core_distance", MIN_SPAWN_CORE_DISTANCE))
+	var min_spawn_distance: int = int(cfg.get("min_spawn_distance", MIN_SPAWN_DISTANCE))
 	for candidate in candidates:
-		if spawn_cells.size() >= SPAWN_COUNT:
+		if spawn_cells.size() >= spawn_count:
 			break
-		if _manhattan(candidate, core_cell) < 12:
+		if _manhattan(candidate, core_cell) < min_core_distance:
 			continue
-		var far_from_existing := true
+		var far_from_existing: bool = true
 		for spawn_cell in spawn_cells:
-			if _manhattan(candidate, spawn_cell) < 10:
+			if _manhattan(candidate, spawn_cell) < min_spawn_distance:
 				far_from_existing = false
 				break
 		if not far_from_existing:
@@ -108,54 +109,61 @@ static func _get_edge_candidates(width: int, height: int) -> Array[Vector2i]:
 	return candidates
 
 
-static func _place_starting_resources(cells: Dictionary, core_cell: Vector2i) -> void:
-	for resource_type in STARTING_RESOURCE_OFFSETS.keys():
-		var resource_key := StringName(resource_type)
-		var resource_offset: Vector2i = STARTING_RESOURCE_OFFSETS.get(resource_key, Vector2i.ZERO)
-		var resource_cell: Vector2i = core_cell + resource_offset
-		if not cells.has(resource_cell):
-			continue
-		var resource_data: CellData = cells[resource_cell]
-		_set_resource_node(resource_data, resource_key)
-
-
-static func _place_extra_resources(
+static func _place_resources(
 	cells: Dictionary,
 	width: int,
 	height: int,
 	spawn_cells: Array[Vector2i],
 	core_cell: Vector2i,
-	rng: RandomNumberGenerator
+	rng: RandomNumberGenerator,
+	cfg: Dictionary
 ) -> void:
-	var candidates: Array[Vector2i] = []
+	var near_candidates: Array[Vector2i] = []
+	var far_candidates: Array[Vector2i] = []
 	for y in range(1, height - 1):
 		for x in range(1, width - 1):
-			var cell := Vector2i(x, y)
-			if _is_protected_cell(cell, core_cell, spawn_cells):
+			var cell: Vector2i = Vector2i(x, y)
+			var near_ring := _is_near_exploration_ring(cell, core_cell)
+			if _is_protected_cell(cell, core_cell, spawn_cells, cfg) and not near_ring:
 				continue
 			var data: CellData = cells[cell]
 			if data == null or not data.walkable or data.resource_type != StringName() or data.spawn_key != StringName():
 				continue
-			candidates.append(cell)
-	_shuffle_cells(candidates, rng)
+			if near_ring:
+				near_candidates.append(cell)
+			else:
+				far_candidates.append(cell)
+	_shuffle_cells(near_candidates, rng)
+	_shuffle_cells(far_candidates, rng)
 
 	var resource_types: Array[StringName] = [&"wood", &"stone", &"mana"]
 	var placed_by_type: Dictionary = {}
 	for resource_type in resource_types:
 		placed_by_type[resource_type] = 0
-	for cell in candidates:
-		var resource_type: StringName = resource_types[rng.randi_range(0, resource_types.size() - 1)]
-		if int(placed_by_type.get(resource_type, 0)) >= EXTRA_RESOURCES_PER_TYPE:
-			var all_done := true
-			for type_key in resource_types:
-				if int(placed_by_type.get(type_key, 0)) < EXTRA_RESOURCES_PER_TYPE:
-					all_done = false
-					resource_type = type_key
-					break
-			if all_done:
-				break
-		_set_resource_node(cells[cell], resource_type)
+	var target_per_type: int = int(cfg.get("resources_per_type", RESOURCES_PER_TYPE))
+	var near_target_per_type: int = min(int(cfg.get("near_resources_per_type", NEAR_RESOURCES_PER_TYPE)), target_per_type)
+	for resource_type in resource_types:
+		_place_resource_type(cells, near_candidates, resource_type, near_target_per_type, placed_by_type)
+	for resource_type in resource_types:
+		_place_resource_type(cells, far_candidates, resource_type, target_per_type, placed_by_type)
+
+
+static func _place_resource_type(
+	cells: Dictionary,
+	candidates: Array[Vector2i],
+	resource_type: StringName,
+	target_count: int,
+	placed_by_type: Dictionary
+) -> void:
+	for cell in candidates.duplicate():
+		if int(placed_by_type.get(resource_type, 0)) >= target_count:
+			return
+		var data: CellData = cells[cell]
+		if data == null or data.resource_type != StringName() or not data.walkable:
+			continue
+		_set_resource_node(data, resource_type)
 		placed_by_type[resource_type] = int(placed_by_type.get(resource_type, 0)) + 1
+		candidates.erase(cell)
 
 
 static func _set_resource_node(data: CellData, resource_type: StringName) -> void:
@@ -165,19 +173,25 @@ static func _set_resource_node(data: CellData, resource_type: StringName) -> voi
 	data.walkable = true
 
 
+static func _is_near_exploration_ring(cell: Vector2i, core_cell: Vector2i) -> bool:
+	var distance: int = max(absi(cell.x - core_cell.x), absi(cell.y - core_cell.y))
+	return distance >= 3 and distance <= 5
+
+
 static func _place_random_obstacles(
 	cells: Dictionary,
 	width: int,
 	height: int,
 	spawn_cells: Array[Vector2i],
 	core_cell: Vector2i,
-	rng: RandomNumberGenerator
+	rng: RandomNumberGenerator,
+	cfg: Dictionary
 ) -> void:
 	var candidates: Array[Vector2i] = []
 	for y in range(height):
 		for x in range(width):
 			var cell: Vector2i = Vector2i(x, y)
-			if _is_protected_cell(cell, core_cell, spawn_cells):
+			if _is_protected_cell(cell, core_cell, spawn_cells, cfg):
 				continue
 			var data: CellData = cells[cell]
 			if data == null or data.resource_type != StringName() or data.spawn_key != StringName():
@@ -186,8 +200,11 @@ static func _place_random_obstacles(
 
 	_shuffle_cells(candidates, rng)
 
-	var target_count: int = max(MIN_OBSTACLE_COUNT, int(round(width * height * OBSTACLE_RATIO)))
-	target_count = min(target_count, min(MAX_OBSTACLE_COUNT, candidates.size()))
+	var obstacle_ratio: float = float(cfg.get("obstacle_ratio", OBSTACLE_RATIO))
+	var min_obstacle_count: int = int(cfg.get("min_obstacle_count", MIN_OBSTACLE_COUNT))
+	var max_obstacle_count: int = int(cfg.get("max_obstacle_count", MAX_OBSTACLE_COUNT))
+	var target_count: int = max(min_obstacle_count, int(round(width * height * obstacle_ratio)))
+	target_count = min(target_count, min(max_obstacle_count, candidates.size()))
 	var placed_count: int = 0
 
 	for cell in candidates:
@@ -216,11 +233,44 @@ static func _place_random_obstacles(
 			data.buildable = true
 
 
-static func _is_protected_cell(cell: Vector2i, core_cell: Vector2i, spawn_cells: Array[Vector2i]) -> bool:
-	if max(absi(cell.x - core_cell.x), absi(cell.y - core_cell.y)) <= CORE_SAFE_RADIUS:
+static func _place_event_points(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	rng: RandomNumberGenerator,
+	cfg: Dictionary,
+	event_ids: Array[StringName]
+) -> void:
+	if event_ids.is_empty():
+		return
+	var candidates: Array[Vector2i] = []
+	for y in range(1, height - 1):
+		for x in range(1, width - 1):
+			var cell: Vector2i = Vector2i(x, y)
+			if _is_protected_cell(cell, core_cell, spawn_cells, cfg):
+				continue
+			var data: CellData = cells[cell]
+			if data == null or not data.walkable or data.resource_type != StringName() or data.spawn_key != StringName() or data.is_core:
+				continue
+			candidates.append(cell)
+	_shuffle_cells(candidates, rng)
+
+	var event_point_count: int = min(int(cfg.get("event_point_count", EVENT_POINT_COUNT)), candidates.size())
+	for index in range(event_point_count):
+		var data: CellData = cells[candidates[index]]
+		data.event_id = event_ids[rng.randi_range(0, event_ids.size() - 1)]
+		data.event_triggered = false
+
+
+static func _is_protected_cell(cell: Vector2i, core_cell: Vector2i, spawn_cells: Array[Vector2i], cfg: Dictionary) -> bool:
+	var core_safe_radius: int = int(cfg.get("core_safe_radius", CORE_SAFE_RADIUS))
+	var spawn_safe_radius: int = int(cfg.get("spawn_safe_radius", SPAWN_SAFE_RADIUS))
+	if max(absi(cell.x - core_cell.x), absi(cell.y - core_cell.y)) <= core_safe_radius:
 		return true
 	for spawn_cell in spawn_cells:
-		if max(absi(cell.x - spawn_cell.x), absi(cell.y - spawn_cell.y)) <= SPAWN_SAFE_RADIUS:
+		if max(absi(cell.x - spawn_cell.x), absi(cell.y - spawn_cell.y)) <= spawn_safe_radius:
 			return true
 	return false
 
