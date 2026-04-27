@@ -193,9 +193,43 @@ func _draw_deploy_direction_arrow(map_manager: Node) -> void:
 	var direction := Vector2(_deploy_preview_facing)
 	if direction.length_squared() <= 0.0:
 		return
-	var end: Vector2 = start + direction.normalized() * CELL_SIZE * 0.78
-	draw_line(start, end, DEPLOY_LOCKED_BORDER, 6.0, true)
-	draw_circle(end, 8.0, DEPLOY_LOCKED_BORDER)
+	direction = direction.normalized()
+	var radius := CELL_SIZE * 1.25
+	var tangent := Vector2(-direction.y, direction.x)
+	var sector_points := PackedVector2Array([
+		start,
+		start + (direction + tangent * 0.58).normalized() * radius,
+		start + (direction - tangent * 0.58).normalized() * radius
+	])
+	draw_circle(start, radius, Color(1.0, 0.70, 0.20, 0.11))
+	draw_colored_polygon(sector_points, Color(1.0, 0.68, 0.18, 0.22))
+	draw_arc(start, radius, 0.0, TAU, 72, Color(1.0, 0.74, 0.28, 0.55), 2.0, true)
+	var center_rect := Rect2(start - Vector2.ONE * CELL_SIZE * 0.26, Vector2.ONE * CELL_SIZE * 0.52)
+	draw_rect(center_rect, Color(1.0, 0.68, 0.18, 0.30))
+	draw_rect(center_rect, DEPLOY_LOCKED_BORDER, false, 3.0)
+	draw_line(start + Vector2(-10.0, 0.0), start + Vector2(10.0, 0.0), DEPLOY_LOCKED_BORDER, 3.0, true)
+	draw_line(start + Vector2(0.0, -10.0), start + Vector2(0.0, 10.0), DEPLOY_LOCKED_BORDER, 3.0, true)
+	var directions: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
+	for direction_i: Vector2i in directions:
+		var arrow_direction := Vector2(direction_i)
+		var selected := direction_i == _deploy_preview_facing
+		var arrow_color := DEPLOY_LOCKED_BORDER if selected else Color(1.0, 0.82, 0.38, 0.48)
+		var line_width := 6.0 if selected else 3.0
+		var begin := start + arrow_direction * CELL_SIZE * 0.34
+		var end := start + arrow_direction * CELL_SIZE * (0.94 if selected else 0.78)
+		draw_line(begin, end, arrow_color, line_width, true)
+		_draw_arrow_head(end, arrow_direction, arrow_color, 12.0 if selected else 8.0)
+
+
+func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: float) -> void:
+	var normalized := direction.normalized()
+	var tangent := Vector2(-normalized.y, normalized.x)
+	var points := PackedVector2Array([
+		tip,
+		tip - normalized * size + tangent * size * 0.55,
+		tip - normalized * size - tangent * size * 0.55
+	])
+	draw_colored_polygon(points, color)
 
 
 func _get_cell_color(data) -> Color:

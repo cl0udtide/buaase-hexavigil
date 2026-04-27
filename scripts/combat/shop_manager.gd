@@ -16,7 +16,6 @@ var _stock_slots: Array[Dictionary] = []
 func _ready() -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
-		event_bus.request_buy_unit.connect(_on_request_buy_unit)
 		event_bus.request_buy_shop_slot.connect(_on_request_buy_shop_slot)
 		event_bus.request_refresh_shop.connect(_on_request_refresh_shop)
 
@@ -30,7 +29,7 @@ func refresh_shop() -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "全局单例尚未初始化")
+		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以刷新商店")
 	var spend_result: Dictionary = run_state.spend_prestige(REFRESH_COST)
@@ -38,7 +37,7 @@ func refresh_shop() -> Dictionary:
 		return spend_result
 	_roll_shop_stock()
 	_emit_stock_changed()
-	return ActionResult.ok({"stock": get_current_stock()}, "商店已刷新")
+	return ActionResult.ok({"stock": get_current_stock()}, "SHOP_REFRESHED")
 
 
 func get_current_stock() -> Array[Dictionary]:
@@ -52,22 +51,22 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "全局单例尚未初始化")
+		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以购买干员")
 	if slot_index < 0 or slot_index >= _stock_slots.size():
-		return ActionResult.err(&"SHOP_SLOT_INVALID", "商店槽位不存在")
+		return ActionResult.err(&"SHOP_SLOT_INVALID", "SHOP_SLOT_INVALID")
 
 	var slot: Dictionary = _stock_slots[slot_index]
 	if bool(slot.get("sold", false)):
 		return ActionResult.err(&"SHOP_SLOT_SOLD", "该槽位已购买")
 	var unit_id := StringName(slot.get("unit_id", ""))
 	if unit_id == StringName():
-		return ActionResult.err(&"SHOP_SLOT_EMPTY", "该槽位为空")
+		return ActionResult.err(&"SHOP_SLOT_EMPTY", "SHOP_SLOT_EMPTY")
 
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
-		return ActionResult.err(&"UNIT_NOT_FOUND", "找不到单位配置")
+		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
 	var spend_result: Dictionary = run_state.spend_prestige(int(cfg.get("cost_prestige", 0)))
 	if not spend_result.get("ok", false):
 		return spend_result
@@ -81,15 +80,7 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 		"unit_id": unit_id,
 		"operator": operator_info,
 		"stock": get_current_stock()
-	}, "购买成功")
-
-
-func try_buy_unit(unit_id: StringName) -> Dictionary:
-	for index in range(_stock_slots.size()):
-		var slot: Dictionary = _stock_slots[index]
-		if not bool(slot.get("sold", false)) and StringName(slot.get("unit_id", "")) == unit_id:
-			return try_buy_shop_slot(index)
-	return ActionResult.err(&"UNIT_NOT_IN_STOCK", "该单位不在当前商店库存中")
+	}, "璐拱鎴愬姛")
 
 
 func _roll_shop_stock() -> void:
@@ -153,10 +144,6 @@ func _emit_action_result(action: StringName, result: Dictionary) -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.shop_action_result.emit(action, result)
-
-
-func _on_request_buy_unit(unit_id: StringName) -> void:
-	_emit_action_result(&"buy", try_buy_unit(unit_id))
 
 
 func _on_request_buy_shop_slot(slot_index: int) -> void:
