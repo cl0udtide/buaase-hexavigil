@@ -2,6 +2,8 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+const DIRECT_DEMOLISH_BUILDINGS: Array[StringName] = [&"wood_wall"]
+
 var _next_runtime_id := 1
 var _buildings_by_runtime_id: Dictionary = {}
 var _buildings_by_cell: Dictionary = {}
@@ -77,7 +79,8 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 		_path_service.set_cell_blocked(cell, true)
 	if event_bus != null:
 		event_bus.building_placed.emit(_next_runtime_id, building_id, cell)
-		event_bus.path_grid_changed.emit()
+	if _is_path_blocking_cfg(cfg):
+		_emit_path_grid_changed("路径阻挡更新：放置 %s#%d，通知敌人重新寻路" % [String(cfg.get("name", building_id)), _next_runtime_id])
 	var created_runtime_id := _next_runtime_id
 	_next_runtime_id += 1
 	return ActionResult.ok({"runtime_id": created_runtime_id})
@@ -106,9 +109,8 @@ func try_repair_building(building_runtime_id: int) -> Dictionary:
 	actor.repair_full()
 	if bool(actor.cfg.get("blocks_path", false)) and _path_service != null:
 		_path_service.set_cell_blocked(actor.get_current_cell(), true)
-	var event_bus = AppRefs.event_bus()
-	if event_bus != null:
-		event_bus.path_grid_changed.emit()
+	if _is_path_blocking_cfg(actor.cfg):
+		_emit_path_grid_changed("路径阻挡更新：修复 %s#%d，通知敌人重新寻路" % [String(actor.cfg.get("name", actor.building_id)), building_runtime_id])
 	_debug_log("修复建筑 %s#%d，消耗 木%d 石%d 魔%d" % [
 		String(actor.cfg.get("name", actor.building_id)),
 		building_runtime_id,
@@ -124,16 +126,16 @@ func try_demolish_building(building_runtime_id: int) -> Dictionary:
 	if run_state == null:
 		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
 	if run_state.phase != GameEnums.PHASE_DAY:
-		return ActionResult.err(&"INVALID_PHASE", "只有白天可以拆除损毁建筑")
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以拆除建筑")
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor == null:
 		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
-	if not _is_building_destroyed(actor):
-		return ActionResult.err(&"BUILDING_NOT_DESTROYED", "只能直接拆除完全损毁的建筑")
+	if not _can_demolish_directly(actor):
+		return ActionResult.err(&"BUILDING_NOT_DEMOLISHABLE", "只有损毁建筑或木墙可以直接拆除")
 	var building_id: StringName = actor.building_id
 	var cell: Vector2i = actor.get_current_cell()
 	remove_building(building_runtime_id)
-	_debug_log("拆除损毁建筑 %s#%d" % [String(building_id), building_runtime_id])
+	_debug_log("拆除建筑 %s#%d" % [String(building_id), building_runtime_id])
 	return ActionResult.ok({"runtime_id": building_runtime_id, "building_id": building_id, "cell": cell}, "建筑已拆除")
 
 
@@ -182,7 +184,8 @@ func remove_building(building_runtime_id: int) -> void:
 	if event_bus != null:
 		if not was_destroyed:
 			event_bus.building_destroyed.emit(building_runtime_id, actor.building_id, cell)
-		event_bus.path_grid_changed.emit()
+	if _is_path_blocking_cfg(cfg):
+		_emit_path_grid_changed("路径阻挡更新：移除 %s#%d，通知敌人重新寻路" % [String(cfg.get("name", actor.building_id)), building_runtime_id])
 	actor.queue_free()
 
 
@@ -245,6 +248,26 @@ func _is_building_destroyed(actor: Node) -> bool:
 	return typeof(current_hp_variant) == TYPE_INT and int(current_hp_variant) <= 0
 
 
+func _can_demolish_directly(actor: Node) -> bool:
+	if actor == null:
+		return false
+	if _is_building_destroyed(actor):
+		return true
+	return DIRECT_DEMOLISH_BUILDINGS.has(StringName(actor.get("building_id")))
+
+
+func _is_path_blocking_cfg(cfg: Dictionary) -> bool:
+	return bool(cfg.get("blocks_path", false))
+
+
+func _emit_path_grid_changed(message: String = "") -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.path_grid_changed.emit()
+	if not message.is_empty():
+		_debug_log(message)
+
+
 func _mark_building_destroyed(actor: Node) -> void:
 	var cell: Vector2i = actor.get_current_cell()
 	var cfg: Dictionary = actor.cfg
@@ -256,7 +279,8 @@ func _mark_building_destroyed(actor: Node) -> void:
 	if event_bus != null:
 		event_bus.building_destroyed.emit(int(actor.get_runtime_id()), actor.building_id, cell)
 		event_bus.building_state_changed.emit(int(actor.get_runtime_id()), actor.building_id, false)
-		event_bus.path_grid_changed.emit()
+	if _is_path_blocking_cfg(cfg):
+		_emit_path_grid_changed("路径阻挡更新：损毁 %s#%d，通知敌人重新寻路" % [String(cfg.get("name", actor.building_id)), int(actor.get_runtime_id())])
 
 
 func _get_destroyed_repair_cost(actor: Node) -> Dictionary:
