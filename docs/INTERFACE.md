@@ -1252,41 +1252,72 @@ func clear_blocked() -> void
 
 作用：
 
-- Boss 扩展控制的预留接口，用于未来把复杂 Boss 行为从 `EnemyActor` 中拆出。
-- 当前实际运行的二阶段 Boss 不依赖该脚本，而是由 `EnemyActor` 读取 `enemies.json[].phases` 并在自身内部完成转阶段。
+- 通用多阶段 Boss 控制器的目标接口。
+- 迁移完成后，只在 `behavior_type == "boss"` 或配置存在 `phases` 时启用。
+- 负责阶段流转、转阶段无敌计时、阶段配置读取和阶段进入效果；不负责普通移动、普通攻击、刷怪或死亡移除。
+- 不硬编码具体 Boss ID。多个 Boss 的共性阶段机制通过 `enemies.json[].phases` 表达；特殊机制后续通过 `boss_behavior_key` 对应的行为组件扩展。
+- 当前代码中 `boss_controller.gd` 尚未实现该接口，现有 Boss 阶段逻辑仍在 `EnemyActor` 内；本节描述的是迁移目标。
 
 ```gdscript
-func on_hp_threshold_crossed(percent: float) -> void
-func enter_phase_two() -> void
-func cast_boss_skill(skill_id: StringName) -> void
+func setup(owner_actor: Node, initial_cfg: Dictionary) -> void
+func is_enabled() -> bool
+func is_transitioning() -> bool
+func try_consume_death_for_phase_transition() -> bool
+func tick(delta: float) -> Dictionary
+func get_current_phase() -> int
+func get_pending_phase_cfg() -> Dictionary
+func apply_phase_enter_effects() -> void
 ```
 
 方法规格：
 
-- `on_hp_threshold_crossed(percent)`
-  输入：血量百分比。
-  行为：处理 Boss 血量越过阈值时的状态切换。
+- `setup(owner_actor, initial_cfg)`
+  输入：所属 `EnemyActor` 与初始敌人配置。
+  行为：绑定所属 Actor，读取 `phases`，初始化阶段状态。
   返回：无。
-- `enter_phase_two()`
+- `is_enabled()`
   输入：无。
-  行为：让 Boss 进入第二阶段。
-  返回：无。
-- `cast_boss_skill(skill_id)`
-  输入：技能 ID。
-  行为：释放指定 Boss 技能。
+  行为：判断当前敌人是否启用 Boss 阶段控制。
+  返回：`bool`。
+- `is_transitioning()`
+  输入：无。
+  行为：判断 Boss 是否处于转阶段无敌计时中。
+  返回：`bool`。
+- `try_consume_death_for_phase_transition()`
+  输入：无。
+  行为：当 `EnemyActor` HP 降为 0 时调用；若存在下一阶段，则进入转阶段并消费这次死亡。
+  返回：`true` 表示进入转阶段，`false` 表示没有下一阶段，应继续普通死亡流程。
+- `tick(delta)`
+  输入：帧间隔。
+  行为：推进转阶段计时。转阶段完成时返回下一阶段配置；未完成时返回空字典。
+  返回：`Dictionary`。
+- `get_current_phase()`
+  输入：无。
+  行为：读取当前 Boss 阶段编号。
+  返回：`int`。
+- `get_pending_phase_cfg()`
+  输入：无。
+  行为：读取待切换阶段配置。
+  返回：`Dictionary`。
+- `apply_phase_enter_effects()`
+  输入：无。
+  行为：执行阶段进入效果，例如 `phase_enter_area_damage`。
   返回：无。
 
-当前已落地 Boss 链路：
+目标 Boss 阶段链路：
 
 ```text
 waves.json -> WaveManager -> EnemyManager.spawn_enemy()
 -> DataRepo.get_enemy_cfg()
 -> EnemyActor.setup_from_cfg()
+-> EnemyActor 启用 BossController
 -> EnemyActor.receive_damage()
--> EnemyActor 内部根据 phases 转阶段
+-> BossController.try_consume_death_for_phase_transition()
+-> BossController.tick()
+-> EnemyActor 应用下一阶段配置
 ```
 
-当 Boss 配置存在 `phases` 且第一阶段 HP 降为 0 时，`EnemyActor` 会进入 `phase_transition_sec` 秒无敌转阶段；转阶段结束后把第二阶段配置 merge 到当前 `cfg`，重置 `max_hp/current_hp`，重新计算寻路，并执行 `phase_enter_area_damage` 等入场效果。
+迁移完成后，当 Boss 配置存在 `phases` 且当前阶段 HP 降为 0 时，`BossController` 会进入 `phase_transition_sec` 秒无敌转阶段；转阶段结束后向 `EnemyActor` 返回下一阶段配置。`EnemyActor` 负责 merge 配置、重置 `max_hp/current_hp`、重新计算寻路并更新显示，然后由 `BossController` 执行阶段进入效果。
 
 ### 3.6 UI 模块
 

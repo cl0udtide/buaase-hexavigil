@@ -242,9 +242,20 @@ building_actor -> scenes/actors/BuildingActor.tscn
 |---|---|---|
 | `damage_type` | `String` | 伤害类型 |
 | `attack_range` | `int` | 攻击范围，按棋盘格切比雪夫距离计算；未配置或小于等于 0 时只攻击阻挡单位 |
-| `phase_transition_sec` | `float` | Boss 第一管血耗尽后的无敌转阶段时长，期间不移动也不攻击 |
-| `phases` | `Array` | Boss 后续阶段配置；当前 `enemy_actor` 支持 `phase: 2` 覆盖基础数值 |
+| `boss_controller_key` | `String` | Boss 阶段控制器逻辑名；未配置时默认使用通用 `phase_boss` |
+| `boss_behavior_key` | `String` | 未来 Boss 专属行为组件逻辑名；用于召唤、护盾循环、地图效果等非通用机制 |
+| `phase_transition_sec` | `float` | Boss 当前阶段 HP 耗尽后的无敌转阶段时长，期间不移动也不攻击 |
+| `phases` | `Array` | Boss 后续阶段配置；仅 Boss 使用，每项通过 `phase` 标识阶段编号，并可覆盖基础数值 |
 | `phase_enter_area_damage` | `Dictionary` | 进入该阶段时触发的区域伤害，支持 `radius`、`damage`、`damage_type` |
+
+Boss 多阶段规则：
+
+- 普通敌人不配置 `phases`。
+- 目标运行时中，`behavior_type: "boss"` 或存在非空 `phases` 时启用 `BossController`。
+- 迁移完成后，`BossController` 负责读取 `phases`、转阶段无敌计时和阶段进入效果。
+- 阶段配置项可以覆盖 `name`、`max_hp`、`atk`、`def`、`res`、`move_speed`、`attack_interval`、`attack_range`、`damage_type`、`behavior_type`、`move_type`、`core_damage` 等基础字段。
+- 多个 Boss 的共性阶段机制优先通过 `phases` 数据表达，不在代码中按 `enemy_id` 写分支。
+- `boss_behavior_key` 只用于数据表达不了的 Boss 专属机制；当前可先预留，不要求已有实现。
 
 ---
 
