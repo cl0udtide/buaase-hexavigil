@@ -90,8 +90,51 @@ func try_repair_building(building_runtime_id: int) -> Dictionary:
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor == null:
 		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
+	if not _is_building_destroyed(actor):
+		return ActionResult.err(&"BUILDING_NOT_DESTROYED", "只有完全损毁的建筑需要手动修复")
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
+	var repair_cost := _get_destroyed_repair_cost(actor)
+	var spend_result: Dictionary = run_state.spend_materials(
+		int(repair_cost.get("wood", 0)),
+		int(repair_cost.get("stone", 0)),
+		int(repair_cost.get("mana", 0))
+	)
+	if not spend_result.get("ok", false):
+		return spend_result
 	actor.repair_full()
-	return ActionResult.ok()
+	if bool(actor.cfg.get("blocks_path", false)) and _path_service != null:
+		_path_service.set_cell_blocked(actor.get_current_cell(), true)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.path_grid_changed.emit()
+	_debug_log("修复建筑 %s#%d，消耗 木%d 石%d 魔%d" % [
+		String(actor.cfg.get("name", actor.building_id)),
+		building_runtime_id,
+		int(repair_cost.get("wood", 0)),
+		int(repair_cost.get("stone", 0)),
+		int(repair_cost.get("mana", 0))
+	])
+	return ActionResult.ok({"runtime_id": building_runtime_id, "cost": repair_cost}, "建筑已修复")
+
+
+func try_demolish_building(building_runtime_id: int) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
+	if run_state.phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以拆除损毁建筑")
+	var actor := get_building_by_runtime_id(building_runtime_id)
+	if actor == null:
+		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
+	if not _is_building_destroyed(actor):
+		return ActionResult.err(&"BUILDING_NOT_DESTROYED", "只能直接拆除完全损毁的建筑")
+	var building_id: StringName = actor.building_id
+	var cell: Vector2i = actor.get_current_cell()
+	remove_building(building_runtime_id)
+	_debug_log("拆除损毁建筑 %s#%d" % [String(building_id), building_runtime_id])
+	return ActionResult.ok({"runtime_id": building_runtime_id, "building_id": building_id, "cell": cell}, "建筑已拆除")
 
 
 func try_toggle_building(building_runtime_id: int) -> Dictionary:
@@ -100,6 +143,8 @@ func try_toggle_building(building_runtime_id: int) -> Dictionary:
 		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
 	if not actor.has_method("can_toggle_enabled") or not actor.can_toggle_enabled():
 		return ActionResult.err(&"BUILDING_NOT_TOGGLEABLE", "This building cannot be toggled")
+	if _is_building_destroyed(actor):
+		return ActionResult.err(&"BUILDING_DESTROYED", "损毁建筑不能切换开关")
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
@@ -126,6 +171,7 @@ func remove_building(building_runtime_id: int) -> void:
 		return
 	var cell: Vector2i = actor.get_current_cell()
 	var cfg: Dictionary = actor.cfg
+	var was_destroyed := _is_building_destroyed(actor)
 	_buildings_by_runtime_id.erase(building_runtime_id)
 	_buildings_by_cell.erase(cell)
 	if _map_manager != null:
@@ -134,7 +180,8 @@ func remove_building(building_runtime_id: int) -> void:
 		_path_service.set_cell_blocked(cell, false)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
-		event_bus.building_destroyed.emit(building_runtime_id, actor.building_id, cell)
+		if not was_destroyed:
+			event_bus.building_destroyed.emit(building_runtime_id, actor.building_id, cell)
 		event_bus.path_grid_changed.emit()
 	actor.queue_free()
 
@@ -164,7 +211,21 @@ func collect_day_income() -> void:
 
 
 func refresh_daytime_repair() -> void:
-	pass
+	var repaired_count := 0
+	for actor in _get_building_list():
+		if actor == null or not is_instance_valid(actor):
+			continue
+		if _is_building_destroyed(actor):
+			continue
+		var current_hp := int(actor.get("current_hp"))
+		var max_hp := int(actor.get("max_hp"))
+		if current_hp <= 0 or current_hp >= max_hp:
+			continue
+		if actor.has_method("repair_full"):
+			actor.repair_full()
+			repaired_count += 1
+	if repaired_count > 0:
+		_debug_log("白天自动修复 %d 个未完全损毁建筑" % repaired_count)
 
 
 func get_building_by_cell(cell: Vector2i) -> Node:
@@ -187,6 +248,8 @@ func _is_building_destroyed(actor: Node) -> bool:
 func _mark_building_destroyed(actor: Node) -> void:
 	var cell: Vector2i = actor.get_current_cell()
 	var cfg: Dictionary = actor.cfg
+	if actor.has_method("can_toggle_enabled") and actor.can_toggle_enabled() and actor.has_method("set_enabled"):
+		actor.set_enabled(false)
 	if bool(cfg.get("blocks_path", false)) and _path_service != null:
 		_path_service.set_cell_blocked(cell, false)
 	var event_bus = AppRefs.event_bus()
@@ -194,6 +257,21 @@ func _mark_building_destroyed(actor: Node) -> void:
 		event_bus.building_destroyed.emit(int(actor.get_runtime_id()), actor.building_id, cell)
 		event_bus.building_state_changed.emit(int(actor.get_runtime_id()), actor.building_id, false)
 		event_bus.path_grid_changed.emit()
+
+
+func _get_destroyed_repair_cost(actor: Node) -> Dictionary:
+	var cfg: Dictionary = actor.cfg if actor != null else {}
+	return {
+		"wood": _half_repair_cost(int(cfg.get("cost_wood", 0))),
+		"stone": _half_repair_cost(int(cfg.get("cost_stone", 0))),
+		"mana": _half_repair_cost(int(cfg.get("cost_mana", 0)))
+	}
+
+
+func _half_repair_cost(value: int) -> int:
+	if value <= 0:
+		return 0
+	return int(ceil(float(value) * 0.5))
 
 
 func _apply_aura_effects(delta: float) -> void:
@@ -316,6 +394,8 @@ func _on_night_started(_day: int) -> void:
 	for actor in _get_building_list():
 		if actor == null or not is_instance_valid(actor):
 			continue
+		if _is_building_destroyed(actor):
+			continue
 		if actor.get("building_id") != &"war_shrine":
 			continue
 		if not actor.has_method("is_enabled") or not actor.is_enabled():
@@ -369,3 +449,9 @@ func _emit_building_state_changed(actor: Node, enabled: bool) -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null and actor != null:
 		event_bus.building_state_changed.emit(int(actor.get_runtime_id()), StringName(actor.building_id), enabled)
+
+
+func _debug_log(message: String) -> void:
+	var tree := get_tree()
+	if tree != null:
+		tree.call_group("combat_debug_log", "append_combat_debug", message)
