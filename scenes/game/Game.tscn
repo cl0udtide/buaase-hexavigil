@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://blw8m701w76xb"]
 
 [ext_resource type="PackedScene" path="res://scenes/world/MapRoot.tscn" id="1_2oj27"]
-[ext_resource type="PackedScene" path="res://scenes/world/SpawnPoint.tscn" id="3_sfnhr"]
+[ext_resource type="PackedScene" uid="uid://y6gtfuutepl7" path="res://scenes/world/SpawnPoint.tscn" id="3_sfnhr"]
 [ext_resource type="PackedScene" uid="uid://d05f48j4ndymu" path="res://scenes/world/Core.tscn" id="5_4wwll"]
 [ext_resource type="Script" uid="uid://cse3k4lj23lt6" path="res://scripts/core/game_controller.gd" id="7_r24yq"]
 [ext_resource type="Script" uid="uid://6rdj1eeimypo" path="res://scripts/core/day_manager.gd" id="8_lvp6d"]
@@ -107,19 +107,18 @@ grow_horizontal = 1
 grow_vertical = 0
 
 [node name="BuildPanel" parent="UI" unique_id=150429329 instance=ExtResource("23_esr4c")]
-anchors_preset = 13
+anchors_preset = 9
 anchor_right = 0.0
-anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 68.0
-offset_right = 238.0
-offset_bottom = -166.0
+offset_left = 12.0
+offset_top = 88.0
+offset_right = 242.0
+offset_bottom = -146.0
 grow_horizontal = 1
-grow_vertical = 2
 
-[node name="CombatHud" parent="UI" instance=ExtResource("35_combat_hud")]
+[node name="CombatHud" parent="UI" unique_id=298156043 instance=ExtResource("35_combat_hud")]
+layout_mode = 3
 
-[node name="CombatHudController" type="Node" parent="UI"]
+[node name="CombatHudController" type="Node" parent="UI" unique_id=2111346396]
 script = ExtResource("36_combat_hud_controller")
 
 [node name="EventPanel" parent="UI" unique_id=239470582 instance=ExtResource("29_rpato")]
