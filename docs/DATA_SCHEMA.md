@@ -276,7 +276,11 @@ Boss 多阶段规则：
   {
     "id": "medical_station",
     "name": "医疗站",
+    "desc": "以建筑为中心 3x3 范围内的友军持续回复 2 生命/秒",
     "building_type": "aura",
+    "sort_order": 110,
+    "icon_key": "medical_station_icon",
+    "icon_text": "疗",
     "max_hp": 150,
     "cost_wood": 2,
     "cost_stone": 1,
@@ -298,6 +302,7 @@ Boss 多阶段规则：
 |---|---|---|
 | `id` | `String` | 建筑唯一标识 |
 | `name` | `String` | 显示名称 |
+| `desc` | `String` | 建筑说明，`BuildPanel` 建筑卡片直接展示该字段 |
 | `building_type` | `String` | 建筑类别 |
 | `max_hp` | `int` | 最大生命 |
 | `cost_wood` | `int` | 木材消耗 |
@@ -315,6 +320,16 @@ Boss 多阶段规则：
 | `effect_radius` | `int` | 效果半径 |
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
+| `sort_order` | `int` | UI 排序值；`BuildPanel` 按该值从小到大显示，同值按 `id` 排序 |
+| `icon_key` | `String` | 建筑图标逻辑名，后续可映射到真实图标资源 |
+| `icon_text` | `String` | 当前占位 UI 使用的单字图标文本；有真实图标资源后可逐步替换 |
+| `hidden_in_build_panel` | `bool` | 是否从建筑面板隐藏，适合未开放或调试建筑 |
+
+`BuildPanel` 不维护独立建筑清单。建筑是否出现在某个标签页，由 `building_type` 决定：
+
+- `resource`：资源建筑。
+- `aura`：增益/光环建筑。
+- `block`：防御/路径阻挡建筑。
 
 ---
 
