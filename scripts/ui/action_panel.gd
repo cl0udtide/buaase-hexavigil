@@ -223,13 +223,14 @@ func _refresh_building_controls() -> void:
 	var building := _get_selected_building()
 	var is_day := _current_phase == GameEnums.PHASE_DAY
 	var is_destroyed := _is_building_destroyed(building)
+	var can_demolish := _can_demolish_building(building)
 	if _building_info_label != null:
 		_building_info_label.text = _format_building_info(building)
 	if _repair_building_button != null:
 		_repair_building_button.disabled = building == null or not is_day or not is_destroyed
 		_style_action_button(_repair_building_button, false)
 	if _demolish_building_button != null:
-		_demolish_building_button.disabled = building == null or not is_day or not is_destroyed
+		_demolish_building_button.disabled = building == null or not is_day or not can_demolish
 		_style_action_button(_demolish_building_button, false)
 	if _toggle_building_button != null:
 		_toggle_building_button.disabled = building == null or not is_day or is_destroyed or StringName(building.get("building_id")) != &"war_shrine"
@@ -254,6 +255,8 @@ func _format_building_info(building: Node) -> String:
 			int(cost.get("stone", 0)),
 			int(cost.get("mana", 0))
 		]
+	elif _can_demolish_building(building):
+		text += "\n可直接拆除，用于重新打开或调整敌人路线"
 	elif building.has_method("can_toggle_enabled") and building.can_toggle_enabled():
 		text += "\n状态：%s" % ("开启" if building.is_enabled() else "关闭")
 	return text
@@ -320,3 +323,11 @@ func _is_building_destroyed(building: Node) -> bool:
 		return bool(building.is_destroyed())
 	var current_hp_variant: Variant = building.get("current_hp")
 	return current_hp_variant != null and int(current_hp_variant) <= 0
+
+
+func _can_demolish_building(building: Node) -> bool:
+	if building == null:
+		return false
+	if _is_building_destroyed(building):
+		return true
+	return StringName(building.get("building_id")) == &"wood_wall"

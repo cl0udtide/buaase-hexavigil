@@ -9,6 +9,7 @@ const MODE_BUILD: StringName = &"build"
 const MODE_SHOP: StringName = &"shop"
 const CATEGORY_RESOURCE: StringName = &"resource"
 const CATEGORY_AURA: StringName = &"aura"
+const CATEGORY_BLOCK: StringName = &"block"
 const REFRESH_COST := 2
 
 const CATEGORY_BUILDINGS := {
@@ -22,6 +23,9 @@ const CATEGORY_BUILDINGS := {
 		&"gravity_tower",
 		&"inspiring_monolith",
 		&"war_shrine"
+	],
+	CATEGORY_BLOCK: [
+		&"wood_wall"
 	]
 }
 
@@ -39,6 +43,7 @@ var _current_phase := GameEnums.PHASE_MENU
 @onready var _category_tabs: HBoxContainer = %CategoryTabs
 @onready var _resource_button: Button = %ResourceCategoryButton
 @onready var _aura_button: Button = %AuraCategoryButton
+@onready var _block_button: Button = %BlockCategoryButton
 @onready var _refresh_shop_button: Button = %RefreshShopButton
 @onready var _message_label: Label = %PanelMessageLabel
 
@@ -74,6 +79,7 @@ func _bind_buttons() -> void:
 	_shop_mode_button.pressed.connect(_select_mode.bind(MODE_SHOP))
 	_resource_button.pressed.connect(_select_category.bind(CATEGORY_RESOURCE))
 	_aura_button.pressed.connect(_select_category.bind(CATEGORY_AURA))
+	_block_button.pressed.connect(_select_category.bind(CATEGORY_BLOCK))
 	_refresh_shop_button.pressed.connect(_on_refresh_shop_pressed)
 
 
@@ -107,8 +113,10 @@ func _refresh_mode_buttons() -> void:
 func _refresh_category_buttons() -> void:
 	_resource_button.disabled = _current_category == CATEGORY_RESOURCE
 	_aura_button.disabled = _current_category == CATEGORY_AURA
+	_block_button.disabled = _current_category == CATEGORY_BLOCK
 	_style_tab_button(_resource_button, _current_category == CATEGORY_RESOURCE)
 	_style_tab_button(_aura_button, _current_category == CATEGORY_AURA)
+	_style_tab_button(_block_button, _current_category == CATEGORY_BLOCK)
 
 
 func _refresh_bottom_controls() -> void:
@@ -234,6 +242,8 @@ func _format_effect_text(cfg: Dictionary) -> String:
 	var effect_type := StringName(cfg.get("effect_type", ""))
 	var effect_value := float(cfg.get("effect_value", 0.0))
 	var radius := int(cfg.get("effect_radius", 0))
+	if bool(cfg.get("blocks_path", false)):
+		return "阻挡敌人路径，损毁后不再挡路"
 	match effect_type:
 		&"collect_wood":
 			return "每天产出 %d 木材" % int(effect_value)
@@ -370,6 +380,8 @@ func _building_icon_text(building_id: StringName) -> String:
 			return "速"
 		&"war_shrine":
 			return "攻"
+		&"wood_wall":
+			return "墙"
 		_:
 			return "*"
 
