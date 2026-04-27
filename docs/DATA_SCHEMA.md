@@ -113,7 +113,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 - 阶段枚举到中文标签。
 - 朝向向量到中文标签。
 
-这些规则规划由 `scripts/ui/ui_display_text.gd` 统一提供。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
+这些规则由 `scripts/ui/ui_display_text.gd` 统一提供。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
 
 ---
 
