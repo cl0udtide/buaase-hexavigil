@@ -635,6 +635,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `EnemyActor.tscn`
   敌人实例模板。
 
+关于 `enemy_targeting.gd`：
+
+当前不单独拆出目标选择模块。现有索敌只服务于 `EnemyAttackController` 的远程普攻流程，尚未形成跨 Boss、技能、建筑攻击或多种敌人策略复用的公共能力。若后续出现优先低血量、优先建筑、仇恨列表、嘲讽、隐身、飞行/地面过滤、Boss 技能共用索敌等差异化目标策略，再将目标选择抽为独立 `enemy_targeting.gd`。
+
 ### 4.6 UI 模块
 
 目录：
