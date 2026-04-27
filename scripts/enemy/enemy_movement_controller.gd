@@ -3,6 +3,12 @@ extends Node
 const PATH_MODE_NORMAL: StringName = &"normal"
 const PATH_MODE_DEMOLISHER: StringName = &"demolisher"
 const PATH_MODE_FLYING: StringName = &"flying"
+const CARDINAL_DIRECTIONS: Array[Vector2i] = [
+	Vector2i.RIGHT,
+	Vector2i.DOWN,
+	Vector2i.LEFT,
+	Vector2i.UP
+]
 const CELL_SIZE := 64.0
 const BLOCK_HOLD_DISTANCE := CELL_SIZE * 0.5
 const BLOCK_SPREAD_DISTANCE := CELL_SIZE * 0.22
@@ -12,6 +18,7 @@ var _owner_actor: Node2D = null
 var _path: Array[Vector2i] = []
 var _path_index := 0
 var _blocked_by := -1
+var _base_path_mode: StringName = PATH_MODE_NORMAL
 var _path_mode: StringName = PATH_MODE_NORMAL
 var _block_slot := 0
 var _block_slot_count := 1
@@ -36,18 +43,26 @@ func reset() -> void:
 
 
 func refresh_path_mode() -> void:
-	_path_mode = _resolve_path_mode()
+	_base_path_mode = _resolve_path_mode()
+	_path_mode = _base_path_mode
 
 
 func recalc_path() -> void:
 	var path_service: Node = _owner_actor.get_node_or_null("../../../Managers/PathService") if _owner_actor != null else null
 	var map_manager: Node = _get_map_manager()
-	if map_manager == null:
+	if map_manager == null or path_service == null:
 		return
+	refresh_path_mode()
 	var core_cell: Vector2i = map_manager.get_core_cell()
-	if path_service != null:
-		_path = path_service.find_path(_owner_actor.current_cell, core_cell, _path_mode)
-		_path_index = min(1, _path.size() - 1) if not _path.is_empty() else 0
+	_path = path_service.find_path(_owner_actor.current_cell, core_cell, _base_path_mode)
+	_path_mode = _base_path_mode
+	if _path.is_empty() and _base_path_mode == PATH_MODE_NORMAL and _is_core_enclosed_by_path_blockers(map_manager, core_cell):
+		var forced_path: Array[Vector2i] = path_service.find_path(_owner_actor.current_cell, core_cell, PATH_MODE_DEMOLISHER)
+		if not forced_path.is_empty():
+			_path = forced_path
+			_path_mode = PATH_MODE_DEMOLISHER
+			_debug_log("核心被挡路建筑封闭，敌人 %s#%d 临时切换为拆墙路径" % [_debug_name(), _runtime_id()])
+	_path_index = min(1, _path.size() - 1) if not _path.is_empty() else 0
 
 
 func has_path() -> bool:
@@ -218,6 +233,63 @@ func _get_unit_by_runtime_id(unit_runtime_id: int) -> Node:
 
 func _get_map_manager() -> Node:
 	return _owner_actor.get_map_manager() if _owner_actor != null else null
+
+
+func _is_core_enclosed_by_path_blockers(map_manager: Node, core_cell: Vector2i) -> bool:
+	if map_manager == null or not map_manager.is_inside(core_cell):
+		return false
+	var queue: Array[Vector2i] = [core_cell]
+	var visited: Dictionary = {core_cell: true}
+	var head := 0
+	var found_path_blocker := false
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		if _is_edge_cell(map_manager, current):
+			return false
+		for direction in CARDINAL_DIRECTIONS:
+			var neighbor: Vector2i = current + direction
+			if not map_manager.is_inside(neighbor) or visited.has(neighbor):
+				continue
+			var data: CellData = map_manager.get_cell_data(neighbor)
+			if data == null or not data.walkable:
+				continue
+			if _has_active_path_blocking_building(data):
+				found_path_blocker = true
+				continue
+			visited[neighbor] = true
+			queue.append(neighbor)
+	return found_path_blocker
+
+
+func _is_edge_cell(map_manager: Node, cell: Vector2i) -> bool:
+	return cell.x <= 0 or cell.y <= 0 or cell.x >= int(map_manager.width) - 1 or cell.y >= int(map_manager.height) - 1
+
+
+func _has_active_path_blocking_building(data: CellData) -> bool:
+	if data == null or data.building_runtime_id < 0 or _owner_actor == null:
+		return false
+	var building_manager: Node = _owner_actor.get_building_manager()
+	if building_manager == null or not building_manager.has_method("get_building_by_runtime_id"):
+		return false
+	var building: Node = building_manager.get_building_by_runtime_id(data.building_runtime_id)
+	if building == null or _is_building_destroyed(building):
+		return false
+	if StringName(building.get("building_id")) == &"wood_wall":
+		return true
+	var cfg_variant: Variant = building.get("cfg")
+	if typeof(cfg_variant) != TYPE_DICTIONARY:
+		return false
+	return bool((cfg_variant as Dictionary).get("blocks_path", false))
+
+
+func _is_building_destroyed(building: Node) -> bool:
+	if building == null:
+		return false
+	if building.has_method("is_destroyed"):
+		return bool(building.is_destroyed())
+	var current_hp_variant: Variant = building.get("current_hp")
+	return current_hp_variant != null and int(current_hp_variant) <= 0
 
 
 func _resolve_path_mode() -> StringName:
