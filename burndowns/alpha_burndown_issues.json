@@ -277,9 +277,9 @@
   {
     "number": 57,
     "title": "行动力数值太低，白天操作不够用",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:49:10+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:19:09+00:00",
     "estimate": 2,
     "labels": [
       "estimate:2"
@@ -288,9 +288,9 @@
   {
     "number": 58,
     "title": "再部署倒计时不会自动刷新，建议改为角色图标倒计时",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:49:13+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:19:10+00:00",
     "estimate": 3,
     "labels": [
       "estimate:3"
@@ -299,9 +299,9 @@
   {
     "number": 59,
     "title": "初始声望过高且缺少稳定获取手段",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:49:15+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:19:10+00:00",
     "estimate": 4,
     "labels": [
       "estimate:4"
@@ -310,9 +310,9 @@
   {
     "number": 60,
     "title": "Boss 进入核心的伤害应设为即死级别",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:49:17+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:49+00:00",
     "estimate": 2,
     "labels": [
       "estimate:2"
@@ -321,9 +321,9 @@
   {
     "number": 61,
     "title": "Buff 系统仍是占位状态，UI 与效果需要重做",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:49:19+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:19:11+00:00",
     "estimate": 6,
     "labels": [
       "estimate:6"
@@ -332,9 +332,9 @@
   {
     "number": 62,
     "title": "随机事件仍是占位符，建议暂时移除",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:49:22+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:49+00:00",
     "estimate": 2,
     "labels": [
       "estimate:2"
@@ -343,9 +343,9 @@
   {
     "number": 63,
     "title": "资源点交互弹窗纵向异常拉长",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:56:55+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:50+00:00",
     "estimate": 2,
     "labels": [
       "estimate:2"
@@ -354,9 +354,9 @@
   {
     "number": 64,
     "title": "迷雾中的怪物不应可见",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T14:56:57+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:50+00:00",
     "estimate": 3,
     "labels": [
       "estimate:3"
@@ -365,9 +365,9 @@
   {
     "number": 65,
     "title": "白天再部署时间应为 0，便于调整阵线",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T15:11:46+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:51+00:00",
     "estimate": 2,
     "labels": [
       "estimate:2"
@@ -376,9 +376,9 @@
   {
     "number": 66,
     "title": "白天开始时干员应自动回满血",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T15:11:54+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:51+00:00",
     "estimate": 2,
     "labels": [
       "estimate:2"
@@ -387,9 +387,9 @@
   {
     "number": 67,
     "title": "飞行怪移动路径异常，斜向飞行且疑似会被建筑卡住",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T15:27:28+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:51+00:00",
     "estimate": 3,
     "labels": [
       "estimate:3"
@@ -398,9 +398,9 @@
   {
     "number": 68,
     "title": "建筑生效范围需要类似干员攻击范围的预览",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-27T15:27:40+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:19:11+00:00",
     "estimate": 4,
     "labels": [
       "estimate:4"
@@ -442,9 +442,9 @@
   {
     "number": 72,
     "title": "暂停与倍速控制应仅在夜晚开放并保持互斥状态",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-04-28T00:32:04+00:00",
-    "closed_at": null,
+    "closed_at": "2026-04-28T06:12:52+00:00",
     "estimate": 3,
     "labels": [
       "estimate:3"
