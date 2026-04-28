@@ -43,12 +43,14 @@ func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i, cfg_override: Dicti
 	return _next_runtime_id - 1
 
 
-func remove_enemy(enemy_runtime_id: int) -> void:
+func remove_enemy(enemy_runtime_id: int, defeated: bool = true) -> void:
 	var enemy := get_enemy_by_runtime_id(enemy_runtime_id)
 	if enemy == null:
 		return
 	var dead_enemy_id: StringName = enemy.enemy_id
 	_enemies_by_runtime_id.erase(enemy_runtime_id)
+	if defeated:
+		_award_prestige_for_defeat(enemy)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.enemy_died.emit(enemy_runtime_id, dead_enemy_id)
@@ -76,7 +78,7 @@ func notify_enemy_reached_core(enemy_runtime_id: int) -> void:
 	if run_state != null:
 		run_state.damage_core(int(enemy.cfg.get("core_damage", 1)))
 		_debug_log("敌人 %s#%d 抵达核心，核心受到 %d 点伤害，HP %d/%d" % [enemy.enemy_id, enemy_runtime_id, int(enemy.cfg.get("core_damage", 1)), run_state.core_hp, run_state.core_hp_max])
-	remove_enemy(enemy_runtime_id)
+	remove_enemy(enemy_runtime_id, false)
 
 
 func _on_path_grid_changed() -> void:
@@ -91,6 +93,17 @@ func clear_all_enemies() -> void:
 		if enemy != null:
 			_enemies_by_runtime_id.erase(int(enemy_runtime_id))
 			enemy.queue_free()
+
+
+func _award_prestige_for_defeat(enemy: Node) -> void:
+	var reward := int(enemy.cfg.get("prestige_reward", 0))
+	if reward <= 0:
+		return
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return
+	run_state.add_prestige(reward)
+	_debug_log("击杀敌人 %s#%d，获得 %d 声望" % [enemy.enemy_id, int(enemy.get_runtime_id()), reward])
 
 
 func _debug_log(message: String) -> void:

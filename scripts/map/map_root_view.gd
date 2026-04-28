@@ -8,6 +8,8 @@ const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
 const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
 const ATTACK_RANGE_BORDER := Color(0.30, 0.85, 1.0, 0.95)
+const BUILDING_RANGE_FILL := Color(0.28, 0.90, 0.42, 0.22)
+const BUILDING_RANGE_BORDER := Color(0.46, 1.0, 0.58, 0.86)
 const DEPLOY_VALID_FILL := Color(0.18, 0.85, 0.65, 0.38)
 const DEPLOY_VALID_BORDER := Color(0.38, 1.0, 0.82, 0.95)
 const DEPLOY_INVALID_FILL := Color(1.0, 0.12, 0.10, 0.36)
@@ -42,6 +44,7 @@ var _camera_fit_initialized := false
 var _last_map_size := Vector2.ZERO
 var _is_dragging := false
 var _debug_attack_range_cells: Array[Vector2i] = []
+var _building_effect_range_cells: Array[Vector2i] = []
 var _deploy_preview_cell := Vector2i(-1, -1)
 var _deploy_preview_valid := false
 var _deploy_locked_cell := Vector2i(-1, -1)
@@ -113,6 +116,8 @@ func _draw() -> void:
 				_draw_deploy_range_cell(rect)
 			if _debug_attack_range_cells.has(cell):
 				_draw_attack_range_cell(rect)
+			if _building_effect_range_cells.has(cell):
+				_draw_building_range_cell(rect)
 			if cell == _deploy_preview_cell:
 				_draw_deploy_preview_cell(rect, _deploy_preview_valid)
 			if cell == _deploy_locked_cell:
@@ -132,6 +137,16 @@ func set_debug_attack_range(cells: Array[Vector2i]) -> void:
 
 func clear_debug_attack_range() -> void:
 	_debug_attack_range_cells.clear()
+	queue_redraw()
+
+
+func set_building_effect_range(cells: Array[Vector2i]) -> void:
+	_building_effect_range_cells = cells.duplicate()
+	queue_redraw()
+
+
+func clear_building_effect_range() -> void:
+	_building_effect_range_cells.clear()
 	queue_redraw()
 
 
@@ -169,6 +184,11 @@ func _draw_attack_range_cell(rect: Rect2) -> void:
 func _draw_deploy_range_cell(rect: Rect2) -> void:
 	draw_rect(rect.grow(-6.0), DEPLOY_RANGE_FILL)
 	draw_rect(rect.grow(-6.0), DEPLOY_RANGE_BORDER, false, 1.5)
+
+
+func _draw_building_range_cell(rect: Rect2) -> void:
+	draw_rect(rect.grow(-7.0), BUILDING_RANGE_FILL)
+	draw_rect(rect.grow(-7.0), BUILDING_RANGE_BORDER, false, 2.0)
 
 
 func _draw_deploy_preview_cell(rect: Rect2, is_valid: bool) -> void:

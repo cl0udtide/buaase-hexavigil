@@ -487,11 +487,15 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 		lines.append("当前祝福：无")
 		return "\n".join(lines)
 	var data_repo = AppRefs.data_repo()
-	var buff_names := PackedStringArray()
+	var buff_lines := PackedStringArray()
 	for buff_id in buff_ids:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
-		buff_names.append(String(cfg.get("name", buff_id)))
-	lines.append("Buffs: %s" % ", ".join(buff_names))
+		buff_lines.append("%s：%s" % [
+			String(cfg.get("name", buff_id)),
+			String(cfg.get("desc", "暂无效果说明"))
+		])
+	lines.append("当前祝福：")
+	lines.append("\n".join(buff_lines))
 	return "\n".join(lines)
 
 
