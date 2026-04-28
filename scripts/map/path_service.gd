@@ -59,7 +59,7 @@ func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName =
 	if start_cell == end_cell:
 		return [start_cell]
 	if path_mode == PATH_MODE_FLYING:
-		return [start_cell, end_cell]
+		return _make_flying_path(start_cell, end_cell)
 
 	var blocked_cells: Dictionary = _get_blocked_cells_for_mode(path_mode)
 	if blocked_cells.get(end_cell, false):
@@ -126,6 +126,18 @@ func _get_blocked_cells_for_mode(path_mode: StringName) -> Dictionary:
 	if path_mode == PATH_MODE_DEMOLISHER:
 		return _terrain_blocked_cells
 	return _normal_blocked_cells
+
+
+func _make_flying_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]:
+	var path: Array[Vector2i] = [start_cell]
+	var current := start_cell
+	while current.x != end_cell.x:
+		current.x += signi(end_cell.x - current.x)
+		path.append(current)
+	while current.y != end_cell.y:
+		current.y += signi(end_cell.y - current.y)
+		path.append(current)
+	return path
 
 
 func _is_path_blocking_building(data: CellData) -> bool:

@@ -195,6 +195,8 @@ func get_attack_targets() -> Array:
 	for enemy in get_all_enemies():
 		if enemy == null or not is_instance_valid(enemy):
 			continue
+		if not _can_detect_enemy(enemy):
+			continue
 		if _blocked_enemy_ids.has(enemy.get_runtime_id()):
 			targets.append(enemy)
 			continue
@@ -525,6 +527,8 @@ func _refresh_blocking() -> void:
 func _can_keep_blocking(enemy: Node) -> bool:
 	if enemy == null or not is_instance_valid(enemy):
 		return false
+	if not _can_detect_enemy(enemy):
+		return false
 	if _is_enemy_unblockable(enemy):
 		return false
 	if enemy.has_method("get_blocker_runtime_id") and enemy.get_blocker_runtime_id() != runtime_id:
@@ -536,6 +540,8 @@ func _can_start_blocking(enemy: Node) -> bool:
 	if block_count <= 0:
 		return false
 	if enemy == null or not is_instance_valid(enemy):
+		return false
+	if not _can_detect_enemy(enemy):
 		return false
 	if _blocked_enemy_ids.has(enemy.get_runtime_id()):
 		return false
@@ -591,7 +597,15 @@ func _get_enemy_block_weight(enemy: Node) -> int:
 
 
 func _is_enemy_unblockable(enemy: Node) -> bool:
-	return enemy != null and bool(enemy.cfg.get("unblockable", false))
+	return enemy != null and (bool(enemy.cfg.get("unblockable", false)) or StringName(enemy.cfg.get("move_type", "ground")) == &"flying")
+
+
+func _can_detect_enemy(enemy: Node) -> bool:
+	var map_manager := get_map_manager()
+	if map_manager == null or not map_manager.has_method("is_discovered"):
+		return true
+	var enemy_cell: Vector2i = map_manager.world_to_cell(enemy.global_position) if map_manager.has_method("world_to_cell") else enemy.get_current_cell()
+	return map_manager.is_discovered(enemy_cell)
 
 
 func _is_enemy_within_block_radius(enemy: Node) -> bool:

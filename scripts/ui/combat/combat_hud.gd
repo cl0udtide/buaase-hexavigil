@@ -71,10 +71,21 @@ func set_resource_values(resource_text: String, tooltip_text_value: String = "")
 	_resource_label.tooltip_text = tooltip_text_value
 
 
-func set_time_controls(paused: bool, speed: float) -> void:
-	_pause_button.text = "继续" if paused else "暂停"
-	_style_button(_speed_1_button, GameUiStyle.ACCENT if is_equal_approx(speed, 1.0) else GameUiStyle.STROKE)
-	_style_button(_speed_2_button, GameUiStyle.ACCENT if is_equal_approx(speed, 2.0) else GameUiStyle.STROKE)
+func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void:
+	_pause_button.disabled = not enabled
+	_speed_1_button.disabled = not enabled
+	_speed_2_button.disabled = not enabled
+	var effective_paused := paused and enabled
+	var pause_accent := GameUiStyle.AMBER if effective_paused else GameUiStyle.STROKE_SOFT
+	var speed_1_accent := GameUiStyle.STROKE_SOFT
+	var speed_2_accent := GameUiStyle.STROKE_SOFT
+	if enabled and not effective_paused:
+		speed_1_accent = GameUiStyle.ACCENT if is_equal_approx(speed, 1.0) else GameUiStyle.STROKE_SOFT
+		speed_2_accent = GameUiStyle.ACCENT if is_equal_approx(speed, 2.0) else GameUiStyle.STROKE_SOFT
+	_pause_button.text = "暂停"
+	_style_button(_pause_button, pause_accent)
+	_style_button(_speed_1_button, speed_1_accent)
+	_style_button(_speed_2_button, speed_2_accent)
 
 
 func set_debug_drawer_open(open: bool) -> void:

@@ -190,6 +190,13 @@ func tick_redeploy(delta: float) -> void:
 		_redeploy_timers.erase(unit_id)
 
 
+func prepare_for_day() -> void:
+	_redeploy_timers.clear()
+	for unit in _units_by_runtime_id.values():
+		if unit != null and is_instance_valid(unit) and unit.has_method("receive_heal"):
+			unit.receive_heal(int(unit.get("max_hp")))
+
+
 func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	var unit := get_unit_by_runtime_id(unit_runtime_id)
 	if unit == null:
@@ -255,6 +262,9 @@ func _get_unit_operator_key(unit: Node) -> StringName:
 
 func _start_operator_redeploy(unit: Node, operator_key: StringName) -> void:
 	if operator_key == StringName():
+		return
+	var run_state = AppRefs.run_state()
+	if run_state != null and int(run_state.phase) == GameEnums.PHASE_DAY:
 		return
 	var redeploy_sec := float(unit.cfg.get("redeploy_sec", 0.0))
 	if redeploy_sec <= 0.0:

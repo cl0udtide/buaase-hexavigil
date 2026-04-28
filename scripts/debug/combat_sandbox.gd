@@ -201,16 +201,18 @@ func _on_debug_drawer_toggle_pressed() -> void:
 
 
 func _on_pause_pressed() -> void:
-	get_tree().paused = not get_tree().paused
+	get_tree().paused = true
 	_refresh_time_controls()
 
 
 func _on_speed_1_pressed() -> void:
+	get_tree().paused = false
 	Engine.time_scale = 1.0
 	_refresh_time_controls()
 
 
 func _on_speed_2_pressed() -> void:
+	get_tree().paused = false
 	Engine.time_scale = 2.0
 	_refresh_time_controls()
 

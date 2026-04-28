@@ -31,6 +31,7 @@ var _debug_panel_open := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_configure_pause_boundaries()
 	set_process(true)
 	set_process_unhandled_input(true)
 	if _debug_panel != null:
@@ -65,6 +66,24 @@ func _unhandled_input(event: InputEvent) -> void:
 				_deploy_drag_state = DRAG_FACING
 				_current_drag_facing = Vector2i.RIGHT
 				_show_message("拖拽选择朝向")
+				return
+		if get_tree().paused and _deploy_drag_state == DRAG_NONE and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			_on_map_cell_clicked(_get_mouse_cell())
+
+
+func _configure_pause_boundaries() -> void:
+	var game_root := get_node_or_null("../..")
+	if game_root == null:
+		return
+	var world := game_root.get_node_or_null("World")
+	if world != null:
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+	var managers := game_root.get_node_or_null("Managers")
+	if managers != null:
+		managers.process_mode = Node.PROCESS_MODE_PAUSABLE
+	var ui := game_root.get_node_or_null("UI")
+	if ui != null:
+		ui.process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 func _exit_tree() -> void:
@@ -135,7 +154,11 @@ func _on_core_hp_changed(_current: int, _max_value: int) -> void:
 
 func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 	_cancel_deploy_flow("")
+	if _new_phase != GameEnums.PHASE_NIGHT:
+		get_tree().paused = false
+		Engine.time_scale = 1.0
 	_refresh_top_hud()
+	_refresh_time_controls()
 	_update_operator_cards()
 
 
@@ -345,16 +368,24 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 
 
 func _on_pause_pressed() -> void:
-	get_tree().paused = not get_tree().paused
+	if not _are_time_controls_enabled():
+		return
+	get_tree().paused = true
 	_refresh_time_controls()
 
 
 func _on_speed_1_pressed() -> void:
+	if not _are_time_controls_enabled():
+		return
+	get_tree().paused = false
 	Engine.time_scale = 1.0
 	_refresh_time_controls()
 
 
 func _on_speed_2_pressed() -> void:
+	if not _are_time_controls_enabled():
+		return
+	get_tree().paused = false
 	Engine.time_scale = 2.0
 	_refresh_time_controls()
 
@@ -401,7 +432,13 @@ func _refresh_top_hud() -> void:
 
 func _refresh_time_controls() -> void:
 	if _combat_hud != null and _combat_hud.has_method("set_time_controls"):
-		_combat_hud.set_time_controls(get_tree().paused, Engine.time_scale)
+		var enabled := _are_time_controls_enabled()
+		_combat_hud.set_time_controls(get_tree().paused if enabled else false, Engine.time_scale, enabled)
+
+
+func _are_time_controls_enabled() -> bool:
+	var run_state = AppRefs.run_state()
+	return run_state != null and int(run_state.phase) == GameEnums.PHASE_NIGHT
 
 
 func _update_operator_cards() -> void:

@@ -6,6 +6,7 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 const RESOURCE_COLLECT_AP_COST := 1
 const RESOURCE_COLLECT_AMOUNT := 1
+const POPUP_MIN_WIDTH := 228.0
 const POPUP_OFFSET := Vector2(14.0, 14.0)
 const INVALID_CELL := Vector2i(-1, -1)
 
@@ -140,12 +141,20 @@ func _make_title(data: CellData, building: Node) -> String:
 
 func _show_near_mouse() -> void:
 	visible = true
+	_fit_to_content()
 	await get_tree().process_frame
+	_fit_to_content()
 	var viewport_size := get_viewport_rect().size
 	var desired := get_viewport().get_mouse_position() + POPUP_OFFSET
 	desired.x = clamp(desired.x, 8.0, max(8.0, viewport_size.x - size.x - 8.0))
 	desired.y = clamp(desired.y, 8.0, max(8.0, viewport_size.y - size.y - 8.0))
 	position = desired
+
+
+func _fit_to_content() -> void:
+	var fit_size := get_combined_minimum_size()
+	fit_size.x = max(fit_size.x, POPUP_MIN_WIDTH)
+	size = fit_size
 
 
 func _on_collect_pressed() -> void:
@@ -329,7 +338,7 @@ func _get_building_by_cell(cell: Vector2i) -> Node:
 
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.0, 6.0))
-	custom_minimum_size = Vector2(228.0, 0.0)
+	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	if _resource_info_label != null:

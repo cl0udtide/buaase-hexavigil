@@ -30,6 +30,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _is_dead:
 		return
+	_refresh_fog_visibility()
 	if _boss_controller != null and _boss_controller.is_transitioning():
 		var phase_cfg: Dictionary = _boss_controller.tick(delta)
 		if not phase_cfg.is_empty():
@@ -71,6 +72,7 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	_setup_boss_controller()
 	global_position = get_map_manager().cell_to_world(spawn_cell)
 	recalc_path()
+	_refresh_fog_visibility()
 	var label: Label = get_node_or_null("%TitleLabel") as Label
 	if label != null:
 		label.theme = AppTheme.get_theme()
@@ -175,6 +177,15 @@ func _update_status_view() -> void:
 func _play_hit_effect() -> void:
 	if _status_view != null and _status_view.has_method("play_hit_effect"):
 		_status_view.play_hit_effect()
+
+
+func _refresh_fog_visibility() -> void:
+	var map_manager := get_map_manager()
+	if map_manager == null or not map_manager.has_method("is_discovered"):
+		visible = true
+		return
+	var position_cell: Vector2i = map_manager.world_to_cell(global_position) if map_manager.has_method("world_to_cell") else current_cell
+	visible = map_manager.is_discovered(position_cell)
 
 
 func get_map_manager() -> Node:
