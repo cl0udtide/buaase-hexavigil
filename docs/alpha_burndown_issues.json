@@ -1,0 +1,453 @@
+[
+  {
+    "number": 3,
+    "title": "[架构] 搭建全局状态机与昼夜阶段流转",
+    "state": "closed",
+    "created_at": "2026-04-23T04:20:49+00:00",
+    "closed_at": "2026-04-23T17:55:50+00:00",
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 4,
+    "title": "[架构] 全局数据中心与行动力/声望系统搭建",
+    "state": "closed",
+    "created_at": "2026-04-23T04:23:54+00:00",
+    "closed_at": "2026-04-23T17:55:51+00:00",
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 5,
+    "title": "[架构] Godot 目录规范与基础数据驱动结构",
+    "state": "closed",
+    "created_at": "2026-04-23T04:24:51+00:00",
+    "closed_at": "2026-04-23T12:04:28+00:00",
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 6,
+    "title": "[地图] 30x30 随机噪声网格地图生成器",
+    "state": "closed",
+    "created_at": "2026-04-23T04:26:16+00:00",
+    "closed_at": "2026-04-26T11:35:29+00:00",
+    "estimate": 6,
+    "labels": [
+      "estimate:6"
+    ]
+  },
+  {
+    "number": 7,
+    "title": "[地图] 迷雾渲染系统与区域解锁逻辑",
+    "state": "closed",
+    "created_at": "2026-04-23T04:26:45+00:00",
+    "closed_at": "2026-04-26T11:35:37+00:00",
+    "estimate": 6,
+    "labels": [
+      "estimate:6"
+    ]
+  },
+  {
+    "number": 8,
+    "title": "[战斗] 单位基类搭建与核心属性注入",
+    "state": "closed",
+    "created_at": "2026-04-23T04:27:18+00:00",
+    "closed_at": "2026-04-24T11:21:59+00:00",
+    "estimate": 9,
+    "labels": [
+      "estimate:9"
+    ]
+  },
+  {
+    "number": 9,
+    "title": "[战斗] 阻挡系统与自动攻击/受击逻辑",
+    "state": "closed",
+    "created_at": "2026-04-23T04:27:49+00:00",
+    "closed_at": "2026-04-24T11:15:41+00:00",
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 10,
+    "title": "[战斗] 局内声望商店与干员部署/撤退",
+    "state": "closed",
+    "created_at": "2026-04-23T04:28:26+00:00",
+    "closed_at": "2026-04-24T15:00:50+00:00",
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 11,
+    "title": "[AI] 怪物基础寻路 (A* 接入) 与逻辑状态机",
+    "state": "closed",
+    "created_at": "2026-04-23T04:29:01+00:00",
+    "closed_at": "2026-04-26T12:08:57+00:00",
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 12,
+    "title": "[AI] 三类怪物特殊行为实现 (绕路/拆除/飞行)",
+    "state": "closed",
+    "created_at": "2026-04-23T04:30:06+00:00",
+    "closed_at": "2026-04-26T12:08:35+00:00",
+    "estimate": 4,
+    "labels": [
+      "estimate:4"
+    ]
+  },
+  {
+    "number": 13,
+    "title": "[基建] 采集类建筑的建造与资源产出逻辑",
+    "state": "closed",
+    "created_at": "2026-04-23T04:30:35+00:00",
+    "closed_at": "2026-04-24T15:01:18+00:00",
+    "estimate": 6,
+    "labels": [
+      "estimate:6"
+    ]
+  },
+  {
+    "number": 14,
+    "title": "[基建] 增益类建筑生效逻辑与损毁修复机制",
+    "state": "closed",
+    "created_at": "2026-04-23T04:30:52+00:00",
+    "closed_at": "2026-04-27T05:44:33+00:00",
+    "estimate": 4,
+    "labels": [
+      "estimate:4"
+    ]
+  },
+  {
+    "number": 15,
+    "title": "[UI] 局内 HUD 战斗与资源信息展示",
+    "state": "closed",
+    "created_at": "2026-04-23T04:31:13+00:00",
+    "closed_at": "2026-04-27T06:38:30+00:00",
+    "estimate": 9,
+    "labels": [
+      "estimate:9"
+    ]
+  },
+  {
+    "number": 16,
+    "title": "[美工数据] 素材切图整合与单位/波次数值表配置",
+    "state": "open",
+    "created_at": "2026-04-23T04:31:33+00:00",
+    "closed_at": null,
+    "estimate": 8,
+    "labels": [
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 27,
+    "title": "重做战斗沙盒作战 UI 与部署交互",
+    "state": "closed",
+    "created_at": "2026-04-25T03:59:31+00:00",
+    "closed_at": "2026-04-25T05:49:28+00:00",
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 29,
+    "title": "引入可扩展飞行物与弹道攻击系统",
+    "state": "closed",
+    "created_at": "2026-04-26T05:54:26+00:00",
+    "closed_at": "2026-04-26T07:51:10+00:00",
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 37,
+    "title": "主场景复用战斗沙盒作战 UI 与拖拽部署交互",
+    "state": "closed",
+    "created_at": "2026-04-26T17:13:58+00:00",
+    "closed_at": "2026-04-27T06:38:08+00:00",
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 40,
+    "title": "[基建] 防御类建筑的阻挡及广播机制",
+    "state": "closed",
+    "created_at": "2026-04-27T09:10:51+00:00",
+    "closed_at": "2026-04-27T09:14:22+00:00",
+    "estimate": 10,
+    "labels": [
+      "estimate:10"
+    ]
+  },
+  {
+    "number": 42,
+    "title": "拆分 Boss 阶段控制到 BossController",
+    "state": "closed",
+    "created_at": "2026-04-27T11:19:50+00:00",
+    "closed_at": "2026-04-27T11:24:00+00:00",
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 44,
+    "title": "拆分 EnemyActor 的移动与攻击控制器",
+    "state": "closed",
+    "created_at": "2026-04-27T11:38:02+00:00",
+    "closed_at": "2026-04-27T11:49:11+00:00",
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 46,
+    "title": "fix(波次): WaveManager 未按 interval 间隔生成同组敌人",
+    "state": "closed",
+    "created_at": "2026-04-27T12:44:15+00:00",
+    "closed_at": "2026-04-27T13:18:42+00:00",
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 47,
+    "title": "fix(战斗沙盒): 敌人队列序列化会丢失额外行为字段",
+    "state": "closed",
+    "created_at": "2026-04-27T12:44:15+00:00",
+    "closed_at": "2026-04-27T13:18:42+00:00",
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 51,
+    "title": "资源建筑损毁后缺少保底资源获取方式，并统一地图对象交互入口",
+    "state": "closed",
+    "created_at": "2026-04-27T13:40:22+00:00",
+    "closed_at": "2026-04-27T14:09:33+00:00",
+    "estimate": 9,
+    "labels": [
+      "estimate:9"
+    ]
+  },
+  {
+    "number": 52,
+    "title": "重构建筑面板数据加载与刷新生命周期",
+    "state": "closed",
+    "created_at": "2026-04-27T13:54:39+00:00",
+    "closed_at": "2026-04-27T14:02:24+00:00",
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 55,
+    "title": "统一 UI 显示文本映射工具",
+    "state": "closed",
+    "created_at": "2026-04-27T14:19:11+00:00",
+    "closed_at": "2026-04-27T14:32:18+00:00",
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 57,
+    "title": "行动力数值太低，白天操作不够用",
+    "state": "open",
+    "created_at": "2026-04-27T14:49:10+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 58,
+    "title": "再部署倒计时不会自动刷新，建议改为角色图标倒计时",
+    "state": "open",
+    "created_at": "2026-04-27T14:49:13+00:00",
+    "closed_at": null,
+    "estimate": 6,
+    "labels": [
+      "estimate:6"
+    ]
+  },
+  {
+    "number": 59,
+    "title": "初始声望过高且缺少稳定获取手段",
+    "state": "open",
+    "created_at": "2026-04-27T14:49:15+00:00",
+    "closed_at": null,
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 60,
+    "title": "Boss 进入核心的伤害应设为即死级别",
+    "state": "open",
+    "created_at": "2026-04-27T14:49:17+00:00",
+    "closed_at": null,
+    "estimate": 13,
+    "labels": [
+      "estimate:13"
+    ]
+  },
+  {
+    "number": 61,
+    "title": "Buff 系统仍是占位状态，UI 与效果需要重做",
+    "state": "open",
+    "created_at": "2026-04-27T14:49:19+00:00",
+    "closed_at": null,
+    "estimate": 10,
+    "labels": [
+      "estimate:10"
+    ]
+  },
+  {
+    "number": 62,
+    "title": "随机事件仍是占位符，建议暂时移除",
+    "state": "open",
+    "created_at": "2026-04-27T14:49:22+00:00",
+    "closed_at": null,
+    "estimate": 6,
+    "labels": [
+      "estimate:6"
+    ]
+  },
+  {
+    "number": 63,
+    "title": "资源点交互弹窗纵向异常拉长",
+    "state": "open",
+    "created_at": "2026-04-27T14:56:55+00:00",
+    "closed_at": null,
+    "estimate": 9,
+    "labels": [
+      "estimate:9"
+    ]
+  },
+  {
+    "number": 64,
+    "title": "迷雾中的怪物不应可见",
+    "state": "open",
+    "created_at": "2026-04-27T14:56:57+00:00",
+    "closed_at": null,
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 65,
+    "title": "白天再部署时间应为 0，便于调整阵线",
+    "state": "open",
+    "created_at": "2026-04-27T15:11:46+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 66,
+    "title": "白天开始时干员应自动回满血",
+    "state": "open",
+    "created_at": "2026-04-27T15:11:54+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 67,
+    "title": "飞行怪移动路径异常，斜向飞行且疑似会被建筑卡住",
+    "state": "open",
+    "created_at": "2026-04-27T15:27:28+00:00",
+    "closed_at": null,
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 68,
+    "title": "建筑生效范围需要类似干员攻击范围的预览",
+    "state": "open",
+    "created_at": "2026-04-27T15:27:40+00:00",
+    "closed_at": null,
+    "estimate": 6,
+    "labels": [
+      "estimate:6"
+    ]
+  },
+  {
+    "number": 69,
+    "title": "长期：白天预览当晚出怪路线与怪物情报",
+    "state": "open",
+    "created_at": "2026-04-27T15:31:06+00:00",
+    "closed_at": null,
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 70,
+    "title": "长期：用剧情与立绘包装提升游戏可玩性",
+    "state": "open",
+    "created_at": "2026-04-27T15:31:08+00:00",
+    "closed_at": null,
+    "estimate": 13,
+    "labels": [
+      "estimate:13"
+    ]
+  },
+  {
+    "number": 71,
+    "title": "长期：补齐美术素材、音乐与音效",
+    "state": "open",
+    "created_at": "2026-04-27T15:31:10+00:00",
+    "closed_at": null,
+    "estimate": 14,
+    "labels": [
+      "estimate:14"
+    ]
+  },
+  {
+    "number": 72,
+    "title": "暂停与倍速控制应仅在夜晚开放并保持互斥状态",
+    "state": "open",
+    "created_at": "2026-04-28T00:32:04+00:00",
+    "closed_at": null,
+    "estimate": 12,
+    "labels": [
+      "estimate:12"
+    ]
+  }
+]
