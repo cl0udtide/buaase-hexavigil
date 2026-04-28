@@ -46,6 +46,7 @@ var _locked_deploy_cell := INVALID_CELL
 var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
+var _cooldown_message_operator_key := StringName()
 var _combat_hud: Control
 var _debug_drawer_panel: Control
 var _debug_drawer_content: Control
@@ -262,8 +263,7 @@ func _on_operator_card_pressed(operator_key: StringName) -> void:
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		_select_deployed_unit(unit)
 	else:
-		var remain: float = _unit_manager.get_operator_redeploy_remaining(operator_key) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
-		_show_message("再部署冷却 %.1f秒" % remain)
+		_show_message("干员正在再部署冷却中", operator_key)
 
 
 func _begin_operator_drag(operator_key: StringName) -> void:
@@ -768,11 +768,12 @@ func _build_item_tab(tab: VBoxContainer) -> void:
 
 func _connect_events() -> void:
 	var event_bus = AppRefs.event_bus()
-	if event_bus == null:
-		return
-	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
-	event_bus.unit_deployed.connect(_on_unit_deployed)
-	event_bus.unit_removed.connect(_on_unit_removed)
+	if event_bus != null:
+		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+		event_bus.unit_deployed.connect(_on_unit_deployed)
+		event_bus.unit_removed.connect(_on_unit_removed)
+	if _unit_manager != null and _unit_manager.has_signal("operator_redeploy_completed"):
+		_unit_manager.connect(&"operator_redeploy_completed", Callable(self, "_on_operator_redeploy_completed"))
 
 
 func _populate_static_options() -> void:
@@ -1241,6 +1242,13 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	_refresh_detail_panel()
 
 
+func _on_operator_redeploy_completed(operator_key: StringName) -> void:
+	_refresh_operator_list()
+	_update_operator_card_states()
+	if _cooldown_message_operator_key == operator_key:
+		_show_message("%s 已可部署" % _get_operator_display_name(operator_key))
+
+
 func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bool:
 	if spawn_key == StringName():
 		return false
@@ -1287,13 +1295,12 @@ func _refresh_status() -> void:
 	var selected_text := "无"
 	var selected_unit := _get_selected_unit()
 	if selected_unit != null:
-		selected_text = "%s 生命 %d/%d 技力 %.0f/%.0f 冷却 %.1f" % [
+		selected_text = "%s 生命 %d/%d 技力 %.0f/%.0f" % [
 			_get_operator_display_name(StringName(selected_unit.operator_key)),
 			selected_unit.current_hp,
 			selected_unit.max_hp,
 			selected_unit.sp,
-			float(selected_unit.cfg.get("sp_max", 0.0)),
-			_unit_manager.get_operator_redeploy_remaining(StringName(selected_unit.operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
+			float(selected_unit.cfg.get("sp_max", 0.0))
 		]
 	elif _selected_operator_key != StringName():
 		selected_text = "%s %s" % [_get_operator_display_name(_selected_operator_key), _get_operator_state_text(_selected_operator_key)]
@@ -2104,7 +2111,8 @@ func _normalize_direction(direction: Vector2i) -> Vector2i:
 	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
 
 
-func _show_message(text: String) -> void:
+func _show_message(text: String, cooldown_operator_key: StringName = &"") -> void:
+	_cooldown_message_operator_key = cooldown_operator_key
 	if _message_label != null:
 		_message_label.text = text
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
