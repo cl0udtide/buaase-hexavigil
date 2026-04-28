@@ -300,11 +300,7 @@ func _resolve_path_mode() -> StringName:
 		return PATH_MODE_FLYING
 
 	var behavior_type: StringName = StringName(_owner_actor.cfg.get("behavior_type", "normal"))
-	match behavior_type:
-		&"demolisher", &"siege", &"rush", &"breaker":
-			return PATH_MODE_DEMOLISHER
-		_:
-			return PATH_MODE_NORMAL
+	return PATH_MODE_DEMOLISHER if behavior_type == &"demolisher" else PATH_MODE_NORMAL
 
 
 func _debug_log(message: String) -> void:

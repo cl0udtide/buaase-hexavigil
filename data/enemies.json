@@ -24,7 +24,7 @@
     "move_speed": 1.4,
     "attack_interval": 1.0,
     "damage_type": "physical",
-    "behavior_type": "rush",
+    "behavior_type": "demolisher",
     "move_type": "ground",
     "core_damage": 1,
     "scene_key": "enemy_actor"
