@@ -254,7 +254,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `res` | `int` | 法术抗性 |
 | `move_speed` | `float` | 移动速度 |
 | `attack_interval` | `float` | 攻击间隔 |
-| `behavior_type` | `String` | 行为类型 |
+| `behavior_type` | `String` | 行为类型；当前使用 `normal`、`demolisher`、`boss` 等策略语义，移速差异统一由 `move_speed` 表达，不另设 `rush` 等速度型行为 |
 | `move_type` | `String` | 移动类型 |
 | `core_damage` | `int` | 抵达核心时造成的伤害 |
 | `scene_key` | `String` | 敌人模板逻辑名 |
