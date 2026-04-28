@@ -28,6 +28,39 @@ DEFAULT_REPO = "Cl0udTide/BUAASE-HexaVigil"
 ESTIMATE_RE = re.compile(r"^estimate:(\d+)$", re.IGNORECASE)
 ONE_DAY = dt.timedelta(days=1)
 
+# The first Alpha batch is normalized to 100 points. Issues created later are
+# new work discovered during development, so they should be estimated at their
+# own size instead of being inflated to keep another artificial total.
+POST_INITIAL_ESTIMATES = {
+    27: 8,
+    29: 7,
+    37: 6,
+    40: 5,
+    42: 4,
+    44: 4,
+    46: 2,
+    47: 2,
+    51: 4,
+    52: 4,
+    55: 3,
+    57: 2,
+    58: 3,
+    59: 4,
+    60: 2,
+    61: 6,
+    62: 2,
+    63: 2,
+    64: 3,
+    65: 2,
+    66: 2,
+    67: 3,
+    68: 4,
+    69: 5,
+    70: 5,
+    71: 5,
+    72: 3,
+}
+
 LOCAL_PACKAGES = Path(".local/python-packages")
 if LOCAL_PACKAGES.exists():
     sys.path.insert(0, str(LOCAL_PACKAGES.resolve()))
@@ -172,6 +205,22 @@ def heuristic_weight(issue: Issue) -> int:
     return max(2, min(weight, 15))
 
 
+def post_initial_estimate(issue: Issue) -> int:
+    if issue.number in POST_INITIAL_ESTIMATES:
+        return POST_INITIAL_ESTIMATES[issue.number]
+
+    text = f"{issue.title}\n{issue.body}".lower()
+    if any(marker in text for marker in ("fix", "bug", "异常", "不会", "不应", "错误")):
+        return 2
+    if any(marker in text for marker in ("ui", "弹窗", "倒计时", "显示", "控制", "互斥", "数值")):
+        return 3
+    if any(marker in text for marker in ("预览", "重构", "拆分", "系统", "机制")):
+        return 4
+    if any(marker in text for marker in ("长期", "美术", "音乐", "剧情", "立绘")):
+        return 5
+    return 3
+
+
 def normalized_initial_estimates(issues: list[Issue], total: int) -> dict[int, int]:
     if not issues:
         return {}
@@ -242,7 +291,7 @@ def sync_alpha(
     for issue in issues:
         current_estimate = issue_estimate(issue)
         if force_estimates or current_estimate is None:
-            estimate = normalized.get(issue.number, heuristic_weight(issue))
+            estimate = normalized.get(issue.number, post_initial_estimate(issue))
         else:
             estimate = current_estimate
 

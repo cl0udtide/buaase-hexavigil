@@ -159,9 +159,9 @@
     "state": "closed",
     "created_at": "2026-04-25T03:59:31+00:00",
     "closed_at": "2026-04-25T05:49:28+00:00",
-    "estimate": 12,
+    "estimate": 8,
     "labels": [
-      "estimate:12"
+      "estimate:8"
     ]
   },
   {
@@ -170,9 +170,9 @@
     "state": "closed",
     "created_at": "2026-04-26T05:54:26+00:00",
     "closed_at": "2026-04-26T07:51:10+00:00",
-    "estimate": 14,
+    "estimate": 7,
     "labels": [
-      "estimate:14"
+      "estimate:7"
     ]
   },
   {
@@ -181,9 +181,9 @@
     "state": "closed",
     "created_at": "2026-04-26T17:13:58+00:00",
     "closed_at": "2026-04-27T06:38:08+00:00",
-    "estimate": 14,
+    "estimate": 6,
     "labels": [
-      "estimate:14"
+      "estimate:6"
     ]
   },
   {
@@ -192,9 +192,9 @@
     "state": "closed",
     "created_at": "2026-04-27T09:10:51+00:00",
     "closed_at": "2026-04-27T09:14:22+00:00",
-    "estimate": 10,
+    "estimate": 5,
     "labels": [
-      "estimate:10"
+      "estimate:5"
     ]
   },
   {
@@ -203,9 +203,9 @@
     "state": "closed",
     "created_at": "2026-04-27T11:19:50+00:00",
     "closed_at": "2026-04-27T11:24:00+00:00",
-    "estimate": 14,
+    "estimate": 4,
     "labels": [
-      "estimate:14"
+      "estimate:4"
     ]
   },
   {
@@ -214,9 +214,9 @@
     "state": "closed",
     "created_at": "2026-04-27T11:38:02+00:00",
     "closed_at": "2026-04-27T11:49:11+00:00",
-    "estimate": 14,
+    "estimate": 4,
     "labels": [
-      "estimate:14"
+      "estimate:4"
     ]
   },
   {
@@ -225,9 +225,9 @@
     "state": "closed",
     "created_at": "2026-04-27T12:44:15+00:00",
     "closed_at": "2026-04-27T13:18:42+00:00",
-    "estimate": 12,
+    "estimate": 2,
     "labels": [
-      "estimate:12"
+      "estimate:2"
     ]
   },
   {
@@ -236,9 +236,9 @@
     "state": "closed",
     "created_at": "2026-04-27T12:44:15+00:00",
     "closed_at": "2026-04-27T13:18:42+00:00",
-    "estimate": 12,
+    "estimate": 2,
     "labels": [
-      "estimate:12"
+      "estimate:2"
     ]
   },
   {
@@ -247,9 +247,9 @@
     "state": "closed",
     "created_at": "2026-04-27T13:40:22+00:00",
     "closed_at": "2026-04-27T14:09:33+00:00",
-    "estimate": 9,
+    "estimate": 4,
     "labels": [
-      "estimate:9"
+      "estimate:4"
     ]
   },
   {
@@ -258,9 +258,9 @@
     "state": "closed",
     "created_at": "2026-04-27T13:54:39+00:00",
     "closed_at": "2026-04-27T14:02:24+00:00",
-    "estimate": 14,
+    "estimate": 4,
     "labels": [
-      "estimate:14"
+      "estimate:4"
     ]
   },
   {
@@ -269,9 +269,9 @@
     "state": "closed",
     "created_at": "2026-04-27T14:19:11+00:00",
     "closed_at": "2026-04-27T14:32:18+00:00",
-    "estimate": 12,
+    "estimate": 3,
     "labels": [
-      "estimate:12"
+      "estimate:3"
     ]
   },
   {
@@ -280,9 +280,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:49:10+00:00",
     "closed_at": null,
-    "estimate": 5,
+    "estimate": 2,
     "labels": [
-      "estimate:5"
+      "estimate:2"
     ]
   },
   {
@@ -291,9 +291,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:49:13+00:00",
     "closed_at": null,
-    "estimate": 6,
+    "estimate": 3,
     "labels": [
-      "estimate:6"
+      "estimate:3"
     ]
   },
   {
@@ -302,9 +302,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:49:15+00:00",
     "closed_at": null,
-    "estimate": 14,
+    "estimate": 4,
     "labels": [
-      "estimate:14"
+      "estimate:4"
     ]
   },
   {
@@ -313,9 +313,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:49:17+00:00",
     "closed_at": null,
-    "estimate": 13,
+    "estimate": 2,
     "labels": [
-      "estimate:13"
+      "estimate:2"
     ]
   },
   {
@@ -324,9 +324,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:49:19+00:00",
     "closed_at": null,
-    "estimate": 10,
+    "estimate": 6,
     "labels": [
-      "estimate:10"
+      "estimate:6"
     ]
   },
   {
@@ -335,9 +335,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:49:22+00:00",
     "closed_at": null,
-    "estimate": 6,
+    "estimate": 2,
     "labels": [
-      "estimate:6"
+      "estimate:2"
     ]
   },
   {
@@ -346,9 +346,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:56:55+00:00",
     "closed_at": null,
-    "estimate": 9,
+    "estimate": 2,
     "labels": [
-      "estimate:9"
+      "estimate:2"
     ]
   },
   {
@@ -357,9 +357,9 @@
     "state": "open",
     "created_at": "2026-04-27T14:56:57+00:00",
     "closed_at": null,
-    "estimate": 12,
+    "estimate": 3,
     "labels": [
-      "estimate:12"
+      "estimate:3"
     ]
   },
   {
@@ -368,9 +368,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:11:46+00:00",
     "closed_at": null,
-    "estimate": 5,
+    "estimate": 2,
     "labels": [
-      "estimate:5"
+      "estimate:2"
     ]
   },
   {
@@ -379,9 +379,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:11:54+00:00",
     "closed_at": null,
-    "estimate": 5,
+    "estimate": 2,
     "labels": [
-      "estimate:5"
+      "estimate:2"
     ]
   },
   {
@@ -390,9 +390,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:27:28+00:00",
     "closed_at": null,
-    "estimate": 12,
+    "estimate": 3,
     "labels": [
-      "estimate:12"
+      "estimate:3"
     ]
   },
   {
@@ -401,9 +401,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:27:40+00:00",
     "closed_at": null,
-    "estimate": 6,
+    "estimate": 4,
     "labels": [
-      "estimate:6"
+      "estimate:4"
     ]
   },
   {
@@ -412,9 +412,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:31:06+00:00",
     "closed_at": null,
-    "estimate": 14,
+    "estimate": 5,
     "labels": [
-      "estimate:14"
+      "estimate:5"
     ]
   },
   {
@@ -423,9 +423,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:31:08+00:00",
     "closed_at": null,
-    "estimate": 13,
+    "estimate": 5,
     "labels": [
-      "estimate:13"
+      "estimate:5"
     ]
   },
   {
@@ -434,9 +434,9 @@
     "state": "open",
     "created_at": "2026-04-27T15:31:10+00:00",
     "closed_at": null,
-    "estimate": 14,
+    "estimate": 5,
     "labels": [
-      "estimate:14"
+      "estimate:5"
     ]
   },
   {
@@ -445,9 +445,9 @@
     "state": "open",
     "created_at": "2026-04-28T00:32:04+00:00",
     "closed_at": null,
-    "estimate": 12,
+    "estimate": 3,
     "labels": [
-      "estimate:12"
+      "estimate:3"
     ]
   }
 ]
