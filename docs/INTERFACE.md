@@ -163,7 +163,7 @@ func request_start_night() -> Dictionary
   返回：布尔值。
 - `try_trigger_event(cell)`
   输入：`cell: Vector2i`。
-  行为：校验并处理指定格子的事件交互；按玩法设计，处理 `?` 事件节点应消耗 1 点行动力，具体扣点与结算由白天流程/随机事件模块负责。
+  行为：校验并处理指定格子的事件交互；当前实现不额外扣除行动力，直接委托 `RandomEventManager.apply_event_for_cell()` 完成事件结算与触发标记。
   成功结果：返回 `ActionResult(ok = true)`，并完成事件结算。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `request_start_night()`
