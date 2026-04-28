@@ -1,0 +1,119 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/dialog_panel.gd" id="1_dialog_panel"]
+
+[node name="DialogPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_dialog_panel")
+
+[node name="Background" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.035, 0.05, 0.065, 1)
+
+[node name="BackdropGrid" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0, 0.0, 0.0, 0.16)
+
+[node name="LeftPortrait" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.02
+anchor_top = 0.08
+anchor_right = 0.49
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RightPortrait" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_left = 0.51
+anchor_top = 0.08
+anchor_right = 0.98
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TextBox" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 110.0
+offset_top = -282.0
+offset_right = -110.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 0
+
+[node name="TextMargin" type="MarginContainer" parent="TextBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TextBox/TextMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SpeakerPlate" type="PanelContainer" parent="TextBox/TextMargin/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+
+[node name="SpeakerMargin" type="MarginContainer" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 6
+
+[node name="SpeakerLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "角色名"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="TextLabel" type="RichTextLabel" parent="TextBox/TextMargin/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 104)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "剧情文本"
+fit_content = true
+scroll_active = false
+
+[node name="PromptLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "点击继续"
+horizontal_alignment = 2
+text_overrun_behavior = 3
