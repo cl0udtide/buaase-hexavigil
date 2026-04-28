@@ -2,6 +2,8 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+signal operator_redeploy_completed(operator_key: StringName)
+
 
 var _next_runtime_id := 1
 var _units_by_runtime_id: Dictionary = {}
@@ -188,6 +190,7 @@ func tick_redeploy(delta: float) -> void:
 			completed.append(unit_id)
 	for unit_id in completed:
 		_redeploy_timers.erase(unit_id)
+		operator_redeploy_completed.emit(unit_id)
 
 
 func prepare_for_day() -> void:
