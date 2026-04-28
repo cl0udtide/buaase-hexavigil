@@ -57,7 +57,7 @@
     "damage_type": "physical",
     "behavior_type": "boss",
     "move_type": "ground",
-    "core_damage": 3,
+    "core_damage": 999,
     "phase_transition_sec": 2.0,
     "phases": [
       {
@@ -73,7 +73,7 @@
         "damage_type": "physical",
         "behavior_type": "boss",
         "move_type": "ground",
-        "core_damage": 4,
+        "core_damage": 999,
         "phase_enter_area_damage": {
           "radius": 1,
           "damage": 80,

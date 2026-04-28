@@ -125,7 +125,6 @@ script = ExtResource("36_combat_hud_controller")
 [node name="MapInteractionPopup" type="PanelContainer" parent="UI"]
 visible = false
 offset_right = 228.0
-offset_bottom = 210.0
 script = ExtResource("37_map_popup")
 
 [node name="ContentMargin" type="MarginContainer" parent="UI/MapInteractionPopup"]

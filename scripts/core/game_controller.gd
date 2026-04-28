@@ -8,6 +8,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 @onready var _shop_manager: Node = get_node_or_null("../ShopManager")
 @onready var _building_manager: Node = get_node_or_null("../BuildingManager")
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
+@onready var _unit_manager: Node = get_node_or_null("../UnitManager")
 
 
 func _ready() -> void:
@@ -50,6 +51,8 @@ func enter_day(day: int) -> void:
 		_shop_manager.start_new_day_shop(day)
 	if _building_manager != null and _building_manager.has_method("refresh_daytime_repair"):
 		_building_manager.refresh_daytime_repair()
+	if _unit_manager != null and _unit_manager.has_method("prepare_for_day"):
+		_unit_manager.prepare_for_day()
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.day_started.emit(day)
