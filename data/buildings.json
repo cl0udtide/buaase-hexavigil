@@ -2,7 +2,7 @@
   {
     "id": "lumber_station",
     "name": "伐木站",
-    "desc": "每天产出 2 木材",
+    "desc": "每天产出 4 木材",
     "sort_order": 10,
     "icon_key": "lumber_station_icon",
     "icon_text": "木",
@@ -15,7 +15,7 @@
     "blocks_path": false,
     "effect_radius": 0,
     "effect_type": "collect_wood",
-    "effect_value": 2,
+    "effect_value": 4,
     "place_rule": "wood_resource_only",
     "scene_key": "building_actor"
   },
@@ -150,7 +150,7 @@
     "icon_text": "墙",
     "building_type": "block",
     "max_hp": 700,
-    "cost_wood": 2,
+    "cost_wood": 1,
     "cost_stone": 0,
     "cost_mana": 0,
     "ap_cost": 1,
