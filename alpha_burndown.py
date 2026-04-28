@@ -469,7 +469,7 @@ def plot_burndown(
     ax.fill_between(actual_x, actual_y, color="#0b6b75", alpha=0.08)
     ax.set_title(f"{milestone_title} Burndown", fontsize=18, pad=16, weight="bold")
     ax.set_ylabel("Estimate Points", fontsize=11)
-    ax.set_xlabel("Date (event-density scaled)", fontsize=11)
+    ax.set_xlabel("Date", fontsize=11)
     ax.set_xlim(actual_x[0], actual_x[-1])
     upper = max([target_total] + actual_y)
     ax.set_ylim(0, math.ceil((upper + 10) / 10) * 10)
