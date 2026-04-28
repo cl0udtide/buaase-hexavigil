@@ -12,6 +12,7 @@
     "behavior_type": "normal",
     "move_type": "ground",
     "core_damage": 1,
+    "prestige_reward": 1,
     "scene_key": "enemy_actor"
   },
   {
@@ -27,6 +28,7 @@
     "behavior_type": "demolisher",
     "move_type": "ground",
     "core_damage": 1,
+    "prestige_reward": 2,
     "scene_key": "enemy_actor"
   },
   {
@@ -42,6 +44,7 @@
     "behavior_type": "normal",
     "move_type": "flying",
     "core_damage": 1,
+    "prestige_reward": 2,
     "scene_key": "enemy_actor"
   },
   {
@@ -58,6 +61,7 @@
     "behavior_type": "boss",
     "move_type": "ground",
     "core_damage": 999,
+    "prestige_reward": 20,
     "phase_transition_sec": 2.0,
     "phases": [
       {

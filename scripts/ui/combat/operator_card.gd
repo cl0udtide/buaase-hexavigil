@@ -16,6 +16,8 @@ var _hovered := false
 @onready var _cost_label: Label = %CostLabel
 @onready var _portrait_box: PanelContainer = %PortraitBox
 @onready var _portrait_label: Label = %PortraitLabel
+@onready var _cooldown_overlay: ColorRect = %CooldownOverlay
+@onready var _cooldown_label: Label = %CooldownLabel
 @onready var _class_label: Label = %ClassLabel
 @onready var _status_label: Label = %StatusLabel
 
@@ -41,12 +43,15 @@ func _ready() -> void:
 	_class_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_portrait_label.add_theme_color_override("font_color", Color(0.42, 0.50, 0.54, 0.95))
+	_cooldown_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_add_label_shadow(_name_label)
 	_add_label_shadow(_cost_label)
 	_add_label_shadow(_class_label)
 	_add_label_shadow(_status_label)
 	_add_label_shadow(_portrait_label)
+	_add_label_shadow(_cooldown_label)
 	_portrait_box.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.02, 0.025, 0.03, 0.92), Color(0.18, 0.25, 0.30, 0.72), 1.0, 4.0))
+	_cooldown_overlay.visible = false
 	_apply_card_style()
 
 
@@ -68,6 +73,7 @@ func set_state_text(text_value: String, state: StringName) -> void:
 	_parse_display_text(text_value)
 	if _accent_bar != null:
 		_accent_bar.visible = false
+	_update_cooldown_overlay(state)
 	_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT if state == &"deployed" else GameUiStyle.TEXT_DIM)
 	_apply_card_style()
 
@@ -90,6 +96,29 @@ func _parse_display_text(text_value: String) -> void:
 	else:
 		_normalize_meta_without_cost(meta)
 	_cost_label.text = "◆ %s" % cost
+
+
+func _update_cooldown_overlay(state: StringName) -> void:
+	if _cooldown_overlay == null or _cooldown_label == null:
+		return
+	if state != &"cooldown":
+		_cooldown_overlay.visible = false
+		return
+	_cooldown_overlay.visible = true
+	_cooldown_label.text = _format_cooldown_overlay_text(_status_label.text)
+
+
+func _format_cooldown_overlay_text(status: String) -> String:
+	var digits := ""
+	for index in range(status.length()):
+		var ch := status.substr(index, 1)
+		if ch.is_valid_int():
+			digits += ch
+		elif ch == "." and not digits.contains("."):
+			digits += ch
+	if digits.is_empty():
+		return "CD"
+	return "%ds" % int(ceil(float(digits)))
 
 
 func _normalize_meta_without_cost(meta: String) -> void:

@@ -17,6 +17,8 @@ var _selected_building_runtime_id := -1
 @onready var _demolish_building_button: Button = %DemolishBuildingButton
 @onready var _toggle_building_button: Button = %ToggleBuildingButton
 @onready var _building_info_label: Label = %BuildingInfoLabel
+@onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
+@onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
 
 
 func _ready() -> void:
@@ -24,16 +26,22 @@ func _ready() -> void:
 	_apply_visual_style()
 	_bind_buttons()
 	_bind_events()
+	set_process(true)
 	var run_state = AppRefs.run_state()
 	if run_state != null:
 		_current_phase = int(run_state.phase)
 	_refresh_state()
 
 
+func _process(_delta: float) -> void:
+	_refresh_building_range_preview()
+
+
 func set_mode_idle() -> void:
 	_current_mode = &"idle"
 	_current_building_id = &""
 	_clear_selected_building()
+	_clear_building_range_preview()
 	_refresh_state()
 
 
@@ -41,6 +49,7 @@ func set_mode_explore() -> void:
 	_current_mode = &"explore"
 	_current_building_id = &""
 	_clear_selected_building()
+	_clear_building_range_preview()
 	_refresh_state()
 
 
@@ -48,6 +57,7 @@ func set_mode_build(building_id: StringName) -> void:
 	_current_mode = &"build"
 	_current_building_id = building_id
 	_clear_selected_building()
+	_refresh_building_range_preview()
 	_refresh_state()
 
 
@@ -111,6 +121,7 @@ func _try_toggle_idle_building(cell: Vector2i) -> bool:
 func _on_phase_changed(_old_phase: int, new_phase: int) -> void:
 	_current_phase = new_phase
 	if new_phase != GameEnums.PHASE_DAY:
+		_clear_building_range_preview()
 		set_mode_idle()
 	else:
 		_refresh_state()
@@ -332,3 +343,42 @@ func _is_building_destroyed(building: Node) -> bool:
 
 func _can_demolish_building(building: Node) -> bool:
 	return building != null
+
+
+func _refresh_building_range_preview() -> void:
+	if _current_phase != GameEnums.PHASE_DAY or _current_mode != &"build" or _current_building_id == StringName():
+		return
+	if _map_root == null or _map_manager == null or not _map_root.has_method("set_building_effect_range"):
+		return
+	var cfg := _get_building_cfg(_current_building_id)
+	var radius := int(cfg.get("effect_radius", 0))
+	if radius <= 0:
+		_clear_building_range_preview()
+		return
+	var cell: Vector2i = _map_manager.world_to_cell(_map_root.get_global_mouse_position())
+	if not _map_manager.is_inside(cell) or not _map_manager.is_discovered(cell):
+		_clear_building_range_preview()
+		return
+	_map_root.set_building_effect_range(_get_square_range_cells(cell, radius))
+
+
+func _clear_building_range_preview() -> void:
+	if _map_root != null and _map_root.has_method("clear_building_effect_range"):
+		_map_root.clear_building_effect_range()
+
+
+func _get_square_range_cells(center: Vector2i, radius: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if _map_manager == null:
+		return cells
+	for y in range(center.y - radius, center.y + radius + 1):
+		for x in range(center.x - radius, center.x + radius + 1):
+			var cell := Vector2i(x, y)
+			if _map_manager.is_inside(cell):
+				cells.append(cell)
+	return cells
+
+
+func _get_building_cfg(building_id: StringName) -> Dictionary:
+	var data_repo = AppRefs.data_repo()
+	return data_repo.get_building_cfg(building_id) if data_repo != null else {}

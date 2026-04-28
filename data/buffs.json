@@ -22,5 +22,29 @@
     "effect_type": "core_heal",
     "effect_value": 2,
     "rarity": 1
+  },
+  {
+    "id": "buff_atk_up_medium",
+    "name": "火力校准",
+    "desc": "所有已部署单位攻击力 +15%",
+    "effect_type": "unit_atk_percent",
+    "effect_value": 0.15,
+    "rarity": 2
+  },
+  {
+    "id": "buff_deploy_plus_two",
+    "name": "预备队入场",
+    "desc": "部署上限 +2",
+    "effect_type": "deploy_limit_add",
+    "effect_value": 2,
+    "rarity": 2
+  },
+  {
+    "id": "buff_core_repair",
+    "name": "核心修复",
+    "desc": "核心生命恢复 4 点",
+    "effect_type": "core_heal",
+    "effect_value": 4,
+    "rarity": 2
   }
 ]
