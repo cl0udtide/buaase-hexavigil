@@ -489,8 +489,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 障碍随机生成，但核心安全半径与刷怪点安全半径内不生成障碍、资源点和事件点。
 - 障碍放置会保持刷怪点到核心的地面路径连通，避免地图生成破坏夜晚基础路径。
 - 资源类型为木材、石材、魔力，当前每种目标 12 个；其中每种至少 2 个放在初始可见区外侧的近探索圈作为开局保底。
-- 随机事件点是格子属性，数量由 `event_point_count` 控制，事件内容引用 `events.json`。
-- 事件点与资源点互斥；地图模块只负责放置和记录事件 ID，事件展示、行动力消耗和效果结算由白天流程与随机事件模块负责。
+- 随机事件点是格子属性，数量由 `event_point_count` 控制；当前 `data/map_generation.json` 中该值为 0，正式地图默认不生成事件点。
+- 事件点与资源点互斥；地图模块只负责放置和记录事件 ID，事件展示和效果结算由白天流程与随机事件模块负责。
 
 各文件作用：
 
@@ -996,12 +996,12 @@ data/units.json
 ```json
 {
   "id": "guard_01",
-  "name": "近卫",
+  "name": "二阶近卫",
   "class": "guard",
-  "cost_prestige": 1,
-  "max_hp": 120,
-  "atk": 30,
-  "def": 10,
+  "cost_prestige": 3,
+  "max_hp": 135,
+  "atk": 34,
+  "def": 12,
   "res": 0,
   "block": 2,
   "attack_interval": 1.0,
@@ -1018,10 +1018,7 @@ data/units.json
   "skill_duration": 10.0,
   "skill_block_bonus": 1,
   "scene_key": "unit_actor",
-  "icon_key": "guard_01_icon",
-  "visual_key": "guard_visual",
-  "attack_sfx_key": "guard_attack",
-  "cast_vfx_key": "guard_hold_line_cast"
+  "icon_key": "guard_01_icon"
 }
 ```
 
@@ -1034,9 +1031,9 @@ data/units.json
 5. `UnitManager` 实例化 `UnitActor.tscn`，加入 `World/UnitRoot`，分配 `runtime_id`。
 6. `UnitManager` 调用 `actor.setup_from_cfg(&"guard_01", cfg, cell, facing)`。
 7. `UnitActor` 将基础字段写入运行时变量：
-   - `max_hp = 120`，`current_hp = 120`
-   - `atk = 30`
-   - `defense = 10`
+   - `max_hp = 135`，`current_hp = 135`
+   - `atk = 34`
+   - `defense = 12`
    - `resistance = 0`
    - `block_count = 2`
    - `attack_interval = 1.0`

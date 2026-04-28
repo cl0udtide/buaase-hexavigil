@@ -129,24 +129,28 @@ building_actor -> scenes/actors/BuildingActor.tscn
 [
   {
     "id": "guard_01",
-    "name": "前锋近卫",
+    "name": "二阶近卫",
     "class": "guard",
-    "cost_prestige": 1,
-    "max_hp": 120,
-    "atk": 30,
-    "def": 10,
+    "cost_prestige": 3,
+    "max_hp": 135,
+    "atk": 34,
+    "def": 12,
     "res": 0,
-    "block": 1,
+    "block": 2,
     "attack_interval": 1.0,
     "damage_type": "physical",
     "target_type": "ground",
-    "range_pattern": [[1, 0]],
-    "redeploy_sec": 12,
-    "sp_max": 20,
+    "range_pattern": [[0, 0], [1, 0]],
+    "redeploy_sec": 12.0,
+    "sp_max": 18,
     "sp_recover_per_sec": 1.0,
-    "skill_id": "guard_power_strike",
-    "skill_behavior_key": "guard_power_strike",
+    "skill_id": "guard_hold_line",
+    "skill_name": "战术咏唱·阵线压制",
+    "skill_description": "阻挡数+1，普通攻击同时攻击所有被自身阻挡的敌人，持续10秒。",
+    "skill_duration": 10.0,
+    "skill_block_bonus": 1,
     "scene_key": "unit_actor",
+    "skill_behavior_key": "guard_hold_line",
     "icon_key": "guard_01_icon"
   }
 ]
@@ -302,15 +306,15 @@ Boss 多阶段规则：
     "sort_order": 110,
     "icon_key": "medical_station_icon",
     "icon_text": "疗",
-    "max_hp": 150,
+    "max_hp": 380,
     "cost_wood": 2,
     "cost_stone": 1,
     "cost_mana": 0,
-    "ap_cost": 1,
+    "ap_cost": 2,
     "blocks_path": false,
-    "effect_radius": 2,
+    "effect_radius": 1,
     "effect_type": "heal",
-    "effect_value": 8,
+    "effect_value": 2,
     "place_rule": "plain_only",
     "scene_key": "building_actor"
   }
@@ -367,8 +371,8 @@ Boss 多阶段规则：
   {
     "day": 1,
     "entries": [
-      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 4, "interval": 0.8 },
-      { "time": 8.0, "enemy_id": "slime", "spawn_key": "S2", "count": 3, "interval": 0.7 }
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 2, "interval": 0.8 },
+      { "time": 6.0, "enemy_id": "wolf", "spawn_key": "S2", "count": 2, "interval": 0.7 }
     ]
   }
 ]
@@ -472,12 +476,15 @@ Boss 多阶段规则：
 
 ```json
 {
-  "id": "default_lane",
+  "id": "default",
   "name": "默认一路调试",
   "operators": [
-    {"key": "G1", "unit_id": "guard_01", "name": "近卫A"},
-    {"key": "G2", "unit_id": "guard_01", "name": "近卫B"},
-    {"key": "S1", "unit_id": "archer_basic", "name": "狙击A"}
+    {"key": "G1", "unit_id": "guard_t1", "name": "一阶近卫"},
+    {"key": "G2", "unit_id": "guard_01", "name": "二阶近卫"},
+    {"key": "G3", "unit_id": "guard_t3", "name": "三阶近卫"},
+    {"key": "S1", "unit_id": "sniper_t1", "name": "一阶狙击"},
+    {"key": "S2", "unit_id": "sniper_t2", "name": "二阶狙击"},
+    {"key": "S3", "unit_id": "archer_basic", "name": "三阶狙击"}
   ],
   "spawns": [
     {"key": "S1", "cell": [0, 3]}
@@ -488,9 +495,9 @@ Boss 多阶段规则：
         "enemy_id": "slime",
         "delay": 0.0,
         "name": "史莱姆",
-        "max_hp": 90,
+        "max_hp": 300,
         "atk": 18,
-        "def": 2,
+        "def": 20,
         "res": 0,
         "move_speed": 1.0,
         "attack_interval": 1.2,
@@ -532,7 +539,7 @@ Boss 多阶段规则：
 | `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
 | `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
-| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json` |
+| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 0 |
 | `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
 | `min_obstacle_count` | `int` | 障碍最小生成数量 |
 | `max_obstacle_count` | `int` | 障碍最大生成数量 |
@@ -541,7 +548,7 @@ Boss 多阶段规则：
 | `min_spawn_core_distance` | `int` | 刷怪点到核心的最小曼哈顿距离 |
 | `min_spawn_distance` | `int` | 刷怪点之间的最小曼哈顿距离 |
 
-当前推荐配置：
+当前配置：
 
 ```json
 {
@@ -550,7 +557,7 @@ Boss 多阶段规则：
   "spawn_count": 3,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
-  "event_point_count": 8,
+  "event_point_count": 0,
   "obstacle_ratio": 0.11,
   "min_obstacle_count": 45,
   "max_obstacle_count": 95,
@@ -574,10 +581,11 @@ Boss 多阶段规则：
 事件点说明：
 
 - 随机事件点是地图格子属性，存储在 `CellData.event_id`。
+- 当前 `event_point_count` 为 0，正式地图默认不生成随机事件点。
 - 随机事件点与资源点互斥，同一个格子不会同时是资源点和事件点。
 - `MapGenerator` 只负责放置事件点并引用已有事件 ID，不负责新增事件内容。
 - 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。
-- 地图侧只负责“这个格子是否有事件”；探索发现后的展示、行动力消耗和事件效果结算属于白天流程与随机事件模块。
+- 地图侧只负责“这个格子是否有事件”；探索发现后的展示和事件效果结算属于白天流程与随机事件模块。
 
 ---
 
