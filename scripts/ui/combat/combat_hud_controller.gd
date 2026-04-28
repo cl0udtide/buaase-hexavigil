@@ -19,6 +19,7 @@ var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
 var _debug_panel_open := false
+var _cooldown_message_operator_key := StringName()
 
 @onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
 @onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
@@ -114,15 +115,16 @@ func _bind_combat_hud() -> void:
 
 func _connect_events() -> void:
 	var event_bus = AppRefs.event_bus()
-	if event_bus == null:
-		return
-	event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
-	event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
-	event_bus.core_hp_changed.connect(_on_core_hp_changed)
-	event_bus.phase_changed.connect(_on_phase_changed)
-	event_bus.unit_deployed.connect(_on_unit_deployed)
-	event_bus.unit_removed.connect(_on_unit_removed)
-	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+	if event_bus != null:
+		event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
+		event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
+		event_bus.core_hp_changed.connect(_on_core_hp_changed)
+		event_bus.phase_changed.connect(_on_phase_changed)
+		event_bus.unit_deployed.connect(_on_unit_deployed)
+		event_bus.unit_removed.connect(_on_unit_removed)
+		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+	if _unit_manager != null and _unit_manager.has_signal("operator_redeploy_completed"):
+		_unit_manager.connect(&"operator_redeploy_completed", Callable(self, "_on_operator_redeploy_completed"))
 
 
 func _bootstrap_hud() -> void:
@@ -174,8 +176,7 @@ func _on_operator_card_pressed(operator_key: StringName) -> void:
 		if unit != null:
 			_select_unit(unit)
 	else:
-		var remain: float = _unit_manager.get_operator_redeploy_remaining(operator_key) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
-		_show_message("再部署冷却 %.1f 秒" % remain)
+		_show_message("干员正在再部署冷却中", operator_key)
 
 
 func _begin_operator_drag(operator_key: StringName) -> void:
@@ -365,6 +366,12 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	if _selected_unit_runtime_id == unit_runtime_id:
 		_clear_selected_unit()
 	_update_operator_cards()
+
+
+func _on_operator_redeploy_completed(operator_key: StringName) -> void:
+	_update_operator_cards()
+	if _cooldown_message_operator_key == operator_key:
+		_show_message("%s 已可部署" % _get_operator_display_name(operator_key))
 
 
 func _on_pause_pressed() -> void:
@@ -605,6 +612,13 @@ func _get_operator_info(operator_key: StringName) -> Dictionary:
 	return {}
 
 
+func _get_operator_display_name(operator_key: StringName) -> String:
+	var operator_info := _get_operator_info(operator_key)
+	if operator_info.is_empty():
+		return String(operator_key)
+	return String(operator_info.get("name", operator_key))
+
+
 func _get_unit_cfg(unit_id: StringName) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
@@ -620,7 +634,8 @@ func _get_unit_display_name(unit: Node) -> String:
 	return String(unit.cfg.get("name", unit.unit_id))
 
 
-func _show_message(text: String) -> void:
+func _show_message(text: String, cooldown_operator_key: StringName = &"") -> void:
+	_cooldown_message_operator_key = cooldown_operator_key
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
 		_combat_hud.show_message(text)
 
