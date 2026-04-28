@@ -333,13 +333,13 @@ def load_font() -> None:
     plt.rcParams["axes.unicode_minus"] = False
 
 
-def event_points(
+def burndown_events(
     issues: list[Issue],
     start_date: dt.date,
     end_date: dt.date,
     initial_batch_date: dt.date,
     target_total: int,
-) -> tuple[list[dt.datetime], list[int]]:
+) -> tuple[list[tuple[dt.datetime, int, str]], int]:
     start = dt.datetime.combine(start_date, dt.time.min, tzinfo=dt.timezone.utc)
     end = dt.datetime.combine(end_date, dt.time.max, tzinfo=dt.timezone.utc)
 
@@ -360,25 +360,74 @@ def event_points(
     events.sort(key=lambda item: (item[0], item[1]))
     initial_delta = sum(delta for when, delta, _ in events if when == start)
     events = [event for event in events if event[0] != start]
-    x_values = [start]
     current = max(0, initial_delta)
-    y_values = [current]
-    for when, delta, _ in events:
-        if when > x_values[-1]:
-            x_values.append(when)
-            y_values.append(current)
-        current = max(0, current + delta)
-        x_values.append(when + dt.timedelta(minutes=18 if delta > 0 else 36))
-        y_values.append(current)
+    if current == 0 and any(issue.created_at.date() <= initial_batch_date for issue in issues):
+        current = target_total
+    if current == 0:
+        current = target_total
+    return events, current
 
-    if y_values[0] == 0 and any(issue.created_at.date() <= initial_batch_date for issue in issues):
-        y_values[0] = target_total
-    if len(y_values) == 1 and y_values[0] == 0:
-        y_values[0] = target_total
-    if x_values[-1] < end:
-        x_values.append(end)
+
+def density_axis(
+    events: list[tuple[dt.datetime, int, str]],
+    start_date: dt.date,
+    end_date: dt.date,
+) -> tuple[dict[dt.date, float], dict[dt.date, float], dict[int, float], list[float], list[str]]:
+    dates = [start_date + dt.timedelta(days=offset) for offset in range((end_date - start_date).days + 1)]
+    event_counts = {day: 0 for day in dates}
+    for when, _, _ in events:
+        day = when.date()
+        if day in event_counts:
+            event_counts[day] += 1
+
+    widths: dict[dt.date, float] = {}
+    for day in dates:
+        count = event_counts[day]
+        widths[day] = 0.55 + min(count, 14) * 0.16
+        if count == 0:
+            widths[day] = 0.5
+
+    starts: dict[dt.date, float] = {}
+    cursor = 0.0
+    for day in dates:
+        starts[day] = cursor
+        cursor += widths[day]
+
+    event_positions: dict[int, float] = {}
+    events_by_day: dict[dt.date, list[int]] = {day: [] for day in dates}
+    for index, (when, _, _) in enumerate(events):
+        if when.date() in events_by_day:
+            events_by_day[when.date()].append(index)
+    for day, indexes in events_by_day.items():
+        if not indexes:
+            continue
+        width = widths[day]
+        for rank, index in enumerate(indexes, start=1):
+            event_positions[index] = starts[day] + width * rank / (len(indexes) + 1)
+
+    tick_positions = [starts[day] + widths[day] / 2 for day in dates]
+    tick_labels = [day.strftime("%m-%d") for day in dates]
+    return starts, widths, event_positions, tick_positions, tick_labels
+
+
+def actual_points(
+    events: list[tuple[dt.datetime, int, str]],
+    initial_total: int,
+    start_date: dt.date,
+    end_date: dt.date,
+) -> tuple[list[float], list[int], list[float], list[str]]:
+    starts, widths, event_positions, tick_positions, tick_labels = density_axis(events, start_date, end_date)
+    x_values = [starts[start_date]]
+    y_values = [initial_total]
+    current = initial_total
+    for index, (_, delta, _) in enumerate(events):
+        current = max(0, current + delta)
+        x_values.append(event_positions[index])
         y_values.append(current)
-    return x_values, y_values
+    end_x = starts[end_date] + widths[end_date]
+    x_values.append(end_x)
+    y_values.append(current)
+    return x_values, y_values, tick_positions, tick_labels
 
 
 def plot_burndown(
@@ -391,21 +440,18 @@ def plot_burndown(
     milestone_title: str,
 ) -> None:
     try:
-        import matplotlib.dates as mdates
         import matplotlib.pyplot as plt
     except ModuleNotFoundError as exc:
         raise RuntimeError("matplotlib is required. Install it with: python -m pip install matplotlib") from exc
 
     load_font()
     output.parent.mkdir(parents=True, exist_ok=True)
-    actual_x, actual_y = event_points(issues, start_date, end_date, initial_batch_date, target_total)
-    ideal_x = [
-        dt.datetime.combine(start_date, dt.time.min, tzinfo=dt.timezone.utc),
-        dt.datetime.combine(end_date, dt.time.max, tzinfo=dt.timezone.utc),
-    ]
+    events, initial_total = burndown_events(issues, start_date, end_date, initial_batch_date, target_total)
+    actual_x, actual_y, tick_positions, tick_labels = actual_points(events, initial_total, start_date, end_date)
+    ideal_x = [actual_x[0], actual_x[-1]]
     ideal_y = [target_total, 0]
 
-    fig, ax = plt.subplots(figsize=(12, 6.4), dpi=160)
+    fig, ax = plt.subplots(figsize=(14, 6.4), dpi=160)
     fig.patch.set_facecolor("#fbfbf8")
     ax.set_facecolor("#fbfbf8")
     ax.plot(ideal_x, ideal_y, color="#9aa0a6", linewidth=2.0, linestyle="--", label="Ideal")
@@ -423,8 +469,8 @@ def plot_burndown(
     ax.fill_between(actual_x, actual_y, color="#0b6b75", alpha=0.08)
     ax.set_title(f"{milestone_title} Burndown", fontsize=18, pad=16, weight="bold")
     ax.set_ylabel("Estimate Points", fontsize=11)
-    ax.set_xlabel("Date", fontsize=11)
-    ax.set_xlim(ideal_x[0], ideal_x[1])
+    ax.set_xlabel("Date (event-density scaled)", fontsize=11)
+    ax.set_xlim(actual_x[0], actual_x[-1])
     upper = max([target_total] + actual_y)
     ax.set_ylim(0, math.ceil((upper + 10) / 10) * 10)
     ax.grid(axis="y", color="#d7d9d2", linewidth=0.8)
@@ -434,9 +480,8 @@ def plot_burndown(
     ax.spines["left"].set_color("#c8cbc2")
     ax.spines["bottom"].set_color("#c8cbc2")
     ax.legend(loc="upper right", frameon=False)
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
-    fig.autofmt_xdate(rotation=0, ha="center")
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels(tick_labels, rotation=0, ha="center")
     fig.tight_layout()
     fig.savefig(output, bbox_inches="tight")
     plt.close(fig)
@@ -467,8 +512,8 @@ def main() -> int:
     parser.add_argument("--end-date", default="2026-05-04")
     parser.add_argument("--initial-batch-date", default="2026-04-23")
     parser.add_argument("--target-total", type=int, default=100)
-    parser.add_argument("--output", default="docs/alpha_burndown.png")
-    parser.add_argument("--json-output", default="docs/alpha_burndown_issues.json")
+    parser.add_argument("--output", default="burndowns/alpha_burndown.png")
+    parser.add_argument("--json-output", default="burndowns/alpha_burndown_issues.json")
     parser.add_argument("--sync", action="store_true", help="write milestone and estimate labels back to GitHub")
     parser.add_argument("--force-estimates", action="store_true", help="replace existing estimate:N labels")
     args = parser.parse_args()
