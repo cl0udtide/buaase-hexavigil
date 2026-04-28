@@ -1,0 +1,76 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/dialog_sandbox.gd" id="1_dialog_sandbox"]
+[ext_resource type="PackedScene" path="res://scenes/ui/DialogPanel.tscn" id="2_dialog_panel"]
+
+[node name="DialogSandbox" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_dialog_sandbox")
+
+[node name="DialogPanel" parent="." instance=ExtResource("2_dialog_panel")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="DebugBar" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = -20.0
+offset_bottom = 74.0
+grow_horizontal = 2
+mouse_filter = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="DebugBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="DebugBar/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusLabel" type="Label" parent="DebugBar/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 36)
+layout_mode = 2
+text = "准备播放"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="ReplayButton" type="Button" parent="DebugBar/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 36)
+layout_mode = 2
+focus_mode = 0
+text = "重播"
+
+[node name="NextButton" type="Button" parent="DebugBar/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 36)
+layout_mode = 2
+focus_mode = 0
+text = "下一句"
+
+[node name="SkipButton" type="Button" parent="DebugBar/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 36)
+layout_mode = 2
+focus_mode = 0
+text = "跳过"
+
+[node name="SpeedButton" type="Button" parent="DebugBar/MarginContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+focus_mode = 0
+text = "快速文本：关"

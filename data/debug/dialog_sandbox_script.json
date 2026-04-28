@@ -1,0 +1,68 @@
+{
+  "settings": {
+    "type_speed": 38
+  },
+  "default_background": "watch_room",
+  "backgrounds": {
+    "watch_room": {
+      "color": "#07131d"
+    },
+    "core_sync": {
+      "color": "#0a1824"
+    },
+    "enemy_signal": {
+      "color": "#1b0d12"
+    }
+  },
+  "portraits": {
+    "vigil_operator": "res://assets/story/portraits/night_watch_operator.png",
+    "core_ai": "res://assets/story/portraits/core_ai_guide.png",
+    "boss_herald": "res://assets/story/portraits/boss_herald.png"
+  },
+  "lines": [
+    {
+      "speaker": "守夜干员",
+      "side": "left",
+      "portrait_key": "vigil_operator",
+      "background_key": "watch_room",
+      "text": "边界灯塔已经点亮。今晚的迷雾比昨天更低，像是有人在另一侧回应我们的信号。"
+    },
+    {
+      "speaker": "核心 AI",
+      "side": "right",
+      "portrait_key": "core_ai",
+      "background_key": "core_sync",
+      "text": "[color=#79e8ff]同步完成。[/color]作战地图已展开，核心周边三十格内的异常回波正在增强。"
+    },
+    {
+      "speaker": "守夜干员",
+      "side": "left",
+      "text": "我知道。把预警推到所有小队终端。让他们在第一波敌人抵达前完成部署。"
+    },
+    {
+      "speaker": "未知信使",
+      "side": "right",
+      "portrait_key": "boss_herald",
+      "background_key": "enemy_signal",
+      "clear_sides": [
+        "left"
+      ],
+      "text": "你们守着那枚核心，却不明白它在夜里真正呼唤的是什么。"
+    },
+    {
+      "speaker": "核心 AI",
+      "side": "left",
+      "portrait_key": "core_ai",
+      "background_key": "core_sync",
+      "text": "检测到敌对通讯源。建议保留记录，并在 Boss 夜前触发完整剧情演出。"
+    },
+    {
+      "speaker": "",
+      "side": "narrator",
+      "clear_sides": [
+        "all"
+      ],
+      "text": "[center][color=#f7c46a]调试脚本结束。[/color]\\n本场景用于验证立绘、文本框、打字机、聚焦和跳过表现。[/center]"
+    }
+  ]
+}
