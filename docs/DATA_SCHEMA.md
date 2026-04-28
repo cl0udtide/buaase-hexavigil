@@ -237,6 +237,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
     "behavior_type": "normal",
     "move_type": "ground",
     "core_damage": 1,
+    "prestige_reward": 1,
     "scene_key": "enemy_actor"
   }
 ]
@@ -257,6 +258,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `behavior_type` | `String` | 行为类型；当前使用 `normal`、`demolisher`、`boss` 等策略语义，移速差异统一由 `move_speed` 表达，不另设 `rush` 等速度型行为 |
 | `move_type` | `String` | 移动类型 |
 | `core_damage` | `int` | 抵达核心时造成的伤害 |
+| `prestige_reward` | `int` | 被击杀时奖励的声望；进入核心消失不发放 |
 | `scene_key` | `String` | 敌人模板逻辑名 |
 
 常用可选字段：

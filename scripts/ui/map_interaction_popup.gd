@@ -37,6 +37,11 @@ func _ready() -> void:
 		_current_phase = int(run_state.phase)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
+		_clear_building_range_preview()
+
+
 func _bind_buttons() -> void:
 	_collect_button.pressed.connect(_on_collect_pressed)
 	_repair_button.pressed.connect(_on_repair_pressed)
@@ -83,10 +88,12 @@ func _refresh_content() -> bool:
 	var has_resource := data.resource_type != StringName()
 	var has_building := building != null
 	if not has_resource and not has_building:
+		_clear_building_range_preview()
 		return false
 	_title_label.text = _make_title(data, building)
 	_refresh_resource_section(data)
 	_refresh_building_section(building)
+	_refresh_building_range_preview(building)
 	return true
 
 
@@ -334,6 +341,40 @@ func _get_building_by_cell(cell: Vector2i) -> Node:
 		return null
 	var building = building_manager.get_building_by_cell(cell)
 	return building if building != null and is_instance_valid(building) else null
+
+
+func _refresh_building_range_preview(building: Node) -> void:
+	if building == null or not is_instance_valid(building):
+		_clear_building_range_preview()
+		return
+	var radius := int(building.cfg.get("effect_radius", 0))
+	if radius <= 0:
+		_clear_building_range_preview()
+		return
+	var map_manager := _get_map_manager()
+	var map_root := get_node_or_null("../../World/MapRoot")
+	if map_manager == null or map_root == null or not map_root.has_method("set_building_effect_range"):
+		return
+	map_root.set_building_effect_range(_get_square_range_cells(building.get_current_cell(), radius))
+
+
+func _clear_building_range_preview() -> void:
+	var map_root := get_node_or_null("../../World/MapRoot")
+	if map_root != null and map_root.has_method("clear_building_effect_range"):
+		map_root.clear_building_effect_range()
+
+
+func _get_square_range_cells(center: Vector2i, radius: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	var map_manager := _get_map_manager()
+	if map_manager == null:
+		return cells
+	for y in range(center.y - radius, center.y + radius + 1):
+		for x in range(center.x - radius, center.x + radius + 1):
+			var cell := Vector2i(x, y)
+			if map_manager.is_inside(cell):
+				cells.append(cell)
+	return cells
 
 
 func _apply_visual_style() -> void:
