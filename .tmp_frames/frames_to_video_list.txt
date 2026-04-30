@@ -1,7 +1,0 @@
-file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/.tmp_frames/frame_1.png'
-duration 0.0833333333
-file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/.tmp_frames/frame_2.png'
-duration 0.0833333333
-file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/.tmp_frames/frame_10.png'
-duration 0.0833333333
-file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/.tmp_frames/frame_10.png'
