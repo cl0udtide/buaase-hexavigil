@@ -338,10 +338,12 @@ def burndown_events(
     start_date: dt.date,
     end_date: dt.date,
     initial_batch_date: dt.date,
+    as_of_date: dt.date,
     target_total: int,
 ) -> tuple[list[tuple[dt.datetime, int, str]], int]:
     start = dt.datetime.combine(start_date, dt.time.min, tzinfo=dt.timezone.utc)
     end = dt.datetime.combine(end_date, dt.time.max, tzinfo=dt.timezone.utc)
+    as_of_end = dt.datetime.combine(as_of_date, dt.time.max, tzinfo=dt.timezone.utc)
 
     events: list[tuple[dt.datetime, int, str]] = []
     for issue in issues:
@@ -350,11 +352,13 @@ def burndown_events(
             continue
         created = issue.created_at
         closed = issue.closed_at
+        if created > as_of_end:
+            continue
         if created.date() <= initial_batch_date:
             events.append((start, estimate, f"#{issue.number} existing"))
-        elif start < created <= end:
+        elif start < created <= min(end, as_of_end):
             events.append((created, estimate, f"#{issue.number} opened"))
-        if closed and start <= closed <= end:
+        if closed and start <= closed <= min(end, as_of_end):
             events.append((closed, -estimate, f"#{issue.number} closed"))
 
     events.sort(key=lambda item: (item[0], item[1]))
@@ -415,6 +419,7 @@ def actual_points(
     initial_total: int,
     start_date: dt.date,
     end_date: dt.date,
+    as_of_date: dt.date,
 ) -> tuple[list[float], list[int], list[float], list[str]]:
     starts, widths, event_positions, tick_positions, tick_labels = density_axis(events, start_date, end_date)
     x_values = [starts[start_date]]
@@ -424,9 +429,11 @@ def actual_points(
         current = max(0, current + delta)
         x_values.append(event_positions[index])
         y_values.append(current)
-    end_x = starts[end_date] + widths[end_date]
-    x_values.append(end_x)
-    y_values.append(current)
+    clamped_as_of = min(max(as_of_date, start_date), end_date)
+    as_of_x = starts[clamped_as_of] + widths[clamped_as_of]
+    if x_values[-1] < as_of_x:
+        x_values.append(as_of_x)
+        y_values.append(current)
     return x_values, y_values, tick_positions, tick_labels
 
 
@@ -436,6 +443,7 @@ def plot_burndown(
     start_date: dt.date,
     end_date: dt.date,
     initial_batch_date: dt.date,
+    as_of_date: dt.date,
     target_total: int,
     milestone_title: str,
 ) -> None:
@@ -446,9 +454,18 @@ def plot_burndown(
 
     load_font()
     output.parent.mkdir(parents=True, exist_ok=True)
-    events, initial_total = burndown_events(issues, start_date, end_date, initial_batch_date, target_total)
-    actual_x, actual_y, tick_positions, tick_labels = actual_points(events, initial_total, start_date, end_date)
-    ideal_x = [actual_x[0], actual_x[-1]]
+    as_of_date = min(max(as_of_date, start_date), end_date)
+    events, initial_total = burndown_events(issues, start_date, end_date, initial_batch_date, as_of_date, target_total)
+    actual_x, actual_y, tick_positions, tick_labels = actual_points(
+        events,
+        initial_total,
+        start_date,
+        end_date,
+        as_of_date,
+    )
+    starts, widths, _, _, _ = density_axis(events, start_date, end_date)
+    ideal_end_x = starts[end_date] + widths[end_date]
+    ideal_x = [actual_x[0], ideal_end_x]
     ideal_y = [target_total, 0]
 
     fig, ax = plt.subplots(figsize=(14, 6.4), dpi=160)
@@ -512,6 +529,11 @@ def main() -> int:
     parser.add_argument("--end-date", default="2026-05-04")
     parser.add_argument("--initial-batch-date", default="2026-04-23")
     parser.add_argument("--target-total", type=int, default=100)
+    parser.add_argument(
+        "--as-of-date",
+        default=dt.datetime.now(dt.timezone.utc).date().isoformat(),
+        help="last date included in the actual line; defaults to today",
+    )
     parser.add_argument("--output", default="burndowns/alpha_burndown.png")
     parser.add_argument("--json-output", default="burndowns/alpha_burndown_issues.json")
     parser.add_argument("--sync", action="store_true", help="write milestone and estimate labels back to GitHub")
@@ -543,6 +565,7 @@ def main() -> int:
             parse_date(args.start_date),
             parse_date(args.end_date),
             parse_date(args.initial_batch_date),
+            parse_date(args.as_of_date),
             args.target_total,
             str(milestone["title"]),
         )

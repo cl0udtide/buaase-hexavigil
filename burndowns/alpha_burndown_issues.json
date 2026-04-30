@@ -449,5 +449,74 @@
     "labels": [
       "estimate:3"
     ]
+  },
+  {
+    "number": 76,
+    "title": "随机事件机制尚未实现",
+    "state": "open",
+    "created_at": "2026-04-28T06:23:33+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 77,
+    "title": "肉鸽 Buff 数量太少，缺乏游戏性",
+    "state": "open",
+    "created_at": "2026-04-28T06:23:33+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 78,
+    "title": "实现轻度剧情播放功能",
+    "state": "open",
+    "created_at": "2026-04-28T07:30:27+00:00",
+    "closed_at": null,
+    "estimate": 2,
+    "labels": [
+      "enhancement",
+      "estimate:2"
+    ]
+  },
+  {
+    "number": 82,
+    "title": "更新美工Pipeline",
+    "state": "open",
+    "created_at": "2026-04-30T12:01:06+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 83,
+    "title": "扩充怪物类型与波次机制，提升战斗变化",
+    "state": "open",
+    "created_at": "2026-04-30T14:29:16+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 84,
+    "title": "大量设计并引入新角色，扩充游戏可玩性",
+    "state": "open",
+    "created_at": "2026-04-30T14:29:16+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
   }
 ]
