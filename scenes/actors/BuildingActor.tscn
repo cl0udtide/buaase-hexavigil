@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://dobyschuycro1"]
+[gd_scene load_steps=3 format=3 uid="uid://dobyschuycro1"]
 
 [ext_resource type="Script" uid="uid://0e8gdjore0oe" path="res://scripts/building/building_actor.gd" id="1_bpxl5"]
+[ext_resource type="Script" uid="uid://dwhx8r7iapqm3" path="res://scripts/ui/actor_status_view.gd" id="2_status"]
 
 [node name="BuildingActor" type="Node2D" unique_id=1419536582]
 script = ExtResource("1_bpxl5")
@@ -21,3 +22,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Building"
 horizontal_alignment = 1
+
+[node name="StatusView" type="Node2D" parent="." unique_id=192452071]
+unique_name_in_owner = true
+script = ExtResource("2_status")

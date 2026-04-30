@@ -1,13 +1,12 @@
 extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const BossController = preload("res://scripts/enemy/boss_controller.gd")
+const EnemyMovementController = preload("res://scripts/enemy/enemy_movement_controller.gd")
+const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controller.gd")
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
-const CELL_SIZE := 64.0
-const BLOCK_HOLD_DISTANCE := CELL_SIZE * 0.5
-const BLOCK_SPREAD_DISTANCE := CELL_SIZE * 0.22
-const BLOCK_SNAP_SPEED := CELL_SIZE * 6.0
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -15,14 +14,10 @@ var current_cell := Vector2i.ZERO
 var cfg: Dictionary = {}
 var current_hp := 1
 var max_hp := 1
-var _path: Array[Vector2i] = []
-var _path_index := 0
-var _blocked_by := -1
-var _block_slot := 0
-var _block_slot_count := 1
-var _block_anchor_dir := Vector2.ZERO
-var _attack_timer := 0.0
 var _is_dead := false
+var _movement_controller: Node = null
+var _attack_controller: Node = null
+var _boss_controller: Node = null
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 
@@ -35,26 +30,34 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _is_dead:
 		return
-	if _blocked_by != -1:
-		var blocker := _get_blocker()
+	_refresh_fog_visibility()
+	if _boss_controller != null and _boss_controller.is_transitioning():
+		var phase_cfg: Dictionary = _boss_controller.tick(delta)
+		if not phase_cfg.is_empty():
+			_apply_phase_cfg(phase_cfg)
+			_boss_controller.apply_phase_enter_effects()
+		return
+	if is_blocked():
+		var blocker: Node = _get_blocker()
 		if blocker == null or not is_instance_valid(blocker):
 			clear_blocked()
 			return
-		_process_blocked_motion(delta, blocker)
-		_process_blocked_attack(delta, blocker)
+		_movement_controller.process_blocked_motion(delta, blocker)
+		_attack_controller.process_blocked_attack(delta, blocker)
 		return
-	if _path.is_empty():
+	if not _movement_controller.has_path():
 		return
-	if _path_index >= _path.size():
+	if _movement_controller.has_arrived():
 		get_enemy_manager().notify_enemy_reached_core(runtime_id)
 		return
-	var target_pos: Vector2 = get_map_manager().cell_to_world(_path[_path_index])
-	global_position = global_position.move_toward(target_pos, float(cfg.get("move_speed", 1.0)) * CELL_SIZE * delta)
-	if global_position.distance_to(target_pos) < 2.0:
-		current_cell = _path[_path_index]
-		_path_index += 1
-		if _path_index >= _path.size():
-			get_enemy_manager().notify_enemy_reached_core(runtime_id)
+	var path_building: Node = _attack_controller.get_blocking_building_on_path(_movement_controller)
+	if path_building != null:
+		_attack_controller.process_building_attack(delta, path_building)
+		return
+	if _attack_controller.process_range_attack(delta):
+		return
+	if _movement_controller.process_path_movement(delta):
+		get_enemy_manager().notify_enemy_reached_core(runtime_id)
 
 
 func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: Vector2i) -> void:
@@ -63,15 +66,14 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	max_hp = int(cfg.get("max_hp", 1))
 	current_hp = max_hp
 	current_cell = spawn_cell
-	_blocked_by = -1
-	_block_slot = 0
-	_block_slot_count = 1
-	_block_anchor_dir = Vector2.ZERO
-	_attack_timer = 0.0
 	_is_dead = false
+	_setup_movement_controller()
+	_setup_attack_controller()
+	_setup_boss_controller()
 	global_position = get_map_manager().cell_to_world(spawn_cell)
 	recalc_path()
-	var label := get_node_or_null("%TitleLabel") as Label
+	_refresh_fog_visibility()
+	var label: Label = get_node_or_null("%TitleLabel") as Label
 	if label != null:
 		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", enemy_id))
@@ -81,14 +83,17 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 
 
 func _draw() -> void:
-	var rect := Rect2(Vector2.ONE * (-DEBUG_SIZE * 0.5), Vector2.ONE * DEBUG_SIZE)
+	var rect: Rect2 = Rect2(Vector2.ONE * (-DEBUG_SIZE * 0.5), Vector2.ONE * DEBUG_SIZE)
 	draw_rect(rect, DEBUG_COLOR, false, 2.0)
 	draw_line(Vector2(-8.0, 0.0), Vector2(8.0, 0.0), DEBUG_COLOR, 1.5)
 	draw_line(Vector2(0.0, -8.0), Vector2(0.0, 8.0), DEBUG_COLOR, 1.5)
 
 
 func receive_damage(value: int, damage_type: int) -> void:
-	var final_damage := value
+	if (_boss_controller != null and _boss_controller.is_transitioning()) or bool(cfg.get("invulnerable", false)):
+		_debug_log("敌人 %s#%d 处于无敌状态，免疫本次伤害" % [_debug_name(), runtime_id])
+		return
+	var final_damage: int = value
 	if damage_type == GameEnums.DAMAGE_PHYSICAL:
 		final_damage = CombatMath.calc_physical_damage(value, int(cfg.get("def", 0)))
 	elif damage_type == GameEnums.DAMAGE_MAGIC:
@@ -98,33 +103,19 @@ func receive_damage(value: int, damage_type: int) -> void:
 	_play_hit_effect()
 	_debug_log("敌人 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type), value, final_damage, current_hp, max_hp])
 	if current_hp == 0 and not _is_dead:
+		if _boss_controller != null and _boss_controller.try_consume_death_for_phase_transition():
+			clear_blocked()
+			_update_status_view()
+			return
 		_is_dead = true
 		_debug_log("敌人 %s#%d 死亡" % [_debug_name(), runtime_id])
 		get_enemy_manager().remove_enemy(runtime_id)
 
 
 func apply_push(direction: Vector2i, tiles: int) -> bool:
-	if _is_dead or _blocked_by != -1 or tiles <= 0:
+	if _is_dead:
 		return false
-	var push_dir := _normalize_push_direction(direction)
-	if push_dir == Vector2i.ZERO:
-		return false
-	var map_manager := get_map_manager()
-	if map_manager == null:
-		return false
-	var target_cell := current_cell
-	for _step in range(tiles):
-		var next_cell := target_cell + push_dir
-		if not _can_push_to_cell(next_cell):
-			break
-		target_cell = next_cell
-	if target_cell == current_cell:
-		return false
-	current_cell = target_cell
-	global_position = map_manager.cell_to_world(current_cell)
-	recalc_path()
-	_debug_log("敌人 %s#%d 被推动到格子 %s" % [_debug_name(), runtime_id, current_cell])
-	return true
+	return _movement_controller.apply_push(direction, tiles) if _movement_controller != null else false
 
 
 func get_runtime_id() -> int:
@@ -135,47 +126,47 @@ func get_current_cell() -> Vector2i:
 	return current_cell
 
 
+func get_attack_range_tiles() -> int:
+	return _attack_controller.get_attack_range_tiles() if _attack_controller != null else int(cfg.get("attack_range", 0))
+
+
 func recalc_path() -> void:
-	var path_service := get_node_or_null("../../../Managers/PathService")
-	var map_manager := get_map_manager()
-	if map_manager == null:
-		return
-	var core_cell: Vector2i = map_manager.get_core_cell()
-	if path_service != null:
-		_path = path_service.find_path(current_cell, core_cell)
-		_path_index = min(1, _path.size() - 1) if not _path.is_empty() else 0
+	if _movement_controller != null:
+		_movement_controller.recalc_path()
 
 
 func set_blocked(blocker_runtime_id: int, block_slot: int = 0, block_slot_count: int = 1) -> void:
-	if _blocked_by != blocker_runtime_id:
-		_attack_timer = 0.0
-		_block_anchor_dir = _resolve_block_anchor_dir(blocker_runtime_id)
-	_blocked_by = blocker_runtime_id
-	_block_slot = max(block_slot, 0)
-	_block_slot_count = max(block_slot_count, 1)
+	if _movement_controller == null:
+		return
+	if _movement_controller.get_blocker_runtime_id() != blocker_runtime_id:
+		_attack_controller.reset_attack_timer()
+	_movement_controller.set_blocked(blocker_runtime_id, block_slot, block_slot_count)
 
 
 func clear_blocked() -> void:
-	_blocked_by = -1
-	_block_slot = 0
-	_block_slot_count = 1
-	_block_anchor_dir = Vector2.ZERO
+	if _movement_controller != null:
+		_movement_controller.clear_blocked()
 
 
 func is_blocked() -> bool:
-	return _blocked_by != -1
+	return _movement_controller != null and _movement_controller.is_blocked()
 
 
 func get_blocker_runtime_id() -> int:
-	return _blocked_by
+	return _movement_controller.get_blocker_runtime_id() if _movement_controller != null else -1
 
 
 func get_path_progress_score() -> float:
-	var core_distance := 0.0
-	var map_manager := get_map_manager()
-	if map_manager != null:
-		core_distance = float(get_current_cell().distance_squared_to(map_manager.get_core_cell()))
-	return float(_path_index) * 100000.0 - core_distance
+	return _movement_controller.get_path_progress_score() if _movement_controller != null else 0.0
+
+
+func get_effective_move_speed() -> float:
+	return _movement_controller.get_effective_move_speed() if _movement_controller != null else max(float(cfg.get("move_speed", 1.0)), 0.05)
+
+
+func set_external_move_speed_multiplier(value: float) -> void:
+	if _movement_controller != null:
+		_movement_controller.set_external_move_speed_multiplier(value)
 
 
 func _update_status_view() -> void:
@@ -186,6 +177,15 @@ func _update_status_view() -> void:
 func _play_hit_effect() -> void:
 	if _status_view != null and _status_view.has_method("play_hit_effect"):
 		_status_view.play_hit_effect()
+
+
+func _refresh_fog_visibility() -> void:
+	var map_manager := get_map_manager()
+	if map_manager == null or not map_manager.has_method("is_discovered"):
+		visible = true
+		return
+	var position_cell: Vector2i = map_manager.world_to_cell(global_position) if map_manager.has_method("world_to_cell") else current_cell
+	visible = map_manager.is_discovered(position_cell)
 
 
 func get_map_manager() -> Node:
@@ -200,88 +200,70 @@ func get_unit_manager() -> Node:
 	return get_node_or_null("../../../Managers/UnitManager")
 
 
+func get_building_manager() -> Node:
+	return get_node_or_null("../../../Managers/BuildingManager")
+
+
 func _get_blocker() -> Node:
-	var unit_manager := get_unit_manager()
-	return unit_manager.get_unit_by_runtime_id(_blocked_by) if unit_manager != null else null
+	var unit_manager: Node = get_unit_manager()
+	return unit_manager.get_unit_by_runtime_id(get_blocker_runtime_id()) if unit_manager != null else null
 
 
-func _process_blocked_motion(delta: float, blocker: Node) -> void:
-	var target_pos := _get_block_hold_position(blocker)
-	var snap_speed := float(cfg.get("blocked_snap_speed", BLOCK_SNAP_SPEED / CELL_SIZE)) * CELL_SIZE
-	global_position = global_position.move_toward(target_pos, snap_speed * delta)
-	var map_manager := get_map_manager()
-	if map_manager != null:
-		current_cell = map_manager.world_to_cell(global_position)
+func _setup_movement_controller() -> void:
+	if _movement_controller == null or not is_instance_valid(_movement_controller):
+		_movement_controller = EnemyMovementController.new()
+		add_child(_movement_controller)
+	_movement_controller.setup(self)
 
 
-func _process_blocked_attack(delta: float, blocker: Node) -> void:
-	_attack_timer = max(_attack_timer - delta, 0.0)
-	if _attack_timer > 0.0:
+func _setup_attack_controller() -> void:
+	if _attack_controller == null or not is_instance_valid(_attack_controller):
+		_attack_controller = EnemyAttackController.new()
+		add_child(_attack_controller)
+	_attack_controller.setup(self)
+
+
+func _setup_boss_controller() -> void:
+	if _boss_controller != null and is_instance_valid(_boss_controller):
+		_boss_controller.queue_free()
+	_boss_controller = null
+	var phases: Array = cfg.get("phases", [])
+	var should_enable := StringName(cfg.get("behavior_type", "normal")) == &"boss" or not phases.is_empty()
+	if not should_enable:
 		return
-	var damage_type := _parse_damage_type(String(cfg.get("damage_type", "physical")))
-	var damage_value := int(cfg.get("atk", 1))
-	_debug_log("敌人 %s#%d 攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
-	blocker.receive_damage(damage_value, damage_type, self)
-	_attack_timer = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+	_boss_controller = BossController.new()
+	add_child(_boss_controller)
+	_boss_controller.setup(self, cfg)
+	if not _boss_controller.is_enabled():
+		_boss_controller.queue_free()
+		_boss_controller = null
 
 
-func _get_block_hold_position(blocker: Node) -> Vector2:
-	var anchor_dir := _block_anchor_dir
-	if anchor_dir == Vector2.ZERO:
-		anchor_dir = _resolve_block_anchor_dir(_blocked_by)
-	var perpendicular := Vector2(-anchor_dir.y, anchor_dir.x)
-	var centered_slot := float(_block_slot) - float(_block_slot_count - 1) * 0.5
-	var hold_distance := float(cfg.get("block_hold_distance", BLOCK_HOLD_DISTANCE))
-	var spread_distance := float(cfg.get("block_spread_distance", BLOCK_SPREAD_DISTANCE))
-	return blocker.global_position + anchor_dir * hold_distance + perpendicular * centered_slot * spread_distance
+func _apply_phase_cfg(phase_cfg: Dictionary) -> void:
+	cfg.merge(phase_cfg, true)
+	if _movement_controller != null:
+		_movement_controller.refresh_path_mode()
+	max_hp = int(cfg.get("max_hp", max_hp))
+	current_hp = max_hp
+	if _attack_controller != null:
+		_attack_controller.set_attack_cooldown_from_cfg()
+	_recalc_path_after_phase_change()
+	_update_title_label()
+	_update_status_view()
+	_debug_log("敌人 %s#%d 转入第%d阶段，HP %d/%d" % [_debug_name(), runtime_id, int(phase_cfg.get("phase", 0)), current_hp, max_hp])
 
 
-func _resolve_block_anchor_dir(blocker_runtime_id: int) -> Vector2:
-	var blocker := _get_unit_by_runtime_id(blocker_runtime_id)
-	if blocker != null:
-		var direct: Vector2 = global_position - blocker.global_position
-		if direct.length() > 0.01:
-			return direct.normalized()
-	var move_dir := _get_current_move_direction()
-	if move_dir.length() > 0.01:
-		return -move_dir.normalized()
-	return Vector2.LEFT
+func _recalc_path_after_phase_change() -> void:
+	if not is_blocked():
+		recalc_path()
 
 
-func _get_unit_by_runtime_id(unit_runtime_id: int) -> Node:
-	var unit_manager := get_unit_manager()
-	return unit_manager.get_unit_by_runtime_id(unit_runtime_id) if unit_manager != null else null
-
-
-func _get_current_move_direction() -> Vector2:
-	var map_manager := get_map_manager()
-	if map_manager == null or _path.is_empty():
-		return Vector2.ZERO
-	var from_cell := current_cell
-	var to_cell := _path[min(_path_index, _path.size() - 1)]
-	if _path_index > 0 and _path_index < _path.size():
-		from_cell = _path[_path_index - 1]
-	var from_pos: Vector2 = map_manager.cell_to_world(from_cell)
-	var to_pos: Vector2 = map_manager.cell_to_world(to_cell)
-	return to_pos - from_pos
-
-
-func _can_push_to_cell(cell: Vector2i) -> bool:
-	var map_manager := get_map_manager()
-	if map_manager == null or not map_manager.is_inside(cell):
-		return false
-	var cell_data = map_manager.get_cell_data(cell)
-	if cell_data == null or cell_data.is_core:
-		return false
-	return map_manager.is_walkable(cell)
-
-
-func _normalize_push_direction(direction: Vector2i) -> Vector2i:
-	if direction == Vector2i.ZERO:
-		return Vector2i.ZERO
-	if abs(direction.x) >= abs(direction.y):
-		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
-	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
+func _update_title_label() -> void:
+	var label: Label = get_node_or_null("%TitleLabel") as Label
+	if label != null:
+		label.theme = AppTheme.get_theme()
+		label.text = String(cfg.get("name", enemy_id))
+		label.position = Vector2(-30.0, -58.0)
 
 
 func _parse_damage_type(raw_type: String) -> int:
@@ -295,7 +277,7 @@ func _parse_damage_type(raw_type: String) -> int:
 
 
 func _debug_log(message: String) -> void:
-	var tree := get_tree()
+	var tree: SceneTree = get_tree()
 	if tree != null:
 		tree.call_group("combat_debug_log", "append_combat_debug", message)
 

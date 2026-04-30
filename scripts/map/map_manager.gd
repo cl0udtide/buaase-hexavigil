@@ -16,14 +16,20 @@ var _core_cell := Vector2i.ZERO
 @onready var _core_root: Node = get_node_or_null("../../World/CoreRoot")
 
 
-func generate_new_map(_seed: int) -> void:
-	var generated: Dictionary = MapGenerator.generate(width, height)
+func generate_new_map(seed: int) -> void:
+	var data_repo = AppRefs.data_repo()
+	var cfg: Dictionary = data_repo.get_map_generation_cfg() if data_repo != null and data_repo.has_method("get_map_generation_cfg") else {}
+	width = int(cfg.get("width", width))
+	height = int(cfg.get("height", height))
+	var event_ids: Array[StringName] = data_repo.get_all_event_ids() if data_repo != null and data_repo.has_method("get_all_event_ids") else []
+	var generated: Dictionary = MapGenerator.generate(width, height, seed, cfg, event_ids)
 	_cells = generated.get("cells", {})
 	_spawn_cells.clear()
 	for cell_variant: Variant in generated.get("spawn_cells", []):
 		_spawn_cells.append(cell_variant as Vector2i)
 	_core_cell = generated.get("core_cell", Vector2i.ZERO)
-	refresh_all_layers()
+	refresh_all_layers(true)
+	_emit_path_grid_changed()
 
 
 func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary) -> void:
@@ -45,7 +51,8 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 		core_data.is_core = true
 		core_data.buildable = false
 	_apply_debug_spawns(spawn_defs)
-	refresh_all_layers()
+	refresh_all_layers(true)
+	_emit_path_grid_changed()
 
 
 func set_debug_spawns(spawn_defs: Dictionary) -> void:
@@ -93,7 +100,8 @@ func reset_map() -> void:
 	_cells.clear()
 	_spawn_cells.clear()
 	_core_cell = Vector2i.ZERO
-	refresh_all_layers()
+	refresh_all_layers(true)
+	_emit_path_grid_changed()
 
 
 func is_inside(cell: Vector2i) -> bool:
@@ -104,9 +112,37 @@ func get_cell_data(cell: Vector2i) -> CellData:
 	return _cells.get(cell)
 
 
+func get_all_cells() -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for cell_variant in _cells.keys():
+		result.append(cell_variant as Vector2i)
+	return result
+
+
 func is_discovered(cell: Vector2i) -> bool:
 	var data := get_cell_data(cell)
 	return data != null and data.discovered
+
+
+func has_discovered_neighbor(cell: Vector2i) -> bool:
+	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		if is_discovered(cell + offset):
+			return true
+	return false
+
+
+func get_event_id_at_cell(cell: Vector2i) -> StringName:
+	var data := get_cell_data(cell)
+	if data == null or data.event_triggered:
+		return StringName()
+	return data.event_id
+
+
+func mark_event_triggered(cell: Vector2i) -> void:
+	var data := get_cell_data(cell)
+	if data != null:
+		data.event_triggered = true
+		refresh_all_layers()
 
 
 func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]:
@@ -224,9 +260,9 @@ func get_random_discovered_empty_cell() -> Vector2i:
 	return candidates.pick_random()
 
 
-func refresh_all_layers() -> void:
+func refresh_all_layers(reset_camera: bool = false) -> void:
 	if _map_root != null and _map_root.has_method("refresh_from_map"):
-		_map_root.refresh_from_map(self)
+		_map_root.refresh_from_map(self, reset_camera)
 	_refresh_world_markers()
 
 
@@ -243,6 +279,7 @@ func _refresh_world_markers() -> void:
 		var spawn_key: StringName = child.get("spawn_key") if child.get("spawn_key") != null else StringName()
 		var spawn_cell := get_spawn_cell_by_key(spawn_key)
 		(child as Node2D).global_position = cell_to_world(spawn_cell)
+		(child as Node2D).visible = is_discovered(spawn_cell)
 
 
 func _apply_debug_spawns(spawn_defs: Dictionary) -> void:

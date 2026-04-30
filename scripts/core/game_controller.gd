@@ -8,6 +8,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 @onready var _shop_manager: Node = get_node_or_null("../ShopManager")
 @onready var _building_manager: Node = get_node_or_null("../BuildingManager")
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
+@onready var _unit_manager: Node = get_node_or_null("../UnitManager")
 
 
 func _ready() -> void:
@@ -27,8 +28,9 @@ func start_new_run(seed: int = -1) -> void:
 	var actual_seed := seed if seed >= 0 else int(Time.get_unix_time_from_system())
 	var data_repo = AppRefs.data_repo()
 	var run_state = AppRefs.run_state()
-	if data_repo != null:
-		data_repo.load_all()
+	if data_repo == null or (data_repo.has_method("is_loaded") and not data_repo.is_loaded()):
+		push_error("DataRepo must be loaded before starting a run.")
+		return
 	if run_state != null:
 		run_state.reset_for_new_run(actual_seed)
 	if _map_manager != null and _map_manager.has_method("generate_new_map"):
@@ -49,6 +51,8 @@ func enter_day(day: int) -> void:
 		_shop_manager.start_new_day_shop(day)
 	if _building_manager != null and _building_manager.has_method("refresh_daytime_repair"):
 		_building_manager.refresh_daytime_repair()
+	if _unit_manager != null and _unit_manager.has_method("prepare_for_day"):
+		_unit_manager.prepare_for_day()
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.day_started.emit(day)

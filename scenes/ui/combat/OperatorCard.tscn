@@ -1,0 +1,114 @@
+[gd_scene format=3 uid="uid://b6gwok5xlov26"]
+
+[ext_resource type="Script" path="res://scripts/ui/combat/operator_card.gd" id="1_operator_card"]
+
+[node name="OperatorCard" type="PanelContainer"]
+custom_minimum_size = Vector2(154, 136)
+size_flags_vertical = 3
+mouse_filter = 0
+script = ExtResource("1_operator_card")
+
+[node name="AccentBar" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = -134.0
+offset_right = 5.0
+offset_bottom = -2.0
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.12, 0.78, 0.88, 0.95)
+
+[node name="CardMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="VBox" type="VBoxContainer" parent="CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TopRow" type="HBoxContainer" parent="CardMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="CardMargin/VBox/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "干员"
+text_overrun_behavior = 3
+
+[node name="CostLabel" type="Label" parent="CardMargin/VBox/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 2
+text = "0"
+
+[node name="PortraitBox" type="PanelContainer" parent="CardMargin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="PortraitLabel" type="Label" parent="CardMargin/VBox/PortraitBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "*"
+
+[node name="CooldownOverlay" type="ColorRect" parent="CardMargin/VBox/PortraitBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.025, 0.03, 0.78)
+
+[node name="CooldownLabel" type="Label" parent="CardMargin/VBox/PortraitBox/CooldownOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "0s"
+
+[node name="ClassLabel" type="Label" parent="CardMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "职业"
+
+[node name="StatusLabel" type="Label" parent="CardMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "READY"
+text_overrun_behavior = 3
+autowrap_mode = 2

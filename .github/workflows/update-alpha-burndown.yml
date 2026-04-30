@@ -1,0 +1,49 @@
+name: Update Alpha Burndown
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  update:
+    name: Regenerate burndown chart
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout burndown branch
+        uses: actions/checkout@v4
+        with:
+          ref: alpha-burndown
+          path: alpha-burndown
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: alpha-burndown
+        run: python -m pip install -r requirements-alpha-burndown.txt
+
+      - name: Regenerate Alpha burndown
+        working-directory: alpha-burndown
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python alpha_burndown.py --sync --force-estimates
+
+      - name: Commit and push chart updates
+        working-directory: alpha-burndown
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md alpha_burndown.py requirements-alpha-burndown.txt burndowns/
+          if git diff --cached --quiet; then
+            echo "No burndown changes to commit."
+          else
+            git commit -m "docs: update Alpha burndown chart"
+            git push origin alpha-burndown
+          fi

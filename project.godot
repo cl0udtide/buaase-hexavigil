@@ -29,6 +29,11 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/main_scene="uid://cmig1vsmvy2ld"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/SourceHanSansSC-Normal.otf"
+theme/default_font_size=20
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

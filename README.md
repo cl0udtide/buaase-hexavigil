@@ -103,6 +103,8 @@ chore(CI): 更新 Godot Web 导出工作流权限
 ### Issue 与 PR
 
 - 所有任务、模块分配、Bug 报告统一使用 GitHub Issues
+- 提交 Issue 时必须设置对应的 Milestone
+- 提交 Issue 时必须设置 `estimate:N` 标签记录估点，例如 `estimate:3`
 - 开发前先认领对应 Issue
 - 本地开发分支从 `dev` 检出
 

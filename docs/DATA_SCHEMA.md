@@ -11,7 +11,8 @@ data/
 ├─ buildings.json
 ├─ buffs.json
 ├─ events.json
-└─ waves.json
+├─ waves.json
+└─ map_generation.json
 ```
 
 各文件用途：
@@ -28,6 +29,8 @@ data/
   随机事件静态配置。
 - `waves.json`
   夜晚波次配置。
+- `map_generation.json`
+  地图生成与探索相关调参配置。
 
 这些文件只保存静态配置，不保存一局游戏的运行时状态。
 
@@ -37,8 +40,9 @@ data/
 
 ### 2.1 顶层结构
 
-- 每个 JSON 文件顶层统一使用数组。
+- 配置表 JSON 文件顶层统一使用数组。
 - 数组中的每一项代表一条记录。
+- 全局调参文件可以使用对象结构，例如 `map_generation.json`。
 
 ### 2.2 `id`
 
@@ -92,6 +96,25 @@ building_actor -> scenes/actors/BuildingActor.tscn
 如果某条配置需要在 UI 中显示图标，则使用 `icon_key`。  
 `icon_key` 是图标资源的逻辑名，不直接写贴图路径。
 
+### 2.7 UI 显示字段与统一显示工具
+
+配置表中对象自身的显示信息优先写在数据里：
+
+- `name`：显示名称。
+- `desc`：说明文本。
+- `icon_key`：真实图标资源逻辑名。
+- `icon_text`：无真实图标时的占位图标文本。
+
+跨 UI 复用的显示规则不应散落在各 UI 脚本中，例如：
+
+- `class` 到职业中文名。
+- `cost_prestige` 到临时阶级名和阶级颜色。
+- 伤害类型枚举到中文标签。
+- 阶段枚举到中文标签。
+- 朝向向量到中文标签。
+
+这些规则由 `scripts/ui/ui_display_text.gd` 统一提供。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
+
 ---
 
 ## 3. `units.json`
@@ -106,24 +129,28 @@ building_actor -> scenes/actors/BuildingActor.tscn
 [
   {
     "id": "guard_01",
-    "name": "前锋近卫",
+    "name": "二阶近卫",
     "class": "guard",
-    "cost_prestige": 1,
-    "max_hp": 120,
-    "atk": 30,
-    "def": 10,
+    "cost_prestige": 3,
+    "max_hp": 135,
+    "atk": 34,
+    "def": 12,
     "res": 0,
-    "block": 1,
+    "block": 2,
     "attack_interval": 1.0,
     "damage_type": "physical",
     "target_type": "ground",
-    "range_pattern": [[1, 0]],
-    "redeploy_sec": 12,
-    "sp_max": 20,
+    "range_pattern": [[0, 0], [1, 0]],
+    "redeploy_sec": 12.0,
+    "sp_max": 18,
     "sp_recover_per_sec": 1.0,
-    "skill_id": "guard_power_strike",
-    "skill_behavior_key": "guard_power_strike",
+    "skill_id": "guard_hold_line",
+    "skill_name": "战术咏唱·阵线压制",
+    "skill_description": "阻挡数+1，普通攻击同时攻击所有被自身阻挡的敌人，持续10秒。",
+    "skill_duration": 10.0,
+    "skill_block_bonus": 1,
     "scene_key": "unit_actor",
+    "skill_behavior_key": "guard_hold_line",
     "icon_key": "guard_01_icon"
   }
 ]
@@ -154,6 +181,11 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `target_type` | `String` | 攻击目标类型 |
+| `attack_delivery` | `String` | 普攻命中形式；`instant` 为即时命中，`projectile` 为飞行物命中，未配置默认 `instant` |
+| `projectile_scene_key` | `String` | 飞行物场景逻辑名，未配置默认 `projectile` |
+| `projectile_speed` | `float` | 飞行物追踪速度 |
+| `projectile_hit_radius` | `float` | 飞行物命中半径 |
+| `projectile_lifetime` | `float` | 飞行物最大存活时间，未配置默认 3 秒 |
 | `sp_recover_per_sec` | `float` | 每秒回复 SP |
 | `skill_id` | `String` | 技能标识 |
 | `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |
@@ -209,6 +241,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
     "behavior_type": "normal",
     "move_type": "ground",
     "core_damage": 1,
+    "prestige_reward": 1,
     "scene_key": "enemy_actor"
   }
 ]
@@ -226,9 +259,10 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `res` | `int` | 法术抗性 |
 | `move_speed` | `float` | 移动速度 |
 | `attack_interval` | `float` | 攻击间隔 |
-| `behavior_type` | `String` | 行为类型 |
+| `behavior_type` | `String` | 行为类型；当前使用 `normal`、`demolisher`、`boss` 等策略语义，移速差异统一由 `move_speed` 表达，不另设 `rush` 等速度型行为 |
 | `move_type` | `String` | 移动类型 |
 | `core_damage` | `int` | 抵达核心时造成的伤害 |
+| `prestige_reward` | `int` | 被击杀时奖励的声望；进入核心消失不发放 |
 | `scene_key` | `String` | 敌人模板逻辑名 |
 
 常用可选字段：
@@ -236,6 +270,21 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `damage_type` | `String` | 伤害类型 |
+| `attack_range` | `int` | 攻击范围，按棋盘格切比雪夫距离计算；未配置或小于等于 0 时只攻击阻挡单位 |
+| `boss_controller_key` | `String` | Boss 阶段控制器逻辑名；未配置时默认使用通用 `phase_boss` |
+| `boss_behavior_key` | `String` | 未来 Boss 专属行为组件逻辑名；用于召唤、护盾循环、地图效果等非通用机制 |
+| `phase_transition_sec` | `float` | Boss 当前阶段 HP 耗尽后的无敌转阶段时长，期间不移动也不攻击 |
+| `phases` | `Array` | Boss 后续阶段配置；仅 Boss 使用，每项通过 `phase` 标识阶段编号，并可覆盖基础数值 |
+| `phase_enter_area_damage` | `Dictionary` | 进入该阶段时触发的区域伤害，支持 `radius`、`damage`、`damage_type` |
+
+Boss 多阶段规则：
+
+- 普通敌人不配置 `phases`。
+- 运行时中，`behavior_type: "boss"` 或存在非空 `phases` 时启用 `BossController`。
+- `BossController` 负责读取 `phases`、转阶段无敌计时和阶段进入效果。
+- 阶段配置项可以覆盖 `name`、`max_hp`、`atk`、`def`、`res`、`move_speed`、`attack_interval`、`attack_range`、`damage_type`、`behavior_type`、`move_type`、`core_damage` 等基础字段。
+- 多个 Boss 的共性阶段机制优先通过 `phases` 数据表达，不在代码中按 `enemy_id` 写分支。
+- `boss_behavior_key` 只用于数据表达不了的 Boss 专属机制；当前可先预留，不要求已有实现。
 
 ---
 
@@ -252,16 +301,20 @@ building_actor -> scenes/actors/BuildingActor.tscn
   {
     "id": "medical_station",
     "name": "医疗站",
+    "desc": "以建筑为中心 3x3 范围内的友军持续回复 2 生命/秒",
     "building_type": "aura",
-    "max_hp": 150,
+    "sort_order": 110,
+    "icon_key": "medical_station_icon",
+    "icon_text": "疗",
+    "max_hp": 380,
     "cost_wood": 2,
     "cost_stone": 1,
     "cost_mana": 0,
-    "ap_cost": 1,
+    "ap_cost": 2,
     "blocks_path": false,
-    "effect_radius": 2,
+    "effect_radius": 1,
     "effect_type": "heal",
-    "effect_value": 8,
+    "effect_value": 2,
     "place_rule": "plain_only",
     "scene_key": "building_actor"
   }
@@ -274,6 +327,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 |---|---|---|
 | `id` | `String` | 建筑唯一标识 |
 | `name` | `String` | 显示名称 |
+| `desc` | `String` | 建筑说明，`BuildPanel` 建筑卡片直接展示该字段 |
 | `building_type` | `String` | 建筑类别 |
 | `max_hp` | `int` | 最大生命 |
 | `cost_wood` | `int` | 木材消耗 |
@@ -291,6 +345,16 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `effect_radius` | `int` | 效果半径 |
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
+| `sort_order` | `int` | UI 排序值；`BuildPanel` 按该值从小到大显示，同值按 `id` 排序 |
+| `icon_key` | `String` | 建筑图标逻辑名，后续可映射到真实图标资源 |
+| `icon_text` | `String` | 当前占位 UI 使用的单字图标文本；有真实图标资源后可逐步替换 |
+| `hidden_in_build_panel` | `bool` | 是否从建筑面板隐藏，适合未开放或调试建筑 |
+
+`BuildPanel` 不维护独立建筑清单。建筑是否出现在某个标签页，由 `building_type` 决定：
+
+- `resource`：资源建筑。
+- `aura`：增益/光环建筑。
+- `block`：防御/路径阻挡建筑。
 
 ---
 
@@ -307,8 +371,8 @@ building_actor -> scenes/actors/BuildingActor.tscn
   {
     "day": 1,
     "entries": [
-      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 4, "interval": 0.8 },
-      { "time": 8.0, "enemy_id": "slime", "spawn_key": "S2", "count": 3, "interval": 0.7 }
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 2, "interval": 0.8 },
+      { "time": 6.0, "enemy_id": "wolf", "spawn_key": "S2", "count": 2, "interval": 0.7 }
     ]
   }
 ]
@@ -412,12 +476,15 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 ```json
 {
-  "id": "default_lane",
+  "id": "default",
   "name": "默认一路调试",
   "operators": [
-    {"key": "G1", "unit_id": "guard_01", "name": "近卫A"},
-    {"key": "G2", "unit_id": "guard_01", "name": "近卫B"},
-    {"key": "S1", "unit_id": "archer_basic", "name": "狙击A"}
+    {"key": "G1", "unit_id": "guard_t1", "name": "一阶近卫"},
+    {"key": "G2", "unit_id": "guard_01", "name": "二阶近卫"},
+    {"key": "G3", "unit_id": "guard_t3", "name": "三阶近卫"},
+    {"key": "S1", "unit_id": "sniper_t1", "name": "一阶狙击"},
+    {"key": "S2", "unit_id": "sniper_t2", "name": "二阶狙击"},
+    {"key": "S3", "unit_id": "archer_basic", "name": "三阶狙击"}
   ],
   "spawns": [
     {"key": "S1", "cell": [0, 3]}
@@ -428,9 +495,9 @@ building_actor -> scenes/actors/BuildingActor.tscn
         "enemy_id": "slime",
         "delay": 0.0,
         "name": "史莱姆",
-        "max_hp": 90,
+        "max_hp": 300,
         "atk": 18,
-        "def": 2,
+        "def": 20,
         "res": 0,
         "move_speed": 1.0,
         "attack_interval": 1.2,
@@ -456,28 +523,94 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 ---
 
-## 10. 配置表之间的引用关系
+## 10. `map_generation.json`
 
-### 10.1 单位
+作用：
+
+- 集中配置地图生成参数，便于快速调整资源点、事件点、障碍、刷怪点等数量和安全半径。
+- 该文件只描述地图生成侧的数量、距离和安全区参数，不保存单局运行时状态。
+
+字段说明：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `width` | `int` | 地图宽度 |
+| `height` | `int` | 地图高度 |
+| `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
+| `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
+| `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
+| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 0 |
+| `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
+| `min_obstacle_count` | `int` | 障碍最小生成数量 |
+| `max_obstacle_count` | `int` | 障碍最大生成数量 |
+| `core_safe_radius` | `int` | 核心周围不会随机生成障碍、额外资源、事件点的安全半径 |
+| `spawn_safe_radius` | `int` | 刷怪点周围不会随机生成障碍、额外资源、事件点的安全半径 |
+| `min_spawn_core_distance` | `int` | 刷怪点到核心的最小曼哈顿距离 |
+| `min_spawn_distance` | `int` | 刷怪点之间的最小曼哈顿距离 |
+
+当前配置：
+
+```json
+{
+  "width": 30,
+  "height": 30,
+  "spawn_count": 3,
+  "resources_per_type": 12,
+  "near_resources_per_type": 2,
+  "event_point_count": 0,
+  "obstacle_ratio": 0.11,
+  "min_obstacle_count": 45,
+  "max_obstacle_count": 95,
+  "core_safe_radius": 3,
+  "spawn_safe_radius": 1,
+  "min_spawn_core_distance": 12,
+  "min_spawn_distance": 10
+}
+```
+
+生成规则说明：
+
+- 地图默认生成 30×30 网格，核心位于地图中心，初始只揭开核心周围 5×5 区域。
+- 初始 5×5 可见区内不再固定塞资源点；资源保底改为放在可见区外侧的近探索圈，避免开局过空。
+- `resources_per_type` 表示每种资源的目标总数；当前木材、石材、魔力各 12 个。
+- `near_resources_per_type` 表示每种资源在近探索圈内的保底数量；当前木材、石材、魔力各至少 2 个靠近开局区域。
+- 障碍数量先按 `width * height * obstacle_ratio` 估算，再被 `min_obstacle_count` 与 `max_obstacle_count` 限制。
+- 障碍放置后会校验刷怪点到核心仍存在地面路径，避免随机地图把夜晚路径彻底堵死。
+- 刷怪点优先从地图边缘选择，受核心距离和刷怪点互相距离限制。
+
+事件点说明：
+
+- 随机事件点是地图格子属性，存储在 `CellData.event_id`。
+- 当前 `event_point_count` 为 0，正式地图默认不生成随机事件点。
+- 随机事件点与资源点互斥，同一个格子不会同时是资源点和事件点。
+- `MapGenerator` 只负责放置事件点并引用已有事件 ID，不负责新增事件内容。
+- 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。
+- 地图侧只负责“这个格子是否有事件”；探索发现后的展示和事件效果结算属于白天流程与随机事件模块。
+
+---
+
+## 11. 配置表之间的引用关系
+
+### 11.1 单位
 
 - `units.json[].skill_id` 引用技能逻辑标识
 - `units.json[].scene_key` 引用单位模板
 - `units.json[].icon_key` 引用单位图标
 
-### 10.2 敌人
+### 11.2 敌人
 
 - `enemies.json[].scene_key` 引用敌人模板
 
-### 10.3 建筑
+### 11.3 建筑
 
 - `buildings.json[].scene_key` 引用建筑模板
 
-### 10.4 波次
+### 11.4 波次
 
 - `waves.json[].entries[].enemy_id` 引用 `enemies.json[].id`
 - `waves.json[].entries[].spawn_key` 引用地图中的刷怪点逻辑名
 
-### 9.5 Buff 与事件
+### 11.5 Buff 与事件
 
 - `buffs.json[].effect_type` 决定 Buff 的结算逻辑
 - `events.json[].effect_type` 决定事件的结算逻辑

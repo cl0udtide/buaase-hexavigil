@@ -5,6 +5,9 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 const CELL_SIZE := 64.0
 const BLOCK_RADIUS_TILES := 0.7071
+const DEFAULT_PROJECTILE_SPEED := 520.0
+const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
+const DEFAULT_PROJECTILE_LIFETIME := 3.0
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -34,6 +37,8 @@ var resistance := 0
 var block_count := 0
 var attack_interval := 1.0
 var attack_multiplier := 1.0
+var _external_attack_interval_multiplier := 1.0
+var _external_attack_bonus := 0
 var damage_type := GameEnums.DAMAGE_PHYSICAL
 var target_type: StringName = &"ground"
 var range_pattern: Array[Vector2i] = []
@@ -77,6 +82,8 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	block_count = int(cfg.get("block", 0))
 	attack_interval = max(float(cfg.get("attack_interval", 1.0)), 0.05)
 	attack_multiplier = 1.0
+	_external_attack_interval_multiplier = 1.0
+	_external_attack_bonus = 0
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
 	target_type = StringName(cfg.get("target_type", "ground"))
 	range_pattern = parse_range_pattern(cfg.get("range_pattern", []))
@@ -188,6 +195,8 @@ func get_attack_targets() -> Array:
 	for enemy in get_all_enemies():
 		if enemy == null or not is_instance_valid(enemy):
 			continue
+		if not _can_detect_enemy(enemy):
+			continue
 		if _blocked_enemy_ids.has(enemy.get_runtime_id()):
 			targets.append(enemy)
 			continue
@@ -248,7 +257,19 @@ func get_effective_atk() -> int:
 	var buff_multiplier := 1.0
 	if run_state != null and run_state.has_method("get_buff_effect_total"):
 		buff_multiplier += float(run_state.get_buff_effect_total(&"unit_atk_percent"))
-	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)), 1)
+	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + _external_attack_bonus, 1)
+
+
+func get_effective_attack_interval() -> float:
+	return max(attack_interval * _external_attack_interval_multiplier, 0.05)
+
+
+func set_external_attack_interval_multiplier(value: float) -> void:
+	_external_attack_interval_multiplier = max(value, 0.1)
+
+
+func set_external_attack_bonus(value: int) -> void:
+	_external_attack_bonus = max(value, 0)
 
 
 func get_map_manager() -> Node:
@@ -261,6 +282,53 @@ func get_unit_manager() -> Node:
 
 func get_enemy_manager() -> Node:
 	return get_node_or_null("../../../Managers/EnemyManager")
+
+
+func get_projectile_root() -> Node:
+	return get_node_or_null("../../ProjectileRoot")
+
+
+func launch_projectile(target: Node, payload: Dictionary = {}) -> Node:
+	if target == null or not is_instance_valid(target):
+		return null
+	var projectile_root := get_projectile_root()
+	if projectile_root == null:
+		return null
+	var scene_key := StringName(payload.get("projectile_scene_key", payload.get("scene_key", cfg.get("projectile_scene_key", "projectile"))))
+	var data_repo = AppRefs.data_repo()
+	var projectile_scene: PackedScene = data_repo.get_scene_by_key(scene_key) if data_repo != null else null
+	if projectile_scene == null:
+		return null
+	var projectile := projectile_scene.instantiate()
+	projectile_root.add_child(projectile)
+	var projectile_payload := payload.duplicate()
+	projectile_payload["source"] = self
+	projectile_payload["target"] = target
+	if not projectile_payload.has("origin"):
+		projectile_payload["origin"] = _get_projectile_origin()
+	if not projectile_payload.has("speed"):
+		projectile_payload["speed"] = float(cfg.get("projectile_speed", DEFAULT_PROJECTILE_SPEED))
+	if not projectile_payload.has("hit_radius"):
+		projectile_payload["hit_radius"] = float(cfg.get("projectile_hit_radius", DEFAULT_PROJECTILE_HIT_RADIUS))
+	if not projectile_payload.has("max_lifetime"):
+		projectile_payload["max_lifetime"] = float(cfg.get("projectile_lifetime", DEFAULT_PROJECTILE_LIFETIME))
+	if projectile.has_signal("hit"):
+		projectile.hit.connect(_on_projectile_hit)
+	if projectile.has_method("setup"):
+		projectile.setup(projectile_payload)
+	elif projectile is Node2D:
+		var origin_variant: Variant = projectile_payload.get("origin", global_position)
+		if origin_variant is Vector2:
+			(projectile as Node2D).global_position = origin_variant
+	return projectile
+
+
+func _uses_projectile_attack() -> bool:
+	return StringName(cfg.get("attack_delivery", "instant")) == &"projectile"
+
+
+func _get_projectile_origin() -> Vector2:
+	return global_position + Vector2(facing).normalized() * 18.0
 
 
 func _configure_skill_behavior() -> void:
@@ -307,6 +375,8 @@ func _play_hit_effect() -> void:
 
 
 func _tick_attack(delta: float) -> void:
+	var effective_attack_interval := get_effective_attack_interval()
+	_attack_timer = min(_attack_timer, effective_attack_interval)
 	_attack_timer = max(_attack_timer - delta, 0.0)
 	if _attack_timer > 0.0:
 		return
@@ -317,13 +387,13 @@ func _tick_attack(delta: float) -> void:
 		for enemy in override_targets:
 			_attack_target(enemy, false)
 		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
-		_attack_timer = attack_interval
+		_attack_timer = effective_attack_interval
 		return
 	var target := _select_attack_target()
 	if target == null:
 		return
 	_attack_target(target)
-	_attack_timer = attack_interval
+	_attack_timer = effective_attack_interval
 
 
 func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
@@ -334,12 +404,61 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
 	_debug_log("单位 %s#%d 攻击敌人 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, target.enemy_id, target.get_runtime_id(), _damage_type_text(damage_type), damage_value])
-	if target.has_method("receive_damage"):
-		target.receive_damage(damage_value, damage_type)
-	if _skill_behavior != null and _skill_behavior.has_method("after_attack"):
-		_skill_behavior.after_attack(target, damage_value)
+	if _uses_projectile_attack():
+		var launched_count := 0
+		for raw_payload in _get_attack_projectile_payloads(target, damage_value):
+			var projectile_payload := (raw_payload as Dictionary).duplicate(true)
+			if not projectile_payload.has("damage"):
+				projectile_payload["damage"] = damage_value
+			if not projectile_payload.has("damage_type"):
+				projectile_payload["damage_type"] = damage_type
+			if not projectile_payload.has("trigger_after_attack"):
+				projectile_payload["trigger_after_attack"] = true
+			var projectile := launch_projectile(target, projectile_payload)
+			if projectile != null:
+				launched_count += 1
+		if launched_count > 0:
+			if gain_sp_on_attack:
+				gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+			return
+	_resolve_attack_hit(target, damage_value, damage_type, true)
 	if gain_sp_on_attack:
 		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+
+
+func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	if target.has_method("receive_damage"):
+		target.receive_damage(damage_value, damage_type_value)
+	if trigger_after_attack and _skill_behavior != null and _skill_behavior.has_method("after_attack"):
+		_skill_behavior.after_attack(target, damage_value)
+
+
+func _on_projectile_hit(_projectile: Node, target: Node, projectile_payload: Dictionary) -> void:
+	if _is_dead:
+		return
+	_resolve_attack_hit(
+		target,
+		int(projectile_payload.get("damage", get_effective_atk())),
+		int(projectile_payload.get("damage_type", damage_type)),
+		bool(projectile_payload.get("trigger_after_attack", true))
+	)
+
+
+func _get_attack_projectile_payloads(target: Node, damage_value: int) -> Array[Dictionary]:
+	var payloads: Array[Dictionary] = []
+	if _skill_behavior != null and _skill_behavior.has_method("get_attack_projectile_payloads"):
+		for payload_variant in _skill_behavior.get_attack_projectile_payloads(target, damage_value):
+			if typeof(payload_variant) == TYPE_DICTIONARY:
+				payloads.append((payload_variant as Dictionary).duplicate(true))
+	if payloads.is_empty():
+		payloads.append({
+			"damage": damage_value,
+			"damage_type": damage_type,
+			"trigger_after_attack": true
+		})
+	return payloads
 
 
 func _select_attack_target() -> Node:
@@ -408,6 +527,8 @@ func _refresh_blocking() -> void:
 func _can_keep_blocking(enemy: Node) -> bool:
 	if enemy == null or not is_instance_valid(enemy):
 		return false
+	if not _can_detect_enemy(enemy):
+		return false
 	if _is_enemy_unblockable(enemy):
 		return false
 	if enemy.has_method("get_blocker_runtime_id") and enemy.get_blocker_runtime_id() != runtime_id:
@@ -419,6 +540,8 @@ func _can_start_blocking(enemy: Node) -> bool:
 	if block_count <= 0:
 		return false
 	if enemy == null or not is_instance_valid(enemy):
+		return false
+	if not _can_detect_enemy(enemy):
 		return false
 	if _blocked_enemy_ids.has(enemy.get_runtime_id()):
 		return false
@@ -474,7 +597,15 @@ func _get_enemy_block_weight(enemy: Node) -> int:
 
 
 func _is_enemy_unblockable(enemy: Node) -> bool:
-	return enemy != null and bool(enemy.cfg.get("unblockable", false))
+	return enemy != null and (bool(enemy.cfg.get("unblockable", false)) or StringName(enemy.cfg.get("move_type", "ground")) == &"flying")
+
+
+func _can_detect_enemy(enemy: Node) -> bool:
+	var map_manager := get_map_manager()
+	if map_manager == null or not map_manager.has_method("is_discovered"):
+		return true
+	var enemy_cell: Vector2i = map_manager.world_to_cell(enemy.global_position) if map_manager.has_method("world_to_cell") else enemy.get_current_cell()
+	return map_manager.is_discovered(enemy_cell)
 
 
 func _is_enemy_within_block_radius(enemy: Node) -> bool:

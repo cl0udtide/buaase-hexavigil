@@ -16,6 +16,11 @@ const DEFAULT_SPAWNS := {
 }
 const MAX_LOG_LINES := 220
 const DAMAGE_TYPE_OPTIONS := ["physical", "magic", "true"]
+const DRAG_NONE := &"none"
+const DRAG_CARD := &"drag_card"
+const DRAG_LOCKED := &"locked"
+const DRAG_FACING := &"facing"
+const INVALID_CELL := Vector2i(-9999, -9999)
 const DAMAGE_TYPE_LABELS := ["物理", "法术", "真实"]
 
 var _unit_ids: Array[StringName] = []
@@ -34,6 +39,17 @@ var _current_preset_name := ""
 var _next_spawn_index := 1
 var _log_lines: Array[String] = []
 var _refreshing_editor_ui := false
+var _debug_drawer_open := false
+var _deploy_drag_state: StringName = DRAG_NONE
+var _drag_operator_key := StringName()
+var _locked_deploy_cell := INVALID_CELL
+var _current_drag_cell := INVALID_CELL
+var _current_drag_cell_valid := false
+var _current_drag_facing := Vector2i.RIGHT
+var _cooldown_message_operator_key := StringName()
+var _combat_hud: Control
+var _debug_drawer_panel: Control
+var _debug_drawer_content: Control
 
 var _editor_tabs: TabContainer
 var _preset_option: OptionButton
@@ -70,15 +86,19 @@ var _log_text: TextEdit
 @onready var _enemy_manager: Node = get_node_or_null("Managers/EnemyManager")
 @onready var _map_root: Node = get_node_or_null("World/MapRoot")
 @onready var _spawn_root: Node = get_node_or_null("World/SpawnRoot")
+@onready var _projectile_root: Node = get_node_or_null("World/ProjectileRoot")
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("combat_debug_log")
+	_configure_pause_boundaries()
 	var data_repo = AppRefs.data_repo()
-	if data_repo != null:
+	if data_repo != null and (not data_repo.has_method("is_loaded") or not data_repo.is_loaded()):
 		data_repo.load_all()
 	_load_presets_from_disk()
 	_build_editor_ui()
+	_bind_combat_hud()
 	_populate_static_options()
 	_connect_events()
 	_apply_preset_by_index(0)
@@ -86,18 +106,456 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_tick_spawn_queues(delta)
-	_refresh_operator_list()
-	_refresh_status()
-	_refresh_skill_info(_get_selected_unit())
+	if not get_tree().paused:
+		_tick_spawn_queues(delta)
+	_update_deploy_drag()
+	_update_operator_card_states()
+	_refresh_top_hud()
+	_refresh_detail_panel()
+	if _debug_drawer_open:
+		_refresh_operator_list()
+		_refresh_status()
+		_refresh_skill_info(_get_selected_unit())
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		_cancel_deploy_flow("已取消")
+		return
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
+			_cancel_deploy_flow("已取消")
+			return
+		if _deploy_drag_state == DRAG_LOCKED and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			if _get_mouse_cell() == _locked_deploy_cell:
+				_deploy_drag_state = DRAG_FACING
+				_current_drag_facing = Vector2i.RIGHT
+				_show_message("向外拖拽选择朝向")
+				return
+		if get_tree().paused and _deploy_drag_state == DRAG_NONE and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			_handle_map_cell_selection(_get_mouse_cell())
+
+
+func _exit_tree() -> void:
+	if get_tree() != null:
+		get_tree().paused = false
+	Engine.time_scale = 1.0
+
+
+func _configure_pause_boundaries() -> void:
+	var world := get_node_or_null("World")
+	if world != null:
+		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+	var managers := get_node_or_null("Managers")
+	if managers != null:
+		managers.process_mode = Node.PROCESS_MODE_PAUSABLE
+	var ui := get_node_or_null("UI")
+	if ui != null:
+		ui.process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+func _bind_combat_hud() -> void:
+	_combat_hud = get_node_or_null("UI/CombatHud") as Control
+	if _combat_hud == null:
+		push_warning("CombatHud scene is missing from CombatSandbox.")
+		return
+	if _combat_hud.has_signal("operator_card_pressed"):
+		_combat_hud.connect(&"operator_card_pressed", Callable(self, "_on_operator_card_pressed"))
+	if _combat_hud.has_signal("pause_pressed"):
+		_combat_hud.connect(&"pause_pressed", Callable(self, "_on_pause_pressed"))
+	if _combat_hud.has_signal("speed_1_pressed"):
+		_combat_hud.connect(&"speed_1_pressed", Callable(self, "_on_speed_1_pressed"))
+	if _combat_hud.has_signal("speed_2_pressed"):
+		_combat_hud.connect(&"speed_2_pressed", Callable(self, "_on_speed_2_pressed"))
+	if _combat_hud.has_signal("debug_drawer_toggle_pressed"):
+		_combat_hud.connect(&"debug_drawer_toggle_pressed", Callable(self, "_on_debug_drawer_toggle_pressed"))
+	if _combat_hud.has_signal("cast_skill_requested"):
+		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
+	if _combat_hud.has_signal("retreat_requested"):
+		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
+	_refresh_top_hud()
+	_rebuild_deploy_deck()
+	_refresh_detail_panel()
+
+
+func _set_debug_drawer_open(open: bool) -> void:
+	_debug_drawer_open = open
+	if _debug_drawer_panel != null:
+		_debug_drawer_panel.visible = open
+		_debug_drawer_panel.anchor_left = 1.0
+		_debug_drawer_panel.anchor_top = 0.0
+		_debug_drawer_panel.anchor_right = 1.0
+		_debug_drawer_panel.anchor_bottom = 1.0
+		_debug_drawer_panel.offset_left = -720.0
+		_debug_drawer_panel.offset_top = 82.0
+		_debug_drawer_panel.offset_right = -18.0
+		_debug_drawer_panel.offset_bottom = -18.0
+	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
+		_combat_hud.set_debug_drawer_open(open)
+
+
+func _on_debug_drawer_toggle_pressed() -> void:
+	_set_debug_drawer_open(not _debug_drawer_open)
+
+
+func _on_pause_pressed() -> void:
+	get_tree().paused = true
+	_refresh_time_controls()
+
+
+func _on_speed_1_pressed() -> void:
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	_refresh_time_controls()
+
+
+func _on_speed_2_pressed() -> void:
+	get_tree().paused = false
+	Engine.time_scale = 2.0
+	_refresh_time_controls()
+
+
+func _refresh_time_controls() -> void:
+	if _combat_hud != null and _combat_hud.has_method("set_time_controls"):
+		_combat_hud.set_time_controls(get_tree().paused, Engine.time_scale)
+
+
+func _refresh_top_hud() -> void:
+	var run_state = AppRefs.run_state()
+	var core_text := "核心生命\n%d/%d" % [run_state.core_hp, run_state.core_hp_max] if run_state != null else "核心生命\n--/--"
+	var deploy_text := "部署上限\n%d/%d" % [run_state.deployed_count, run_state.deploy_limit] if run_state != null else "部署上限\n0/0"
+	var queue_text := "战斗沙盒\n运行队列 %d" % _running_spawn_queues.size()
+	if _combat_hud != null and _combat_hud.has_method("set_top_values"):
+		_combat_hud.set_top_values(core_text, deploy_text, queue_text)
+	if _combat_hud != null and _combat_hud.has_method("set_resource_values"):
+		_combat_hud.set_resource_values("调试资源\n沙盒模式")
+	_refresh_time_controls()
+
+
+func _rebuild_deploy_deck() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_operators"):
+		return
+	_combat_hud.set_operators(_operator_defs)
+	_update_operator_card_states()
+
+
+func _update_operator_card_states() -> void:
+	for operator_info in _operator_defs:
+		_refresh_operator_card(StringName((operator_info as Dictionary).get("key", "")))
+
+
+func _refresh_operator_card(operator_key: StringName) -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_operator_card"):
+		return
+	var operator_info := _get_operator_info(operator_key)
+	var state := _get_operator_state(operator_key)
+	_combat_hud.set_operator_card(operator_key, _format_operator_card_text(operator_info, state), state)
+
+
+func _on_operator_card_pressed(operator_key: StringName) -> void:
+	var state := _get_operator_state(operator_key)
+	if state == &"ready":
+		_begin_operator_drag(operator_key)
+	elif state == &"deployed":
+		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		_select_deployed_unit(unit)
+	else:
+		_show_message("干员正在再部署冷却中", operator_key)
+
+
+func _begin_operator_drag(operator_key: StringName) -> void:
+	_cancel_deploy_flow("")
+	_deploy_drag_state = DRAG_CARD
+	_drag_operator_key = operator_key
+	_selected_operator_key = operator_key
+	_current_drag_cell = INVALID_CELL
+	_current_drag_cell_valid = false
+	_current_drag_facing = Vector2i.RIGHT
+	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
+		_combat_hud.show_drag_ghost(_format_operator_drag_text(operator_key))
+	_show_message("拖拽干员卡到可部署格")
+
+
+func _update_deploy_drag() -> void:
+	if _deploy_drag_state == DRAG_NONE:
+		return
+	_update_drag_ghost_position()
+	match _deploy_drag_state:
+		DRAG_CARD:
+			_update_card_drag_preview()
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				if _current_drag_cell_valid:
+					_lock_deploy_cell(_current_drag_cell)
+				else:
+					_cancel_deploy_flow("已取消")
+		DRAG_LOCKED:
+			_update_locked_deploy_preview(Vector2i.RIGHT)
+		DRAG_FACING:
+			_current_drag_facing = _get_facing_from_mouse(_locked_deploy_cell)
+			_update_locked_deploy_preview(_current_drag_facing)
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				_confirm_locked_deploy()
+
+
+func _update_card_drag_preview() -> void:
+	var cell := _get_mouse_cell()
+	_current_drag_cell = cell
+	var validation := _validate_drag_cell(_drag_operator_key, cell)
+	_current_drag_cell_valid = bool(validation.get("ok", false))
+	var preview_range: Array[Vector2i] = []
+	if _current_drag_cell_valid:
+		preview_range = _get_operator_attack_range_cells(_drag_operator_key, cell, Vector2i.RIGHT)
+	if _map_root != null and _map_root.has_method("set_deploy_preview"):
+		_map_root.set_deploy_preview(cell, _current_drag_cell_valid, preview_range)
+
+
+func _lock_deploy_cell(cell: Vector2i) -> void:
+	_deploy_drag_state = DRAG_LOCKED
+	_locked_deploy_cell = cell
+	_current_drag_facing = Vector2i.RIGHT
+	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
+		_combat_hud.hide_drag_ghost()
+	_update_locked_deploy_preview(_current_drag_facing)
+	_show_message("从锁定格向外拖拽选择朝向")
+
+
+func _update_locked_deploy_preview(facing: Vector2i) -> void:
+	if _locked_deploy_cell == INVALID_CELL:
+		return
+	var preview_range := _get_operator_attack_range_cells(_drag_operator_key, _locked_deploy_cell, facing)
+	if _map_root != null and _map_root.has_method("set_deploy_direction_preview"):
+		_map_root.set_deploy_direction_preview(_locked_deploy_cell, facing, preview_range)
+
+
+func _confirm_locked_deploy() -> void:
+	if _unit_manager == null or _locked_deploy_cell == INVALID_CELL:
+		_cancel_deploy_flow("部署失败")
+		return
+	var result: Dictionary = _unit_manager.try_deploy_operator(_drag_operator_key, _locked_deploy_cell, _current_drag_facing)
+	var payload: Dictionary = result.get("payload", {})
+	var runtime_id := int(payload.get("runtime_id", -1))
+	var unit = _unit_manager.get_unit_by_runtime_id(runtime_id) if runtime_id >= 0 and _unit_manager.has_method("get_unit_by_runtime_id") else null
+	_clear_deploy_preview()
+	_deploy_drag_state = DRAG_NONE
+	_drag_operator_key = StringName()
+	_locked_deploy_cell = INVALID_CELL
+	if result.get("ok", false):
+		_select_deployed_unit(unit)
+	_show_result_message(result, "部署完成", "部署失败")
+
+
+func _cancel_deploy_flow(message: String = "") -> void:
+	_deploy_drag_state = DRAG_NONE
+	_drag_operator_key = StringName()
+	_locked_deploy_cell = INVALID_CELL
+	_current_drag_cell = INVALID_CELL
+	_current_drag_cell_valid = false
+	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
+		_combat_hud.hide_drag_ghost()
+	_clear_deploy_preview()
+	if not message.is_empty():
+		_show_message(message)
+
+
+func _clear_deploy_preview() -> void:
+	if _map_root != null and _map_root.has_method("clear_deploy_preview"):
+		_map_root.clear_deploy_preview()
+
+
+func _update_drag_ghost_position() -> void:
+	if _combat_hud != null and _combat_hud.has_method("move_drag_ghost"):
+		_combat_hud.move_drag_ghost(get_viewport().get_mouse_position())
+
+
+func _validate_drag_cell(operator_key: StringName, cell: Vector2i) -> Dictionary:
+	if _unit_manager == null or not _unit_manager.has_method("validate_deploy_operator"):
+		return ActionResult.err(&"UNIT_MANAGER_MISSING", "UNIT_MANAGER_MISSING")
+	return _unit_manager.validate_deploy_operator(operator_key, cell)
+
+
+func _get_mouse_cell() -> Vector2i:
+	if _map_manager == null or _map_root == null:
+		return INVALID_CELL
+	return _map_manager.world_to_cell(_map_root.get_global_mouse_position())
+
+
+func _get_facing_from_mouse(origin_cell: Vector2i) -> Vector2i:
+	if _map_manager == null or _map_root == null:
+		return Vector2i.RIGHT
+	var delta: Vector2 = _map_root.get_global_mouse_position() - _map_manager.cell_to_world(origin_cell)
+	if delta.length_squared() < 64.0:
+		return Vector2i.RIGHT
+	if abs(delta.x) >= abs(delta.y):
+		return Vector2i.RIGHT if delta.x >= 0.0 else Vector2i.LEFT
+	return Vector2i.DOWN if delta.y >= 0.0 else Vector2i.UP
+
+
+func _handle_map_cell_selection(cell: Vector2i) -> void:
+	if _deploy_drag_state != DRAG_NONE or _unit_manager == null:
+		return
+	if cell == INVALID_CELL:
+		return
+	var existing_unit = _unit_manager.get_unit_by_cell(cell) if _unit_manager.has_method("get_unit_by_cell") else null
+	if existing_unit != null:
+		_select_deployed_unit(existing_unit)
+		return
+	_clear_selected_unit_selection()
+
+
+func _select_deployed_unit(unit: Node) -> void:
+	if unit == null or not is_instance_valid(unit):
+		return
+	_selected_unit_runtime_id = unit.get_runtime_id() if unit.has_method("get_runtime_id") else -1
+	_selected_operator_key = StringName(unit.operator_key) if unit.get("operator_key") != null else StringName()
+	_refresh_attack_range_preview()
+	_refresh_detail_panel()
+	_show_message("已选中 %s" % _get_unit_display_name_for_ui(unit))
+
+
+func _clear_selected_unit_selection() -> void:
+	_selected_unit_runtime_id = -1
+	_clear_attack_range_preview()
+	_refresh_detail_panel()
+
+
+func _clear_unit_selection_if_click_misses_unit(cell: Vector2i) -> void:
+	if _selected_unit_runtime_id < 0 or _unit_manager == null or not _unit_manager.has_method("get_unit_by_cell"):
+		return
+	var clicked_unit = _unit_manager.get_unit_by_cell(cell)
+	if clicked_unit != null and is_instance_valid(clicked_unit) and clicked_unit.has_method("get_runtime_id") and int(clicked_unit.get_runtime_id()) == _selected_unit_runtime_id:
+		return
+	_clear_selected_unit_selection()
+
+
+func _refresh_detail_panel() -> void:
+	if _combat_hud == null:
+		return
+	var unit := _get_selected_unit()
+	if unit == null:
+		if _combat_hud.has_method("clear_unit_detail"):
+			_combat_hud.clear_unit_detail()
+		return
+	if _combat_hud.has_method("show_unit_detail"):
+		_combat_hud.show_unit_detail(
+			unit,
+			_get_unit_display_name_for_ui(unit),
+			_damage_type_label(String(unit.cfg.get("damage_type", "physical"))),
+			_direction_label(unit.facing)
+		)
+
+
+func _get_operator_attack_range_cells(operator_key: StringName, origin: Vector2i, facing: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if _map_manager == null:
+		return cells
+	var run_state = AppRefs.run_state()
+	var data_repo = AppRefs.data_repo()
+	if run_state == null or data_repo == null or not run_state.has_method("get_owned_operator"):
+		return cells
+	var operator_info: Dictionary = run_state.get_owned_operator(operator_key)
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
+	for offset in _parse_range_pattern_for_ui(cfg.get("range_pattern", [])):
+		var cell := origin + _rotate_offset(offset, facing)
+		if _map_manager.is_inside(cell) and not cells.has(cell):
+			cells.append(cell)
+	return cells
+
+
+func _parse_range_pattern_for_ui(raw_pattern: Variant) -> Array[Vector2i]:
+	var parsed: Array[Vector2i] = []
+	if typeof(raw_pattern) != TYPE_ARRAY:
+		return parsed
+	for entry: Variant in raw_pattern:
+		if typeof(entry) == TYPE_ARRAY and (entry as Array).size() >= 2:
+			var pair := entry as Array
+			parsed.append(Vector2i(int(pair[0]), int(pair[1])))
+		elif entry is Vector2i:
+			parsed.append(entry)
+	return parsed
+
+
+func _get_unit_display_name_for_ui(unit: Node) -> String:
+	if unit == null:
+		return "未知单位"
+	if unit.operator_name != "":
+		return String(unit.operator_name)
+	return String(unit.cfg.get("name", unit.unit_id))
+
+
+func _format_operator_card_text(operator_info: Dictionary, state: StringName) -> String:
+	if operator_info.is_empty():
+		return "未知\n--"
+	var operator_key := StringName(operator_info.get("key", ""))
+	var data_repo = AppRefs.data_repo()
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
+	var class_text := _class_label(str(cfg.get("class", "")))
+	var cost_text := str(cfg.get("cost_prestige", "--"))
+	if state == &"deployed":
+		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		if unit != null:
+			return "%s\n%s  费用 %s\n生命 %d/%d  技力 %.0f" % [name, class_text, cost_text, int(unit.current_hp), int(unit.max_hp), float(unit.sp)]
+		return "%s\n%s  费用 %s\n已部署" % [name, class_text, cost_text]
+	if state == &"cooldown":
+		var remain: float = _unit_manager.get_operator_redeploy_remaining(operator_key) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
+		return "%s\n%s  费用 %s\n冷却 %.1f秒" % [name, class_text, cost_text, remain]
+	return "%s\n%s  费用 %s\n拖拽部署" % [name, class_text, cost_text]
+
+
+func _format_operator_drag_text(operator_key: StringName) -> String:
+	var operator_info := _get_operator_info(operator_key)
+	if operator_info.is_empty():
+		return String(operator_key)
+	return "%s\n%s" % [String(operator_info.get("name", operator_key)), String(operator_info.get("unit_id", ""))]
+
+
+func _get_operator_state(operator_key: StringName) -> StringName:
+	if _unit_manager == null or not _unit_manager.has_method("get_operator_status"):
+		return &"ready"
+	return StringName(_unit_manager.get_operator_status(operator_key))
+
+
+func _class_label(raw_class: String) -> String:
+	match raw_class:
+		"guard":
+			return "近卫"
+		"sniper":
+			return "狙击"
+		"caster":
+			return "术士"
+		"defender":
+			return "重装"
+		_:
+			return raw_class if not raw_class.is_empty() else "干员"
+
+
+func _damage_type_label(raw_type: String) -> String:
+	match raw_type:
+		"magic":
+			return "法术"
+		"true":
+			return "真实"
+		_:
+			return "物理"
+
+
+func _direction_label(direction: Vector2i) -> String:
+	if abs(direction.x) >= abs(direction.y):
+		return "右" if direction.x >= 0 else "左"
+	return "下" if direction.y >= 0 else "上"
 
 
 func _build_editor_ui() -> void:
 	var panel := get_node_or_null("UI/Panel") as Control
 	if panel != null:
 		AppTheme.apply(panel)
+		_debug_drawer_panel = panel
+		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var vbox := get_node_or_null("UI/Panel/MarginContainer/VBox") as VBoxContainer
 	if vbox == null:
 		return
@@ -105,11 +563,11 @@ func _build_editor_ui() -> void:
 		vbox.remove_child(child)
 		child.queue_free()
 
-	var title := _make_label("Combat Sandbox Editor", 0.0)
+	var title := _make_label("战斗沙盒编辑器", 0.0)
 	title.add_theme_font_size_override("font_size", 20)
 	vbox.add_child(title)
 
-	_status_label = _make_label("状态", 0.0)
+	_status_label = _make_label("单位 0  敌人 0", 0.0)
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_status_label)
 
@@ -120,13 +578,13 @@ func _build_editor_ui() -> void:
 	_editor_tabs.tab_changed.connect(_on_editor_tab_changed)
 	vbox.add_child(_editor_tabs)
 
-	_build_combat_tab(_make_tab(_editor_tabs, "作战"))
+	_build_combat_tab(_make_tab(_editor_tabs, "战斗"))
 	_build_preset_tab(_make_tab(_editor_tabs, "预设"))
-	_build_spawn_tab(_make_tab(_editor_tabs, "出怪口"))
+	_build_spawn_tab(_make_tab(_editor_tabs, "出怪点"))
 	_build_queue_tab(_make_tab(_editor_tabs, "队列"))
-	_build_item_tab(_make_tab(_editor_tabs, "属性"))
+	_build_item_tab(_make_tab(_editor_tabs, "敌人"))
 
-	_message_label = _make_label("加载预设后可部署单位、编辑出怪口与队列。", 0.0)
+	_message_label = _make_label("加载预设，编辑出怪点并调整敌人队列。", 0.0)
 	_message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_message_label)
 
@@ -138,6 +596,7 @@ func _build_editor_ui() -> void:
 	_log_text.editable = false
 	_log_text.wrap_mode = 1
 	vbox.add_child(_log_text)
+	_set_debug_drawer_open(false)
 
 
 func _build_combat_tab(tab: VBoxContainer) -> void:
@@ -158,20 +617,22 @@ func _build_combat_tab(tab: VBoxContainer) -> void:
 	add_row.add_child(_operator_name_edit)
 
 	var roster_action_row := _make_row(tab)
-	roster_action_row.add_child(_make_button("新增槽位", _on_add_operator_pressed))
+	roster_action_row.add_child(_make_button("添加槽位", _on_add_operator_pressed))
 	roster_action_row.add_child(_make_button("删除槽位", _on_delete_operator_pressed))
 
 	var facing_row := _make_row(tab)
+	facing_row.visible = false
 	facing_row.add_child(_make_label("朝向", 54.0))
 	_facing_option = _make_option(facing_row)
 
 	var unit_action_row := _make_row(tab)
+	unit_action_row.visible = false
 	unit_action_row.add_child(_make_button("释放技能", _on_cast_skill_pressed))
-	unit_action_row.add_child(_make_button("撤退选中", _on_retreat_pressed))
+	unit_action_row.add_child(_make_button("撤退", _on_retreat_pressed))
 
 	var run_row := _make_row(tab)
-	run_row.add_child(_make_button("开始当前口", _on_start_selected_spawn_pressed))
-	run_row.add_child(_make_button("开始全部", _on_start_all_spawns_pressed))
+	run_row.add_child(_make_button("启动选中", _on_start_selected_spawn_pressed))
+	run_row.add_child(_make_button("全部启动", _on_start_all_spawns_pressed))
 	run_row.add_child(_make_button("停止队列", _on_stop_spawns_pressed))
 
 	var scene_row := _make_row(tab)
@@ -197,41 +658,41 @@ func _build_preset_tab(tab: VBoxContainer) -> void:
 	name_row.add_child(_preset_name_edit)
 
 	var action_row := _make_row(tab)
-	action_row.add_child(_make_button("覆盖保存", _on_save_preset_pressed))
-	action_row.add_child(_make_button("另存新预设", _on_save_new_preset_pressed))
-	action_row.add_child(_make_button("删除预设", _on_delete_preset_pressed))
+	action_row.add_child(_make_button("保存", _on_save_preset_pressed))
+	action_row.add_child(_make_button("另存", _on_save_new_preset_pressed))
+	action_row.add_child(_make_button("删除", _on_delete_preset_pressed))
 
 
 func _build_spawn_tab(tab: VBoxContainer) -> void:
 	var spawn_row := _make_row(tab)
-	spawn_row.add_child(_make_label("出怪口", 68.0))
+	spawn_row.add_child(_make_label("出怪点", 68.0))
 	_spawn_option = _make_option(spawn_row)
 	_spawn_option.item_selected.connect(_on_spawn_option_selected)
-	spawn_row.add_child(_make_button("新增", _on_add_spawn_pressed))
+	spawn_row.add_child(_make_button("添加", _on_add_spawn_pressed))
 	spawn_row.add_child(_make_button("删除", _on_delete_spawn_pressed))
 
-	var hint := _make_label("点击红色出怪口格子可直接选中；点击空格会移动当前选中的出怪口。不能放在核心、单位或已有出怪口上。", 0.0)
+	var hint := _make_label("点击已有出怪点进行选择，或点击空格移动当前选中的出怪点。", 0.0)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tab.add_child(hint)
 
 
 func _build_queue_tab(tab: VBoxContainer) -> void:
-	_queue_hint_label = _make_label("队列：未选择出怪口", 0.0)
+	_queue_hint_label = _make_label("队列：未选择出怪点", 0.0)
 	tab.add_child(_queue_hint_label)
 
 	var add_row := _make_row(tab)
 	add_row.add_child(_make_label("敌人", 54.0))
 	_enemy_option = _make_option(add_row)
-	add_row.add_child(_make_button("添加单只", _on_add_enemy_item_pressed))
+	add_row.add_child(_make_button("添加单个", _on_add_enemy_item_pressed))
 
 	var batch_row := _make_row(tab)
-	batch_row.add_child(_make_label("批量", 54.0))
+	batch_row.add_child(_make_label("数量", 54.0))
 	_batch_count_spin = _make_spin(1.0, 50.0, 1.0, 3.0)
 	batch_row.add_child(_batch_count_spin)
 	batch_row.add_child(_make_label("延迟", 54.0))
 	_batch_delay_spin = _make_spin(0.0, 60.0, 0.05, 0.5)
 	batch_row.add_child(_batch_delay_spin)
-	batch_row.add_child(_make_button("批量追加", _on_batch_append_pressed))
+	batch_row.add_child(_make_button("追加批次", _on_batch_append_pressed))
 
 	_queue_list = ItemList.new()
 	_queue_list.custom_minimum_size = Vector2(0, 180)
@@ -264,7 +725,7 @@ func _build_item_tab(tab: VBoxContainer) -> void:
 	_item_delay_spin = _make_spin(0.0, 60.0, 0.05, 0.0)
 	_item_delay_spin.value_changed.connect(_on_selected_item_property_changed)
 	timing_row.add_child(_item_delay_spin)
-	timing_row.add_child(_make_label("攻速", 68.0))
+	timing_row.add_child(_make_label("间隔", 68.0))
 	_item_interval_spin = _make_spin(0.05, 60.0, 0.05, 1.0)
 	_item_interval_spin.value_changed.connect(_on_selected_item_property_changed)
 	timing_row.add_child(_item_interval_spin)
@@ -290,7 +751,7 @@ func _build_item_tab(tab: VBoxContainer) -> void:
 	defense_row.add_child(_item_res_spin)
 
 	var move_row := _make_row(tab)
-	move_row.add_child(_make_label("移速", 68.0))
+	move_row.add_child(_make_label("速度", 68.0))
 	_item_speed_spin = _make_spin(0.05, 20.0, 0.05, 1.0)
 	_item_speed_spin.value_changed.connect(_on_selected_item_property_changed)
 	move_row.add_child(_item_speed_spin)
@@ -307,11 +768,12 @@ func _build_item_tab(tab: VBoxContainer) -> void:
 
 func _connect_events() -> void:
 	var event_bus = AppRefs.event_bus()
-	if event_bus == null:
-		return
-	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
-	event_bus.unit_deployed.connect(_on_unit_deployed)
-	event_bus.unit_removed.connect(_on_unit_removed)
+	if event_bus != null:
+		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+		event_bus.unit_deployed.connect(_on_unit_deployed)
+		event_bus.unit_removed.connect(_on_unit_removed)
+	if _unit_manager != null and _unit_manager.has_signal("operator_redeploy_completed"):
+		_unit_manager.connect(&"operator_redeploy_completed", Callable(self, "_on_operator_redeploy_completed"))
 
 
 func _populate_static_options() -> void:
@@ -323,6 +785,7 @@ func _populate_static_options() -> void:
 
 
 func _reset_sandbox() -> void:
+	_cancel_deploy_flow("")
 	_clear_debug_log()
 	_running_spawn_queues.clear()
 	_selected_operator_key = _get_first_operator_key()
@@ -332,6 +795,7 @@ func _reset_sandbox() -> void:
 		_enemy_manager.clear_all_enemies()
 	if _unit_manager != null and _unit_manager.has_method("clear_all_units"):
 		_unit_manager.clear_all_units()
+	_clear_projectiles()
 	var run_state = AppRefs.run_state()
 	if run_state != null:
 		run_state.reset_for_new_run(1)
@@ -347,11 +811,12 @@ func _reset_sandbox() -> void:
 				String(operator_dict.get("name", ""))
 			)
 	_apply_debug_map_from_state()
-	append_combat_debug("战斗编辑器已重置：预设 %s，出怪口 %d 个" % [_current_preset_name, _spawn_defs.size()])
+	append_combat_debug("沙盒已重置")
 	_refresh_editor_controls()
 
 
 func _clear_battlefield() -> void:
+	_cancel_deploy_flow("")
 	_running_spawn_queues.clear()
 	_selected_unit_runtime_id = -1
 	_clear_attack_range_preview()
@@ -359,6 +824,7 @@ func _clear_battlefield() -> void:
 		_enemy_manager.clear_all_enemies()
 	if _unit_manager != null and _unit_manager.has_method("clear_all_units"):
 		_unit_manager.clear_all_units()
+	_clear_projectiles()
 	if _map_manager != null and _map_manager.has_method("clear_runtime_occupancy"):
 		_map_manager.clear_runtime_occupancy()
 	var run_state = AppRefs.run_state()
@@ -367,7 +833,14 @@ func _clear_battlefield() -> void:
 		run_state.core_hp = run_state.core_hp_max
 		EventBus.deploy_limit_changed.emit(run_state.deployed_count, run_state.deploy_limit)
 		EventBus.core_hp_changed.emit(run_state.core_hp, run_state.core_hp_max)
-	append_combat_debug("清场完成：移除所有单位、敌人与运行中的刷怪队列，编辑器队列保留")
+	append_combat_debug("战场已清空")
+
+
+func _clear_projectiles() -> void:
+	if _projectile_root == null:
+		return
+	for child in _projectile_root.get_children():
+		child.queue_free()
 
 
 func _tick_spawn_queues(delta: float) -> void:
@@ -381,14 +854,14 @@ func _tick_spawn_queues(delta: float) -> void:
 		var index := int(state.get("index", 0))
 		if index >= items.size():
 			_running_spawn_queues.erase(raw_key)
-			append_combat_debug("出怪口 %s 队列完成" % spawn_key)
+			append_combat_debug("出怪点 %s 队列完成" % spawn_key)
 			continue
 		var item: Dictionary = items[index]
 		_spawn_enemy_item(spawn_key, item)
 		index += 1
 		if index >= items.size():
 			_running_spawn_queues.erase(raw_key)
-			append_combat_debug("出怪口 %s 队列完成" % spawn_key)
+			append_combat_debug("出怪点 %s 队列完成" % spawn_key)
 		else:
 			state["index"] = index
 			state["timer"] = float((items[index] as Dictionary).get("delay", 0.0))
@@ -398,7 +871,7 @@ func _spawn_enemy_item(spawn_key: StringName, item: Dictionary) -> void:
 	if _enemy_manager == null or _map_manager == null:
 		return
 	if _map_manager.has_method("has_spawn_key") and not _map_manager.has_spawn_key(spawn_key):
-		append_combat_debug("出怪失败：出怪口 %s 不存在" % spawn_key)
+		append_combat_debug("出怪点 %s 已不存在" % spawn_key)
 		return
 	var enemy_id := StringName(item.get("enemy_id", ""))
 	if enemy_id == StringName():
@@ -406,7 +879,7 @@ func _spawn_enemy_item(spawn_key: StringName, item: Dictionary) -> void:
 	var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(spawn_key)
 	var override := _make_enemy_override(item)
 	_enemy_manager.spawn_enemy(enemy_id, spawn_cell, override)
-	append_combat_debug("出怪口 %s 生成 %s：HP %d ATK %d DEF %d RES %d" % [
+	append_combat_debug("出怪点 %s 生成 %s：生命 %d 攻击 %d 防御 %d 法抗 %d" % [
 		spawn_key,
 		String(item.get("name", enemy_id)),
 		int(item.get("max_hp", 1)),
@@ -417,36 +890,20 @@ func _spawn_enemy_item(spawn_key: StringName, item: Dictionary) -> void:
 
 
 func _on_map_cell_clicked(cell: Vector2i) -> void:
-	var clicked_spawn_key := _get_spawn_key_at_cell(cell)
-	if _is_tab_active("出怪口"):
-		if clicked_spawn_key != StringName():
-			_select_spawn_from_map(clicked_spawn_key)
+	if _deploy_drag_state != DRAG_NONE:
+		return
+	_clear_unit_selection_if_click_misses_unit(cell)
+	var clicked_spawn_key_new := _get_spawn_key_at_cell(cell)
+	if _debug_drawer_open and _is_tab_active("Spawns"):
+		if clicked_spawn_key_new != StringName():
+			_select_spawn_from_map(clicked_spawn_key_new)
 			return
 		_move_selected_spawn_to(cell)
 		return
-	if clicked_spawn_key != StringName() and not _is_tab_active("作战"):
-		_select_spawn_from_map(clicked_spawn_key)
+	if _debug_drawer_open and clicked_spawn_key_new != StringName() and not _is_tab_active("Combat"):
+		_select_spawn_from_map(clicked_spawn_key_new)
 		return
-	if not _is_tab_active("作战"):
-		_show_message("当前页面不会部署单位；切换到“作战”页后点击地图部署或选中单位。")
-		return
-	if _unit_manager == null:
-		return
-	var existing_unit = _unit_manager.get_unit_by_cell(cell) if _unit_manager.has_method("get_unit_by_cell") else null
-	if existing_unit != null:
-		_selected_unit_runtime_id = existing_unit.get_runtime_id()
-		_selected_operator_key = StringName(existing_unit.operator_key)
-		_select_operator_item(_selected_operator_key)
-		_refresh_attack_range_preview()
-		append_combat_debug("选中干员槽位 %s 的单位 %s#%d，预览攻击范围" % [_selected_operator_key, existing_unit.unit_id, existing_unit.get_runtime_id()])
-		_refresh_status()
-		return
-	var operator_key := _get_selected_operator_key()
-	if operator_key == StringName():
-		_show_message("请先在干员槽位列表中选择一个可部署槽位")
-		return
-	var result: Dictionary = _unit_manager.try_deploy_operator(operator_key, cell, _get_selected_facing())
-	_show_result_message(result, "部署完成", "部署失败")
+	_handle_map_cell_selection(cell)
 
 
 func _on_preset_option_selected(_index: int) -> void:
@@ -455,7 +912,7 @@ func _on_preset_option_selected(_index: int) -> void:
 	var preset := _get_selected_preset_option()
 	if preset.is_empty():
 		return
-	_show_message("已选中预设 %s，点击“加载”应用到场景" % String(preset.get("name", "")))
+	_show_message("已选择预设 %s，点击加载以应用。" % String(preset.get("name", "")))
 
 
 func _on_load_preset_pressed() -> void:
@@ -475,8 +932,8 @@ func _on_save_preset_pressed() -> void:
 	_save_presets_to_disk()
 	_populate_preset_options()
 	_select_preset_option_by_id(_current_preset_id)
-	_show_message("已覆盖保存预设：%s" % _current_preset_name)
-	append_combat_debug("保存调试预设 %s 到 %s" % [_current_preset_name, PRESET_PATH])
+	_show_message("已保存预设：%s" % _current_preset_name)
+	append_combat_debug("已保存调试预设 %s 到 %s" % [_current_preset_name, PRESET_PATH])
 
 
 func _on_save_new_preset_pressed() -> void:
@@ -486,8 +943,8 @@ func _on_save_new_preset_pressed() -> void:
 	_save_presets_to_disk()
 	_populate_preset_options()
 	_select_preset_option_by_id(_current_preset_id)
-	_show_message("已另存为新预设：%s" % _current_preset_name)
-	append_combat_debug("另存调试预设 %s" % _current_preset_name)
+	_show_message("已另存预设：%s" % _current_preset_name)
+	append_combat_debug("已另存调试预设 %s" % _current_preset_name)
 
 
 func _on_delete_preset_pressed() -> void:
@@ -513,7 +970,7 @@ func _on_spawn_option_selected(index: int) -> void:
 	_selected_spawn_key = keys[index]
 	_selected_queue_index = -1
 	_refresh_editor_controls()
-	_show_message("已选中出怪口 %s" % _selected_spawn_key)
+	_show_message("已选择出怪点 %s" % _selected_spawn_key)
 
 
 func _on_add_spawn_pressed() -> void:
@@ -527,7 +984,7 @@ func _on_add_spawn_pressed() -> void:
 	_selected_queue_index = -1
 	_sync_spawn_nodes()
 	_refresh_editor_controls()
-	append_combat_debug("新增出怪口 %s 于 %s" % [spawn_key, cell])
+	append_combat_debug("已在 %s 添加出怪点 %s" % [cell, spawn_key])
 
 
 func _on_delete_spawn_pressed() -> void:
@@ -539,7 +996,7 @@ func _on_delete_spawn_pressed() -> void:
 	_spawn_defs.erase(key)
 	_spawn_queues.erase(key)
 	_running_spawn_queues.erase(key)
-	append_combat_debug("删除出怪口 %s，并清理该口队列" % _selected_spawn_key)
+	append_combat_debug("已删除出怪点 %s 并清空队列" % _selected_spawn_key)
 	var keys := _get_spawn_keys()
 	_selected_spawn_key = keys[0] if not keys.is_empty() else StringName()
 	_selected_queue_index = -1
@@ -548,22 +1005,22 @@ func _on_delete_spawn_pressed() -> void:
 
 
 func _on_editor_tab_changed(_tab: int) -> void:
-	if _is_tab_active("出怪口") and _selected_spawn_key != StringName():
-		_show_message("点击已有出怪口选中；点击空格移动 %s" % _selected_spawn_key)
+	if _is_tab_active("Spawns") and _selected_spawn_key != StringName():
+		_show_message("点击已有出怪点进行选择，或点击空格移动 %s。" % _selected_spawn_key)
 
 
 func _move_selected_spawn_to(cell: Vector2i) -> void:
 	if _selected_spawn_key == StringName() or _map_manager == null:
 		return
 	if not _map_manager.has_method("upsert_debug_spawn") or not _map_manager.upsert_debug_spawn(_selected_spawn_key, cell):
-		_show_message("移动失败：目标格不可用")
-		append_combat_debug("移动出怪口 %s 失败，目标格 %s 不可用" % [_selected_spawn_key, cell])
+		_show_message("无法把出怪点移动到该格")
+		append_combat_debug("移动出怪点 %s 到 %s 失败" % [_selected_spawn_key, cell])
 		return
 	_spawn_defs[String(_selected_spawn_key)] = cell
 	_sync_spawn_nodes()
 	_refresh_editor_controls()
-	_show_message("已移动出怪口 %s 到 %s" % [_selected_spawn_key, cell])
-	append_combat_debug("移动出怪口 %s 到 %s" % [_selected_spawn_key, cell])
+	_show_message("已移动出怪点 %s 到 %s" % [_selected_spawn_key, cell])
+	append_combat_debug("已移动出怪点 %s 到 %s" % [_selected_spawn_key, cell])
 
 
 func _select_spawn_from_map(spawn_key: StringName) -> void:
@@ -572,8 +1029,8 @@ func _select_spawn_from_map(spawn_key: StringName) -> void:
 	_selected_spawn_key = spawn_key
 	_selected_queue_index = -1
 	_refresh_editor_controls()
-	_show_message("已通过地图选中出怪口 %s" % spawn_key)
-	append_combat_debug("通过地图选中出怪口 %s" % spawn_key)
+	_show_message("已从地图选择出怪点 %s" % spawn_key)
+	append_combat_debug("已从地图选择出怪点 %s" % spawn_key)
 
 
 func _on_add_enemy_item_pressed() -> void:
@@ -597,7 +1054,7 @@ func _on_batch_append_pressed() -> void:
 		queue.append(_make_enemy_queue_item(enemy_id, delay))
 	_selected_queue_index = queue.size() - 1
 	_refresh_editor_controls()
-	append_combat_debug("向出怪口 %s 批量追加 %d 只 %s" % [_selected_spawn_key, count, enemy_id])
+	append_combat_debug("已向出怪点 %s 追加 %d 个 %s 条目" % [_selected_spawn_key, count, enemy_id])
 
 
 func _on_queue_item_selected(index: int) -> void:
@@ -674,14 +1131,14 @@ func _on_start_all_spawns_pressed() -> void:
 		if _start_spawn_queue(spawn_key, false):
 			started += 1
 	_refresh_editor_controls()
-	_show_message("已启动 %d 个出怪口队列" % started)
+	_show_message("已启动 %d 个出怪队列" % started)
 
 
 func _on_stop_spawns_pressed() -> void:
 	_running_spawn_queues.clear()
 	_refresh_editor_controls()
-	_show_message("已停止所有运行中的出怪队列")
-	append_combat_debug("停止所有运行中的出怪队列")
+	_show_message("已停止全部出怪队列")
+	append_combat_debug("已停止全部出怪队列")
 
 
 func _on_cast_skill_pressed() -> void:
@@ -689,7 +1146,7 @@ func _on_cast_skill_pressed() -> void:
 	if unit == null or _unit_manager == null:
 		return
 	var result: Dictionary = _unit_manager.try_cast_skill(unit.get_runtime_id())
-	_show_result_message(result, "技能已释放", "技能失败")
+	_show_result_message(result, "技能已释放", "技能释放失败")
 
 
 func _on_retreat_pressed() -> void:
@@ -704,12 +1161,12 @@ func _on_retreat_pressed() -> void:
 
 func _on_clear_pressed() -> void:
 	_clear_battlefield()
-	_show_message("已清场")
+	_show_message("战场已清空")
 
 
 func _on_reset_pressed() -> void:
 	_reset_sandbox()
-	_show_message("已重置战斗编辑器")
+	_show_message("战斗编辑器已重置")
 
 
 func _on_operator_item_selected(index: int) -> void:
@@ -741,8 +1198,9 @@ func _on_add_operator_pressed() -> void:
 	if run_state != null and run_state.has_method("add_owned_operator_with_key"):
 		run_state.add_owned_operator_with_key(_selected_operator_key, unit_id, String(operator_info.get("name", "")))
 	_refresh_operator_list()
-	_show_message("已新增干员槽位：%s" % _format_operator_label(operator_info))
-	append_combat_debug("新增干员槽位 %s，单位类型 %s" % [_selected_operator_key, unit_id])
+	_rebuild_deploy_deck()
+	_show_message("已添加干员槽位：%s" % _format_operator_label(operator_info))
+	append_combat_debug("鏂板骞插憳妲戒綅 %s锛屽崟浣嶇被鍨?%s" % [_selected_operator_key, unit_id])
 
 
 func _on_delete_operator_pressed() -> void:
@@ -750,7 +1208,7 @@ func _on_delete_operator_pressed() -> void:
 	if operator_key == StringName():
 		return
 	if _unit_manager != null and _unit_manager.has_method("get_operator_status") and StringName(_unit_manager.get_operator_status(operator_key)) != &"ready":
-		_show_message("该槽位已部署或正在再部署，不能直接删除")
+		_show_message("只能删除可部署的干员槽位")
 		return
 	for index in range(_operator_defs.size()):
 		if StringName((_operator_defs[index] as Dictionary).get("key", "")) == operator_key:
@@ -761,8 +1219,9 @@ func _on_delete_operator_pressed() -> void:
 		run_state.remove_owned_operator(operator_key)
 	_selected_operator_key = _get_first_operator_key()
 	_refresh_operator_list()
+	_rebuild_deploy_deck()
 	_show_message("已删除干员槽位：%s" % operator_key)
-	append_combat_debug("删除干员槽位 %s" % operator_key)
+	append_combat_debug("鍒犻櫎骞插憳妲戒綅 %s" % operator_key)
 
 
 func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
@@ -770,6 +1229,8 @@ func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id:
 	_selected_unit_runtime_id = unit_runtime_id
 	_select_operator_item(operator_key)
 	_refresh_attack_range_preview()
+	_update_operator_card_states()
+	_refresh_detail_panel()
 
 
 func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
@@ -777,6 +1238,15 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 		_selected_unit_runtime_id = -1
 		_refresh_attack_range_preview()
 	_refresh_operator_list()
+	_update_operator_card_states()
+	_refresh_detail_panel()
+
+
+func _on_operator_redeploy_completed(operator_key: StringName) -> void:
+	_refresh_operator_list()
+	_update_operator_card_states()
+	if _cooldown_message_operator_key == operator_key:
+		_show_message("%s 已可部署" % _get_operator_display_name(operator_key))
 
 
 func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bool:
@@ -785,7 +1255,7 @@ func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bo
 	var queue := _get_queue(spawn_key)
 	if queue.is_empty():
 		if show_feedback:
-			_show_message("出怪口 %s 队列为空" % spawn_key)
+			_show_message("出怪点 %s 队列为空" % spawn_key)
 		return false
 	var key := String(spawn_key)
 	var items: Array = []
@@ -796,9 +1266,9 @@ func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bo
 		"index": 0,
 		"timer": float((items[0] as Dictionary).get("delay", 0.0))
 	}
-	append_combat_debug("启动出怪口 %s 队列，共 %d 只敌人" % [spawn_key, items.size()])
+	append_combat_debug("已启动出怪点 %s 队列" % spawn_key)
 	if show_feedback:
-		_show_message("已启动出怪口 %s 队列" % spawn_key)
+		_show_message("已启动出怪点 %s 队列" % spawn_key)
 	return true
 
 
@@ -812,6 +1282,7 @@ func _refresh_editor_controls() -> void:
 		_preset_name_edit.text = _current_preset_name
 	_refreshing_editor_ui = false
 	_refresh_status()
+	_rebuild_deploy_deck()
 
 
 func _refresh_status() -> void:
@@ -824,18 +1295,17 @@ func _refresh_status() -> void:
 	var selected_text := "无"
 	var selected_unit := _get_selected_unit()
 	if selected_unit != null:
-		selected_text = "%s HP %d/%d SP %.0f/%.0f CD %.1f" % [
+		selected_text = "%s 生命 %d/%d 技力 %.0f/%.0f" % [
 			_get_operator_display_name(StringName(selected_unit.operator_key)),
 			selected_unit.current_hp,
 			selected_unit.max_hp,
 			selected_unit.sp,
-			float(selected_unit.cfg.get("sp_max", 0.0)),
-			_unit_manager.get_operator_redeploy_remaining(StringName(selected_unit.operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
+			float(selected_unit.cfg.get("sp_max", 0.0))
 		]
 	elif _selected_operator_key != StringName():
 		selected_text = "%s %s" % [_get_operator_display_name(_selected_operator_key), _get_operator_state_text(_selected_operator_key)]
 	var selected_spawn_text := String(_selected_spawn_key) if _selected_spawn_key != StringName() else "无"
-	_status_label.text = "单位 %d  敌人 %d  核心 %s  运行队列 %d\n预设：%s  出怪口：%s  选中单位：%s" % [
+	_status_label.text = "单位 %d  敌人 %d  核心 %s  运行队列 %d\n预设：%s  出怪点：%s  选择：%s" % [
 		unit_count,
 		enemy_count,
 		core_text,
@@ -854,12 +1324,11 @@ func _refresh_skill_info(selected_unit: Node) -> void:
 		return
 	var cfg: Dictionary = selected_unit.cfg
 	var skill_name := String(cfg.get("skill_name", cfg.get("skill_id", "未配置技能")))
-	var skill_desc := String(cfg.get("skill_description", "暂无技能描述。"))
+	var skill_desc := String(cfg.get("skill_description", "暂无技能说明。"))
 	var sp_max := float(cfg.get("sp_max", 0.0))
 	var sp_text := "无技力"
 	if sp_max > 0.0:
 		sp_text = "技力 %.0f/%.0f" % [selected_unit.sp, sp_max]
-	# 技能描述来自数据表，调试面板只负责展示，避免把技能文案写死在 UI 脚本里。
 	_skill_info_label.text = "技能：%s（%s）\n%s" % [skill_name, sp_text, skill_desc]
 
 
@@ -872,7 +1341,7 @@ func _refresh_queue_list(update_item_editor: bool = true) -> void:
 	_queue_list.clear()
 	for index in range(queue.size()):
 		var item: Dictionary = queue[index]
-		_queue_list.add_item("%02d  +%.2fs  %s  HP%d ATK%d DEF%d RES%d" % [
+		_queue_list.add_item("%02d  +%.2f秒  %s  生命%d 攻击%d 防御%d 法抗%d" % [
 			index + 1,
 			float(item.get("delay", 0.0)),
 			String(item.get("name", item.get("enemy_id", ""))),
@@ -884,10 +1353,8 @@ func _refresh_queue_list(update_item_editor: bool = true) -> void:
 	if _selected_queue_index >= 0 and _selected_queue_index < queue.size():
 		_queue_list.select(_selected_queue_index)
 	if _queue_hint_label != null:
-		_queue_hint_label.text = "出怪口 %s：%d 只敌人" % [
-			String(_selected_spawn_key) if _selected_spawn_key != StringName() else "无",
-			queue.size()
-		]
+		var spawn_label := String(_selected_spawn_key) if _selected_spawn_key != StringName() else "无"
+		_queue_hint_label.text = "队列：%s  条目：%d" % [spawn_label, queue.size()]
 	if update_item_editor:
 		_refresh_item_editor()
 
@@ -977,7 +1444,7 @@ func _apply_preset_by_index(index: int) -> void:
 func _create_default_preset() -> Dictionary:
 	return {
 		"id": "default",
-		"name": "默认三路调试",
+		"name": "默认三路测试",
 		"operators": [
 			{"key": "G1", "unit_id": "guard_t1", "name": "一阶近卫"},
 			{"key": "G2", "unit_id": "guard_01", "name": "二阶近卫"},
@@ -1002,7 +1469,7 @@ func _create_default_preset() -> Dictionary:
 				{"enemy_id": "slime", "delay": 0.0, "name": "史莱姆", "max_hp": 80, "atk": 18, "def": 2, "res": 0, "move_speed": 1.0, "attack_interval": 1.2, "damage_type": "physical", "core_damage": 1}
 			],
 			"S2": [
-				{"enemy_id": "wolf", "delay": 0.5, "name": "荒原狼", "max_hp": 60, "atk": 22, "def": 1, "res": 0, "move_speed": 1.4, "attack_interval": 1.0, "damage_type": "physical", "core_damage": 1}
+				{"enemy_id": "wolf", "delay": 0.5, "name": "狼", "max_hp": 60, "atk": 22, "def": 1, "res": 0, "move_speed": 1.4, "attack_interval": 1.0, "damage_type": "physical", "core_damage": 1}
 			],
 			"S3": []
 		}
@@ -1120,19 +1587,19 @@ func _serialize_operator_defs() -> Array:
 
 
 func _serialize_queue_item(item: Dictionary) -> Dictionary:
-	return {
-		"enemy_id": String(item.get("enemy_id", "")),
-		"delay": float(item.get("delay", 0.0)),
-		"name": String(item.get("name", "")),
-		"max_hp": int(item.get("max_hp", 1)),
-		"atk": int(item.get("atk", 1)),
-		"def": int(item.get("def", 0)),
-		"res": int(item.get("res", 0)),
-		"move_speed": float(item.get("move_speed", 1.0)),
-		"attack_interval": float(item.get("attack_interval", 1.0)),
-		"damage_type": String(item.get("damage_type", "physical")),
-		"core_damage": int(item.get("core_damage", 1))
-	}
+	var serialized := item.duplicate(true)
+	serialized["enemy_id"] = String(item.get("enemy_id", ""))
+	serialized["delay"] = float(item.get("delay", 0.0))
+	serialized["name"] = String(item.get("name", ""))
+	serialized["max_hp"] = int(item.get("max_hp", 1))
+	serialized["atk"] = int(item.get("atk", 1))
+	serialized["def"] = int(item.get("def", 0))
+	serialized["res"] = int(item.get("res", 0))
+	serialized["move_speed"] = float(item.get("move_speed", 1.0))
+	serialized["attack_interval"] = float(item.get("attack_interval", 1.0))
+	serialized["damage_type"] = String(item.get("damage_type", "physical"))
+	serialized["core_damage"] = int(item.get("core_damage", 1))
+	return serialized
 
 
 func _normalize_queue_item(raw_item: Dictionary) -> Dictionary:
@@ -1212,7 +1679,7 @@ func _populate_preset_options() -> void:
 	_refreshing_editor_ui = true
 	_preset_option.clear()
 	for preset in _presets:
-		_preset_option.add_item(String(preset.get("name", preset.get("id", "未命名"))))
+		_preset_option.add_item(String(preset.get("name", preset.get("id", "Unnamed"))))
 	_refreshing_editor_ui = false
 
 
@@ -1302,7 +1769,7 @@ func _populate_direction_options() -> void:
 	if _facing_option == null:
 		return
 	_facing_option.clear()
-	for text in ["右", "下", "左", "上"]:
+	for text in ["Right", "Down", "Left", "Up"]:
 		_facing_option.add_item(text)
 
 
@@ -1367,7 +1834,7 @@ func _get_operator_state_text(operator_key: StringName) -> String:
 		&"deployed":
 			return "已部署"
 		&"cooldown":
-			return "再部署"
+			return "冷却中"
 		_:
 			return "可部署"
 
@@ -1585,11 +2052,19 @@ func _swap_queue_items(queue: Array, a: int, b: int) -> void:
 
 func _is_tab_active(tab_name: String) -> bool:
 	if _editor_tabs == null:
-		return tab_name == "作战"
-	var tab_index := _editor_tabs.current_tab
-	if tab_index < 0 or tab_index >= _editor_tabs.get_child_count():
+		return tab_name == "Combat"
+	var current_index := _editor_tabs.current_tab
+	if current_index < 0 or current_index >= _editor_tabs.get_child_count():
 		return false
-	return _editor_tabs.get_child(tab_index).name == tab_name
+	var tab_indices: Dictionary = {
+		"Combat": 0,
+		"Presets": 1,
+		"Spawns": 2,
+		"Queues": 3,
+		"Enemy": 4
+	}
+	var expected_index: int = int(tab_indices.get(tab_name, -1))
+	return current_index == expected_index
 
 
 func _refresh_attack_range_preview() -> void:
@@ -1603,7 +2078,6 @@ func _refresh_attack_range_preview() -> void:
 
 
 func _clear_attack_range_preview() -> void:
-	# 清场、重置、撤退都会走这里，保证调试预览不会残留在地图上。
 	if _map_root != null and _map_root.has_method("clear_debug_attack_range"):
 		_map_root.clear_debug_attack_range()
 
@@ -1621,7 +2095,6 @@ func _get_unit_attack_range_cells(unit: Node) -> Array[Vector2i]:
 
 
 func _rotate_offset(offset: Vector2i, direction: Vector2i) -> Vector2i:
-	# 调试预览和 UnitActor 使用同一套“默认向右，按朝向旋转”的约定。
 	var normalized := _normalize_direction(direction)
 	if normalized == Vector2i.LEFT:
 		return Vector2i(-offset.x, -offset.y)
@@ -1638,9 +2111,12 @@ func _normalize_direction(direction: Vector2i) -> Vector2i:
 	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
 
 
-func _show_message(text: String) -> void:
+func _show_message(text: String, cooldown_operator_key: StringName = &"") -> void:
+	_cooldown_message_operator_key = cooldown_operator_key
 	if _message_label != null:
 		_message_label.text = text
+	if _combat_hud != null and _combat_hud.has_method("show_message"):
+		_combat_hud.show_message(text)
 
 
 func append_combat_debug(text: String) -> void:

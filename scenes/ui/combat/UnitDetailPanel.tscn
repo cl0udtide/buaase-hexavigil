@@ -1,0 +1,164 @@
+[gd_scene load_steps=2 format=3 uid="uid://cccru63t3a3nx"]
+
+[ext_resource type="Script" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_detail"]
+
+[node name="UnitDetailPanel" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_detail")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TopRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PortraitPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 140)
+layout_mode = 2
+
+[node name="PortraitLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/PortraitPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "◆"
+
+[node name="InfoColumn" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="HeaderRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+text = "未选中"
+text_overrun_behavior = 3
+
+[node name="LevelLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn/HeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 2
+text = "#--"
+
+[node name="TypeLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "伤害 / 朝向"
+
+[node name="HpValueLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "HP --/--"
+
+[node name="HpBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+show_percentage = false
+
+[node name="SpValueLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "SP --/--"
+
+[node name="SpBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/TopRow/InfoColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+show_percentage = false
+
+[node name="StatsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 2
+text = "攻击 --   防御 --   法抗 --"
+
+[node name="SkillCard" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+
+[node name="SkillMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/SkillCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="SkillRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SkillIconPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="SkillIconLabel" type="Label" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow/SkillIconPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "◇"
+
+[node name="SkillLabel" type="Label" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 2
+max_lines_visible = 4
+text = "技能信息"
+
+[node name="DetailSpacer" type="Control" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Actions" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CastSkillButton" type="Button" parent="MarginContainer/VBoxContainer/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "激活技能"
+
+[node name="RetreatButton" type="Button" parent="MarginContainer/VBoxContainer/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "撤退"
