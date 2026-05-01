@@ -31,7 +31,7 @@ func _on_skill_end() -> void:
 
 
 func after_attack(target: Node, damage_value: int) -> void:
-	if owner_unit == null or target == null or not is_instance_valid(target):
+	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
 		return
 	var hit_targets: Array = [target]
 	_push_if_active(target)

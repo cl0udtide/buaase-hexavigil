@@ -961,6 +961,7 @@ data/units.json
 | `skill_description` | 技能描述 | UI 展示读取 |
 | `skill_behavior_key` | `SkillBehavior` 脚本选择 | 映射到某个 `UnitSkillBehavior` 子类 |
 | `sp_max` | SP 上限 | 技能行为或 `UnitActor` 读取 |
+| `sp_initial` | 初始 SP | 单位部署时由 `UnitActor` 读取，未配置默认 0 |
 | `sp_recover_per_sec` | SP 回复速度 | 技能行为或 `UnitActor` 读取 |
 | `skill_duration` | 技能持续时间 | 技能行为读取 |
 

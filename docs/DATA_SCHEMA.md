@@ -143,6 +143,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
     "range_pattern": [[0, 0], [1, 0]],
     "redeploy_sec": 12.0,
     "sp_max": 18,
+    "sp_initial": 8,
     "sp_recover_per_sec": 1.0,
     "skill_id": "guard_hold_line",
     "skill_name": "战术咏唱·阵线压制",
@@ -186,6 +187,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `projectile_speed` | `float` | 飞行物追踪速度 |
 | `projectile_hit_radius` | `float` | 飞行物命中半径 |
 | `projectile_lifetime` | `float` | 飞行物最大存活时间，未配置默认 3 秒 |
+| `sp_initial` | `float` | 部署时初始 SP；未配置默认 0 |
 | `sp_recover_per_sec` | `float` | 每秒回复 SP |
 | `skill_id` | `String` | 技能标识 |
 | `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |
