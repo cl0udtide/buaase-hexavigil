@@ -2,6 +2,7 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
 
 signal operator_card_pressed(operator_key: StringName)
 signal pause_pressed
@@ -21,6 +22,8 @@ const UNIT_DETAIL_GAP := 12.0
 const UNIT_DETAIL_MIN_TOP := 250.0
 
 var _cards_by_operator_key: Dictionary = {}
+var _left_reserved_width := 0.0
+var _layout_profile: Dictionary = {}
 
 @onready var _top_bar: PanelContainer = %TopBar
 @onready var _core_label: Label = %CoreLabel
@@ -47,6 +50,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	AppTheme.apply(self)
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_top_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_style_top_cards()
 	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.07, 0.09, 0.10, 0.88), GameUiStyle.STROKE_SOFT, 1.0, 6.0))
@@ -59,7 +63,7 @@ func _ready() -> void:
 	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 1)
 	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 1)
 	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
-	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.08, 0.10, 0.11, 0.88), GameUiStyle.AMBER, 2.0, 6.0))
+	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_CARD, GameUiStyle.AMBER, 2.0, 6.0))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
@@ -75,6 +79,12 @@ func _ready() -> void:
 	_style_button(_speed_2_button, GameUiStyle.STROKE)
 	_style_button(_debug_button, GameUiStyle.STROKE)
 	_drag_ghost.visible = false
+	_apply_responsive_layout()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED and is_node_ready():
+		_apply_responsive_layout()
 
 
 func set_top_values(core_text: String, deploy_text: String, queue_text: String) -> void:
@@ -131,6 +141,8 @@ func set_operators(operators: Array[Dictionary]) -> void:
 		var operator_key := StringName((operator_info as Dictionary).get("key", ""))
 		var card = OPERATOR_CARD_SCENE.instantiate()
 		card.setup(operator_key)
+		if card.has_method("set_compact"):
+			card.set_compact(bool(_layout_profile.get("compact", false)))
 		card.operator_card_pressed.connect(func(key: StringName) -> void: operator_card_pressed.emit(key))
 		_deck_container.add_child(card)
 		_cards_by_operator_key[operator_key] = card
@@ -160,15 +172,21 @@ func hide_drag_ghost() -> void:
 func show_unit_detail(unit: Node, display_name: String, damage_label: String, direction_label: String) -> void:
 	if _detail_panel.has_method("show_unit"):
 		_detail_panel.show_unit(unit, display_name, damage_label, direction_label)
+	_apply_responsive_layout()
 
 
 func clear_unit_detail() -> void:
 	if _detail_panel.has_method("clear_unit"):
 		_detail_panel.clear_unit()
+	_apply_responsive_layout()
 
 
 func set_left_reserved_width(width: float) -> void:
-	_deck_panel.offset_left = max(18.0, width + 14.0)
+	var next_width := maxf(0.0, width)
+	if is_equal_approx(_left_reserved_width, next_width):
+		return
+	_left_reserved_width = next_width
+	_apply_responsive_layout()
 
 
 func _resize_wave_preview_panel(text_value: String) -> void:
@@ -203,8 +221,71 @@ func _style_top_cards() -> void:
 			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
 	for label in [_core_label, _deploy_label, _queue_label, _message_label, _resource_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.55))
+		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 1)
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+
+
+func _on_viewport_size_changed() -> void:
+	_apply_responsive_layout()
+
+
+func _apply_responsive_layout() -> void:
+	if not is_node_ready():
+		return
+	var viewport_size := get_viewport_rect().size
+	var detail_visible := _detail_panel != null and _detail_panel.visible
+	_layout_profile = UiLayoutRules.hud_profile(viewport_size, detail_visible, _left_reserved_width)
+	_place_control(_top_bar, _layout_profile.get("top_rect", Rect2()))
+	_place_control(_deck_panel, _layout_profile.get("deck_rect", Rect2()))
+	_place_control(_detail_panel, _layout_profile.get("detail_rect", Rect2()))
+	_apply_top_bar_density(viewport_size.x)
+	var compact := bool(_layout_profile.get("compact", false))
+	for child in _deck_container.get_children():
+		if child.has_method("set_compact"):
+			child.set_compact(compact)
+
+
+func _place_control(control: Control, rect: Rect2) -> void:
+	if control == null:
+		return
+	control.anchor_left = 0.0
+	control.anchor_top = 0.0
+	control.anchor_right = 0.0
+	control.anchor_bottom = 0.0
+	control.offset_left = rect.position.x
+	control.offset_top = rect.position.y
+	control.offset_right = rect.position.x + rect.size.x
+	control.offset_bottom = rect.position.y + rect.size.y
+
+
+func _apply_top_bar_density(viewport_width: float) -> void:
+	var widths := UiLayoutRules.top_card_widths(viewport_width)
+	var top_height := float(_layout_profile.get("top_card_height", 52.0))
+	var compact := bool(_layout_profile.get("compact", false))
+	var row := get_node_or_null("TopBar/TopMargin/Row") as HBoxContainer
+	if row != null:
+		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)))
+	_set_top_card_min("TopBar/TopMargin/Row/StageCard", widths.get("stage", 190.0), top_height)
+	_set_top_card_min("TopBar/TopMargin/Row/CoreCard", widths.get("core", 190.0), top_height)
+	_set_top_card_min("TopBar/TopMargin/Row/DeployCard", widths.get("deploy", 160.0), top_height)
+	_set_top_card_min("TopBar/TopMargin/Row/MessageCard", widths.get("message", 260.0), top_height)
+	_set_top_card_min("TopBar/TopMargin/Row/TimeCard", widths.get("time", 200.0), top_height)
+	_set_top_card_min("TopBar/TopMargin/Row/ResourceCard", widths.get("resource", 245.0), top_height)
+	_debug_button.custom_minimum_size = Vector2(float(widths.get("debug", 76.0)), top_height)
+	var label_size := 13 if compact else 15
+	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
+		label.add_theme_font_size_override("font_size", label_size)
+	_resource_label.add_theme_font_size_override("font_size", 12 if compact else 13)
+	var button_height := 34.0 if compact else 36.0
+	_pause_button.custom_minimum_size = Vector2(64.0 if compact else 68.0, button_height)
+	_speed_1_button.custom_minimum_size = Vector2(54.0 if compact else 58.0, button_height)
+	_speed_2_button.custom_minimum_size = Vector2(54.0 if compact else 58.0, button_height)
+
+
+func _set_top_card_min(path: NodePath, width: float, height: float) -> void:
+	var card := get_node_or_null(path) as Control
+	if card != null:
+		card.custom_minimum_size = Vector2(width, height)

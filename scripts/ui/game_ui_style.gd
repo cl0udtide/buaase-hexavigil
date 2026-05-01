@@ -2,22 +2,23 @@ class_name GameUiStyle
 extends RefCounted
 
 
-const BG := Color(0.055, 0.075, 0.095, 0.88)
-const BG_DARK := Color(0.025, 0.035, 0.045, 0.94)
-const BG_GLASS := Color(0.035, 0.045, 0.052, 0.82)
-const BG_CARD := Color(0.065, 0.080, 0.088, 0.92)
-const BG_CARD_HOVER := Color(0.085, 0.105, 0.112, 0.96)
-const BG_DISABLED := Color(0.030, 0.034, 0.038, 0.82)
-const STROKE := Color(0.34, 0.48, 0.56, 0.65)
-const STROKE_SOFT := Color(0.25, 0.32, 0.36, 0.58)
-const STROKE_STRONG := Color(0.52, 0.72, 0.82, 0.82)
-const ACCENT := Color(0.12, 0.78, 0.88, 0.95)
-const AMBER := Color(1.0, 0.64, 0.18, 0.95)
-const DANGER := Color(0.92, 0.18, 0.14, 0.95)
-const SUCCESS := Color(0.30, 0.88, 0.56, 0.95)
-const TEXT := Color(0.90, 0.96, 0.98, 1.0)
-const TEXT_DIM := Color(0.72, 0.80, 0.84, 1.0)
-const TEXT_MUTED := Color(0.58, 0.66, 0.70, 1.0)
+const BG := Color(0.058, 0.071, 0.084, 0.98)
+const BG_DARK := Color(0.034, 0.043, 0.052, 0.99)
+const BG_GLASS := Color(0.070, 0.087, 0.100, 0.97)
+const BG_CARD := Color(0.092, 0.110, 0.124, 0.98)
+const BG_CARD_HOVER := Color(0.118, 0.148, 0.160, 1.0)
+const BG_DISABLED := Color(0.048, 0.056, 0.064, 0.97)
+const STROKE := Color(0.220, 0.355, 0.400, 0.78)
+const STROKE_SOFT := Color(0.145, 0.205, 0.232, 0.76)
+const STROKE_STRONG := Color(0.055, 0.690, 0.760, 0.88)
+const ACCENT := Color(0.000, 0.760, 0.840, 0.96)
+const AMBER := Color(1.000, 0.585, 0.145, 0.96)
+const DANGER := Color(0.940, 0.225, 0.170, 0.96)
+const SUCCESS := Color(0.265, 0.780, 0.465, 0.96)
+const TEXT := Color(0.900, 0.945, 0.955, 1.0)
+const TEXT_DIM := Color(0.680, 0.755, 0.780, 1.0)
+const TEXT_MUTED := Color(0.455, 0.530, 0.560, 1.0)
+const TEXT_SHADOW := Color(0.0, 0.0, 0.0, 0.78)
 
 
 static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
@@ -32,14 +33,14 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	style.corner_radius_top_right = int(radius)
 	style.corner_radius_bottom_left = int(radius)
 	style.corner_radius_bottom_right = int(radius)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
-	style.shadow_size = 8
-	style.shadow_offset = Vector2(0.0, 3.0)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0.0, 5.0)
 	return style
 
 
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBoxFlat:
-	return panel(Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 1.0, 6.0)
+	return panel(Color(border.r * 0.20, border.g * 0.20, border.b * 0.20, fill_alpha), border, 1.0, 6.0)
 
 
 static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBoxFlat:
@@ -61,11 +62,11 @@ static func top_card() -> StyleBoxFlat:
 
 
 static func accent_button(accent: Color) -> StyleBoxFlat:
-	return panel(Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.34), accent, 1.0, 6.0)
+	return panel(Color(accent.r * 0.22, accent.g * 0.22, accent.b * 0.22, 0.42), accent, 1.0, 6.0)
 
 
 static func progress_background() -> StyleBoxFlat:
-	return panel(Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 1.0, 3.0)
+	return panel(Color(0.020, 0.027, 0.032, 0.72), Color(0.160, 0.220, 0.250, 0.90), 1.0, 3.0)
 
 
 static func progress_fill(color: Color) -> StyleBoxFlat:
