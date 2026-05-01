@@ -22,7 +22,7 @@ func _on_skill_end() -> void:
 
 
 func after_attack(target: Node, damage_value: int) -> void:
-	if owner_unit == null or target == null or not is_instance_valid(target):
+	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
 		return
 	var radius := int(owner_unit.cfg.get("aoe_radius", 1))
 	var hit_count := 0
