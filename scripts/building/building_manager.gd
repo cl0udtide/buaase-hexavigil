@@ -88,6 +88,57 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	return ActionResult.ok({"runtime_id": created_runtime_id})
 
 
+func try_place_building_debug(cell: Vector2i, building_id: StringName) -> Dictionary:
+	var check := _can_place_building_debug(cell)
+	if not check.get("ok", false):
+		return check
+	var data_repo = AppRefs.data_repo()
+	var event_bus = AppRefs.event_bus()
+	if data_repo == null:
+		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
+	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
+	if cfg.is_empty():
+		return ActionResult.err(&"BUILDING_CONFIG_MISSING", "Building config is missing")
+	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
+	if scene == null:
+		return ActionResult.err(&"SCENE_MISSING", "Building scene is missing")
+	if _building_root == null:
+		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot is missing")
+
+	var actor: Node = scene.instantiate()
+	_building_root.add_child(actor)
+	actor.runtime_id = _next_runtime_id
+	if actor.has_method("setup_from_cfg"):
+		actor.setup_from_cfg(building_id, cfg, cell)
+
+	_buildings_by_runtime_id[_next_runtime_id] = actor
+	_buildings_by_cell[cell] = actor
+	if _map_manager != null:
+		_map_manager.set_building_occupy(cell, true, _next_runtime_id)
+	if bool(cfg.get("blocks_path", false)) and _path_service != null:
+		_path_service.set_cell_blocked(cell, true)
+	if event_bus != null:
+		event_bus.building_placed.emit(_next_runtime_id, building_id, cell)
+	if _is_path_blocking_cfg(cfg):
+		_emit_path_grid_changed()
+	var created_runtime_id := _next_runtime_id
+	_next_runtime_id += 1
+	return ActionResult.ok({"runtime_id": created_runtime_id})
+
+
+func remove_building_at_cell(cell: Vector2i) -> bool:
+	var actor := get_building_by_cell(cell)
+	if actor == null:
+		return false
+	remove_building(int(actor.get_runtime_id()))
+	return true
+
+
+func clear_all_buildings() -> void:
+	for runtime_id_variant in _buildings_by_runtime_id.keys().duplicate():
+		remove_building(int(runtime_id_variant))
+
+
 func try_repair_building(building_runtime_id: int) -> Dictionary:
 	var check := _validator.can_repair_building(building_runtime_id)
 	if not check.get("ok", false):
@@ -237,6 +288,27 @@ func get_building_by_cell(cell: Vector2i) -> Node:
 
 func get_building_by_runtime_id(building_runtime_id: int) -> Node:
 	return _buildings_by_runtime_id.get(building_runtime_id)
+
+
+func _can_place_building_debug(cell: Vector2i) -> Dictionary:
+	if _map_manager == null:
+		return ActionResult.err(&"MAP_MANAGER_MISSING", "Map manager is unavailable")
+	if not _map_manager.is_inside(cell):
+		return ActionResult.err(&"CELL_OUT_OF_BOUNDS", "Cell is outside the map")
+	var data: CellData = _map_manager.get_cell_data(cell)
+	if data == null:
+		return ActionResult.err(&"CELL_MISSING", "Cell data is missing")
+	if data.is_core:
+		return ActionResult.err(&"CELL_IS_CORE", "Cannot place a building on the core")
+	if data.spawn_key != StringName():
+		return ActionResult.err(&"CELL_IS_SPAWN", "Cannot place a building on a spawn point")
+	if data.terrain == &"blocked" or not data.walkable:
+		return ActionResult.err(&"CELL_BLOCKED", "Cannot place a building on blocked terrain")
+	if data.unit_runtime_id >= 0:
+		return ActionResult.err(&"CELL_HAS_UNIT", "Cannot place a building on a deployed unit")
+	if data.building_runtime_id >= 0 or data.occupied:
+		return ActionResult.err(&"CELL_HAS_BUILDING", "Cell already has a building")
+	return ActionResult.ok()
 
 
 func _is_building_destroyed(actor: Node) -> bool:
