@@ -253,7 +253,7 @@ func _update_portrait_focus() -> void:
 
 
 func _apply_background(background_key: StringName) -> void:
-	var fallback := Color(0.035, 0.05, 0.065, 1.0)
+	var fallback := Color(0.040, 0.052, 0.064, 1.0)
 	if background_key == StringName():
 		_background.color = fallback
 		return
@@ -346,7 +346,7 @@ func _set_descendant_mouse_filter(root: Node, filter: int) -> void:
 
 func _apply_style() -> void:
 	_text_box.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.5, 6.0))
-	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.05, 0.10, 0.12, 0.94), GameUiStyle.ACCENT, 1.0, 5.0))
+	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.055, 0.120, 0.135, 0.98), GameUiStyle.ACCENT, 1.0, 5.0))
 	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_speaker_label.add_theme_font_size_override("font_size", 22)
 	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT)

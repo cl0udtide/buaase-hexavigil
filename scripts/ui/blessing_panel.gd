@@ -4,9 +4,13 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
+const PANEL_SIZE := Vector2(580.0, 330.0)
+
 
 func _ready() -> void:
 	AppTheme.apply(self)
+	_apply_visual_style()
+	_place_centered()
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.blessing_choices_ready.connect(show_choices)
@@ -17,6 +21,7 @@ func _ready() -> void:
 
 
 func show_choices(choice_ids: Array[StringName]) -> void:
+	_place_centered()
 	visible = true
 	var buttons := _get_choice_buttons()
 	for i in range(buttons.size()):
@@ -58,6 +63,21 @@ func _style_choice_button(button: Button) -> void:
 	button.add_theme_stylebox_override("disabled", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DISABLED, 1.0))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+
+
+func _apply_visual_style() -> void:
+	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.0, 6.0))
+
+
+func _place_centered() -> void:
+	anchor_left = 0.5
+	anchor_top = 0.5
+	anchor_right = 0.5
+	anchor_bottom = 0.5
+	offset_left = -PANEL_SIZE.x * 0.5
+	offset_top = -PANEL_SIZE.y * 0.5
+	offset_right = PANEL_SIZE.x * 0.5
+	offset_bottom = PANEL_SIZE.y * 0.5
 
 
 func _on_choice_pressed(button: BaseButton) -> void:
