@@ -22,16 +22,21 @@ signal retreat_requested
 @onready var _skill_icon_panel: PanelContainer = %SkillIconPanel
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
 @onready var _skill_icon_label: Label = %SkillIconLabel
+@onready var _skill_scroll: ScrollContainer = %SkillScroll
 @onready var _skill_label: Label = %SkillLabel
 @onready var _cast_button: Button = %CastSkillButton
 @onready var _retreat_button: Button = %RetreatButton
+
+var _last_skill_scroll_key := ""
 
 
 func _ready() -> void:
 	AppTheme.apply(self)
 	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
 	_skill_card.custom_minimum_size = Vector2(0.0, 128.0)
-	_skill_card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_skill_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_skill_icon_panel.custom_minimum_size = Vector2(64.0, 64.0)
 	_skill_icon_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -90,17 +95,35 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	]
 	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
 	var active_text := ""
+	var active_state := "ready"
 	if active_remaining < 0.0:
-		active_text = "\n状态：常驻"
+		active_text = "状态：常驻"
+		active_state = "permanent"
 	elif active_remaining > 0.0:
-		active_text = "\n状态：持续 %.1fs" % active_remaining
-	_skill_label.text = "%s\n%s%s" % [unit.get_skill_name(), unit.get_skill_description(), active_text]
-	_cast_button.disabled = not unit.can_cast_skill()
+		active_text = "状态：持续 %.1fs" % active_remaining
+		active_state = "active"
+	if active_text.is_empty():
+		_skill_label.text = "%s\n%s" % [unit.get_skill_name(), unit.get_skill_description()]
+	else:
+		_skill_label.text = "%s\n%s\n%s" % [unit.get_skill_name(), active_text, unit.get_skill_description()]
+	var skill_scroll_key := "%d:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state]
+	if skill_scroll_key != _last_skill_scroll_key:
+		_skill_scroll.scroll_vertical = 0
+		_last_skill_scroll_key = skill_scroll_key
+	if active_remaining < 0.0:
+		_cast_button.text = "技能常驻"
+	elif active_remaining > 0.0:
+		_cast_button.text = "技能运行中"
+	else:
+		_cast_button.text = "激活技能"
+	_cast_button.disabled = active_remaining != 0.0 or not unit.can_cast_skill()
 	_retreat_button.disabled = false
 
 
 func clear_unit() -> void:
 	visible = false
+	_last_skill_scroll_key = ""
+	_cast_button.text = "激活技能"
 	_cast_button.disabled = true
 	_retreat_button.disabled = true
 
