@@ -31,6 +31,17 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(112, 140)
 layout_mode = 2
 
+[node name="PortraitTexture" type="TextureRect" parent="MarginContainer/VBoxContainer/TopRow/PortraitPanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="PortraitLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/PortraitPanel"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -121,6 +132,17 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 0
+
+[node name="SkillIconTexture" type="TextureRect" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow/SkillIconPanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="SkillIconLabel" type="Label" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow/SkillIconPanel"]
 unique_name_in_owner = true

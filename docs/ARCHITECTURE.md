@@ -707,7 +707,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
-  共用 UI 样式辅助函数，集中生成暗色玻璃面板、按钮和进度条等 `StyleBox`。
+  共用 UI 样式辅助函数，集中生成现代深色 matte tactical 面板、按钮和进度条等 `StyleBox`。
 - `ui_display_text.gd`
   统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
 - `combat/combat_hud.gd`

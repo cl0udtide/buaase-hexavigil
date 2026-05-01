@@ -19,10 +19,10 @@ static func get_theme() -> Theme:
 
 	var theme := Theme.new()
 	theme.default_font = font
-	theme.default_font_size = 20
+	theme.default_font_size = 18
 	for type_name in ["Label", "Button", "LineEdit", "TextEdit", "RichTextLabel", "CheckBox", "OptionButton"]:
 		theme.set_font("font", type_name, font)
-		theme.set_font_size("font_size", type_name, 20)
+		theme.set_font_size("font_size", type_name, 18)
 
 	_theme = theme
 	return _theme
