@@ -50,7 +50,8 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
 	if not _is_deploy_phase(int(run_state.phase)):
 		return ActionResult.err(&"INVALID_PHASE", "当前阶段不能部署")
-	if run_state.deployed_count >= run_state.deploy_limit:
+	var deploy_slot_cost := _get_operator_deploy_slot_cost(cfg)
+	if run_state.deployed_count + deploy_slot_cost > run_state.deploy_limit:
 		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "DEPLOY_LIMIT_REACHED")
 	if _map_manager == null:
 		return ActionResult.err(&"MAP_UNAVAILABLE", "MAP_UNAVAILABLE")
@@ -75,7 +76,7 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	_operator_key_by_runtime_id[_next_runtime_id] = operator_key
 	if _map_manager != null and _map_manager.has_method("set_unit_occupy"):
 		_map_manager.set_unit_occupy(cell, true, _next_runtime_id)
-	run_state.change_deployed_count(1)
+	run_state.change_deployed_count(deploy_slot_cost)
 	if event_bus != null:
 		event_bus.unit_deployed.emit(_next_runtime_id, operator_key, unit_id, cell)
 	_debug_log("部署干员 %s#%d 到格子 %s，朝向 %s" % [String(operator_info.get("name", cfg.get("name", unit_id))), _next_runtime_id, cell, _direction_text(facing)])
@@ -101,7 +102,8 @@ func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dict
 		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
 	if not _is_deploy_phase(int(run_state.phase)):
 		return ActionResult.err(&"INVALID_PHASE", "当前阶段不能部署")
-	if run_state.deployed_count >= run_state.deploy_limit:
+	var deploy_slot_cost := _get_operator_deploy_slot_cost(cfg)
+	if run_state.deployed_count + deploy_slot_cost > run_state.deploy_limit:
 		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "DEPLOY_LIMIT_REACHED")
 	if _map_manager == null:
 		return ActionResult.err(&"MAP_UNAVAILABLE", "MAP_UNAVAILABLE")
@@ -218,7 +220,7 @@ func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	if reason == GameEnums.UNIT_REMOVE_RETREAT or reason == GameEnums.UNIT_REMOVE_DEAD:
 		_start_operator_redeploy(unit, operator_key)
 	if run_state != null:
-		run_state.change_deployed_count(-1)
+		run_state.change_deployed_count(-_get_operator_deploy_slot_cost(unit.cfg))
 	if event_bus != null:
 		event_bus.unit_removed.emit(unit_runtime_id, reason)
 	_debug_log("鍗曚綅绂诲満 %s#%d锛屽師鍥狅細%s" % [_get_unit_display_name(unit), unit_runtime_id, _remove_reason_text(reason)])
@@ -270,6 +272,8 @@ func _start_operator_redeploy(unit: Node, operator_key: StringName) -> void:
 	if run_state != null and int(run_state.phase) == GameEnums.PHASE_DAY:
 		return
 	var redeploy_sec := float(unit.cfg.get("redeploy_sec", 0.0))
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		redeploy_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_redeploy_percent", unit.cfg))
 	if redeploy_sec <= 0.0:
 		return
 	_redeploy_timers[operator_key] = redeploy_sec
@@ -282,3 +286,11 @@ func _get_unit_display_name(unit: Node) -> String:
 	if unit.operator_name != "":
 		return String(unit.operator_name)
 	return String(unit.cfg.get("name", unit.unit_id))
+
+
+func _get_operator_deploy_slot_cost(unit_cfg: Dictionary) -> int:
+	var cost := 1
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		cost += int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_deploy_slot_cost_add", unit_cfg))))
+	return max(cost, 0)

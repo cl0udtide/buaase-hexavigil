@@ -42,25 +42,28 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	if data_repo == null or run_state == null:
 		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
 	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
+	var cost_wood := _get_building_material_cost(cfg, &"wood")
+	var cost_stone := _get_building_material_cost(cfg, &"stone")
+	var cost_mana := _get_building_material_cost(cfg, &"mana")
 	var material_result: Dictionary = run_state.spend_materials(
-		int(cfg.get("cost_wood", 0)),
-		int(cfg.get("cost_stone", 0)),
-		int(cfg.get("cost_mana", 0))
+		cost_wood,
+		cost_stone,
+		cost_mana
 	)
 	if not material_result.get("ok", false):
 		return material_result
 	var ap_result: Dictionary = run_state.consume_action_points(int(cfg.get("ap_cost", 0)))
 	if not ap_result.get("ok", false):
-		run_state.add_materials(int(cfg.get("cost_wood", 0)), int(cfg.get("cost_stone", 0)), int(cfg.get("cost_mana", 0)))
+		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		return ap_result
 
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
-		run_state.add_materials(int(cfg.get("cost_wood", 0)), int(cfg.get("cost_stone", 0)), int(cfg.get("cost_mana", 0)))
+		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
 		return ActionResult.err(&"SCENE_MISSING", "Building scene is missing")
 	if _building_root == null:
-		run_state.add_materials(int(cfg.get("cost_wood", 0)), int(cfg.get("cost_stone", 0)), int(cfg.get("cost_mana", 0)))
+		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
 		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot is missing")
 
@@ -201,11 +204,11 @@ func collect_day_income() -> void:
 		var effect_value := int(actor_cfg.get("effect_value", 0))
 		match effect_type:
 			&"collect_wood":
-				gained_wood += effect_value
+				gained_wood += _get_income_value(actor_cfg, effect_value, &"wood")
 			&"collect_stone":
-				gained_stone += effect_value
+				gained_stone += _get_income_value(actor_cfg, effect_value, &"stone")
 			&"collect_mana":
-				gained_mana += effect_value
+				gained_mana += _get_income_value(actor_cfg, effect_value, &"mana")
 	if gained_wood > 0 or gained_stone > 0 or gained_mana > 0:
 		run_state.add_materials(gained_wood, gained_stone, gained_mana)
 
@@ -287,6 +290,29 @@ func _half_repair_cost(value: int) -> int:
 	return int(ceil(float(value) * 0.5))
 
 
+func _get_building_material_cost(cfg: Dictionary, material: StringName) -> int:
+	var key := "cost_%s" % String(material)
+	var cost := int(cfg.get(key, 0))
+	var run_state = AppRefs.run_state()
+	if run_state != null:
+		if run_state.has_method("get_buff_effect_total_for_building"):
+			cost += int(round(float(run_state.get_buff_effect_total_for_building(&"building_cost_add", cfg))))
+		if run_state.has_method("get_buff_effect_total_for_material"):
+			cost += int(round(float(run_state.get_buff_effect_total_for_material(&"building_material_cost_add", material))))
+	return max(cost, 0)
+
+
+func _get_income_value(cfg: Dictionary, base_value: int, material: StringName) -> int:
+	var run_state = AppRefs.run_state()
+	var value := float(base_value)
+	if run_state != null:
+		if run_state.has_method("get_buff_effect_total_for_building"):
+			value *= 1.0 + float(run_state.get_buff_effect_total_for_building(&"building_income_percent", cfg))
+		if run_state.has_method("get_buff_effect_total_for_material"):
+			value += float(run_state.get_buff_effect_total_for_material(&"building_income_add", material))
+	return max(int(round(value)), 0)
+
+
 func _apply_aura_effects(delta: float) -> void:
 	var units: Array = _get_deployed_units()
 	var enemies: Array = _get_alive_enemies()
@@ -316,6 +342,10 @@ func _apply_aura_effects(delta: float) -> void:
 		var effect_type := StringName(actor_cfg.get("effect_type", ""))
 		var effect_radius: int = int(actor_cfg.get("effect_radius", 0))
 		var effect_value: float = float(actor_cfg.get("effect_value", 0.0))
+		var run_state = AppRefs.run_state()
+		if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+			effect_radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", actor_cfg))))
+			effect_value *= 1.0 + float(run_state.get_buff_effect_total_for_building(&"building_aura_effect_percent", actor_cfg))
 		var building_cell: Vector2i = actor.get_current_cell()
 		match effect_type:
 			&"heal":

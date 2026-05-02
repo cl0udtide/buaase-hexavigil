@@ -75,12 +75,20 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	current_cell = spawn_cell
 	facing = new_facing
 	max_hp = int(cfg.get("max_hp", 1))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		max_hp = max(int(round(float(max_hp) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_hp_percent", cfg))))), 1)
 	current_hp = max_hp
 	atk = int(cfg.get("atk", 1))
 	defense = int(cfg.get("def", 0))
 	resistance = int(cfg.get("res", 0))
 	block_count = int(cfg.get("block", 0))
 	attack_interval = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		atk = max(int(round(float(atk) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_base_atk_percent", cfg))))), 1)
+		defense = max(int(round(float(defense) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", cfg))))), 0)
+		resistance = max(int(round(float(resistance) + float(run_state.get_buff_effect_total_for_unit(&"unit_res_add", cfg)))), 0)
+		block_count = max(block_count + int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_block_add", cfg)))), 0)
 	attack_multiplier = 1.0
 	_external_attack_interval_multiplier = 1.0
 	_external_attack_bonus = 0
@@ -257,11 +265,17 @@ func get_effective_atk() -> int:
 	var buff_multiplier := 1.0
 	if run_state != null and run_state.has_method("get_buff_effect_total"):
 		buff_multiplier += float(run_state.get_buff_effect_total(&"unit_atk_percent"))
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		buff_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_atk_percent", cfg))
 	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + _external_attack_bonus, 1)
 
 
 func get_effective_attack_interval() -> float:
-	return max(attack_interval * _external_attack_interval_multiplier, 0.05)
+	var run_state = AppRefs.run_state()
+	var relic_multiplier := 1.0
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		relic_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_attack_interval_percent", cfg))
+	return max(attack_interval * relic_multiplier * _external_attack_interval_multiplier, 0.05)
 
 
 func set_external_attack_interval_multiplier(value: float) -> void:
@@ -361,6 +375,9 @@ func _recover_sp(delta: float) -> void:
 			recover_per_sec = float(_skill_behavior.get_sp_recover_per_sec())
 		if _skill_behavior.has_method("get_sp_max"):
 			sp_max = float(_skill_behavior.get_sp_max())
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		recover_per_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_sp_recover_percent", cfg))
 	sp = min(sp + recover_per_sec * delta, sp_max)
 
 

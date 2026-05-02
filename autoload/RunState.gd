@@ -220,9 +220,86 @@ func get_buff_effect_total(effect_type: StringName) -> float:
 	var total := 0.0
 	for buff_id in buffs:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
-		if StringName(cfg.get("effect_type", "")) == effect_type:
-			total += float(cfg.get("effect_value", 0.0))
+		for effect in _get_buff_effect_entries(cfg):
+			if _buff_effect_has_filters(effect):
+				continue
+			if StringName(effect.get("effect_type", "")) == effect_type:
+				total += float(effect.get("effect_value", 0.0))
 	return total
+
+
+func get_buff_effect_total_for_unit(effect_type: StringName, unit_cfg: Dictionary) -> float:
+	var tags: Dictionary = {
+		"class": StringName(unit_cfg.get("class", "")),
+		"damage_type": StringName(unit_cfg.get("damage_type", "")),
+		"cost_prestige": int(unit_cfg.get("cost_prestige", 0))
+	}
+	return _get_filtered_buff_effect_total(effect_type, tags)
+
+
+func get_buff_effect_total_for_building(effect_type: StringName, building_cfg: Dictionary) -> float:
+	var tags: Dictionary = {
+		"building_type": StringName(building_cfg.get("building_type", "")),
+		"effect_type": StringName(building_cfg.get("effect_type", ""))
+	}
+	return _get_filtered_buff_effect_total(effect_type, tags)
+
+
+func get_buff_effect_total_for_material(effect_type: StringName, material: StringName) -> float:
+	return _get_filtered_buff_effect_total(effect_type, {"material": material})
+
+
+func _get_filtered_buff_effect_total(effect_type: StringName, tags: Dictionary) -> float:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return 0.0
+	var total := 0.0
+	for buff_id in buffs:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		for effect in _get_buff_effect_entries(cfg):
+			if StringName(effect.get("effect_type", "")) != effect_type:
+				continue
+			if not _buff_matches_tags(effect, tags):
+				continue
+			total += float(effect.get("effect_value", 0.0))
+	return total
+
+
+func _get_buff_effect_entries(cfg: Dictionary) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if cfg.has("effects") and typeof(cfg.get("effects")) == TYPE_ARRAY:
+		for raw_effect in cfg.get("effects", []):
+			if typeof(raw_effect) == TYPE_DICTIONARY:
+				var effect := (raw_effect as Dictionary).duplicate(true)
+				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "max_cost_prestige", "min_cost_prestige"]:
+					if not effect.has(key) and cfg.has(key):
+						effect[key] = cfg[key]
+				result.append(effect)
+	if result.is_empty() and cfg.has("effect_type"):
+		result.append(cfg)
+	return result
+
+
+func _buff_matches_tags(effect: Dictionary, tags: Dictionary) -> bool:
+	for key in ["class", "damage_type", "building_type", "material"]:
+		var filter_key := "%s_filter" % key
+		if not effect.has(filter_key):
+			continue
+		var expected := StringName(effect.get(filter_key, ""))
+		if expected != StringName() and expected != StringName(tags.get(key, "")):
+			return false
+	if effect.has("max_cost_prestige") and int(tags.get("cost_prestige", 999)) > int(effect.get("max_cost_prestige", 999)):
+		return false
+	if effect.has("min_cost_prestige") and int(tags.get("cost_prestige", 0)) < int(effect.get("min_cost_prestige", 0)):
+		return false
+	return true
+
+
+func _buff_effect_has_filters(effect: Dictionary) -> bool:
+	for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "max_cost_prestige", "min_cost_prestige"]:
+		if effect.has(key):
+			return true
+	return false
 
 
 func _emit_all_state() -> void:

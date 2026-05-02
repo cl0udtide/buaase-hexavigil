@@ -24,7 +24,7 @@ data/
 - `buildings.json`
   建筑静态配置。
 - `buffs.json`
-  Buff / 祝福静态配置。
+  遗物静态配置。旧接口仍沿用 buff 命名以兼容现有代码。
 - `events.json`
   随机事件静态配置。
 - `waves.json`
@@ -401,7 +401,7 @@ Boss 多阶段规则：
 
 作用：
 
-- 定义 Buff / 祝福效果。
+- 定义肉鸽遗物效果。旧接口仍沿用 Buff 命名以兼容现有代码。
 
 记录示例：
 
@@ -428,6 +428,10 @@ Boss 多阶段规则：
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
 | `rarity` | `int` | 稀有度 |
+| `effects` | `Array` | 可选，复合遗物使用；每项包含 `effect_type`、`effect_value` 和过滤字段 |
+| `class_filter` | `String` | 可选，仅影响指定职业，例如 `guard`、`sniper`、`caster`、`defender` |
+| `building_type_filter` | `String` | 可选，仅影响指定建筑类别，例如 `resource`、`aura` |
+| `material_filter` | `String` | 可选，仅影响指定资源，例如 `wood`、`stone`、`mana` |
 
 ---
 

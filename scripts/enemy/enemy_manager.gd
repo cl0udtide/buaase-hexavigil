@@ -102,6 +102,8 @@ func _award_prestige_for_defeat(enemy: Node) -> void:
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return
+	if run_state.has_method("get_buff_effect_total"):
+		reward += int(round(float(reward) * float(run_state.get_buff_effect_total(&"kill_prestige_percent"))))
 	run_state.add_prestige(reward)
 	_debug_log("击杀敌人 %s#%d，获得 %d 声望" % [enemy.enemy_id, int(enemy.get_runtime_id()), reward])
 
