@@ -32,7 +32,7 @@ func refresh_shop() -> Dictionary:
 		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以刷新商店")
-	var spend_result: Dictionary = run_state.spend_prestige(REFRESH_COST)
+	var spend_result: Dictionary = run_state.spend_prestige(_get_refresh_cost())
 	if not spend_result.get("ok", false):
 		return spend_result
 	_roll_shop_stock()
@@ -67,7 +67,7 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
 		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
-	var spend_result: Dictionary = run_state.spend_prestige(int(cfg.get("cost_prestige", 0)))
+	var spend_result: Dictionary = run_state.spend_prestige(_get_unit_purchase_cost(cfg))
 	if not spend_result.get("ok", false):
 		return spend_result
 
@@ -132,6 +132,22 @@ func _get_unit_ids_by_cost(cost: int) -> Array[StringName]:
 		if int(cfg.get("cost_prestige", 0)) == cost:
 			result.append(unit_id)
 	return result
+
+
+func _get_refresh_cost() -> int:
+	var run_state = AppRefs.run_state()
+	var cost := REFRESH_COST
+	if run_state != null and run_state.has_method("get_buff_effect_total"):
+		cost += int(round(float(run_state.get_buff_effect_total(&"shop_refresh_cost_add"))))
+	return max(cost, 0)
+
+
+func _get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
+	var run_state = AppRefs.run_state()
+	var cost := int(unit_cfg.get("cost_prestige", 0))
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		cost += int(round(float(run_state.get_buff_effect_total_for_unit(&"shop_unit_cost_add", unit_cfg))))
+	return max(cost, 0)
 
 
 func _emit_stock_changed() -> void:
