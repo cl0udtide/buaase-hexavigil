@@ -5,6 +5,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const PATH_MODE_NORMAL: StringName = &"normal"
 const PATH_MODE_DEMOLISHER: StringName = &"demolisher"
 const PATH_MODE_FLYING: StringName = &"flying"
+const MIN_PREVIEW_PATH_CELLS := 4
 const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.RIGHT,
 	Vector2i.DOWN,
@@ -49,7 +50,7 @@ func rebuild_from_map() -> void:
 	_grid_ready = true
 
 
-func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL) -> Array[Vector2i]:
+func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]:
 	if _map_manager == null:
 		return []
 	if not _grid_ready:
@@ -61,7 +62,7 @@ func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName =
 	if path_mode == PATH_MODE_FLYING:
 		return _make_flying_path(start_cell, end_cell)
 
-	var blocked_cells: Dictionary = _get_blocked_cells_for_mode(path_mode)
+	var blocked_cells: Dictionary = _get_blocked_cells_for_mode(path_mode, extra_blocked_cells)
 	if blocked_cells.get(end_cell, false):
 		return []
 
@@ -98,12 +99,78 @@ func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName =
 	return []
 
 
-func get_cell_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL) -> Array[Vector2i]:
-	return find_path(start_cell, end_cell, path_mode)
+func find_path_preview(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Dictionary:
+	var path: Array[Vector2i] = find_path(start_cell, end_cell, path_mode, extra_blocked_cells)
+	var effective_path_mode := path_mode
+	var status: StringName = &"ok"
+	var message := ""
+
+	if path.is_empty() and path_mode == PATH_MODE_NORMAL and is_core_enclosed_by_path_blockers(end_cell, extra_blocked_cells):
+		var demolisher_path: Array[Vector2i] = find_path(start_cell, end_cell, PATH_MODE_DEMOLISHER)
+		if not demolisher_path.is_empty():
+			path = demolisher_path
+			effective_path_mode = PATH_MODE_DEMOLISHER
+			status = &"core_enclosed"
+			message = "核心被阻挡建筑封死，普通敌人将改为拆墙路径"
+
+	if path.is_empty():
+		return {
+			"ok": false,
+			"status": &"no_path",
+			"message": "无法生成从出怪点到核心的有效路径",
+			"path": [],
+			"requested_path_mode": path_mode,
+			"effective_path_mode": effective_path_mode
+		}
+	if path.size() < MIN_PREVIEW_PATH_CELLS and status == &"ok":
+		status = &"path_too_short"
+		message = "出怪点到核心的路径过短"
+	return {
+		"ok": true,
+		"status": status,
+		"message": message,
+		"path": path,
+		"requested_path_mode": path_mode,
+		"effective_path_mode": effective_path_mode
+	}
 
 
-func has_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL) -> bool:
-	return not find_path(start_cell, end_cell, path_mode).is_empty()
+func get_cell_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]:
+	return find_path(start_cell, end_cell, path_mode, extra_blocked_cells)
+
+
+func has_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> bool:
+	return not find_path(start_cell, end_cell, path_mode, extra_blocked_cells).is_empty()
+
+
+func is_core_enclosed_by_path_blockers(core_cell: Vector2i, extra_blocked_cells: Dictionary = {}) -> bool:
+	if _map_manager == null or not _map_manager.is_inside(core_cell):
+		return false
+	if not _grid_ready:
+		rebuild_from_map()
+	var blocked_cells := _get_blocked_cells_for_mode(PATH_MODE_NORMAL, extra_blocked_cells)
+	var queue: Array[Vector2i] = [core_cell]
+	var visited: Dictionary = {core_cell: true}
+	var head := 0
+	var found_path_blocker := false
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		if _is_edge_cell(current):
+			return false
+		for direction in CARDINAL_DIRECTIONS:
+			var neighbor: Vector2i = current + direction
+			if not _map_manager.is_inside(neighbor) or visited.has(neighbor):
+				continue
+			var data: CellData = _map_manager.get_cell_data(neighbor)
+			if data == null or not data.walkable:
+				continue
+			if blocked_cells.get(neighbor, false):
+				found_path_blocker = true
+				continue
+			visited[neighbor] = true
+			queue.append(neighbor)
+	return found_path_blocker
 
 
 func set_cell_blocked(cell: Vector2i, blocked: bool) -> void:
@@ -122,10 +189,16 @@ func _estimate_cost(from_cell: Vector2i, to_cell: Vector2i) -> int:
 	return absi(from_cell.x - to_cell.x) + absi(from_cell.y - to_cell.y)
 
 
-func _get_blocked_cells_for_mode(path_mode: StringName) -> Dictionary:
+func _get_blocked_cells_for_mode(path_mode: StringName, extra_blocked_cells: Dictionary = {}) -> Dictionary:
 	if path_mode == PATH_MODE_DEMOLISHER:
 		return _terrain_blocked_cells
-	return _normal_blocked_cells
+	if extra_blocked_cells.is_empty():
+		return _normal_blocked_cells
+	var blocked_cells := _normal_blocked_cells.duplicate()
+	for cell_variant: Variant in extra_blocked_cells.keys():
+		if bool(extra_blocked_cells.get(cell_variant, false)):
+			blocked_cells[cell_variant] = true
+	return blocked_cells
 
 
 func _make_flying_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]:
@@ -166,6 +239,10 @@ func _is_building_destroyed(building: Node) -> bool:
 		return bool(building.is_destroyed())
 	var current_hp_variant: Variant = building.get("current_hp")
 	return current_hp_variant != null and int(current_hp_variant) <= 0
+
+
+func _is_edge_cell(cell: Vector2i) -> bool:
+	return cell.x <= 0 or cell.y <= 0 or cell.x >= int(_map_manager.width) - 1 or cell.y >= int(_map_manager.height) - 1
 
 
 func _pop_best_open_cell(open_set: Array[Vector2i], end_cell: Vector2i, f_score: Dictionary) -> Vector2i:
