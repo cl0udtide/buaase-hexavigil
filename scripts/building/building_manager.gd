@@ -18,6 +18,7 @@ var _unit_heal_remainders: Dictionary = {}
 func _ready() -> void:
 	set_process(true)
 	_validator.map_manager = _map_manager
+	_validator.path_service = _path_service
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.request_build.connect(_on_request_build)
@@ -388,7 +389,10 @@ func _apply_enemy_aura_effects(enemies: Array, speed_multipliers: Dictionary) ->
 
 
 func _on_request_build(cell: Vector2i, building_id: StringName) -> void:
-	try_place_building(cell, building_id)
+	var result := try_place_building(cell, building_id)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.build_action_result.emit(building_id, cell, result)
 
 
 func _on_request_toggle_building(building_runtime_id: int) -> void:

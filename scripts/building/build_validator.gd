@@ -4,6 +4,7 @@ extends RefCounted
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 var map_manager: Node
+var path_service: Node
 
 
 func can_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
@@ -35,6 +36,10 @@ func can_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "Not enough materials")
 	if run_state.action_points < int(cfg.get("ap_cost", 0)):
 		return ActionResult.err(&"NOT_ENOUGH_AP", "Not enough action points")
+	if bool(cfg.get("blocks_path", false)):
+		var path_result := _validate_path_after_block(cell)
+		if not bool(path_result.get("ok", false)):
+			return path_result
 	return ActionResult.ok()
 
 
@@ -63,6 +68,24 @@ func _validate_place_rule(cell_data: CellData, place_rule: StringName) -> Dictio
 				return ActionResult.err(&"PLACE_RULE_MISMATCH", "Requires a mana resource cell")
 		_:
 			return ActionResult.err(&"UNKNOWN_PLACE_RULE", "Unknown place rule")
+	return ActionResult.ok()
+
+
+func _validate_path_after_block(block_cell: Vector2i) -> Dictionary:
+	if map_manager == null or path_service == null:
+		return ActionResult.ok()
+	if not path_service.has_method("find_path_preview"):
+		return ActionResult.ok()
+	var extra_blocked_cells: Dictionary = {block_cell: true}
+	var core_cell: Vector2i = map_manager.get_core_cell()
+	var blocked_spawns := PackedStringArray()
+	for spawn_cell: Vector2i in map_manager.get_spawn_cells():
+		var spawn_key := String(map_manager.get_spawn_key_at_cell(spawn_cell))
+		var result: Dictionary = path_service.find_path_preview(spawn_cell, core_cell, &"normal", extra_blocked_cells)
+		if not bool(result.get("ok", false)):
+			blocked_spawns.append(spawn_key)
+	if not blocked_spawns.is_empty():
+		return ActionResult.err(&"PATH_BLOCKED", "该建筑会封死出怪点 %s 到核心的路径" % "、".join(blocked_spawns))
 	return ActionResult.ok()
 
 
