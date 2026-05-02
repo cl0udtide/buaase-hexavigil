@@ -18,6 +18,16 @@ const DEPLOY_LOCKED_FILL := Color(1.0, 0.68, 0.18, 0.32)
 const DEPLOY_LOCKED_BORDER := Color(1.0, 0.84, 0.32, 0.95)
 const DEPLOY_RANGE_FILL := Color(0.95, 0.65, 0.18, 0.20)
 const DEPLOY_RANGE_BORDER := Color(1.0, 0.78, 0.26, 0.82)
+const ROUTE_PREVIEW_COLORS: Array[Color] = [
+	Color(1.0, 0.54, 0.20, 0.95),
+	Color(0.20, 0.78, 1.0, 0.95),
+	Color(0.86, 0.62, 1.0, 0.95),
+	Color(0.38, 0.95, 0.58, 0.95),
+	Color(1.0, 0.84, 0.24, 0.95)
+]
+const ROUTE_WARNING_COLOR := Color(1.0, 0.22, 0.20, 0.96)
+const ROUTE_DEMOLISHER_COLOR := Color(1.0, 0.88, 0.34, 0.96)
+const ROUTE_FLYING_COLOR := Color(0.36, 0.90, 1.0, 0.92)
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_BLOCKED := Color(0.33, 0.34, 0.38, 1.0)
@@ -50,6 +60,7 @@ var _deploy_preview_valid := false
 var _deploy_locked_cell := Vector2i(-1, -1)
 var _deploy_preview_facing := Vector2i.ZERO
 var _deploy_range_preview_cells: Array[Vector2i] = []
+var _wave_route_previews: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -126,6 +137,7 @@ func _draw() -> void:
 				draw_rect(rect.grow(-2.0), HOVER_COLOR)
 			if cell == _selected_cell:
 				draw_rect(rect.grow(-6.0), SELECT_COLOR)
+	_draw_wave_route_previews(map_manager)
 	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
 		_draw_deploy_direction_arrow(map_manager)
 
@@ -173,6 +185,18 @@ func clear_deploy_preview() -> void:
 	_deploy_locked_cell = Vector2i(-1, -1)
 	_deploy_preview_facing = Vector2i.ZERO
 	_deploy_range_preview_cells.clear()
+	queue_redraw()
+
+
+func set_wave_route_previews(routes: Array[Dictionary]) -> void:
+	_wave_route_previews.clear()
+	for route: Dictionary in routes:
+		_wave_route_previews.append(route.duplicate(true))
+	queue_redraw()
+
+
+func clear_wave_route_previews() -> void:
+	_wave_route_previews.clear()
 	queue_redraw()
 
 
@@ -251,6 +275,89 @@ func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: floa
 		tip - normalized * size - tangent * size * 0.55
 	])
 	draw_colored_polygon(points, color)
+
+
+func _draw_wave_route_previews(map_manager: Node) -> void:
+	if _wave_route_previews.is_empty():
+		return
+	for index in range(_wave_route_previews.size()):
+		var route: Dictionary = _wave_route_previews[index]
+		var color := _get_route_color(route, index)
+		var offset := _get_route_offset(index)
+		var path: Array = route.get("path", [])
+		if not path.is_empty():
+			_draw_route_path(map_manager, path, color, offset, StringName(route.get("effective_path_mode", route.get("path_mode", &"normal"))))
+		var spawn_cell: Vector2i = route.get("spawn_cell", Vector2i(-1, -1))
+		if map_manager.is_inside(spawn_cell):
+			_draw_route_endpoint(map_manager.cell_to_world(spawn_cell) + offset, color, String(route.get("spawn_key", "")))
+
+
+func _draw_route_path(map_manager: Node, path: Array, color: Color, offset: Vector2, path_mode: StringName) -> void:
+	if path.size() <= 1:
+		return
+	var points := PackedVector2Array()
+	for cell_variant: Variant in path:
+		var cell: Vector2i = cell_variant
+		points.append(map_manager.cell_to_world(cell) + offset)
+	var width := 7.0 if path_mode == &"flying" else 5.0
+	draw_polyline(points, Color(color.r, color.g, color.b, 0.22), width + 5.0, true)
+	draw_polyline(points, color, width, true)
+	if path_mode == &"demolisher":
+		_draw_route_markers(points, color, 11.0, true)
+	elif path_mode == &"flying":
+		_draw_route_markers(points, color, 14.0, false)
+	if points.size() >= 2:
+		_draw_arrow_head(points[points.size() - 1], points[points.size() - 1] - points[points.size() - 2], color, 13.0)
+
+
+func _draw_route_markers(points: PackedVector2Array, color: Color, spacing: float, draw_square: bool) -> void:
+	if points.size() < 2:
+		return
+	for i in range(1, points.size()):
+		var from_point := points[i - 1]
+		var to_point := points[i]
+		var segment := to_point - from_point
+		var length := segment.length()
+		if length <= 0.01:
+			continue
+		var direction := segment / length
+		var marker_count := int(floor(length / (CELL_SIZE * 0.85)))
+		for marker_index in range(marker_count + 1):
+			var point: Vector2 = from_point + direction * min(float(marker_index + 1) * CELL_SIZE * 0.55, length)
+			if draw_square:
+				draw_rect(Rect2(point - Vector2.ONE * spacing * 0.5, Vector2.ONE * spacing), Color(color.r, color.g, color.b, 0.45), false, 2.0)
+			else:
+				draw_circle(point, spacing * 0.32, Color(color.r, color.g, color.b, 0.45))
+
+
+func _draw_route_endpoint(center: Vector2, color: Color, label_text: String) -> void:
+	draw_circle(center, 16.0, Color(color.r, color.g, color.b, 0.18))
+	draw_circle(center, 9.0, color)
+	if label_text.is_empty():
+		return
+	draw_string(ThemeDB.fallback_font, center + Vector2(12.0, -12.0), label_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 14, color)
+
+
+func _get_route_color(route: Dictionary, index: int) -> Color:
+	if not bool(route.get("ok", false)):
+		return ROUTE_WARNING_COLOR
+	var effective_path_mode := StringName(route.get("effective_path_mode", route.get("path_mode", &"normal")))
+	if effective_path_mode == &"flying":
+		return ROUTE_FLYING_COLOR
+	if effective_path_mode == &"demolisher":
+		return ROUTE_DEMOLISHER_COLOR
+	return ROUTE_PREVIEW_COLORS[index % ROUTE_PREVIEW_COLORS.size()]
+
+
+func _get_route_offset(index: int) -> Vector2:
+	var offsets: Array[Vector2] = [
+		Vector2.ZERO,
+		Vector2(0.0, -7.0),
+		Vector2(7.0, 0.0),
+		Vector2(0.0, 7.0),
+		Vector2(-7.0, 0.0)
+	]
+	return offsets[index % offsets.size()]
 
 
 func _get_cell_color(data) -> Color:
