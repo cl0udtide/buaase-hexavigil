@@ -420,7 +420,7 @@ func _refresh_top_hud() -> void:
 		core_text = "核心生命\n%d/%d" % [int(run_state.core_hp), int(run_state.core_hp_max)]
 		deploy_text = "部署上限\n%d/%d" % [int(run_state.deployed_count), int(run_state.deploy_limit)]
 		var buff_ids: Array[StringName] = run_state.get_all_buffs() if run_state.has_method("get_all_buffs") else []
-		resource_text = "行动 %d/%d  声望 %d\n木 %d  石 %d  魔 %d  祝福 %d" % [
+		resource_text = "行动 %d/%d  声望 %d\n木 %d  石 %d  魔 %d  遗物 %d" % [
 			int(run_state.action_points),
 			int(run_state.DEFAULT_ACTION_POINTS),
 			int(run_state.prestige),
@@ -491,7 +491,7 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 		"声望用于招募和刷新商店。"
 	])
 	if buff_ids.is_empty():
-		lines.append("当前祝福：无")
+		lines.append("当前遗物：无")
 		return "\n".join(lines)
 	var data_repo = AppRefs.data_repo()
 	var buff_lines := PackedStringArray()
@@ -501,7 +501,7 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 			String(cfg.get("name", buff_id)),
 			String(cfg.get("desc", "暂无效果说明"))
 		])
-	lines.append("当前祝福：")
+	lines.append("当前遗物：")
 	lines.append("\n".join(buff_lines))
 	return "\n".join(lines)
 
