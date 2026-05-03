@@ -10,8 +10,15 @@ signal speed_2_pressed
 signal debug_drawer_toggle_pressed
 signal cast_skill_requested
 signal retreat_requested
+signal wave_route_preview_toggled(enabled: bool)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
+const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 108.0
+const WAVE_PREVIEW_LINE_HEIGHT := 19.0
+const WAVE_PREVIEW_PANEL_TOP := 68.0
+const WAVE_PREVIEW_PANEL_BOTTOM_PADDING := 34.0
+const UNIT_DETAIL_GAP := 12.0
+const UNIT_DETAIL_MIN_TOP := 250.0
 
 var _cards_by_operator_key: Dictionary = {}
 
@@ -25,6 +32,10 @@ var _cards_by_operator_key: Dictionary = {}
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
 @onready var _debug_button: Button = %DebugButton
+@onready var _wave_preview_panel: PanelContainer = %WavePreviewPanel
+@onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
+@onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
+@onready var _wave_preview_label: Label = %WavePreviewLabel
 @onready var _deck_panel: PanelContainer = %DeployDeck
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
 @onready var _detail_panel: PanelContainer = %UnitDetailPanel
@@ -38,6 +49,15 @@ func _ready() -> void:
 	AppTheme.apply(self)
 	_top_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_style_top_cards()
+	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.07, 0.09, 0.10, 0.88), GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.50))
+	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 1)
+	_wave_preview_title_label.add_theme_constant_override("shadow_offset_y", 1)
+	_wave_preview_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	_wave_preview_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.50))
+	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 1)
+	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 1)
 	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
 	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.08, 0.10, 0.11, 0.88), GameUiStyle.AMBER, 2.0, 6.0))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
@@ -45,6 +65,7 @@ func _ready() -> void:
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
 	_speed_2_button.pressed.connect(func() -> void: speed_2_pressed.emit())
 	_debug_button.pressed.connect(func() -> void: debug_drawer_toggle_pressed.emit())
+	_wave_route_toggle.toggled.connect(func(enabled: bool) -> void: wave_route_preview_toggled.emit(enabled))
 	if _detail_panel.has_signal("cast_skill_requested"):
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
@@ -69,6 +90,16 @@ func show_message(text_value: String) -> void:
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
 	_resource_label.text = resource_text
 	_resource_label.tooltip_text = tooltip_text_value
+
+
+func set_wave_preview_text(text_value: String, show_panel: bool = true) -> void:
+	_wave_preview_label.text = text_value
+	_wave_preview_panel.visible = show_panel and not text_value.strip_edges().is_empty()
+	_resize_wave_preview_panel(text_value)
+
+
+func set_wave_route_preview_enabled(enabled: bool) -> void:
+	_wave_route_toggle.set_pressed_no_signal(enabled)
 
 
 func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void:
@@ -138,6 +169,15 @@ func clear_unit_detail() -> void:
 
 func set_left_reserved_width(width: float) -> void:
 	_deck_panel.offset_left = max(18.0, width + 14.0)
+
+
+func _resize_wave_preview_panel(text_value: String) -> void:
+	var line_count: int = max(text_value.count("\n") + 1, 1)
+	var text_height: float = max(WAVE_PREVIEW_MIN_TEXT_HEIGHT, float(line_count) * WAVE_PREVIEW_LINE_HEIGHT)
+	_wave_preview_label.custom_minimum_size.y = text_height
+	var panel_height: float = text_height + WAVE_PREVIEW_PANEL_BOTTOM_PADDING
+	_wave_preview_panel.offset_bottom = WAVE_PREVIEW_PANEL_TOP + panel_height
+	_detail_panel.offset_top = max(UNIT_DETAIL_MIN_TOP, _wave_preview_panel.offset_bottom + UNIT_DETAIL_GAP)
 
 
 func _style_button(button: Button, accent: Color) -> void:
