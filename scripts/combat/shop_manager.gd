@@ -47,6 +47,14 @@ func get_current_stock() -> Array[Dictionary]:
 	return result
 
 
+func get_refresh_cost() -> int:
+	return _get_refresh_cost()
+
+
+func get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
+	return _get_unit_purchase_cost(unit_cfg)
+
+
 func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()

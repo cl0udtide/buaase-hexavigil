@@ -181,7 +181,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `target_type` | `String` | 攻击目标类型 |
+| `target_type` | `String` | 攻击目标类型；只使用 `ground`、`flying`、`all`，未配置或非法值按 `ground` 处理 |
 | `attack_delivery` | `String` | 普攻命中形式；`instant` 为即时命中，`projectile` 为飞行物命中，未配置默认 `instant` |
 | `projectile_scene_key` | `String` | 飞行物场景逻辑名，未配置默认 `projectile` |
 | `projectile_speed` | `float` | 飞行物追踪速度 |
@@ -262,7 +262,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `move_speed` | `float` | 移动速度 |
 | `attack_interval` | `float` | 攻击间隔 |
 | `behavior_type` | `String` | 行为类型；当前使用 `normal`、`demolisher`、`boss` 等策略语义，移速差异统一由 `move_speed` 表达，不另设 `rush` 等速度型行为 |
-| `move_type` | `String` | 移动类型 |
+| `move_type` | `String` | 移动类型；只使用 `ground`、`flying`，未配置或非法值按 `ground` 处理 |
 | `core_damage` | `int` | 抵达核心时造成的伤害 |
 | `prestige_reward` | `int` | 被击杀时奖励的声望；进入核心消失不发放 |
 | `scene_key` | `String` | 敌人模板逻辑名 |
