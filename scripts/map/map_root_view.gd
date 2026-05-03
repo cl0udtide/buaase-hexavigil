@@ -288,26 +288,37 @@ func _draw_wave_route_previews(map_manager: Node) -> void:
 		if not path.is_empty():
 			_draw_route_path(map_manager, path, color, offset, StringName(route.get("effective_path_mode", route.get("path_mode", &"normal"))))
 		var spawn_cell: Vector2i = route.get("spawn_cell", Vector2i(-1, -1))
-		if map_manager.is_inside(spawn_cell):
+		if map_manager.is_inside(spawn_cell) and map_manager.is_discovered(spawn_cell):
 			_draw_route_endpoint(map_manager.cell_to_world(spawn_cell) + offset, color, String(route.get("spawn_key", "")))
 
 
 func _draw_route_path(map_manager: Node, path: Array, color: Color, offset: Vector2, path_mode: StringName) -> void:
 	if path.size() <= 1:
 		return
+	var segments: Array[PackedVector2Array] = []
 	var points := PackedVector2Array()
 	for cell_variant: Variant in path:
 		var cell: Vector2i = cell_variant
+		if not map_manager.is_inside(cell) or not map_manager.is_discovered(cell):
+			if points.size() > 1:
+				segments.append(points)
+			points = PackedVector2Array()
+			continue
 		points.append(map_manager.cell_to_world(cell) + offset)
+	if points.size() > 1:
+		segments.append(points)
+	if segments.is_empty():
+		return
 	var width := 7.0 if path_mode == &"flying" else 5.0
-	draw_polyline(points, Color(color.r, color.g, color.b, 0.22), width + 5.0, true)
-	draw_polyline(points, color, width, true)
-	if path_mode == &"demolisher":
-		_draw_route_markers(points, color, 11.0, true)
-	elif path_mode == &"flying":
-		_draw_route_markers(points, color, 14.0, false)
-	if points.size() >= 2:
-		_draw_arrow_head(points[points.size() - 1], points[points.size() - 1] - points[points.size() - 2], color, 13.0)
+	for segment: PackedVector2Array in segments:
+		draw_polyline(segment, Color(color.r, color.g, color.b, 0.22), width + 5.0, true)
+		draw_polyline(segment, color, width, true)
+		if path_mode == &"demolisher":
+			_draw_route_markers(segment, color, 11.0, true)
+		elif path_mode == &"flying":
+			_draw_route_markers(segment, color, 14.0, false)
+		if segment.size() >= 2:
+			_draw_arrow_head(segment[segment.size() - 1], segment[segment.size() - 1] - segment[segment.size() - 2], color, 13.0)
 
 
 func _draw_route_markers(points: PackedVector2Array, color: Color, spacing: float, draw_square: bool) -> void:

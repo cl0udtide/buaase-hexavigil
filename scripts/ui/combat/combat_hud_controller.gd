@@ -26,6 +26,8 @@ var _wave_preview_active := false
 var _show_wave_routes: bool = false
 var _latest_wave_routes: Array[Dictionary] = []
 var _latest_wave_preview_text := ""
+var _wave_route_revision := 0
+var _wave_preview_refresh_queued := false
 
 @onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
 @onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
@@ -395,15 +397,15 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 
 
 func _on_path_grid_changed() -> void:
-	_force_wave_preview_refresh()
+	_queue_wave_preview_refresh()
 
 
 func _on_building_changed(_building_runtime_id: int, _building_id: StringName, _cell: Vector2i) -> void:
-	_force_wave_preview_refresh()
+	_queue_wave_preview_refresh()
 
 
 func _on_building_state_changed(_building_runtime_id: int, _building_id: StringName, _enabled: bool) -> void:
-	_force_wave_preview_refresh()
+	_queue_wave_preview_refresh()
 
 
 func _on_build_action_result(_building_id: StringName, _cell: Vector2i, result: Dictionary) -> void:
@@ -513,7 +515,7 @@ func _refresh_wave_preview() -> void:
 		_clear_wave_routes()
 		return
 	var hover_cell: Vector2i = _get_blocking_build_preview_cell()
-	var signature: String = "%d|%s|%d" % [int(run_state.day), str(hover_cell), int(preview.get("total_count", 0))]
+	var signature: String = "%d|%s|%d|%d" % [int(run_state.day), str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision]
 	if signature != _last_wave_preview_signature:
 		_last_wave_preview_signature = signature
 		var extra_blocked_cells: Dictionary = {}
@@ -527,8 +529,17 @@ func _refresh_wave_preview() -> void:
 
 
 func _force_wave_preview_refresh() -> void:
+	_wave_preview_refresh_queued = false
+	_wave_route_revision += 1
 	_last_wave_preview_signature = ""
 	_refresh_wave_preview()
+
+
+func _queue_wave_preview_refresh() -> void:
+	if _wave_preview_refresh_queued:
+		return
+	_wave_preview_refresh_queued = true
+	call_deferred("_force_wave_preview_refresh")
 
 
 func _clear_wave_preview() -> void:
@@ -611,24 +622,19 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], hover_cell: Vector2i) -> String:
 	var lines := PackedStringArray()
 	lines.append("Day %d  合计 %d" % [int(preview.get("day", 0)), int(preview.get("total_count", 0))])
-	var entries_by_spawn: Dictionary = {}
+	var enemy_counts: Dictionary = {}
 	var entries: Array = preview.get("entries", [])
 	for entry_variant: Variant in entries:
 		if typeof(entry_variant) != TYPE_DICTIONARY:
 			continue
 		var entry: Dictionary = entry_variant
-		var spawn_key := String(entry.get("spawn_key", ""))
-		if not entries_by_spawn.has(spawn_key):
-			entries_by_spawn[spawn_key] = []
-		var enemy_text := "%s x%d" % [String(entry.get("enemy_name", entry.get("enemy_id", ""))), int(entry.get("count", 0))]
-		var spawn_entries: Array = entries_by_spawn[spawn_key]
-		spawn_entries.append(enemy_text)
-		entries_by_spawn[spawn_key] = spawn_entries
-	for spawn_key in entries_by_spawn.keys():
-		var spawn_lines := PackedStringArray()
-		for enemy_text_variant: Variant in entries_by_spawn[spawn_key]:
-			spawn_lines.append(String(enemy_text_variant))
-		lines.append("%s: %s" % [String(spawn_key), "、".join(spawn_lines)])
+		var enemy_name := String(entry.get("enemy_name", entry.get("enemy_id", "")))
+		enemy_counts[enemy_name] = int(enemy_counts.get(enemy_name, 0)) + int(entry.get("count", 0))
+	if not enemy_counts.is_empty():
+		var enemy_lines := PackedStringArray()
+		for enemy_name in enemy_counts.keys():
+			enemy_lines.append("%s x%d" % [String(enemy_name), int(enemy_counts.get(enemy_name, 0))])
+		lines.append("敌群: %s" % "、".join(enemy_lines))
 
 	var warnings := _collect_route_warning_lines(routes)
 	if hover_cell != INVALID_CELL:
@@ -646,8 +652,7 @@ func _collect_route_warning_lines(routes: Array[Dictionary]) -> PackedStringArra
 		if not PREVIEW_WARNING_STATUSES.has(status):
 			continue
 		var message := String(route.get("message", "路线异常"))
-		var spawn_key := String(route.get("spawn_key", ""))
-		var line := "%s %s" % [spawn_key, message]
+		var line := message
 		if not warnings.has(line):
 			warnings.append(line)
 	return warnings
