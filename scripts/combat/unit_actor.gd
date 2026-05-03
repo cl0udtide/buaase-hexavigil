@@ -8,6 +8,11 @@ const BLOCK_RADIUS_TILES := 0.7071
 const DEFAULT_PROJECTILE_SPEED := 520.0
 const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
 const DEFAULT_PROJECTILE_LIFETIME := 3.0
+const TARGET_TYPE_GROUND: StringName = &"ground"
+const TARGET_TYPE_FLYING: StringName = &"flying"
+const TARGET_TYPE_ALL: StringName = &"all"
+const MOVE_TYPE_GROUND: StringName = &"ground"
+const MOVE_TYPE_FLYING: StringName = &"flying"
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -56,7 +61,7 @@ var attack_multiplier := 1.0
 var _external_attack_interval_multiplier := 1.0
 var _external_attack_bonus := 0
 var damage_type := GameEnums.DAMAGE_PHYSICAL
-var target_type: StringName = &"ground"
+var target_type: StringName = TARGET_TYPE_GROUND
 var range_pattern: Array[Vector2i] = []
 
 var _attack_timer := 0.0
@@ -113,7 +118,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	_external_attack_bonus = 0
 	_damage_reduction_effects.clear()
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
-	target_type = StringName(cfg.get("target_type", "ground"))
+	target_type = parse_target_type(String(cfg.get("target_type", "ground")))
 	range_pattern = parse_range_pattern(cfg.get("range_pattern", []))
 	sp = clamp(float(cfg.get("sp_initial", cfg.get("initial_sp", 0.0))), 0.0, float(cfg.get("sp_max", 0.0)))
 	_attack_timer = attack_interval
@@ -723,14 +728,15 @@ func _is_enemy_unblockable(enemy: Node) -> bool:
 func _can_target_enemy(enemy: Node) -> bool:
 	if enemy == null or not is_instance_valid(enemy):
 		return false
-	var enemy_move_type := StringName(enemy.cfg.get("move_type", "ground"))
+	var enemy_move_type := _get_enemy_move_type(enemy)
 	match target_type:
-		&"all", &"any", &"both":
+		TARGET_TYPE_ALL:
 			return true
-		&"aerial", &"air", &"flying":
-			return enemy_move_type == &"flying"
-		_:
-			return enemy_move_type != &"flying"
+		TARGET_TYPE_FLYING:
+			return enemy_move_type == MOVE_TYPE_FLYING
+		TARGET_TYPE_GROUND:
+			return enemy_move_type == MOVE_TYPE_GROUND
+	return false
 
 
 func _can_detect_enemy(enemy: Node) -> bool:
@@ -787,6 +793,23 @@ func parse_damage_type(raw_type: String) -> int:
 			return GameEnums.DAMAGE_TRUE
 		_:
 			return GameEnums.DAMAGE_PHYSICAL
+
+
+func parse_target_type(raw_type: String) -> StringName:
+	match raw_type:
+		"flying":
+			return TARGET_TYPE_FLYING
+		"all":
+			return TARGET_TYPE_ALL
+		_:
+			return TARGET_TYPE_GROUND
+
+
+func _get_enemy_move_type(enemy: Node) -> StringName:
+	if enemy == null:
+		return MOVE_TYPE_GROUND
+	var move_type := StringName(enemy.cfg.get("move_type", String(MOVE_TYPE_GROUND)))
+	return MOVE_TYPE_FLYING if move_type == MOVE_TYPE_FLYING else MOVE_TYPE_GROUND
 
 
 func _rotate_offset(offset: Vector2i, direction: Vector2i) -> Vector2i:

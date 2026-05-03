@@ -941,7 +941,7 @@ data/units.json
 | `block` | `block_count` | 阻挡数 |
 | `attack_interval` | `attack_interval` | 普攻间隔 |
 | `damage_type` | `damage_type` | 伤害类型，部署时解析成枚举 |
-| `target_type` | `target_type` | 目标类型，例如地面或飞行 |
+| `target_type` | `target_type` | 目标类型；只使用 `ground`、`flying`、`all` |
 | `range_pattern` | `range_pattern` | 攻击范围格子偏移 |
 | `attack_delivery` | 普攻结算路径 | `instant` 即时命中；`projectile` 通过飞行物命中 |
 | `projectile_scene_key` | `launch_projectile()` | 飞行物场景逻辑名 |

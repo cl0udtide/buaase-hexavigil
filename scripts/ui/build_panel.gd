@@ -46,6 +46,7 @@ func _bind_events() -> void:
 	if event_bus != null:
 		event_bus.phase_changed.connect(_on_phase_changed)
 		event_bus.prestige_changed.connect(_on_prestige_changed)
+		event_bus.buffs_changed.connect(_on_buffs_changed)
 		event_bus.shop_stock_changed.connect(_on_shop_stock_changed)
 		event_bus.shop_action_result.connect(_on_shop_action_result)
 		event_bus.building_placed.connect(_on_building_placed)
@@ -116,7 +117,9 @@ func _refresh_category_buttons() -> void:
 func _refresh_bottom_controls() -> void:
 	_category_tabs.visible = _current_mode == MODE_BUILD
 	_refresh_shop_button.visible = _current_mode == MODE_SHOP
-	_refresh_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY or _current_prestige < REFRESH_COST
+	var refresh_cost := _get_shop_refresh_cost()
+	_refresh_shop_button.text = "刷新 %d 声望" % refresh_cost
+	_refresh_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY or _current_prestige < refresh_cost
 	_style_command_button(_refresh_shop_button, GameUiStyle.STROKE_SOFT)
 	_refresh_category_buttons()
 
@@ -184,22 +187,23 @@ func _make_shop_card(slot: Dictionary) -> Control:
 	var sold := bool(slot.get("sold", false))
 	var slot_index := int(slot.get("slot_index", -1))
 	var cfg := _get_unit_cfg(unit_id)
-	var cost := int(cfg.get("cost_prestige", 0))
-	var accent := UiDisplayText.tier_color(cost)
+	var base_cost := int(cfg.get("cost_prestige", 0))
+	var cost := _get_shop_unit_purchase_cost(cfg)
+	var accent := UiDisplayText.tier_color(base_cost)
 	if sold or unit_id == StringName():
 		accent = GameUiStyle.STROKE_SOFT
 	var title := ""
 	var subtitle := ""
 	var detail := ""
 	var state := ""
-	var title_color := UiDisplayText.tier_color(cost)
+	var title_color := UiDisplayText.tier_color(base_cost)
 	if unit_id == StringName():
 		title = "空槽位"
 		title_color = GameUiStyle.TEXT_MUTED
 	else:
 		title = UiDisplayText.config_name(cfg, unit_id)
-		subtitle = "%s  %s" % [UiDisplayText.class_label(str(cfg.get("class", ""))), UiDisplayText.tier_label(cost)]
-		detail = "%d 声望" % cost
+		subtitle = "%s  %s" % [UiDisplayText.class_label(str(cfg.get("class", ""))), UiDisplayText.tier_label(base_cost)]
+		detail = _format_shop_cost(base_cost, cost)
 		if sold:
 			state = "已购买"
 	var card := BuildListCardScene.instantiate() as Control
@@ -340,6 +344,10 @@ func _on_prestige_changed(value: int) -> void:
 	refresh_from_state()
 
 
+func _on_buffs_changed(_buff_ids: Array[StringName]) -> void:
+	refresh_from_state()
+
+
 func _get_building_cfg(building_id: StringName) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	return data_repo.get_building_cfg(building_id) if data_repo != null else {}
@@ -348,6 +356,28 @@ func _get_building_cfg(building_id: StringName) -> Dictionary:
 func _get_unit_cfg(unit_id: StringName) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	return data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+
+
+func _get_shop_refresh_cost() -> int:
+	var shop_manager := get_node_or_null("../../Managers/ShopManager")
+	if shop_manager != null and shop_manager.has_method("get_refresh_cost"):
+		return int(shop_manager.get_refresh_cost())
+	return REFRESH_COST
+
+
+func _get_shop_unit_purchase_cost(cfg: Dictionary) -> int:
+	if cfg.is_empty():
+		return 0
+	var shop_manager := get_node_or_null("../../Managers/ShopManager")
+	if shop_manager != null and shop_manager.has_method("get_unit_purchase_cost"):
+		return int(shop_manager.get_unit_purchase_cost(cfg))
+	return int(cfg.get("cost_prestige", 0))
+
+
+func _format_shop_cost(base_cost: int, cost: int) -> String:
+	if cost != base_cost:
+		return "%d 声望（原 %d）" % [cost, base_cost]
+	return "%d 声望" % cost
 
 
 func _unit_icon_text(unit_id: StringName) -> String:
