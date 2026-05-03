@@ -10,6 +10,7 @@ var _units_by_runtime_id: Dictionary = {}
 # Deployment state is keyed by operator_key so duplicate unit_id slots stay independent.
 var _runtime_by_operator_key: Dictionary = {}
 var _operator_key_by_runtime_id: Dictionary = {}
+var _deploy_slot_cost_by_runtime_id: Dictionary = {}
 var _redeploy_timers: Dictionary = {}
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
@@ -74,6 +75,7 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	_units_by_runtime_id[_next_runtime_id] = actor
 	_runtime_by_operator_key[operator_key] = _next_runtime_id
 	_operator_key_by_runtime_id[_next_runtime_id] = operator_key
+	_deploy_slot_cost_by_runtime_id[_next_runtime_id] = deploy_slot_cost
 	if _map_manager != null and _map_manager.has_method("set_unit_occupy"):
 		_map_manager.set_unit_occupy(cell, true, _next_runtime_id)
 	run_state.change_deployed_count(deploy_slot_cost)
@@ -211,6 +213,12 @@ func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	if operator_key != StringName():
 		_runtime_by_operator_key.erase(operator_key)
 	_operator_key_by_runtime_id.erase(unit_runtime_id)
+	var deploy_slot_cost := 0
+	if _deploy_slot_cost_by_runtime_id.has(unit_runtime_id):
+		deploy_slot_cost = int(_deploy_slot_cost_by_runtime_id.get(unit_runtime_id, 0))
+	else:
+		deploy_slot_cost = _get_operator_deploy_slot_cost(unit.cfg)
+	_deploy_slot_cost_by_runtime_id.erase(unit_runtime_id)
 	var run_state = AppRefs.run_state()
 	var event_bus = AppRefs.event_bus()
 	if _map_manager != null and _map_manager.has_method("set_unit_occupy"):
@@ -220,7 +228,7 @@ func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	if reason == GameEnums.UNIT_REMOVE_RETREAT or reason == GameEnums.UNIT_REMOVE_DEAD:
 		_start_operator_redeploy(unit, operator_key)
 	if run_state != null:
-		run_state.change_deployed_count(-_get_operator_deploy_slot_cost(unit.cfg))
+		run_state.change_deployed_count(-deploy_slot_cost)
 	if event_bus != null:
 		event_bus.unit_removed.emit(unit_runtime_id, reason)
 	_debug_log("鍗曚綅绂诲満 %s#%d锛屽師鍥狅細%s" % [_get_unit_display_name(unit), unit_runtime_id, _remove_reason_text(reason)])
@@ -233,6 +241,7 @@ func clear_all_units() -> void:
 	_redeploy_timers.clear()
 	_runtime_by_operator_key.clear()
 	_operator_key_by_runtime_id.clear()
+	_deploy_slot_cost_by_runtime_id.clear()
 
 
 func _debug_log(message: String) -> void:

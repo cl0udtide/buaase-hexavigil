@@ -32,19 +32,19 @@ func _process(delta: float) -> void:
 
 
 func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
-	var check := _validator.can_place_building(cell, building_id)
-	if not check.get("ok", false):
-		return check
-
 	var data_repo = AppRefs.data_repo()
 	var run_state = AppRefs.run_state()
 	var event_bus = AppRefs.event_bus()
 	if data_repo == null or run_state == null:
 		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
 	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
-	var cost_wood := _get_building_material_cost(cfg, &"wood")
-	var cost_stone := _get_building_material_cost(cfg, &"stone")
-	var cost_mana := _get_building_material_cost(cfg, &"mana")
+	var material_costs := BuildValidator.get_building_material_costs(cfg)
+	var check := _validator.can_place_building(cell, building_id, material_costs)
+	if not check.get("ok", false):
+		return check
+	var cost_wood := int(material_costs.get("wood", 0))
+	var cost_stone := int(material_costs.get("stone", 0))
+	var cost_mana := int(material_costs.get("mana", 0))
 	var material_result: Dictionary = run_state.spend_materials(
 		cost_wood,
 		cost_stone,
@@ -288,18 +288,6 @@ func _half_repair_cost(value: int) -> int:
 	if value <= 0:
 		return 0
 	return int(ceil(float(value) * 0.5))
-
-
-func _get_building_material_cost(cfg: Dictionary, material: StringName) -> int:
-	var key := "cost_%s" % String(material)
-	var cost := int(cfg.get(key, 0))
-	var run_state = AppRefs.run_state()
-	if run_state != null:
-		if run_state.has_method("get_buff_effect_total_for_building"):
-			cost += int(round(float(run_state.get_buff_effect_total_for_building(&"building_cost_add", cfg))))
-		if run_state.has_method("get_buff_effect_total_for_material"):
-			cost += int(round(float(run_state.get_buff_effect_total_for_material(&"building_material_cost_add", material))))
-	return max(cost, 0)
 
 
 func _get_income_value(cfg: Dictionary, base_value: int, material: StringName) -> int:

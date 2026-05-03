@@ -7,7 +7,7 @@ var map_manager: Node
 var path_service: Node
 
 
-func can_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
+func can_place_building(cell: Vector2i, building_id: StringName, material_costs: Dictionary = {}) -> Dictionary:
 	var data_repo = _get_data_repo()
 	var run_state = _get_run_state()
 	if data_repo == null or run_state == null:
@@ -32,7 +32,8 @@ func can_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	if not place_rule_result.get("ok", false):
 		return place_rule_result
 
-	if run_state.wood < int(cfg.get("cost_wood", 0)) or run_state.stone < int(cfg.get("cost_stone", 0)) or run_state.mana < int(cfg.get("cost_mana", 0)):
+	var costs := material_costs if not material_costs.is_empty() else get_building_material_costs(cfg)
+	if run_state.wood < int(costs.get("wood", 0)) or run_state.stone < int(costs.get("stone", 0)) or run_state.mana < int(costs.get("mana", 0)):
 		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "Not enough materials")
 	if run_state.action_points < int(cfg.get("ap_cost", 0)):
 		return ActionResult.err(&"NOT_ENOUGH_AP", "Not enough action points")
@@ -41,6 +42,26 @@ func can_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 		if not bool(path_result.get("ok", false)):
 			return path_result
 	return ActionResult.ok()
+
+
+static func get_building_material_costs(cfg: Dictionary) -> Dictionary:
+	return {
+		"wood": get_building_material_cost(cfg, &"wood"),
+		"stone": get_building_material_cost(cfg, &"stone"),
+		"mana": get_building_material_cost(cfg, &"mana")
+	}
+
+
+static func get_building_material_cost(cfg: Dictionary, material: StringName) -> int:
+	var key := "cost_%s" % String(material)
+	var cost := int(cfg.get(key, 0))
+	var run_state = AppRefs.run_state()
+	if run_state != null:
+		if run_state.has_method("get_buff_effect_total_for_building"):
+			cost += int(round(float(run_state.get_buff_effect_total_for_building(&"building_cost_add", cfg))))
+		if run_state.has_method("get_buff_effect_total_for_material"):
+			cost += int(round(float(run_state.get_buff_effect_total_for_material(&"building_material_cost_add", material))))
+	return max(cost, 0)
 
 
 func can_repair_building(_building_runtime_id: int) -> Dictionary:
