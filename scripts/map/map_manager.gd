@@ -14,6 +14,7 @@ var _core_cell := Vector2i.ZERO
 @onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
 @onready var _spawn_root: Node = get_node_or_null("../../World/SpawnRoot")
 @onready var _core_root: Node = get_node_or_null("../../World/CoreRoot")
+@onready var _random_event_manager: Node = get_node_or_null("../RandomEventManager")
 
 
 func generate_new_map(seed: int) -> void:
@@ -28,6 +29,7 @@ func generate_new_map(seed: int) -> void:
 	for cell_variant: Variant in generated.get("spawn_cells", []):
 		_spawn_cells.append(cell_variant as Vector2i)
 	_core_cell = generated.get("core_cell", Vector2i.ZERO)
+	_setup_event_overlay(generated.get("event_points", []))
 	refresh_all_layers(true)
 	_emit_path_grid_changed()
 
@@ -52,6 +54,7 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 		core_data.buildable = false
 	_apply_debug_spawns(spawn_defs)
 	_apply_debug_blocked_cells(blocked_cells)
+	_clear_event_overlay()
 	refresh_all_layers(true)
 	_emit_path_grid_changed()
 
@@ -219,6 +222,7 @@ func reset_map() -> void:
 	_cells.clear()
 	_spawn_cells.clear()
 	_core_cell = Vector2i.ZERO
+	_clear_event_overlay()
 	refresh_all_layers(true)
 	_emit_path_grid_changed()
 
@@ -251,17 +255,14 @@ func has_discovered_neighbor(cell: Vector2i) -> bool:
 
 
 func get_event_id_at_cell(cell: Vector2i) -> StringName:
-	var data := get_cell_data(cell)
-	if data == null or data.event_triggered:
+	if _random_event_manager == null or not _random_event_manager.has_method("get_event_id_at_cell"):
 		return StringName()
-	return data.event_id
+	return _random_event_manager.get_event_id_at_cell(cell)
 
 
 func mark_event_triggered(cell: Vector2i) -> void:
-	var data := get_cell_data(cell)
-	if data != null:
-		data.event_triggered = true
-		refresh_all_layers()
+	if _random_event_manager != null and _random_event_manager.has_method("mark_event_triggered"):
+		_random_event_manager.mark_event_triggered(cell)
 
 
 func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]:
@@ -449,6 +450,16 @@ func _parse_debug_cell(raw_cell: Variant, fallback: Vector2i) -> Vector2i:
 	if raw_cell is Dictionary:
 		return Vector2i(int(raw_cell.get("x", fallback.x)), int(raw_cell.get("y", fallback.y)))
 	return fallback
+
+
+func _setup_event_overlay(event_points: Array) -> void:
+	if _random_event_manager != null and _random_event_manager.has_method("setup_events"):
+		_random_event_manager.setup_events(event_points)
+
+
+func _clear_event_overlay() -> void:
+	if _random_event_manager != null and _random_event_manager.has_method("clear_events"):
+		_random_event_manager.clear_events()
 
 
 func _clear_debug_spawn(spawn_key: StringName) -> bool:

@@ -45,6 +45,7 @@ const ZOOM_STEP := 0.9
 const PAN_OVERSCROLL_VIEWPORT_RATIO := 0.75
 
 var _map_manager: Node
+var _random_event_manager: Node
 var _hovered_cell := Vector2i(-1, -1)
 var _selected_cell := Vector2i(-1, -1)
 var _camera: Camera2D
@@ -390,7 +391,7 @@ func _get_cell_color(data) -> Color:
 		return COLOR_RESOURCE_STONE
 	if data.resource_type == &"mana":
 		return COLOR_RESOURCE_MANA
-	if data.event_id != StringName() and not data.event_triggered:
+	if _has_event_at_cell(data.cell):
 		return COLOR_EVENT
 	return COLOR_PLAIN
 
@@ -515,3 +516,9 @@ func _get_map_manager() -> Node:
 		return _map_manager
 	_map_manager = get_node_or_null("../../Managers/MapManager")
 	return _map_manager
+
+
+func _has_event_at_cell(cell: Vector2i) -> bool:
+	if _random_event_manager == null:
+		_random_event_manager = get_node_or_null("../../Managers/RandomEventManager")
+	return _random_event_manager != null and _random_event_manager.has_method("has_event_at_cell") and _random_event_manager.has_event_at_cell(cell)
