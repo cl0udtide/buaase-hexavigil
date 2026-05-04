@@ -114,6 +114,8 @@ func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dict
 	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
 	if cell_data != null and cell_data.is_core:
 		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
+	if _map_manager.has_method("is_discovered") and not _map_manager.is_discovered(cell):
+		return ActionResult.err(&"CELL_NOT_DISCOVERED", "CELL_NOT_DISCOVERED")
 	if not _map_manager.is_walkable(cell):
 		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
 	return ActionResult.ok({"operator_key": operator_key, "unit_id": unit_id})
