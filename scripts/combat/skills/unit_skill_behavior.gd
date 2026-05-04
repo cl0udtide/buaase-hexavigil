@@ -81,6 +81,10 @@ func is_active() -> bool:
 	return active_timer > 0.0
 
 
+func get_ammo_status() -> Dictionary:
+	return {}
+
+
 func get_attack_targets_override() -> Array:
 	return []
 

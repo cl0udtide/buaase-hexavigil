@@ -25,7 +25,7 @@
 				{
 					"enemy_id": "slime",
 					"delay": 0,
-					"name": "史莱姆",
+					"name": "源石虫",
 					"max_hp": 300,
 					"atk": 18,
 					"def": 20,
@@ -38,7 +38,7 @@
 				{
 					"enemy_id": "slime",
 					"delay": 0.5,
-					"name": "史莱姆",
+					"name": "源石虫",
 					"max_hp": 80,
 					"atk": 18,
 					"def": 2,
@@ -51,7 +51,7 @@
 				{
 					"enemy_id": "slime",
 					"delay": 0.5,
-					"name": "史莱姆",
+					"name": "源石虫",
 					"max_hp": 80,
 					"atk": 18,
 					"def": 2,

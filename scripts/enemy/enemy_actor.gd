@@ -7,6 +7,7 @@ const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controll
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
+const INVALID_DEATH_SPAWN_CELL := Vector2i(-9999, -9999)
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -31,6 +32,9 @@ var _necrosis_burst_timer := 0.0
 var _necrosis_vulnerability := 0.0
 var _necrosis_dot_damage_per_sec := 0.0
 var _necrosis_dot_carry := 0.0
+var _shield_hp := 0
+var _max_shield_hp := 0
+var _regen_carry := 0.0
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 
@@ -46,6 +50,7 @@ func _process(delta: float) -> void:
 	_tick_status_effects(delta)
 	if _is_dead:
 		return
+	_tick_regeneration(delta)
 	_refresh_fog_visibility()
 	if _boss_controller != null and _boss_controller.is_transitioning():
 		var phase_cfg: Dictionary = _boss_controller.tick(delta)
@@ -86,6 +91,9 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	cfg = new_cfg.duplicate(true)
 	max_hp = int(cfg.get("max_hp", 1))
 	current_hp = max_hp
+	_max_shield_hp = max(int(cfg.get("shield_hp", 0)), 0)
+	_shield_hp = _max_shield_hp
+	_regen_carry = 0.0
 	current_cell = spawn_cell
 	_is_dead = false
 	_clear_temporary_status()
@@ -121,10 +129,13 @@ func receive_damage(value: int, damage_type: int) -> void:
 	elif damage_type == GameEnums.DAMAGE_MAGIC:
 		final_damage = CombatMath.calc_magic_damage(value, _get_effective_resistance())
 	final_damage = max(int(round(float(final_damage) * _get_vulnerability_multiplier(damage_type))), 0)
+	var shield_absorbed: int = _absorb_damage_with_shield(final_damage)
+	final_damage = max(final_damage - shield_absorbed, 0)
 	current_hp = max(current_hp - final_damage, 0)
 	_update_status_view()
 	_play_hit_effect()
-	_debug_log("敌人 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type), value, final_damage, current_hp, max_hp])
+	var shield_text := "，护盾吸收 %d，护盾 %d" % [shield_absorbed, _shield_hp] if shield_absorbed > 0 else ""
+	_debug_log("敌人 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d%s" % [_debug_name(), runtime_id, _damage_type_text(damage_type), value, final_damage, current_hp, max_hp, shield_text])
 	if current_hp == 0 and not _is_dead:
 		if _boss_controller != null and _boss_controller.try_consume_death_for_phase_transition():
 			clear_blocked()
@@ -133,6 +144,11 @@ func receive_damage(value: int, damage_type: int) -> void:
 		_is_dead = true
 		_debug_log("敌人 %s#%d 死亡" % [_debug_name(), runtime_id])
 		get_enemy_manager().remove_enemy(runtime_id)
+
+
+func apply_defeat_effects() -> void:
+	_apply_death_area_damage()
+	_spawn_death_enemies()
 
 
 func apply_push(direction: Vector2i, tiles: int) -> bool:
@@ -279,6 +295,8 @@ func set_external_move_speed_multiplier(value: float) -> void:
 func _update_status_view() -> void:
 	if _status_view != null and _status_view.has_method("set_hp"):
 		_status_view.set_hp(current_hp, max_hp)
+	if _status_view != null and _status_view.has_method("set_shield"):
+		_status_view.set_shield(_shield_hp, _max_shield_hp)
 
 
 func _play_hit_effect() -> void:
@@ -353,6 +371,8 @@ func _apply_phase_cfg(phase_cfg: Dictionary) -> void:
 		_movement_controller.refresh_path_mode()
 	max_hp = int(cfg.get("max_hp", max_hp))
 	current_hp = max_hp
+	_max_shield_hp = max(int(cfg.get("shield_hp", 0)), 0)
+	_shield_hp = _max_shield_hp
 	if _attack_controller != null:
 		_attack_controller.set_attack_cooldown_from_cfg()
 	_recalc_path_after_phase_change()
@@ -456,6 +476,135 @@ func _tick_necrosis_burst(delta: float) -> void:
 		_necrosis_vulnerability = 0.0
 		_necrosis_dot_damage_per_sec = 0.0
 		_necrosis_dot_carry = 0.0
+
+
+func _tick_regeneration(delta: float) -> void:
+	var regen_per_sec: float = max(float(cfg.get("regen_per_sec", 0.0)), 0.0)
+	if regen_per_sec <= 0.0 or current_hp <= 0 or current_hp >= max_hp:
+		return
+	_regen_carry += regen_per_sec * delta
+	var heal_value := int(floor(_regen_carry))
+	if heal_value <= 0:
+		return
+	_regen_carry -= float(heal_value)
+	current_hp = min(current_hp + heal_value, max_hp)
+	_update_status_view()
+
+
+func _absorb_damage_with_shield(damage_value: int) -> int:
+	if _shield_hp <= 0 or damage_value <= 0:
+		return 0
+	var absorbed: int = min(_shield_hp, damage_value)
+	_shield_hp -= absorbed
+	return absorbed
+
+
+func _apply_death_area_damage() -> void:
+	var raw_area_cfg: Variant = cfg.get("death_area_damage", {})
+	if typeof(raw_area_cfg) != TYPE_DICTIONARY:
+		return
+	var area_cfg: Dictionary = raw_area_cfg
+	if area_cfg.is_empty():
+		return
+	var radius: int = max(int(area_cfg.get("radius", 1)), 0)
+	var damage: int = max(int(area_cfg.get("damage", 0)), 0)
+	if damage <= 0:
+		return
+	var damage_type_value: int = _parse_damage_type(String(area_cfg.get("damage_type", cfg.get("damage_type", "physical"))))
+	var unit_manager: Node = get_unit_manager()
+	var building_manager: Node = get_building_manager()
+	for y in range(current_cell.y - radius, current_cell.y + radius + 1):
+		for x in range(current_cell.x - radius, current_cell.x + radius + 1):
+			var cell := Vector2i(x, y)
+			if unit_manager != null and unit_manager.has_method("get_unit_by_cell"):
+				var unit: Node = unit_manager.get_unit_by_cell(cell)
+				if unit != null and unit.has_method("receive_damage"):
+					unit.receive_damage(damage, damage_type_value, self)
+			if building_manager != null and building_manager.has_method("get_building_by_cell"):
+				var building: Node = building_manager.get_building_by_cell(cell)
+				if building != null and is_instance_valid(building):
+					_damage_building(building, damage, damage_type_value)
+	_debug_log("敌人 %s#%d 死亡爆发，影响周围 %dx%d 区域，造成%s伤害 %d" % [_debug_name(), runtime_id, radius * 2 + 1, radius * 2 + 1, _damage_type_text(damage_type_value), damage])
+
+
+func _spawn_death_enemies() -> void:
+	var enemy_manager: Node = get_enemy_manager()
+	if enemy_manager == null or not enemy_manager.has_method("spawn_enemy"):
+		return
+	var spawn_entries: Array[Dictionary] = _get_death_spawn_entries()
+	var spawn_index := 0
+	for spawn_cfg: Dictionary in spawn_entries:
+		var spawn_enemy_id := StringName(spawn_cfg.get("enemy_id", ""))
+		var count: int = max(int(spawn_cfg.get("count", 1)), 0)
+		var radius: int = max(int(spawn_cfg.get("radius", 1)), 0)
+		if spawn_enemy_id == StringName() or count <= 0:
+			continue
+		var spawned_count := 0
+		for _index in range(count):
+			var spawn_cell: Vector2i = _resolve_death_spawn_cell(spawn_index, radius)
+			spawn_index += 1
+			if spawn_cell == INVALID_DEATH_SPAWN_CELL:
+				_debug_log("敌人 %s#%d 死亡分裂跳过 %s：周围没有合法生成格" % [_debug_name(), runtime_id, String(spawn_enemy_id)])
+				continue
+			enemy_manager.spawn_enemy(spawn_enemy_id, spawn_cell)
+			spawned_count += 1
+		if spawned_count > 0:
+			_debug_log("敌人 %s#%d 死亡分裂，生成 %d 个 %s" % [_debug_name(), runtime_id, spawned_count, String(spawn_enemy_id)])
+
+
+func _get_death_spawn_entries() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var raw_spawn: Variant = cfg.get("death_spawn", [])
+	if typeof(raw_spawn) == TYPE_DICTIONARY:
+		result.append((raw_spawn as Dictionary).duplicate(true))
+	elif typeof(raw_spawn) == TYPE_ARRAY:
+		for entry_variant: Variant in raw_spawn:
+			if typeof(entry_variant) == TYPE_DICTIONARY:
+				result.append((entry_variant as Dictionary).duplicate(true))
+	return result
+
+
+func _resolve_death_spawn_cell(spawn_index: int, radius: int) -> Vector2i:
+	var map_manager: Node = get_map_manager()
+	if map_manager == null:
+		return INVALID_DEATH_SPAWN_CELL
+	var offsets: Array[Vector2i] = _make_spawn_offsets(radius)
+	for attempt in range(offsets.size()):
+		var offset: Vector2i = offsets[(spawn_index + attempt) % offsets.size()]
+		var candidate := current_cell + offset
+		if _can_spawn_death_enemy_at(map_manager, candidate):
+			return candidate
+	return INVALID_DEATH_SPAWN_CELL
+
+
+func _make_spawn_offsets(radius: int) -> Array[Vector2i]:
+	var offsets: Array[Vector2i] = [Vector2i.ZERO]
+	var radius_value: int = max(radius, 0)
+	for distance in range(1, radius_value + 1):
+		for y in range(-distance, distance + 1):
+			for x in range(-distance, distance + 1):
+				if max(abs(x), abs(y)) == distance:
+					offsets.append(Vector2i(x, y))
+	return offsets
+
+
+func _can_spawn_death_enemy_at(map_manager: Node, cell: Vector2i) -> bool:
+	if map_manager == null or not map_manager.is_inside(cell):
+		return false
+	var cell_data = map_manager.get_cell_data(cell) if map_manager.has_method("get_cell_data") else null
+	if cell_data != null and cell_data.is_core:
+		return false
+	if map_manager.has_method("is_walkable") and not map_manager.is_walkable(cell):
+		return false
+	return true
+
+
+func _damage_building(building: Node, damage_value: int, damage_type_value: int) -> void:
+	var building_manager: Node = get_building_manager()
+	if building_manager != null and building_manager.has_method("damage_building"):
+		building_manager.damage_building(int(building.get("runtime_id")), damage_value, damage_type_value)
+	elif building != null and building.has_method("receive_damage"):
+		building.receive_damage(damage_value, damage_type_value)
 
 
 func _refresh_status_multipliers() -> void:

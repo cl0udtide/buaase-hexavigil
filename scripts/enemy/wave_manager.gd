@@ -37,9 +37,13 @@ func start_wave_for_day(day: int) -> void:
 		return
 	var cfg: Dictionary = _get_wave_cfg_with_fallback(data_repo, day)
 	_pending_spawns.clear()
-	for entry_variant: Variant in cfg.get("entries", []):
+	var raw_entries: Array = cfg.get("entries", [])
+	for entry_index in range(raw_entries.size()):
+		var entry_variant: Variant = raw_entries[entry_index]
 		if typeof(entry_variant) == TYPE_DICTIONARY:
-			_pending_spawns.append_array(_make_expanded_spawn_entries(entry_variant as Dictionary))
+			var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, day, entry_index)
+			if StringName(entry.get("enemy_id", "")) != StringName():
+				_pending_spawns.append_array(_make_expanded_spawn_entries(entry))
 	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
 	_elapsed = 0.0
 	_running = true
@@ -69,10 +73,12 @@ func get_wave_preview_for_day(day: int) -> Dictionary:
 	var entries_by_key: Dictionary = {}
 	var spawn_order: Array[StringName] = []
 	var total_count := 0
-	for entry_variant: Variant in cfg.get("entries", []):
+	var raw_entries: Array = cfg.get("entries", [])
+	for entry_index in range(raw_entries.size()):
+		var entry_variant: Variant = raw_entries[entry_index]
 		if typeof(entry_variant) != TYPE_DICTIONARY:
 			continue
-		var entry: Dictionary = entry_variant
+		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, day, entry_index)
 		var enemy_id := StringName(entry.get("enemy_id", ""))
 		var spawn_key := StringName(entry.get("spawn_key", ""))
 		if enemy_id == StringName() or spawn_key == StringName():
@@ -147,6 +153,54 @@ func _make_expanded_spawn_entries(entry: Dictionary) -> Array[Dictionary]:
 		spawn_entry["count"] = 1
 		entries.append(spawn_entry)
 	return entries
+
+
+func _resolve_wave_entry(entry: Dictionary, day: int, entry_index: int) -> Dictionary:
+	var resolved := entry.duplicate(true)
+	var chosen_enemy_id := _pick_enemy_choice(resolved.get("enemy_choices", []), day, entry_index)
+	if chosen_enemy_id != StringName():
+		resolved["enemy_id"] = chosen_enemy_id
+	return resolved
+
+
+func _pick_enemy_choice(raw_choices: Variant, day: int, entry_index: int) -> StringName:
+	if typeof(raw_choices) != TYPE_ARRAY:
+		return StringName()
+	var choices: Array = raw_choices
+	var weighted_choices: Array[Dictionary] = []
+	var total_weight := 0.0
+	for choice_variant: Variant in choices:
+		if typeof(choice_variant) != TYPE_DICTIONARY:
+			continue
+		var choice: Dictionary = choice_variant
+		var enemy_id := StringName(choice.get("enemy_id", ""))
+		var weight: float = max(float(choice.get("weight", 1.0)), 0.0)
+		if enemy_id == StringName() or weight <= 0.0:
+			continue
+		weighted_choices.append({
+			"enemy_id": enemy_id,
+			"weight": weight
+		})
+		total_weight += weight
+	if weighted_choices.is_empty() or total_weight <= 0.0:
+		return StringName()
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _make_enemy_choice_seed(day, entry_index)
+	var roll: float = rng.randf() * total_weight
+	var cursor := 0.0
+	for choice: Dictionary in weighted_choices:
+		cursor += float(choice.get("weight", 0.0))
+		if roll <= cursor:
+			return StringName(choice.get("enemy_id", ""))
+	return StringName((weighted_choices.back() as Dictionary).get("enemy_id", ""))
+
+
+func _make_enemy_choice_seed(day: int, entry_index: int) -> int:
+	var run_state = AppRefs.run_state()
+	var run_seed := int(run_state.random_seed) if run_state != null else 0
+	var seed_text := "%d|%d|%d" % [run_seed, day, entry_index]
+	return abs(seed_text.hash())
 
 
 func _get_wave_cfg_with_fallback(data_repo: Node, day: int) -> Dictionary:

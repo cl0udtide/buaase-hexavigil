@@ -94,19 +94,22 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 		damage_label
 	]
 	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
-	var active_text := ""
+	var status_lines := PackedStringArray()
 	var active_state := "ready"
 	if active_remaining < 0.0:
-		active_text = "状态：常驻"
+		status_lines.append("状态：常驻")
 		active_state = "permanent"
 	elif active_remaining > 0.0:
-		active_text = "状态：持续 %.1fs" % active_remaining
+		status_lines.append("状态：持续 %.1fs" % active_remaining)
 		active_state = "active"
-	if active_text.is_empty():
+	var ammo_text := _format_unit_ammo_status(unit)
+	if not ammo_text.is_empty():
+		status_lines.append(ammo_text)
+	if status_lines.is_empty():
 		_skill_label.text = "%s\n%s" % [unit.get_skill_name(), unit.get_skill_description()]
 	else:
-		_skill_label.text = "%s\n%s\n%s" % [unit.get_skill_name(), active_text, unit.get_skill_description()]
-	var skill_scroll_key := "%d:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state]
+		_skill_label.text = "%s\n%s\n%s" % [unit.get_skill_name(), "\n".join(status_lines), unit.get_skill_description()]
+	var skill_scroll_key := "%d:%s:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state, ammo_text]
 	if skill_scroll_key != _last_skill_scroll_key:
 		_skill_scroll.scroll_vertical = 0
 		_last_skill_scroll_key = skill_scroll_key
@@ -155,3 +158,14 @@ func _icon_text(cfg: Dictionary, fallback_text: String) -> String:
 	if not icon.is_empty():
 		return icon.substr(0, 1)
 	return fallback_text
+
+
+func _format_unit_ammo_status(unit: Node) -> String:
+	if unit == null or not unit.has_method("get_skill_ammo_status"):
+		return ""
+	var ammo_status: Dictionary = unit.get_skill_ammo_status()
+	var max_ammo := int(ammo_status.get("max", 0))
+	if max_ammo <= 0:
+		return ""
+	var label := String(ammo_status.get("label", "弹药"))
+	return "%s：%d/%d" % [label, int(ammo_status.get("current", 0)), max_ammo]
