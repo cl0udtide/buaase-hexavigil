@@ -1036,6 +1036,8 @@ func receive_heal(value: int) -> void
 func gain_sp(value: int) -> void
 func can_cast_skill() -> bool
 func cast_skill() -> void
+func get_skill_ammo_status() -> Dictionary
+func refresh_status_view() -> void
 func get_runtime_id() -> int
 func get_current_cell() -> Vector2i
 func get_block_count() -> int
@@ -1068,6 +1070,14 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node
 - `cast_skill()`
   输入：无。
   行为：执行单位技能释放。
+  返回：无。
+- `get_skill_ammo_status()`
+  输入：无。
+  行为：读取当前技能暴露的弹药状态；无弹药技能返回空字典。
+  返回：`Dictionary`，可包含 `current`、`max`、`label`。
+- `refresh_status_view()`
+  输入：无。
+  行为：要求单位刷新头顶状态条，用于技能内部弹药等运行时状态变化后同步 UI。
   返回：无。
 - `get_runtime_id()`
   输入：无。
@@ -1108,6 +1118,7 @@ func get_sp_recover_per_sec() -> float
 func get_duration() -> float
 func get_active_remaining() -> float
 func is_active() -> bool
+func get_ammo_status() -> Dictionary
 func get_attack_targets_override() -> Array
 func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array
 func after_attack(target: Node, damage_value: int) -> void
@@ -1139,6 +1150,10 @@ func after_receive_damage(source: Node, final_damage: int) -> void
 - `get_sp_max()` / `get_sp_recover_per_sec()` / `get_duration()` / `get_active_remaining()` / `is_active()`
   行为：读取技能 SP、回复、持续时间和激活状态。
   返回：对应数值或状态。
+- `get_ammo_status()`
+  输入：无。
+  行为：弹药型技能返回当前弹药状态；非弹药技能保持空字典。
+  返回：`Dictionary`，可包含 `current`、`max`、`label`。
 - `get_attack_targets_override()`
   输入：无。
   行为：可覆盖本次攻击目标列表，例如让近卫攻击所有被自身阻挡的敌人。

@@ -1971,10 +1971,10 @@ func _create_default_preset() -> Dictionary:
 		],
 		"queues": {
 			"S1": [
-				{"enemy_id": "slime", "delay": 0.0, "name": "史莱姆", "max_hp": 80, "atk": 18, "def": 2, "res": 0, "move_speed": 1.0, "attack_interval": 1.2, "damage_type": "physical", "core_damage": 1}
+				{"enemy_id": "slime", "delay": 0.0, "name": "源石虫", "max_hp": 80, "atk": 18, "def": 2, "res": 0, "move_speed": 1.0, "attack_interval": 1.2, "damage_type": "physical", "core_damage": 1}
 			],
 			"S2": [
-				{"enemy_id": "wolf", "delay": 0.5, "name": "狼", "max_hp": 60, "atk": 22, "def": 1, "res": 0, "move_speed": 1.4, "attack_interval": 1.0, "damage_type": "physical", "core_damage": 1}
+				{"enemy_id": "lumberjack_veteran", "delay": 0.5, "name": "伐木老手", "max_hp": 210, "atk": 42, "def": 10, "res": 0, "move_speed": 0.72, "attack_interval": 1.45, "damage_type": "physical", "behavior_type": "demolisher", "core_damage": 1}
 			],
 			"S3": []
 		}

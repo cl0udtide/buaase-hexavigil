@@ -705,6 +705,9 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
 			state_text = "HP %d/%d  SP %.0f/%.0f" % [int(unit.current_hp), int(unit.max_hp), float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+			var ammo_text := _format_unit_ammo_status(unit)
+			if not ammo_text.is_empty():
+				state_text = "%s  %s" % [state_text, ammo_text]
 		else:
 			state_text = "已部署"
 	elif state == &"cooldown":
@@ -713,6 +716,17 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	elif not _can_deploy_now():
 		state_text = "当前阶段不可部署"
 	return "%s\n%s  费用 %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
+
+
+func _format_unit_ammo_status(unit: Node) -> String:
+	if unit == null or not unit.has_method("get_skill_ammo_status"):
+		return ""
+	var ammo_status: Dictionary = unit.get_skill_ammo_status()
+	var max_ammo := int(ammo_status.get("max", 0))
+	if max_ammo <= 0:
+		return ""
+	var label := String(ammo_status.get("label", "弹药"))
+	return "%s %d/%d" % [label, int(ammo_status.get("current", 0)), max_ammo]
 
 
 func _format_operator_drag_text(operator_key: StringName) -> String:

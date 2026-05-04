@@ -232,7 +232,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 [
   {
     "id": "slime",
-    "name": "史莱姆",
+    "name": "源石虫",
     "max_hp": 80,
     "atk": 18,
     "def": 2,
@@ -273,6 +273,11 @@ building_actor -> scenes/actors/BuildingActor.tscn
 |---|---|---|
 | `damage_type` | `String` | 伤害类型 |
 | `attack_range` | `int` | 攻击范围，按棋盘格切比雪夫距离计算；未配置或小于等于 0 时只攻击阻挡单位 |
+| `block_weight` | `int` | 占用阻挡数；未配置默认 1，适合大体型敌人占用多个阻挡位 |
+| `shield_hp` | `int` | 额外护盾值；护盾会先吸收结算后的伤害，归零后才损失生命 |
+| `regen_per_sec` | `float` | 每秒生命回复量；仅在敌人受伤且仍存活时生效 |
+| `death_area_damage` | `Dictionary` | 被击杀时触发的死亡爆发，支持 `radius`、`damage`、`damage_type`；进入核心离场不触发 |
+| `death_spawn` | `Array` / `Dictionary` | 被击杀时生成额外敌人；每项包含 `enemy_id`、`count`、`radius`，生成位置优先选择死亡格周围可通行格 |
 | `boss_controller_key` | `String` | Boss 阶段控制器逻辑名；未配置时默认使用通用 `phase_boss` |
 | `boss_behavior_key` | `String` | 未来 Boss 专属行为组件逻辑名；用于召唤、护盾循环、地图效果等非通用机制 |
 | `phase_transition_sec` | `float` | Boss 当前阶段 HP 耗尽后的无敌转阶段时长，期间不移动也不攻击 |
@@ -374,7 +379,22 @@ Boss 多阶段规则：
     "day": 1,
     "entries": [
       { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 2, "interval": 0.8 },
-      { "time": 6.0, "enemy_id": "wolf", "spawn_key": "S2", "count": 2, "interval": 0.7 }
+      { "time": 6.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "day": 6,
+    "entries": [
+      {
+        "time": 4.0,
+        "spawn_key": "S2",
+        "count": 1,
+        "interval": 0.0,
+        "enemy_choices": [
+          { "enemy_id": "milk_dragon_chief", "weight": 1.0 },
+          { "enemy_id": "patriot", "weight": 1.0 }
+        ]
+      }
     ]
   }
 ]
@@ -387,15 +407,21 @@ Boss 多阶段规则：
 | `day` | `int` | 第几天夜晚 |
 | `entries` | `Array` | 本夜晚的刷怪条目列表 |
 
-`entries` 中每条记录必填字段：
+`entries` 中每条记录基础字段：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `time` | `float` | 从夜晚开始后的触发时间 |
-| `enemy_id` | `String` | 敌人配置 ID |
+| `enemy_id` | `String` | 敌人配置 ID；当 `enemy_choices` 有有效候选时可省略 |
 | `spawn_key` | `String` | 刷怪点逻辑名 |
 | `count` | `int` | 生成数量 |
 | `interval` | `float` | 同组敌人之间的生成间隔 |
+
+`entries` 中每条记录常用可选字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、天数和条目序号确定选择，白天预览与夜晚实际刷怪保持一致 |
 
 ---
 
@@ -500,7 +526,7 @@ Boss 多阶段规则：
       {
         "enemy_id": "slime",
         "delay": 0.0,
-        "name": "史莱姆",
+        "name": "源石虫",
         "max_hp": 300,
         "atk": 18,
         "def": 20,

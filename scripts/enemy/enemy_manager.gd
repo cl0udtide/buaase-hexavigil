@@ -50,6 +50,8 @@ func remove_enemy(enemy_runtime_id: int, defeated: bool = true) -> void:
 	var dead_enemy_id: StringName = enemy.enemy_id
 	_enemies_by_runtime_id.erase(enemy_runtime_id)
 	if defeated:
+		if enemy.has_method("apply_defeat_effects"):
+			enemy.apply_defeat_effects()
 		_award_prestige_for_defeat(enemy)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
