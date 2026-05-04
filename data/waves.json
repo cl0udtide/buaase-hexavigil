@@ -2,30 +2,86 @@
   {
     "day": 1,
     "entries": [
-      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 2, "interval": 0.8 },
-      { "time": 6.0, "enemy_id": "wolf", "spawn_key": "S2", "count": 2, "interval": 0.7 }
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 4, "interval": 0.9 },
+      { "time": 5.5, "enemy_id": "hound", "spawn_key": "S2", "count": 2, "interval": 0.8 },
+      { "time": 10.0, "enemy_id": "soldier", "spawn_key": "S1", "count": 2, "interval": 1.0 },
+      { "time": 15.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S3", "count": 1, "interval": 0.0 }
     ]
   },
   {
     "day": 2,
     "entries": [
-      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 3, "interval": 0.8 },
-      { "time": 5.0, "enemy_id": "wolf", "spawn_key": "S3", "count": 3, "interval": 0.6 },
-      { "time": 9.0, "enemy_id": "bat", "spawn_key": "S2", "count": 2, "interval": 0.5 }
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 4, "interval": 0.75 },
+      { "time": 2.5, "enemy_id": "originium_slug_alpha", "spawn_key": "S2", "count": 3, "interval": 0.9 },
+      { "time": 6.0, "enemy_id": "hound", "spawn_key": "S3", "count": 4, "interval": 0.65 },
+      { "time": 10.0, "enemy_id": "crossbowman", "spawn_key": "S1", "count": 2, "interval": 1.2 },
+      { "time": 15.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S2", "count": 2, "interval": 1.5 }
     ]
   },
   {
     "day": 3,
     "entries": [
-      { "time": 0.0, "enemy_id": "wolf", "spawn_key": "S1", "count": 4, "interval": 0.6 },
-      { "time": 4.0, "enemy_id": "bat", "spawn_key": "S3", "count": 2, "interval": 0.5 },
-      { "time": 7.0, "enemy_id": "slime", "spawn_key": "S2", "count": 4, "interval": 0.6 }
+      { "time": 0.0, "enemy_id": "hound_pro", "spawn_key": "S1", "count": 4, "interval": 0.65 },
+      { "time": 3.0, "enemy_id": "bat", "spawn_key": "S3", "count": 4, "interval": 0.7 },
+      { "time": 6.0, "enemy_id": "infused_originium_slug", "spawn_key": "S1", "count": 2, "interval": 1.0 },
+      { "time": 8.0, "enemy_id": "armored_soldier", "spawn_key": "S2", "count": 3, "interval": 1.0 },
+      { "time": 11.0, "enemy_id": "caster", "spawn_key": "S1", "count": 2, "interval": 1.4 },
+      { "time": 15.0, "enemy_id": "splitting_originium_slug", "spawn_key": "S3", "count": 2, "interval": 1.2 },
+      { "time": 17.0, "enemy_id": "crossbowman", "spawn_key": "S3", "count": 3, "interval": 1.0 },
+      { "time": 22.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S2", "count": 2, "interval": 1.8 }
+    ]
+  },
+  {
+    "day": 4,
+    "entries": [
+      { "time": 0.0, "enemy_id": "dualstrike_swordsman", "spawn_key": "S1", "count": 4, "interval": 0.8 },
+      { "time": 2.0, "enemy_id": "bat", "spawn_key": "S2", "count": 4, "interval": 0.65 },
+      { "time": 6.0, "enemy_id": "caster", "spawn_key": "S3", "count": 3, "interval": 1.2 },
+      { "time": 10.0, "enemy_id": "demolitionist", "spawn_key": "S1", "count": 2, "interval": 2.0 },
+      { "time": 14.0, "enemy_id": "shieldguard", "spawn_key": "S2", "count": 2, "interval": 1.8 },
+      { "time": 16.0, "enemy_id": "possessed_soldier", "spawn_key": "S1", "count": 2, "interval": 1.4 },
+      { "time": 18.0, "enemy_id": "hound_pro", "spawn_key": "S3", "count": 5, "interval": 0.55 },
+      { "time": 23.0, "enemy_id": "armored_soldier", "spawn_key": "S1", "count": 3, "interval": 1.0 },
+      { "time": 26.0, "enemy_id": "splitting_originium_slug", "spawn_key": "S2", "count": 2, "interval": 1.2 }
+    ]
+  },
+  {
+    "day": 5,
+    "entries": [
+      { "time": 0.0, "enemy_id": "heavy_defender", "spawn_key": "S1", "count": 2, "interval": 1.4 },
+      { "time": 1.5, "enemy_id": "shieldguard", "spawn_key": "S2", "count": 2, "interval": 1.8 },
+      { "time": 2.0, "enemy_id": "arts_drone", "spawn_key": "S3", "count": 3, "interval": 1.0 },
+      { "time": 6.0, "enemy_id": "senior_caster", "spawn_key": "S2", "count": 2, "interval": 1.8 },
+      { "time": 10.0, "enemy_id": "siege_breaker", "spawn_key": "S1", "count": 1, "interval": 0.0 },
+      { "time": 13.0, "enemy_id": "sarkaz_greatswordsman", "spawn_key": "S3", "count": 2, "interval": 2.2 },
+      { "time": 17.0, "enemy_id": "infused_originium_slug", "spawn_key": "S3", "count": 3, "interval": 0.8 },
+      { "time": 19.0, "enemy_id": "dualstrike_swordsman", "spawn_key": "S2", "count": 4, "interval": 0.75 },
+      { "time": 22.0, "enemy_id": "demolitionist", "spawn_key": "S1", "count": 2, "interval": 2.0 },
+      { "time": 27.0, "enemy_id": "senior_caster", "spawn_key": "S3", "count": 2, "interval": 1.8 }
     ]
   },
   {
     "day": 6,
     "entries": [
-      { "time": 0.0, "enemy_id": "milk_dragon_chief", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+      { "time": 0.0, "enemy_id": "crossbowman", "spawn_key": "S1", "count": 2, "interval": 1.0 },
+      { "time": 1.5, "enemy_id": "caster", "spawn_key": "S3", "count": 2, "interval": 1.2 },
+      {
+        "time": 4.0,
+        "spawn_key": "S2",
+        "count": 1,
+        "interval": 0.0,
+        "enemy_choices": [
+          { "enemy_id": "milk_dragon_chief", "weight": 1.0 },
+          { "enemy_id": "patriot", "weight": 1.0 }
+        ]
+      },
+      { "time": 8.0, "enemy_id": "hound_pro", "spawn_key": "S1", "count": 4, "interval": 0.55 },
+      { "time": 10.0, "enemy_id": "arts_drone", "spawn_key": "S3", "count": 2, "interval": 1.0 },
+      { "time": 14.0, "enemy_id": "demolitionist", "spawn_key": "S2", "count": 1, "interval": 0.0 },
+      { "time": 16.0, "enemy_id": "shieldguard", "spawn_key": "S1", "count": 1, "interval": 0.0 },
+      { "time": 18.0, "enemy_id": "sarkaz_greatswordsman", "spawn_key": "S1", "count": 1, "interval": 0.0 },
+      { "time": 20.0, "enemy_id": "infused_originium_slug", "spawn_key": "S3", "count": 2, "interval": 0.8 },
+      { "time": 23.0, "enemy_id": "senior_caster", "spawn_key": "S3", "count": 1, "interval": 0.0 }
     ]
   }
 ]

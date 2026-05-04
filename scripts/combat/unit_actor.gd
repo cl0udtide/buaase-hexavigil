@@ -249,6 +249,18 @@ func get_skill_active_remaining() -> float:
 	return 0.0
 
 
+func get_skill_ammo_status() -> Dictionary:
+	if _skill_behavior != null and _skill_behavior.has_method("get_ammo_status"):
+		var status: Variant = _skill_behavior.get_ammo_status()
+		if typeof(status) == TYPE_DICTIONARY:
+			return (status as Dictionary).duplicate(true)
+	return {}
+
+
+func refresh_status_view() -> void:
+	_update_status_view()
+
+
 func is_skill_active() -> bool:
 	return _is_skill_active()
 
@@ -492,6 +504,9 @@ func _get_damage_reduction_multiplier() -> float:
 func _update_status_view() -> void:
 	if _status_view != null and _status_view.has_method("set_hp"):
 		_status_view.set_hp(current_hp, max_hp)
+	if _status_view != null and _status_view.has_method("set_ammo"):
+		var ammo_status := get_skill_ammo_status()
+		_status_view.set_ammo(int(ammo_status.get("current", 0)), int(ammo_status.get("max", 0)))
 
 
 func _play_hit_effect() -> void:

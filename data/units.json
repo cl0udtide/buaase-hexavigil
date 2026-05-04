@@ -602,6 +602,7 @@
     "skill_attack_multiplier": 1.55,
     "skill_mark_radius": 2,
     "skill_extra_hit_count": 3,
+    "skill_extra_hit_multiplier": 0.55,
     "skill_stun_duration": 0.35,
     "scene_key": "unit_actor",
     "skill_behavior_key": "typhon_eternal_hunt",
