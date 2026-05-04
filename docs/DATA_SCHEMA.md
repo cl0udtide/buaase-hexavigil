@@ -545,7 +545,7 @@ Boss 多阶段规则：
 | `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
 | `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
-| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 0 |
+| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 8 |
 | `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
 | `min_obstacle_count` | `int` | 障碍最小生成数量 |
 | `max_obstacle_count` | `int` | 障碍最大生成数量 |
@@ -563,7 +563,7 @@ Boss 多阶段规则：
   "spawn_count": 3,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
-  "event_point_count": 0,
+  "event_point_count": 8,
   "obstacle_ratio": 0.11,
   "min_obstacle_count": 45,
   "max_obstacle_count": 95,
@@ -586,8 +586,8 @@ Boss 多阶段规则：
 
 事件点说明：
 
-- 随机事件点是地图格子属性，存储在 `CellData.event_id`。
-- 当前 `event_point_count` 为 0，正式地图默认不生成随机事件点。
+- 随机事件点由 `RandomEventManager` 作为地图覆盖层维护，地图格本身不记录事件触发状态。
+- 当前 `event_point_count` 为 8，正式地图默认生成 8 个随机事件点。
 - 随机事件点与资源点互斥，同一个格子不会同时是资源点和事件点。
 - `MapGenerator` 只负责放置事件点并引用已有事件 ID，不负责新增事件内容。
 - 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。

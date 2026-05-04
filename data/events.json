@@ -10,5 +10,89 @@
       "mana": 0,
       "prestige": -1
     }
+  },
+  {
+    "id": "event_hidden_cache",
+    "name": "隐蔽储藏箱",
+    "desc": "获得 1 木材和 1 石材。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 1,
+      "stone": 1,
+      "mana": 0,
+      "prestige": 0
+    }
+  },
+  {
+    "id": "event_mana_spring",
+    "name": "微光魔力泉",
+    "desc": "获得 2 魔力。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 2,
+      "prestige": 0
+    }
+  },
+  {
+    "id": "event_old_banner",
+    "name": "旧战旗",
+    "desc": "士气受到鼓舞，获得 2 声望。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 0,
+      "prestige": 2
+    }
+  },
+  {
+    "id": "event_ruined_watchtower",
+    "name": "坍塌瞭望塔",
+    "desc": "回收塔材，获得 2 石材。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 2,
+      "mana": 0,
+      "prestige": 0
+    }
+  },
+  {
+    "id": "event_lost_patrol",
+    "name": "迷路巡逻队",
+    "desc": "救回巡逻队，获得 1 木材和 1 声望。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 1,
+      "stone": 0,
+      "mana": 0,
+      "prestige": 1
+    }
+  },
+  {
+    "id": "event_fog_relic",
+    "name": "雾中古物",
+    "desc": "回收古物，获得 1 魔力和 1 声望。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 1,
+      "prestige": 1
+    }
+  },
+  {
+    "id": "event_broken_tools",
+    "name": "破损工具箱",
+    "desc": "修好工具，获得 1 木材和 1 石材。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 1,
+      "stone": 1,
+      "mana": 0,
+      "prestige": 0
+    }
   }
 ]

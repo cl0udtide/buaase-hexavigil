@@ -4,7 +4,7 @@
   "spawn_count": 3,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
-  "event_point_count": 0,
+  "event_point_count": 8,
   "obstacle_ratio": 0.11,
   "min_obstacle_count": 45,
   "max_obstacle_count": 95,

@@ -3,6 +3,7 @@ extends Node
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 const EXPLORE_AP_COST := 2
+const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
 const RESOURCE_COLLECT_AMOUNT := 1
 
@@ -28,7 +29,6 @@ func start_day(_day: int) -> void:
 
 func try_explore(cell: Vector2i) -> Dictionary:
 	var run_state = AppRefs.run_state()
-	var event_bus = AppRefs.event_bus()
 	if run_state == null:
 		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
 	if run_state.phase != GameEnums.PHASE_DAY:
@@ -47,26 +47,52 @@ func try_explore(cell: Vector2i) -> Dictionary:
 		return ap_result
 
 	_map_manager.reveal_area(cell, 1)
-	var event_id := StringName()
-	if _random_event_manager != null and _random_event_manager.has_method("roll_event_for_cell"):
-		event_id = _random_event_manager.roll_event_for_cell(cell)
-	if event_id != StringName():
-		if event_bus != null:
-			event_bus.random_event_triggered.emit(event_id, cell)
-	return ActionResult.ok({"event_id": event_id})
+	return ActionResult.ok({"ap_cost": EXPLORE_AP_COST})
 
 
 func try_trigger_event(cell: Vector2i) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
+	if run_state.phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天才能处理事件")
+	if _map_manager == null or not _map_manager.has_method("is_inside"):
+		return ActionResult.err(&"MAP_UNAVAILABLE", "地图尚未初始化")
+	if not _map_manager.is_inside(cell):
+		return ActionResult.err(&"OUT_OF_MAP", "目标格子不在地图内")
+	if not _map_manager.is_discovered(cell):
+		return ActionResult.err(&"NOT_DISCOVERED", "只能处理已探索区域的事件")
 	if _random_event_manager == null:
 		return ActionResult.err(&"EVENT_UNAVAILABLE", "事件系统尚未初始化")
-	if _random_event_manager.has_method("apply_event_for_cell"):
-		return _random_event_manager.apply_event_for_cell(cell)
-	if not _random_event_manager.has_method("roll_event_for_cell"):
-		return ActionResult.err(&"EVENT_UNAVAILABLE", "事件系统尚未初始化")
-	var event_id: StringName = _random_event_manager.roll_event_for_cell(cell)
-	if event_id == StringName():
+	if _random_event_manager.has_method("get_event_id_at_cell") and _random_event_manager.get_event_id_at_cell(cell) == StringName():
 		return ActionResult.err(&"NO_EVENT", "该格子没有可触发事件")
-	return _random_event_manager.apply_event(event_id)
+
+	var ap_result: Dictionary = run_state.consume_action_points(EVENT_TRIGGER_AP_COST)
+	if not ap_result.get("ok", false):
+		return ap_result
+
+	var result: Dictionary
+	if _random_event_manager.has_method("apply_event_for_cell"):
+		result = _random_event_manager.apply_event_for_cell(cell)
+	elif _random_event_manager.has_method("roll_event_for_cell") and _random_event_manager.has_method("apply_event"):
+		var event_id: StringName = _random_event_manager.roll_event_for_cell(cell)
+		if event_id == StringName():
+			run_state.reset_action_points(run_state.action_points + EVENT_TRIGGER_AP_COST)
+			return ActionResult.err(&"NO_EVENT", "该格子没有可触发事件")
+		result = _random_event_manager.apply_event(event_id)
+	else:
+		run_state.reset_action_points(run_state.action_points + EVENT_TRIGGER_AP_COST)
+		return ActionResult.err(&"EVENT_UNAVAILABLE", "事件系统尚未初始化")
+
+	if not result.get("ok", false):
+		run_state.reset_action_points(run_state.action_points + EVENT_TRIGGER_AP_COST)
+		return result
+	var payload: Dictionary = result.get("payload", {})
+	payload["ap_cost"] = EVENT_TRIGGER_AP_COST
+	result["payload"] = payload
+	if String(result.get("message", "")).is_empty():
+		result["message"] = "事件已处理"
+	return result
 
 
 func try_collect_resource(cell: Vector2i) -> Dictionary:
