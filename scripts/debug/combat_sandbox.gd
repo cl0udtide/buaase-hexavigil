@@ -180,12 +180,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_current_drag_facing = Vector2i.RIGHT
 				_show_message("向外拖拽选择朝向")
 				return
-		if get_tree().paused and _deploy_drag_state == DRAG_NONE and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			if _is_pointer_over_debug_drawer():
-				return
-			if _handle_primary_map_click(_get_mouse_cell()):
-				get_viewport().set_input_as_handled()
-
 
 func _exit_tree() -> void:
 	if get_tree() != null:
@@ -197,6 +191,9 @@ func _configure_pause_boundaries() -> void:
 	var world := get_node_or_null("World")
 	if world != null:
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		var map_root := world.get_node_or_null("MapRoot")
+		if map_root != null:
+			map_root.process_mode = Node.PROCESS_MODE_ALWAYS
 	var managers := get_node_or_null("Managers")
 	if managers != null:
 		managers.process_mode = Node.PROCESS_MODE_PAUSABLE
