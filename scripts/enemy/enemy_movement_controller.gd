@@ -13,6 +13,8 @@ const CELL_SIZE := 64.0
 const BLOCK_HOLD_DISTANCE := CELL_SIZE * 0.5
 const BLOCK_SPREAD_DISTANCE := CELL_SIZE * 0.22
 const BLOCK_SNAP_SPEED := CELL_SIZE * 6.0
+const CROWD_SPREAD_DISTANCE := CELL_SIZE * 0.18
+const CROWD_SNAP_SPEED := CELL_SIZE * 5.0
 
 var _owner_actor: Node2D = null
 var _path: Array[Vector2i] = []
@@ -23,6 +25,7 @@ var _path_mode: StringName = PATH_MODE_NORMAL
 var _block_slot := 0
 var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
+var _crowd_offset := Vector2.ZERO
 var _external_move_speed_multiplier: float = 1.0
 
 
@@ -38,6 +41,7 @@ func reset() -> void:
 	_block_slot = 0
 	_block_slot_count = 1
 	_block_anchor_dir = Vector2.ZERO
+	_crowd_offset = Vector2.ZERO
 	_external_move_speed_multiplier = 1.0
 	refresh_path_mode()
 
@@ -91,13 +95,26 @@ func process_path_movement(delta: float) -> bool:
 	var map_manager: Node = _get_map_manager()
 	if map_manager == null:
 		return false
-	var target_pos: Vector2 = map_manager.cell_to_world(_path[_path_index])
+	_update_crowd_offset()
+	var target_pos: Vector2 = map_manager.cell_to_world(_path[_path_index]) + _crowd_offset
 	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, get_effective_move_speed() * CELL_SIZE * delta)
 	if _owner_actor.global_position.distance_to(target_pos) < 2.0:
 		_owner_actor.current_cell = _path[_path_index]
 		_path_index += 1
 		return _path_index >= _path.size()
 	return false
+
+
+func process_idle_crowd_spacing(delta: float) -> void:
+	var previous_offset := _crowd_offset
+	_update_crowd_offset()
+	var map_manager: Node = _get_map_manager()
+	if map_manager == null:
+		return
+	var base_position := _owner_actor.global_position - previous_offset
+	var target_pos := base_position + _crowd_offset
+	var snap_speed: float = float(_owner_actor.cfg.get("crowd_snap_speed", CROWD_SNAP_SPEED / CELL_SIZE)) * CELL_SIZE
+	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, snap_speed * delta)
 
 
 func process_blocked_motion(delta: float, blocker: Node) -> void:
@@ -170,6 +187,47 @@ func get_effective_move_speed() -> float:
 
 func set_external_move_speed_multiplier(value: float) -> void:
 	_external_move_speed_multiplier = max(value, 0.1)
+
+
+func _update_crowd_offset() -> void:
+	if _owner_actor == null or _blocked_by != -1:
+		_crowd_offset = Vector2.ZERO
+		return
+	var cell_peers := _get_unblocked_peers_in_cell(_owner_actor.current_cell)
+	if cell_peers.size() <= 1:
+		_crowd_offset = Vector2.ZERO
+		return
+	cell_peers.sort_custom(func(a: Node, b: Node) -> bool:
+		return int(a.get_runtime_id()) < int(b.get_runtime_id())
+	)
+	var owner_index := cell_peers.find(_owner_actor)
+	if owner_index < 0:
+		_crowd_offset = Vector2.ZERO
+		return
+	var direction := _get_current_move_direction()
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	else:
+		direction = direction.normalized()
+	var perpendicular := Vector2(-direction.y, direction.x)
+	var centered_slot := float(owner_index) - float(cell_peers.size() - 1) * 0.5
+	var spread_distance := float(_owner_actor.cfg.get("crowd_spread_distance", CROWD_SPREAD_DISTANCE))
+	_crowd_offset = perpendicular * centered_slot * spread_distance
+
+
+func _get_unblocked_peers_in_cell(cell: Vector2i) -> Array:
+	var peers: Array = []
+	var enemy_manager: Node = _owner_actor.get_enemy_manager() if _owner_actor != null else null
+	if enemy_manager == null or not enemy_manager.has_method("get_all_enemies"):
+		return peers
+	for enemy in enemy_manager.get_all_enemies():
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		if enemy.has_method("is_blocked") and enemy.is_blocked():
+			continue
+		if enemy.has_method("get_current_cell") and enemy.get_current_cell() == cell:
+			peers.append(enemy)
+	return peers
 
 
 func _get_block_hold_position(blocker: Node) -> Vector2:
