@@ -74,6 +74,7 @@ func _process(delta: float) -> void:
 		get_enemy_manager().notify_enemy_reached_core(runtime_id)
 		return
 	if _is_movement_locked():
+		_movement_controller.process_idle_crowd_spacing(delta)
 		_attack_controller.process_range_attack(delta)
 		return
 	var path_building: Node = _attack_controller.get_blocking_building_on_path(_movement_controller)
@@ -81,6 +82,7 @@ func _process(delta: float) -> void:
 		_attack_controller.process_building_attack(delta, path_building)
 		return
 	if _attack_controller.process_range_attack(delta):
+		_movement_controller.process_idle_crowd_spacing(delta)
 		return
 	if _movement_controller.process_path_movement(delta):
 		get_enemy_manager().notify_enemy_reached_core(runtime_id)
