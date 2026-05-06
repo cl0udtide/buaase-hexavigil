@@ -80,9 +80,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_current_drag_facing = Vector2i.RIGHT
 				_show_message("拖拽选择朝向")
 				return
-		if get_tree().paused and _deploy_drag_state == DRAG_NONE and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			_on_map_cell_clicked(_get_mouse_cell())
-
 
 func _configure_pause_boundaries() -> void:
 	var game_root := get_node_or_null("../..")
@@ -91,6 +88,9 @@ func _configure_pause_boundaries() -> void:
 	var world := game_root.get_node_or_null("World")
 	if world != null:
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		var map_root := world.get_node_or_null("MapRoot")
+		if map_root != null:
+			map_root.process_mode = Node.PROCESS_MODE_ALWAYS
 	var managers := game_root.get_node_or_null("Managers")
 	if managers != null:
 		managers.process_mode = Node.PROCESS_MODE_PAUSABLE
