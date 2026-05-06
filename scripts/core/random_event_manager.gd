@@ -70,6 +70,9 @@ func apply_event_for_cell(cell: Vector2i) -> Dictionary:
 	var result := apply_event(event_id)
 	if result.get("ok", false):
 		mark_event_triggered(cell)
+		var event_bus = AppRefs.event_bus()
+		if event_bus != null:
+			event_bus.audio_cue_requested.emit(&"event_trigger")
 	return result
 
 

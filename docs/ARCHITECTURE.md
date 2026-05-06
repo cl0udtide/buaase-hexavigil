@@ -774,6 +774,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 提供配置表
 - 提供图片、音频、字体资源
 
+音频资源约定：
+
+- `assets/audio/bgm/` 存放较长的背景音乐，目前包含白天与夜晚 BGM。
+- 短音效后续放入 `assets/audio/sfx/`，通过 `AudioManager` 的逻辑 key 播放。
+- UI 面板只读写 `AudioManager` 暴露的音量接口，不直接持有音频资源路径；未来可以迁移到总设置面板下。
+
 ---
 
 ## 5. 数据归属
@@ -788,6 +794,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 | 场上单位、槽位部署映射、再部署状态、技能运行时状态 | `UnitManager` |
 | 商店库存 | `ShopManager` |
 | 场上敌人运行时状态 | `EnemyManager` |
+| BGM 切换、音效播放、音量设置 | `AudioManager` |
 | 波次进度与待生成队列 | `WaveManager` |
 | Buff 选择与 Buff 结算 | `BuffManager` |
 | 随机事件抽取与事件结算 | `RandomEventManager` |
