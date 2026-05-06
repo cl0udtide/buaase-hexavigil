@@ -65,6 +65,7 @@ var _wave_route_previews: Array[Dictionary] = []
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_process(true)
 	_camera = get_node_or_null("MapCamera") as Camera2D
 	if _camera == null:
