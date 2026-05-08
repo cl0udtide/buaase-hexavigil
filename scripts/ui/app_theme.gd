@@ -1,6 +1,7 @@
 class_name AppTheme
 extends RefCounted
 
+const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 const FONT_PATH := "res://assets/fonts/SourceHanSansSC-Normal.otf"
 
@@ -23,6 +24,20 @@ static func get_theme() -> Theme:
 	for type_name in ["Label", "Button", "LineEdit", "TextEdit", "RichTextLabel", "CheckBox", "OptionButton"]:
 		theme.set_font("font", type_name, font)
 		theme.set_font_size("font_size", type_name, 18)
+
+	theme.set_color("font_color", "Label", GameUiStyle.TEXT)
+	theme.set_color("font_color", "Button", GameUiStyle.TEXT)
+	theme.set_color("font_hover_color", "Button", GameUiStyle.TEXT)
+	theme.set_color("font_pressed_color", "Button", GameUiStyle.TEXT)
+	theme.set_color("font_disabled_color", "Button", GameUiStyle.TEXT_MUTED)
+	theme.set_stylebox("panel", "PanelContainer", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
+	theme.set_stylebox("normal", "Button", GameUiStyle.button(GameUiStyle.STROKE_SOFT))
+	theme.set_stylebox("hover", "Button", GameUiStyle.button(GameUiStyle.ACCENT))
+	theme.set_stylebox("pressed", "Button", GameUiStyle.button(GameUiStyle.AMBER))
+	theme.set_stylebox("disabled", "Button", GameUiStyle.disabled_button())
+	theme.set_constant("h_separation", "Button", 6)
+	theme.set_constant("outline_size", "Label", 2)
+	theme.set_color("font_outline_color", "Label", Color(0.0, 0.0, 0.0, 0.75))
 
 	_theme = theme
 	return _theme
