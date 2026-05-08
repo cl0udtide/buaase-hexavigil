@@ -33,12 +33,13 @@ static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = 
 	var spawn_cells := _place_spawns(cells, width, height, core_cell, rng, cfg)
 	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, rng, cfg)
 	_place_resources(cells, width, height, spawn_cells, core_cell, rng, cfg)
-	_place_event_points(cells, width, height, spawn_cells, core_cell, rng, cfg, event_ids)
+	var event_points := _place_event_points(cells, width, height, spawn_cells, core_cell, rng, cfg, event_ids)
 
 	return {
 		"cells": cells,
 		"core_cell": core_cell,
-		"spawn_cells": spawn_cells
+		"spawn_cells": spawn_cells,
+		"event_points": event_points
 	}
 
 
@@ -242,9 +243,10 @@ static func _place_event_points(
 	rng: RandomNumberGenerator,
 	cfg: Dictionary,
 	event_ids: Array[StringName]
-) -> void:
+) -> Array[Dictionary]:
+	var event_points: Array[Dictionary] = []
 	if event_ids.is_empty():
-		return
+		return event_points
 	var candidates: Array[Vector2i] = []
 	for y in range(1, height - 1):
 		for x in range(1, width - 1):
@@ -259,9 +261,11 @@ static func _place_event_points(
 
 	var event_point_count: int = min(int(cfg.get("event_point_count", EVENT_POINT_COUNT)), candidates.size())
 	for index in range(event_point_count):
-		var data: CellData = cells[candidates[index]]
-		data.event_id = event_ids[rng.randi_range(0, event_ids.size() - 1)]
-		data.event_triggered = false
+		event_points.append({
+			"cell": candidates[index],
+			"event_id": event_ids[rng.randi_range(0, event_ids.size() - 1)]
+		})
+	return event_points
 
 
 static func _is_protected_cell(cell: Vector2i, core_cell: Vector2i, spawn_cells: Array[Vector2i], cfg: Dictionary) -> bool:

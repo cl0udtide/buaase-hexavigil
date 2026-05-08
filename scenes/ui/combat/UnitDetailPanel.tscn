@@ -31,6 +31,17 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(112, 140)
 layout_mode = 2
 
+[node name="PortraitTexture" type="TextureRect" parent="MarginContainer/VBoxContainer/TopRow/PortraitPanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="PortraitLabel" type="Label" parent="MarginContainer/VBoxContainer/TopRow/PortraitPanel"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -104,6 +115,7 @@ text = "攻击 --   防御 --   法抗 --"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 128)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="SkillMargin" type="MarginContainer" parent="MarginContainer/VBoxContainer/SkillCard"]
 layout_mode = 2
@@ -114,6 +126,7 @@ theme_override_constants/margin_bottom = 8
 
 [node name="SkillRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 10
 
 [node name="SkillIconPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow"]
@@ -121,6 +134,17 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 0
+
+[node name="SkillIconTexture" type="TextureRect" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow/SkillIconPanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="SkillIconLabel" type="Label" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow/SkillIconPanel"]
 unique_name_in_owner = true
@@ -130,18 +154,26 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text = "◇"
 
-[node name="SkillLabel" type="Label" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow"]
+[node name="SkillScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="SkillLabel" type="Label" parent="MarginContainer/VBoxContainer/SkillCard/SkillMargin/SkillRow/SkillScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_font_sizes/font_size = 15
-autowrap_mode = 2
-max_lines_visible = 4
+autowrap_mode = 1
 text = "技能信息"
 
 [node name="DetailSpacer" type="Control" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 6)
 
 [node name="Actions" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2

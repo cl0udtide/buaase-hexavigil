@@ -8,6 +8,7 @@ const DRAG_CARD := &"drag_card"
 const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
+const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
 
 var _operator_defs: Array[Dictionary] = []
 var _selected_unit_runtime_id := -1
@@ -20,12 +21,22 @@ var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
 var _debug_panel_open := false
 var _cooldown_message_operator_key := StringName()
+var _last_wave_preview_signature := ""
+var _wave_preview_active := false
+var _show_wave_routes: bool = false
+var _latest_wave_routes: Array[Dictionary] = []
+var _latest_wave_preview_text := ""
+var _wave_route_revision := 0
+var _wave_preview_refresh_queued := false
 
 @onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
 @onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
+@onready var _build_panel: Control = get_node_or_null("../BuildPanel") as Control
 @onready var _debug_panel: Control = get_node_or_null("../DebugPanel") as Control
 @onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
 @onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
+@onready var _path_service: Node = get_node_or_null("../../Managers/PathService")
+@onready var _wave_manager: Node = get_node_or_null("../../Managers/WaveManager")
 @onready var _unit_manager: Node = get_node_or_null("../../Managers/UnitManager")
 @onready var _enemy_manager: Node = get_node_or_null("../../Managers/EnemyManager")
 
@@ -38,8 +49,7 @@ func _ready() -> void:
 	if _debug_panel != null:
 		_debug_panel_open = _debug_panel.visible
 	_bind_combat_hud()
-	if _combat_hud != null and _combat_hud.has_method("set_left_reserved_width"):
-		_combat_hud.set_left_reserved_width(238.0)
+	_refresh_hud_reserved_width()
 	_connect_events()
 	call_deferred("_bootstrap_hud")
 
@@ -49,6 +59,8 @@ func _process(_delta: float) -> void:
 	_update_operator_cards()
 	_refresh_top_hud()
 	_refresh_detail_panel()
+	_refresh_wave_preview()
+	_refresh_hud_reserved_width()
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
 
@@ -68,9 +80,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_current_drag_facing = Vector2i.RIGHT
 				_show_message("拖拽选择朝向")
 				return
-		if get_tree().paused and _deploy_drag_state == DRAG_NONE and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			_on_map_cell_clicked(_get_mouse_cell())
-
 
 func _configure_pause_boundaries() -> void:
 	var game_root := get_node_or_null("../..")
@@ -79,6 +88,9 @@ func _configure_pause_boundaries() -> void:
 	var world := game_root.get_node_or_null("World")
 	if world != null:
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
+		var map_root := world.get_node_or_null("MapRoot")
+		if map_root != null:
+			map_root.process_mode = Node.PROCESS_MODE_ALWAYS
 	var managers := game_root.get_node_or_null("Managers")
 	if managers != null:
 		managers.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -111,6 +123,10 @@ func _bind_combat_hud() -> void:
 		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
 	if _combat_hud.has_signal("retreat_requested"):
 		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
+	if _combat_hud.has_signal("wave_route_preview_toggled"):
+		_combat_hud.connect(&"wave_route_preview_toggled", Callable(self, "_on_wave_route_preview_toggled"))
+	if _combat_hud.has_method("set_wave_route_preview_enabled"):
+		_combat_hud.set_wave_route_preview_enabled(_show_wave_routes)
 
 
 func _connect_events() -> void:
@@ -120,9 +136,15 @@ func _connect_events() -> void:
 		event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
 		event_bus.core_hp_changed.connect(_on_core_hp_changed)
 		event_bus.phase_changed.connect(_on_phase_changed)
+		event_bus.day_started.connect(_on_day_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
 		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+		event_bus.path_grid_changed.connect(_on_path_grid_changed)
+		event_bus.building_placed.connect(_on_building_changed)
+		event_bus.building_destroyed.connect(_on_building_changed)
+		event_bus.building_state_changed.connect(_on_building_state_changed)
+		event_bus.build_action_result.connect(_on_build_action_result)
 	if _unit_manager != null and _unit_manager.has_signal("operator_redeploy_completed"):
 		_unit_manager.connect(&"operator_redeploy_completed", Callable(self, "_on_operator_redeploy_completed"))
 
@@ -134,6 +156,7 @@ func _bootstrap_hud() -> void:
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_show_message("拖拽底部干员卡开始部署")
+	_force_wave_preview_refresh()
 
 
 func _on_owned_operators_changed(operators: Array[Dictionary]) -> void:
@@ -162,6 +185,11 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_update_operator_cards()
+	_force_wave_preview_refresh()
+
+
+func _on_day_started(_day: int) -> void:
+	_force_wave_preview_refresh()
 
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
@@ -368,6 +396,32 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	_update_operator_cards()
 
 
+func _on_path_grid_changed() -> void:
+	_queue_wave_preview_refresh()
+
+
+func _on_building_changed(_building_runtime_id: int, _building_id: StringName, _cell: Vector2i) -> void:
+	_queue_wave_preview_refresh()
+
+
+func _on_building_state_changed(_building_runtime_id: int, _building_id: StringName, _enabled: bool) -> void:
+	_queue_wave_preview_refresh()
+
+
+func _on_build_action_result(_building_id: StringName, _cell: Vector2i, result: Dictionary) -> void:
+	if result.get("ok", false):
+		return
+	var message := String(result.get("message", "建造失败"))
+	if not message.is_empty():
+		_show_message(message)
+
+
+func _on_wave_route_preview_toggled(enabled: bool) -> void:
+	_show_wave_routes = enabled
+	_apply_wave_route_visibility()
+	_force_wave_preview_refresh()
+
+
 func _on_operator_redeploy_completed(operator_key: StringName) -> void:
 	_update_operator_cards()
 	if _cooldown_message_operator_key == operator_key:
@@ -420,7 +474,7 @@ func _refresh_top_hud() -> void:
 		core_text = "核心生命\n%d/%d" % [int(run_state.core_hp), int(run_state.core_hp_max)]
 		deploy_text = "部署上限\n%d/%d" % [int(run_state.deployed_count), int(run_state.deploy_limit)]
 		var buff_ids: Array[StringName] = run_state.get_all_buffs() if run_state.has_method("get_all_buffs") else []
-		resource_text = "行动 %d/%d  声望 %d\n木 %d  石 %d  魔 %d  祝福 %d" % [
+		resource_text = "行动 %d/%d  声望 %d\n木 %d  石 %d  魔 %d  遗物 %d" % [
 			int(run_state.action_points),
 			int(run_state.DEFAULT_ACTION_POINTS),
 			int(run_state.prestige),
@@ -441,6 +495,189 @@ func _refresh_time_controls() -> void:
 	if _combat_hud != null and _combat_hud.has_method("set_time_controls"):
 		var enabled := _are_time_controls_enabled()
 		_combat_hud.set_time_controls(get_tree().paused if enabled else false, Engine.time_scale, enabled)
+
+
+func _refresh_wave_preview() -> void:
+	var run_state = AppRefs.run_state()
+	if run_state == null or int(run_state.phase) != GameEnums.PHASE_DAY:
+		_clear_wave_preview()
+		return
+	if _wave_manager == null or _map_manager == null or _path_service == null:
+		_last_wave_preview_signature = ""
+		_clear_wave_routes()
+		_set_wave_preview_text("今晚敌情\n地图或波次数据加载中...", true)
+		return
+
+	var preview: Dictionary = _wave_manager.get_wave_preview_for_day(int(run_state.day)) if _wave_manager.has_method("get_wave_preview_for_day") else {}
+	if preview.is_empty():
+		_last_wave_preview_signature = ""
+		_set_wave_preview_text("今晚敌情\n暂无波次配置", true)
+		_clear_wave_routes()
+		return
+	var hover_cell: Vector2i = _get_blocking_build_preview_cell()
+	var signature: String = "%d|%s|%d|%d" % [int(run_state.day), str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision]
+	if signature != _last_wave_preview_signature:
+		_last_wave_preview_signature = signature
+		var extra_blocked_cells: Dictionary = {}
+		if hover_cell != INVALID_CELL:
+			extra_blocked_cells[hover_cell] = true
+		var routes: Array[Dictionary] = _build_wave_route_previews(preview, extra_blocked_cells)
+		_set_wave_routes(routes)
+	else:
+		_apply_wave_route_visibility()
+	_set_wave_preview_text(_format_wave_preview_text(preview, _latest_wave_routes, hover_cell), true)
+
+
+func _force_wave_preview_refresh() -> void:
+	_wave_preview_refresh_queued = false
+	_wave_route_revision += 1
+	_last_wave_preview_signature = ""
+	_refresh_wave_preview()
+
+
+func _queue_wave_preview_refresh() -> void:
+	if _wave_preview_refresh_queued:
+		return
+	_wave_preview_refresh_queued = true
+	call_deferred("_force_wave_preview_refresh")
+
+
+func _clear_wave_preview() -> void:
+	_wave_preview_active = false
+	_last_wave_preview_signature = ""
+	_latest_wave_preview_text = ""
+	_set_wave_preview_text("", false)
+	_clear_wave_routes()
+
+
+func _set_wave_routes(routes: Array[Dictionary]) -> void:
+	_latest_wave_routes.clear()
+	for route: Dictionary in routes:
+		_latest_wave_routes.append(route.duplicate(true))
+	_apply_wave_route_visibility()
+
+
+func _clear_wave_routes() -> void:
+	_latest_wave_routes.clear()
+	_apply_wave_route_visibility()
+
+
+func _apply_wave_route_visibility() -> void:
+	if _map_root != null and _map_root.has_method("set_wave_route_previews"):
+		if _show_wave_routes:
+			_map_root.set_wave_route_previews(_latest_wave_routes)
+		elif _map_root.has_method("clear_wave_route_previews"):
+			_map_root.clear_wave_route_previews()
+
+
+func _set_wave_preview_text(text_value: String, show_panel: bool) -> void:
+	_latest_wave_preview_text = text_value if show_panel else ""
+	_wave_preview_active = show_panel and not text_value.strip_edges().is_empty()
+	if _combat_hud != null and _combat_hud.has_method("set_wave_preview_text"):
+		_combat_hud.set_wave_preview_text(text_value, show_panel)
+
+
+func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictionary) -> Array[Dictionary]:
+	var routes_by_key: Dictionary = {}
+	var entries: Array = preview.get("entries", [])
+	for entry_variant: Variant in entries:
+		if typeof(entry_variant) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_variant
+		var spawn_key := StringName(entry.get("spawn_key", ""))
+		var path_mode := StringName(entry.get("path_mode", &"normal"))
+		var route_key := "%s|%s" % [String(spawn_key), String(path_mode)]
+		if routes_by_key.has(route_key):
+			var existing: Dictionary = routes_by_key[route_key]
+			existing["count"] = int(existing.get("count", 0)) + int(entry.get("count", 0))
+			continue
+		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(spawn_key)
+		var core_cell: Vector2i = _map_manager.get_core_cell()
+		var path_result: Dictionary = _path_service.find_path_preview(spawn_cell, core_cell, path_mode, extra_blocked_cells) if _path_service.has_method("find_path_preview") else {}
+		var route := {
+			"spawn_key": spawn_key,
+			"spawn_cell": spawn_cell,
+			"path_mode": path_mode,
+			"effective_path_mode": StringName(path_result.get("effective_path_mode", path_mode)),
+			"path": path_result.get("path", []),
+			"ok": bool(path_result.get("ok", false)),
+			"status": StringName(path_result.get("status", &"no_path")),
+			"message": String(path_result.get("message", "")),
+			"count": int(entry.get("count", 0))
+		}
+		routes_by_key[route_key] = route
+	var routes: Array[Dictionary] = []
+	for route in routes_by_key.values():
+		routes.append((route as Dictionary).duplicate(true))
+	routes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var spawn_a := String(a.get("spawn_key", ""))
+		var spawn_b := String(b.get("spawn_key", ""))
+		if spawn_a == spawn_b:
+			return String(a.get("path_mode", "")) < String(b.get("path_mode", ""))
+		return spawn_a < spawn_b
+	)
+	return routes
+
+
+func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], hover_cell: Vector2i) -> String:
+	var lines := PackedStringArray()
+	lines.append("Day %d  合计 %d" % [int(preview.get("day", 0)), int(preview.get("total_count", 0))])
+	var enemy_counts: Dictionary = {}
+	var entries: Array = preview.get("entries", [])
+	for entry_variant: Variant in entries:
+		if typeof(entry_variant) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_variant
+		var enemy_name := String(entry.get("enemy_name", entry.get("enemy_id", "")))
+		enemy_counts[enemy_name] = int(enemy_counts.get(enemy_name, 0)) + int(entry.get("count", 0))
+	if not enemy_counts.is_empty():
+		var enemy_lines := PackedStringArray()
+		for enemy_name in enemy_counts.keys():
+			enemy_lines.append("%s x%d" % [String(enemy_name), int(enemy_counts.get(enemy_name, 0))])
+		lines.append("敌群: %s" % "、".join(enemy_lines))
+
+	var warnings := _collect_route_warning_lines(routes)
+	if hover_cell != INVALID_CELL:
+		lines.append("预览阻挡: %s" % str(hover_cell))
+	lines.append("路线预览: %s" % ("已开启" if _show_wave_routes else "关闭"))
+	if not warnings.is_empty():
+		lines.append("警告: %s" % "；".join(warnings))
+	return "\n".join(lines)
+
+
+func _collect_route_warning_lines(routes: Array[Dictionary]) -> PackedStringArray:
+	var warnings := PackedStringArray()
+	for route in routes:
+		var status := StringName(route.get("status", &"ok"))
+		if not PREVIEW_WARNING_STATUSES.has(status):
+			continue
+		var message := String(route.get("message", "路线异常"))
+		var line := message
+		if not warnings.has(line):
+			warnings.append(line)
+	return warnings
+
+
+func _get_blocking_build_preview_cell() -> Vector2i:
+	if _action_panel == null or _map_manager == null or _map_root == null:
+		return INVALID_CELL
+	if not _action_panel.has_method("get_current_mode") or _action_panel.get_current_mode() != &"build":
+		return INVALID_CELL
+	if not _action_panel.has_method("get_current_building_id"):
+		return INVALID_CELL
+	var building_id := StringName(_action_panel.get_current_building_id())
+	if building_id == StringName():
+		return INVALID_CELL
+	var data_repo = AppRefs.data_repo()
+	var building_cfg: Dictionary = data_repo.get_building_cfg(building_id) if data_repo != null else {}
+	if not bool(building_cfg.get("blocks_path", false)):
+		return INVALID_CELL
+	var cell := _get_mouse_cell()
+	if not _map_manager.is_inside(cell):
+		return INVALID_CELL
+	if not _map_manager.is_buildable(cell):
+		return INVALID_CELL
+	return cell
 
 
 func _are_time_controls_enabled() -> bool:
@@ -468,6 +705,9 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
 			state_text = "HP %d/%d  SP %.0f/%.0f" % [int(unit.current_hp), int(unit.max_hp), float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+			var ammo_text := _format_unit_ammo_status(unit)
+			if not ammo_text.is_empty():
+				state_text = "%s  %s" % [state_text, ammo_text]
 		else:
 			state_text = "已部署"
 	elif state == &"cooldown":
@@ -476,6 +716,17 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	elif not _can_deploy_now():
 		state_text = "当前阶段不可部署"
 	return "%s\n%s  费用 %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
+
+
+func _format_unit_ammo_status(unit: Node) -> String:
+	if unit == null or not unit.has_method("get_skill_ammo_status"):
+		return ""
+	var ammo_status: Dictionary = unit.get_skill_ammo_status()
+	var max_ammo := int(ammo_status.get("max", 0))
+	if max_ammo <= 0:
+		return ""
+	var label := String(ammo_status.get("label", "弹药"))
+	return "%s %d/%d" % [label, int(ammo_status.get("current", 0)), max_ammo]
 
 
 func _format_operator_drag_text(operator_key: StringName) -> String:
@@ -491,7 +742,7 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 		"声望用于招募和刷新商店。"
 	])
 	if buff_ids.is_empty():
-		lines.append("当前祝福：无")
+		lines.append("当前遗物：无")
 		return "\n".join(lines)
 	var data_repo = AppRefs.data_repo()
 	var buff_lines := PackedStringArray()
@@ -501,7 +752,7 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 			String(cfg.get("name", buff_id)),
 			String(cfg.get("desc", "暂无效果说明"))
 		])
-	lines.append("当前祝福：")
+	lines.append("当前遗物：")
 	lines.append("\n".join(buff_lines))
 	return "\n".join(lines)
 
@@ -638,6 +889,16 @@ func _show_message(text: String, cooldown_operator_key: StringName = &"") -> voi
 	_cooldown_message_operator_key = cooldown_operator_key
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
 		_combat_hud.show_message(text)
+
+
+func _refresh_hud_reserved_width() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_left_reserved_width"):
+		return
+	var reserved_width := 0.0
+	for panel in [_build_panel, _action_panel]:
+		if panel != null and panel.visible:
+			reserved_width = max(reserved_width, panel.position.x + panel.size.x)
+	_combat_hud.set_left_reserved_width(reserved_width)
 
 
 func _show_result_message(result: Dictionary, success_text: String, failure_text: String) -> void:

@@ -2,6 +2,7 @@ extends PanelContainer
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiTokens = preload("res://scripts/ui/ui_tokens.gd")
 
 signal operator_card_pressed(operator_key: StringName)
 
@@ -10,6 +11,7 @@ var _state := &"ready"
 var _accent := GameUiStyle.ACCENT
 var _fill := GameUiStyle.BG_CARD
 var _hovered := false
+var _compact := false
 
 @onready var _accent_bar: ColorRect = %AccentBar
 @onready var _name_label: Label = %NameLabel
@@ -25,7 +27,6 @@ var _hovered := false
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
-	custom_minimum_size = Vector2(154.0, 136.0)
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	if _accent_bar != null:
 		_accent_bar.visible = false
@@ -50,13 +51,20 @@ func _ready() -> void:
 	_add_label_shadow(_status_label)
 	_add_label_shadow(_portrait_label)
 	_add_label_shadow(_cooldown_label)
-	_portrait_box.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.02, 0.025, 0.03, 0.92), Color(0.18, 0.25, 0.30, 0.72), 1.0, 4.0))
+	_portrait_box.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.035, 0.046, 0.055, 0.98), GameUiStyle.STROKE_SOFT, 1.0, 4.0))
 	_cooldown_overlay.visible = false
+	_apply_density()
 	_apply_card_style()
 
 
 func setup(new_operator_key: StringName) -> void:
 	operator_key = new_operator_key
+
+
+func set_compact(compact: bool) -> void:
+	_compact = compact
+	if is_node_ready():
+		_apply_density()
 
 
 func set_state_text(text_value: String, state: StringName) -> void:
@@ -151,9 +159,20 @@ func _apply_card_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.card(border, fill, width))
 
 
+func _apply_density() -> void:
+	custom_minimum_size = UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE
+	_portrait_box.custom_minimum_size = Vector2(0.0, 50.0 if _compact else 58.0)
+	_name_label.add_theme_font_size_override("font_size", 13 if _compact else 14)
+	_cost_label.add_theme_font_size_override("font_size", 13 if _compact else 14)
+	_class_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
+	_status_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
+	_portrait_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
+	_cooldown_label.add_theme_font_size_override("font_size", 20 if _compact else 22)
+
+
 func _add_label_shadow(label: Label) -> void:
 	if label == null:
 		return
-	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.84))
-	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
+	label.add_theme_constant_override("shadow_offset_x", 0)
 	label.add_theme_constant_override("shadow_offset_y", 1)

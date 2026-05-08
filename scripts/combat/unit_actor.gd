@@ -8,6 +8,11 @@ const BLOCK_RADIUS_TILES := 0.7071
 const DEFAULT_PROJECTILE_SPEED := 520.0
 const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
 const DEFAULT_PROJECTILE_LIFETIME := 3.0
+const TARGET_TYPE_GROUND: StringName = &"ground"
+const TARGET_TYPE_FLYING: StringName = &"flying"
+const TARGET_TYPE_ALL: StringName = &"all"
+const MOVE_TYPE_GROUND: StringName = &"ground"
+const MOVE_TYPE_FLYING: StringName = &"flying"
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -17,7 +22,23 @@ const SKILL_BEHAVIOR_REGISTRY := {
 	&"caster_overload_permanent": "res://scripts/combat/skills/caster_overload_permanent_skill.gd",
 	&"caster_chain_push": "res://scripts/combat/skills/caster_chain_push_skill.gd",
 	&"defender_fortify": "res://scripts/combat/skills/defender_fortify_skill.gd",
-	&"defender_counter_stance": "res://scripts/combat/skills/defender_counter_stance_skill.gd"
+	&"defender_counter_stance": "res://scripts/combat/skills/defender_counter_stance_skill.gd",
+	&"mountain_sweeping_stance": "res://scripts/combat/skills/mountain_sweeping_stance_skill.gd",
+	&"zuo_le_risky_venture": "res://scripts/combat/skills/zuo_le_risky_venture_skill.gd",
+	&"degenbrecher_silence": "res://scripts/combat/skills/degenbrecher_silence_skill.gd",
+	&"surtr_twilight": "res://scripts/combat/skills/surtr_twilight_skill.gd",
+	&"narantuya_solar_swallow": "res://scripts/combat/skills/narantuya_solar_swallow_skill.gd",
+	&"ray_light": "res://scripts/combat/skills/ray_light_skill.gd",
+	&"typhon_eternal_hunt": "res://scripts/combat/skills/typhon_eternal_hunt_skill.gd",
+	&"wisadel_saturated_revenge": "res://scripts/combat/skills/wisadel_saturated_revenge_skill.gd",
+	&"ifrit_scorched_earth": "res://scripts/combat/skills/ifrit_scorched_earth_skill.gd",
+	&"nymph_psychic_collapse": "res://scripts/combat/skills/nymph_psychic_collapse_skill.gd",
+	&"goldenglow_clear_shine": "res://scripts/combat/skills/goldenglow_clear_shine_skill.gd",
+	&"logos_oblivion": "res://scripts/combat/skills/logos_oblivion_skill.gd",
+	&"saria_calcification": "res://scripts/combat/skills/saria_calcification_skill.gd",
+	&"penance_thorny_body": "res://scripts/combat/skills/penance_thorny_body_skill.gd",
+	&"jessica_saturation_burst": "res://scripts/combat/skills/jessica_saturation_burst_skill.gd",
+	&"shu_cycle_of_growth": "res://scripts/combat/skills/shu_cycle_of_growth_skill.gd"
 }
 
 
@@ -40,13 +61,14 @@ var attack_multiplier := 1.0
 var _external_attack_interval_multiplier := 1.0
 var _external_attack_bonus := 0
 var damage_type := GameEnums.DAMAGE_PHYSICAL
-var target_type: StringName = &"ground"
+var target_type: StringName = TARGET_TYPE_GROUND
 var range_pattern: Array[Vector2i] = []
 
 var _attack_timer := 0.0
 var _blocked_enemy_ids: Array[int] = []
 var _current_target_runtime_id := -1
 var _is_dead := false
+var _damage_reduction_effects: Dictionary = {}
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _skill_behavior: Node = get_node_or_null("%SkillBehavior")
@@ -62,7 +84,9 @@ func _process(delta: float) -> void:
 	# UnitActor 只保留公共战斗循环；角色特化技能通过 SkillBehavior 子节点接入。
 	if _skill_behavior != null and _skill_behavior.has_method("tick"):
 		_skill_behavior.tick(delta)
+	_tick_damage_reduction_effects(delta)
 	_recover_sp(delta)
+	_try_auto_cast_skill()
 	_refresh_blocking()
 	_tick_attack(delta)
 
@@ -75,17 +99,26 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	current_cell = spawn_cell
 	facing = new_facing
 	max_hp = int(cfg.get("max_hp", 1))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		max_hp = max(int(round(float(max_hp) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_hp_percent", cfg))))), 1)
 	current_hp = max_hp
 	atk = int(cfg.get("atk", 1))
 	defense = int(cfg.get("def", 0))
 	resistance = int(cfg.get("res", 0))
 	block_count = int(cfg.get("block", 0))
 	attack_interval = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		atk = max(int(round(float(atk) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_base_atk_percent", cfg))))), 1)
+		defense = max(int(round(float(defense) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", cfg))))), 0)
+		resistance = max(int(round(float(resistance) + float(run_state.get_buff_effect_total_for_unit(&"unit_res_add", cfg)))), 0)
+		block_count = max(block_count + int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_block_add", cfg)))), 0)
 	attack_multiplier = 1.0
 	_external_attack_interval_multiplier = 1.0
 	_external_attack_bonus = 0
+	_damage_reduction_effects.clear()
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
-	target_type = StringName(cfg.get("target_type", "ground"))
+	target_type = parse_target_type(String(cfg.get("target_type", "ground")))
 	range_pattern = parse_range_pattern(cfg.get("range_pattern", []))
 	sp = clamp(float(cfg.get("sp_initial", cfg.get("initial_sp", 0.0))), 0.0, float(cfg.get("sp_max", 0.0)))
 	_attack_timer = attack_interval
@@ -104,6 +137,8 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	_configure_skill_behavior()
 	if _skill_behavior != null and _skill_behavior.has_method("setup"):
 		_skill_behavior.setup(self)
+	if _skill_behavior != null and _skill_behavior.has_method("on_deployed"):
+		_skill_behavior.on_deployed()
 	_update_status_view()
 
 
@@ -113,6 +148,9 @@ func receive_damage(value: int, damage_type_value: int, source: Node = null) -> 
 		final_damage = CombatMath.calc_physical_damage(value, defense)
 	elif damage_type_value == GameEnums.DAMAGE_MAGIC:
 		final_damage = CombatMath.calc_magic_damage(value, resistance)
+	final_damage = max(int(round(float(final_damage) * _get_damage_reduction_multiplier())), 0)
+	if _skill_behavior != null and _skill_behavior.has_method("modify_final_incoming_damage"):
+		final_damage = max(int(_skill_behavior.modify_final_incoming_damage(final_damage, value, damage_type_value, source)), 0)
 	var hp_before := current_hp
 	current_hp = max(current_hp - final_damage, 0)
 	_update_status_view()
@@ -128,14 +166,47 @@ func receive_damage(value: int, damage_type_value: int, source: Node = null) -> 
 			unit_manager.remove_unit(runtime_id, GameEnums.UNIT_REMOVE_DEAD)
 
 
-func receive_heal(value: int) -> void:
+func receive_heal(value: int, source: Node = null) -> void:
 	if _is_dead:
 		return
-	current_hp = min(current_hp + value, max_hp)
+	var final_value: int = max(value, 0)
+	if _skill_behavior != null and _skill_behavior.has_method("modify_incoming_heal"):
+		final_value = max(int(_skill_behavior.modify_incoming_heal(final_value, source)), 0)
+	if final_value <= 0:
+		return
+	current_hp = min(current_hp + final_value, max_hp)
 	_update_status_view()
 
 
+func lose_hp(value: int, allow_death: bool = false) -> void:
+	if _is_dead:
+		return
+	var final_value: int = max(value, 0)
+	if final_value <= 0:
+		return
+	current_hp = current_hp - final_value if allow_death else max(current_hp - final_value, 1)
+	current_hp = max(current_hp, 0)
+	_update_status_view()
+	if current_hp == 0 and not _is_dead:
+		_is_dead = true
+		_debug_log("单位 %s#%d 因生命流失死亡" % [_debug_name(), runtime_id])
+		var unit_manager := get_unit_manager()
+		if unit_manager != null and unit_manager.has_method("remove_unit"):
+			unit_manager.remove_unit(runtime_id, GameEnums.UNIT_REMOVE_DEAD)
+
+
+func apply_damage_reduction(effect_key: StringName, multiplier: float, duration: float) -> void:
+	if duration <= 0.0:
+		return
+	_damage_reduction_effects[effect_key] = {
+		"multiplier": clamp(multiplier, 0.0, 1.0),
+		"remaining": duration
+	}
+
+
 func gain_sp(value: int) -> void:
+	if _is_skill_active():
+		return
 	sp = min(sp + value, float(cfg.get("sp_max", 0)))
 
 
@@ -178,6 +249,22 @@ func get_skill_active_remaining() -> float:
 	return 0.0
 
 
+func get_skill_ammo_status() -> Dictionary:
+	if _skill_behavior != null and _skill_behavior.has_method("get_ammo_status"):
+		var status: Variant = _skill_behavior.get_ammo_status()
+		if typeof(status) == TYPE_DICTIONARY:
+			return (status as Dictionary).duplicate(true)
+	return {}
+
+
+func refresh_status_view() -> void:
+	_update_status_view()
+
+
+func is_skill_active() -> bool:
+	return _is_skill_active()
+
+
 func get_runtime_id() -> int:
 	return runtime_id
 
@@ -196,6 +283,8 @@ func get_attack_targets() -> Array:
 		if enemy == null or not is_instance_valid(enemy):
 			continue
 		if not _can_detect_enemy(enemy):
+			continue
+		if not _can_target_enemy(enemy):
 			continue
 		if _blocked_enemy_ids.has(enemy.get_runtime_id()):
 			targets.append(enemy)
@@ -242,6 +331,13 @@ func get_all_enemies() -> Array:
 	return enemy_manager.get_all_enemies()
 
 
+func get_all_deployed_units() -> Array:
+	var unit_manager := get_unit_manager()
+	if unit_manager == null or not unit_manager.has_method("get_all_deployed_units"):
+		return []
+	return unit_manager.get_all_deployed_units()
+
+
 func release_all_blocked_enemies() -> void:
 	var enemy_manager := get_enemy_manager()
 	for enemy_runtime_id in _blocked_enemy_ids:
@@ -257,11 +353,17 @@ func get_effective_atk() -> int:
 	var buff_multiplier := 1.0
 	if run_state != null and run_state.has_method("get_buff_effect_total"):
 		buff_multiplier += float(run_state.get_buff_effect_total(&"unit_atk_percent"))
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		buff_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_atk_percent", cfg))
 	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + _external_attack_bonus, 1)
 
 
 func get_effective_attack_interval() -> float:
-	return max(attack_interval * _external_attack_interval_multiplier, 0.05)
+	var run_state = AppRefs.run_state()
+	var relic_multiplier := 1.0
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		relic_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_attack_interval_percent", cfg))
+	return max(attack_interval * relic_multiplier * _external_attack_interval_multiplier, 0.05)
 
 
 func set_external_attack_interval_multiplier(value: float) -> void:
@@ -361,12 +463,50 @@ func _recover_sp(delta: float) -> void:
 			recover_per_sec = float(_skill_behavior.get_sp_recover_per_sec())
 		if _skill_behavior.has_method("get_sp_max"):
 			sp_max = float(_skill_behavior.get_sp_max())
+	if _is_skill_active():
+		sp = min(sp, sp_max)
+		return
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		recover_per_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_sp_recover_percent", cfg))
 	sp = min(sp + recover_per_sec * delta, sp_max)
+
+
+func _is_skill_active() -> bool:
+	return _skill_behavior != null and _skill_behavior.has_method("is_active") and bool(_skill_behavior.is_active())
+
+
+func _try_auto_cast_skill() -> void:
+	if _skill_behavior == null or not _skill_behavior.has_method("should_auto_cast"):
+		return
+	if bool(_skill_behavior.should_auto_cast()) and can_cast_skill():
+		cast_skill()
+
+
+func _tick_damage_reduction_effects(delta: float) -> void:
+	for effect_key in _damage_reduction_effects.keys().duplicate():
+		var entry: Dictionary = _damage_reduction_effects[effect_key]
+		entry["remaining"] = float(entry.get("remaining", 0.0)) - delta
+		if float(entry.get("remaining", 0.0)) <= 0.0:
+			_damage_reduction_effects.erase(effect_key)
+		else:
+			_damage_reduction_effects[effect_key] = entry
+
+
+func _get_damage_reduction_multiplier() -> float:
+	var multiplier := 1.0
+	for entry_variant in _damage_reduction_effects.values():
+		var entry: Dictionary = entry_variant
+		multiplier = min(multiplier, float(entry.get("multiplier", 1.0)))
+	return multiplier
 
 
 func _update_status_view() -> void:
 	if _status_view != null and _status_view.has_method("set_hp"):
 		_status_view.set_hp(current_hp, max_hp)
+	if _status_view != null and _status_view.has_method("set_ammo"):
+		var ammo_status := get_skill_ammo_status()
+		_status_view.set_ammo(int(ammo_status.get("current", 0)), int(ammo_status.get("max", 0)))
 
 
 func _play_hit_effect() -> void:
@@ -600,6 +740,20 @@ func _is_enemy_unblockable(enemy: Node) -> bool:
 	return enemy != null and (bool(enemy.cfg.get("unblockable", false)) or StringName(enemy.cfg.get("move_type", "ground")) == &"flying")
 
 
+func _can_target_enemy(enemy: Node) -> bool:
+	if enemy == null or not is_instance_valid(enemy):
+		return false
+	var enemy_move_type := _get_enemy_move_type(enemy)
+	match target_type:
+		TARGET_TYPE_ALL:
+			return true
+		TARGET_TYPE_FLYING:
+			return enemy_move_type == MOVE_TYPE_FLYING
+		TARGET_TYPE_GROUND:
+			return enemy_move_type == MOVE_TYPE_GROUND
+	return false
+
+
 func _can_detect_enemy(enemy: Node) -> bool:
 	var map_manager := get_map_manager()
 	if map_manager == null or not map_manager.has_method("is_discovered"):
@@ -654,6 +808,23 @@ func parse_damage_type(raw_type: String) -> int:
 			return GameEnums.DAMAGE_TRUE
 		_:
 			return GameEnums.DAMAGE_PHYSICAL
+
+
+func parse_target_type(raw_type: String) -> StringName:
+	match raw_type:
+		"flying":
+			return TARGET_TYPE_FLYING
+		"all":
+			return TARGET_TYPE_ALL
+		_:
+			return TARGET_TYPE_GROUND
+
+
+func _get_enemy_move_type(enemy: Node) -> StringName:
+	if enemy == null:
+		return MOVE_TYPE_GROUND
+	var move_type := StringName(enemy.cfg.get("move_type", String(MOVE_TYPE_GROUND)))
+	return MOVE_TYPE_FLYING if move_type == MOVE_TYPE_FLYING else MOVE_TYPE_GROUND
 
 
 func _rotate_offset(offset: Vector2i, direction: Vector2i) -> Vector2i:

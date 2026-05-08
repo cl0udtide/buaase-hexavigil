@@ -24,7 +24,7 @@ data/
 - `buildings.json`
   建筑静态配置。
 - `buffs.json`
-  Buff / 祝福静态配置。
+  遗物静态配置。旧接口仍沿用 buff 命名以兼容现有代码。
 - `events.json`
   随机事件静态配置。
 - `waves.json`
@@ -143,6 +143,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
     "range_pattern": [[0, 0], [1, 0]],
     "redeploy_sec": 12.0,
     "sp_max": 18,
+    "sp_initial": 8,
     "sp_recover_per_sec": 1.0,
     "skill_id": "guard_hold_line",
     "skill_name": "战术咏唱·阵线压制",
@@ -180,12 +181,13 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `target_type` | `String` | 攻击目标类型 |
+| `target_type` | `String` | 攻击目标类型；只使用 `ground`、`flying`、`all`，未配置或非法值按 `ground` 处理 |
 | `attack_delivery` | `String` | 普攻命中形式；`instant` 为即时命中，`projectile` 为飞行物命中，未配置默认 `instant` |
 | `projectile_scene_key` | `String` | 飞行物场景逻辑名，未配置默认 `projectile` |
 | `projectile_speed` | `float` | 飞行物追踪速度 |
 | `projectile_hit_radius` | `float` | 飞行物命中半径 |
 | `projectile_lifetime` | `float` | 飞行物最大存活时间，未配置默认 3 秒 |
+| `sp_initial` | `float` | 部署时初始 SP；未配置默认 0 |
 | `sp_recover_per_sec` | `float` | 每秒回复 SP |
 | `skill_id` | `String` | 技能标识 |
 | `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |
@@ -230,7 +232,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 [
   {
     "id": "slime",
-    "name": "史莱姆",
+    "name": "源石虫",
     "max_hp": 80,
     "atk": 18,
     "def": 2,
@@ -260,7 +262,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `move_speed` | `float` | 移动速度 |
 | `attack_interval` | `float` | 攻击间隔 |
 | `behavior_type` | `String` | 行为类型；当前使用 `normal`、`demolisher`、`boss` 等策略语义，移速差异统一由 `move_speed` 表达，不另设 `rush` 等速度型行为 |
-| `move_type` | `String` | 移动类型 |
+| `move_type` | `String` | 移动类型；只使用 `ground`、`flying`，未配置或非法值按 `ground` 处理 |
 | `core_damage` | `int` | 抵达核心时造成的伤害 |
 | `prestige_reward` | `int` | 被击杀时奖励的声望；进入核心消失不发放 |
 | `scene_key` | `String` | 敌人模板逻辑名 |
@@ -271,6 +273,11 @@ building_actor -> scenes/actors/BuildingActor.tscn
 |---|---|---|
 | `damage_type` | `String` | 伤害类型 |
 | `attack_range` | `int` | 攻击范围，按棋盘格切比雪夫距离计算；未配置或小于等于 0 时只攻击阻挡单位 |
+| `block_weight` | `int` | 占用阻挡数；未配置默认 1，适合大体型敌人占用多个阻挡位 |
+| `shield_hp` | `int` | 额外护盾值；护盾会先吸收结算后的伤害，归零后才损失生命 |
+| `regen_per_sec` | `float` | 每秒生命回复量；仅在敌人受伤且仍存活时生效 |
+| `death_area_damage` | `Dictionary` | 被击杀时触发的死亡爆发，支持 `radius`、`damage`、`damage_type`；进入核心离场不触发 |
+| `death_spawn` | `Array` / `Dictionary` | 被击杀时生成额外敌人；每项包含 `enemy_id`、`count`、`radius`，生成位置优先选择死亡格周围可通行格 |
 | `boss_controller_key` | `String` | Boss 阶段控制器逻辑名；未配置时默认使用通用 `phase_boss` |
 | `boss_behavior_key` | `String` | 未来 Boss 专属行为组件逻辑名；用于召唤、护盾循环、地图效果等非通用机制 |
 | `phase_transition_sec` | `float` | Boss 当前阶段 HP 耗尽后的无敌转阶段时长，期间不移动也不攻击 |
@@ -372,7 +379,22 @@ Boss 多阶段规则：
     "day": 1,
     "entries": [
       { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 2, "interval": 0.8 },
-      { "time": 6.0, "enemy_id": "wolf", "spawn_key": "S2", "count": 2, "interval": 0.7 }
+      { "time": 6.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "day": 6,
+    "entries": [
+      {
+        "time": 4.0,
+        "spawn_key": "S2",
+        "count": 1,
+        "interval": 0.0,
+        "enemy_choices": [
+          { "enemy_id": "milk_dragon_chief", "weight": 1.0 },
+          { "enemy_id": "patriot", "weight": 1.0 }
+        ]
+      }
     ]
   }
 ]
@@ -385,15 +407,21 @@ Boss 多阶段规则：
 | `day` | `int` | 第几天夜晚 |
 | `entries` | `Array` | 本夜晚的刷怪条目列表 |
 
-`entries` 中每条记录必填字段：
+`entries` 中每条记录基础字段：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `time` | `float` | 从夜晚开始后的触发时间 |
-| `enemy_id` | `String` | 敌人配置 ID |
+| `enemy_id` | `String` | 敌人配置 ID；当 `enemy_choices` 有有效候选时可省略 |
 | `spawn_key` | `String` | 刷怪点逻辑名 |
 | `count` | `int` | 生成数量 |
 | `interval` | `float` | 同组敌人之间的生成间隔 |
+
+`entries` 中每条记录常用可选字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、天数和条目序号确定选择，白天预览与夜晚实际刷怪保持一致 |
 
 ---
 
@@ -401,7 +429,7 @@ Boss 多阶段规则：
 
 作用：
 
-- 定义 Buff / 祝福效果。
+- 定义肉鸽遗物效果。旧接口仍沿用 Buff 命名以兼容现有代码。
 
 记录示例：
 
@@ -428,6 +456,10 @@ Boss 多阶段规则：
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
 | `rarity` | `int` | 稀有度 |
+| `effects` | `Array` | 可选，复合遗物使用；每项包含 `effect_type`、`effect_value` 和过滤字段 |
+| `class_filter` | `String` | 可选，仅影响指定职业，例如 `guard`、`sniper`、`caster`、`defender` |
+| `building_type_filter` | `String` | 可选，仅影响指定建筑类别，例如 `resource`、`aura` |
+| `material_filter` | `String` | 可选，仅影响指定资源，例如 `wood`、`stone`、`mana` |
 
 ---
 
@@ -494,7 +526,7 @@ Boss 多阶段规则：
       {
         "enemy_id": "slime",
         "delay": 0.0,
-        "name": "史莱姆",
+        "name": "源石虫",
         "max_hp": 300,
         "atk": 18,
         "def": 20,
@@ -539,7 +571,7 @@ Boss 多阶段规则：
 | `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
 | `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
-| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 0 |
+| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 8 |
 | `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
 | `min_obstacle_count` | `int` | 障碍最小生成数量 |
 | `max_obstacle_count` | `int` | 障碍最大生成数量 |
@@ -557,7 +589,7 @@ Boss 多阶段规则：
   "spawn_count": 3,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
-  "event_point_count": 0,
+  "event_point_count": 8,
   "obstacle_ratio": 0.11,
   "min_obstacle_count": 45,
   "max_obstacle_count": 95,
@@ -580,8 +612,8 @@ Boss 多阶段规则：
 
 事件点说明：
 
-- 随机事件点是地图格子属性，存储在 `CellData.event_id`。
-- 当前 `event_point_count` 为 0，正式地图默认不生成随机事件点。
+- 随机事件点由 `RandomEventManager` 作为地图覆盖层维护，地图格本身不记录事件触发状态。
+- 当前 `event_point_count` 为 8，正式地图默认生成 8 个随机事件点。
 - 随机事件点与资源点互斥，同一个格子不会同时是资源点和事件点。
 - `MapGenerator` 只负责放置事件点并引用已有事件 ID，不负责新增事件内容。
 - 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。

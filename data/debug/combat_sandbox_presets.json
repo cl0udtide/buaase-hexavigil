@@ -1,120 +1,158 @@
 [
 	{
 		"id": "default",
-		"name": "默认一路调试",
-		"operators": [
-			{
-				"key": "G1",
-				"name": "一阶近卫",
-				"unit_id": "guard_t1"
-			},
-			{
-				"key": "G2",
-				"name": "二阶近卫",
-				"unit_id": "guard_01"
-			},
-			{
-				"key": "G3",
-				"name": "三阶近卫",
-				"unit_id": "guard_t3"
-			},
+		"name": "默认调试",
+		"map": {
+			"width": 12,
+			"height": 7,
+			"core": [
+				10,
+				3
+			],
+			"blocked": []
+		},
+		"spawns": [
 			{
 				"key": "S1",
-				"name": "一阶狙击",
-				"unit_id": "sniper_t1"
-			},
-			{
-				"key": "S2",
-				"name": "二阶狙击",
-				"unit_id": "sniper_t2"
-			},
-			{
-				"key": "S3",
-				"name": "三阶狙击",
-				"unit_id": "archer_basic"
-			},
-			{
-				"key": "C1",
-				"name": "一阶术士",
-				"unit_id": "caster_t1"
-			},
-			{
-				"key": "C2",
-				"name": "二阶术士",
-				"unit_id": "caster_t2"
-			},
-			{
-				"key": "C3",
-				"name": "三阶术士",
-				"unit_id": "caster_t3"
-			},
-			{
-				"key": "D1",
-				"name": "一阶重装",
-				"unit_id": "defender_t1"
-			},
-			{
-				"key": "D2",
-				"name": "二阶重装",
-				"unit_id": "defender_t2"
-			},
-			{
-				"key": "D3",
-				"name": "三阶重装",
-				"unit_id": "defender_t3"
+				"cell": [
+					0,
+					3
+				]
 			}
 		],
 		"queues": {
 			"S1": [
 				{
-					"atk": 18,
-					"attack_interval": 1.2,
-					"core_damage": 1,
-					"damage_type": "physical",
-					"def": 20,
-					"delay": 0.0,
 					"enemy_id": "slime",
+					"delay": 0,
+					"name": "源石虫",
 					"max_hp": 300,
-					"move_speed": 1.0,
-					"name": "史莱姆",
-					"res": 0
+					"atk": 18,
+					"def": 20,
+					"res": 0,
+					"move_speed": 1,
+					"attack_interval": 1.2,
+					"damage_type": "physical",
+					"core_damage": 1
 				},
 				{
-					"atk": 18,
-					"attack_interval": 1.2,
-					"core_damage": 1,
-					"damage_type": "physical",
-					"def": 2,
-					"delay": 0.5,
 					"enemy_id": "slime",
+					"delay": 0.5,
+					"name": "源石虫",
 					"max_hp": 80,
-					"move_speed": 1.0,
-					"name": "史莱姆",
-					"res": 0
+					"atk": 18,
+					"def": 2,
+					"res": 0,
+					"move_speed": 1,
+					"attack_interval": 1.2,
+					"damage_type": "physical",
+					"core_damage": 1
 				},
 				{
-					"atk": 18,
-					"attack_interval": 1.2,
-					"core_damage": 1,
-					"damage_type": "physical",
-					"def": 2,
-					"delay": 0.5,
 					"enemy_id": "slime",
+					"delay": 0.5,
+					"name": "源石虫",
 					"max_hp": 80,
-					"move_speed": 1.0,
-					"name": "史莱姆",
-					"res": 0
+					"atk": 18,
+					"def": 2,
+					"res": 0,
+					"move_speed": 1,
+					"attack_interval": 1.2,
+					"damage_type": "physical",
+					"core_damage": 1
 				}
 			]
+		}
+	},
+	{
+		"id": "issue84_recent_arknights_roster",
+		"name": "Issue 84 机制验收队列",
+		"map": {
+			"width": 12,
+			"height": 7,
+			"core": [
+				10,
+				3
+			],
+			"blocked": []
 		},
 		"spawns": [
 			{
+				"key": "ISSUE84_MAIN",
 				"cell": [
 					0,
 					3
-				],
-				"key": "S1"
+				]
 			}
-		]
+		],
+		"queues": {
+			"ISSUE84_MAIN": [
+				{
+					"enemy_id": "slime",
+					"delay": 0,
+					"name": "沙盒轻甲",
+					"max_hp": 110,
+					"atk": 18,
+					"def": 8,
+					"res": 0,
+					"move_speed": 1,
+					"attack_interval": 1.2,
+					"damage_type": "physical",
+					"core_damage": 1
+				},
+				{
+					"enemy_id": "slime",
+					"delay": 0.6,
+					"name": "沙盒重甲",
+					"max_hp": 180,
+					"atk": 22,
+					"def": 22,
+					"res": 5,
+					"move_speed": 0.9,
+					"attack_interval": 1.1,
+					"damage_type": "physical",
+					"core_damage": 1
+				},
+				{
+					"enemy_id": "slime",
+					"delay": 0.6,
+					"name": "沙盒术士",
+					"max_hp": 150,
+					"atk": 20,
+					"def": 6,
+					"res": 35,
+					"move_speed": 1.1,
+					"attack_interval": 1.4,
+					"damage_type": "magic",
+					"core_damage": 1
+				},
+				{
+					"enemy_id": "slime",
+					"delay": 1,
+					"name": "沙盒精英",
+					"max_hp": 320,
+					"atk": 28,
+					"def": 18,
+					"res": 20,
+					"move_speed": 0.75,
+					"attack_interval": 1.4,
+					"damage_type": "physical",
+					"core_damage": 2
+				},
+				{
+					"enemy_id": "slime",
+					"delay": 0.4,
+					"name": "沙盒高速兵",
+					"max_hp": 90,
+					"atk": 16,
+					"def": 4,
+					"res": 0,
+					"move_speed": 1.3,
+					"attack_interval": 1,
+					"damage_type": "physical",
+					"core_damage": 1
+				}
+			]
+		}
 	}
 ]

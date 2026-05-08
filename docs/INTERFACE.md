@@ -163,9 +163,9 @@ func request_start_night() -> Dictionary
   返回：布尔值。
 - `try_trigger_event(cell)`
   输入：`cell: Vector2i`。
-  行为：校验并处理指定格子的事件交互；当前实现不额外扣除行动力，直接委托 `RandomEventManager.apply_event_for_cell()` 完成事件结算与触发标记。
-  成功结果：返回 `ActionResult(ok = true)`，并完成事件结算。
-  失败结果：返回 `ActionResult(ok = false)`，不修改状态。
+  行为：校验指定格子位于已探索区域且存在事件，消耗 2 点行动力后委托 `RandomEventManager.apply_event_for_cell()` 完成事件结算。
+  成功结果：返回 `ActionResult(ok = true)`，并完成事件结算；事件覆盖层移除该事件点，地图格属性不修改。
+  失败结果：返回 `ActionResult(ok = false)`，不修改状态；若事件结算失败会退还已扣除行动力。
 - `request_start_night()`
   输入：无。
   行为：校验当前是否允许结束白天并进入夜晚。
@@ -258,7 +258,7 @@ func get_event_cfg(event_id: StringName) -> Dictionary
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `apply_event_for_cell(cell)`
   输入：`cell: Vector2i`。
-  行为：读取指定地图格上的事件 ID，结算事件并标记该格事件已触发。
+  行为：读取指定坐标上的事件覆盖层 ID，结算事件并从覆盖层移除该事件点。
   成功结果：返回 `ActionResult(ok = true)`，事件结算完成。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `get_event_cfg(event_id)`
@@ -563,11 +563,11 @@ func refresh_all_layers(reset_camera: bool = false) -> void
   返回：`bool`。
 - `get_event_id_at_cell(cell)`
   输入：`cell: Vector2i`。
-  行为：读取指定格上的未触发随机事件 ID；无事件或已触发时返回空值。
+  行为：委托 `RandomEventManager` 读取指定坐标上的事件覆盖层 ID；无事件时返回空值。
   返回：`StringName`。
 - `mark_event_triggered(cell)`
   输入：`cell: Vector2i`。
-  行为：标记指定格上的随机事件已触发，并刷新地图显示。
+  行为：委托 `RandomEventManager` 移除指定坐标上的事件覆盖层，并刷新地图显示。
   返回：无。
 - `reveal_area(center, radius)`
   输入：中心格与揭示半径。
@@ -1036,6 +1036,8 @@ func receive_heal(value: int) -> void
 func gain_sp(value: int) -> void
 func can_cast_skill() -> bool
 func cast_skill() -> void
+func get_skill_ammo_status() -> Dictionary
+func refresh_status_view() -> void
 func get_runtime_id() -> int
 func get_current_cell() -> Vector2i
 func get_block_count() -> int
@@ -1068,6 +1070,14 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node
 - `cast_skill()`
   输入：无。
   行为：执行单位技能释放。
+  返回：无。
+- `get_skill_ammo_status()`
+  输入：无。
+  行为：读取当前技能暴露的弹药状态；无弹药技能返回空字典。
+  返回：`Dictionary`，可包含 `current`、`max`、`label`。
+- `refresh_status_view()`
+  输入：无。
+  行为：要求单位刷新头顶状态条，用于技能内部弹药等运行时状态变化后同步 UI。
   返回：无。
 - `get_runtime_id()`
   输入：无。
@@ -1108,6 +1118,7 @@ func get_sp_recover_per_sec() -> float
 func get_duration() -> float
 func get_active_remaining() -> float
 func is_active() -> bool
+func get_ammo_status() -> Dictionary
 func get_attack_targets_override() -> Array
 func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array
 func after_attack(target: Node, damage_value: int) -> void
@@ -1139,6 +1150,10 @@ func after_receive_damage(source: Node, final_damage: int) -> void
 - `get_sp_max()` / `get_sp_recover_per_sec()` / `get_duration()` / `get_active_remaining()` / `is_active()`
   行为：读取技能 SP、回复、持续时间和激活状态。
   返回：对应数值或状态。
+- `get_ammo_status()`
+  输入：无。
+  行为：弹药型技能返回当前弹药状态；非弹药技能保持空字典。
+  返回：`Dictionary`，可包含 `current`、`max`、`label`。
 - `get_attack_targets_override()`
   输入：无。
   行为：可覆盖本次攻击目标列表，例如让近卫攻击所有被自身阻挡的敌人。
@@ -1743,7 +1758,7 @@ func hide_panel() -> void
 | `unit_removed` | `unit_runtime_id: int, reason: int` | `UnitManager` | CombatHudController、CombatSandbox | 单位离场 |
 | `enemy_spawned` | `enemy_runtime_id: int, enemy_id: StringName, cell: Vector2i` | `EnemyManager` | CombatHudController、调试工具 | 敌人出生 |
 | `enemy_died` | `enemy_runtime_id: int, enemy_id: StringName` | `EnemyManager` | `WaveManager`、`BuffManager` | 敌人死亡 |
-| `random_event_triggered` | `event_id: StringName, cell: Vector2i` | `RandomEventManager` | `EventPanel` | 随机事件被发现或进入展示流程 |
+| `random_event_triggered` | `event_id: StringName, cell: Vector2i` | `RandomEventManager` | `EventPanel` | 兼容旧事件展示入口；当前地图事件默认通过地图对象弹窗点击触发 |
 | `blessing_choices_ready` | `choice_ids: Array[StringName]` | `BuffManager` | `BlessingPanel` | 祝福选项已生成 |
 | `core_destroyed` | 无 | `RunState` | `GameController`、`ResultPanel` | 核心归零 |
 

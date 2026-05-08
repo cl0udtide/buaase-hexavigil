@@ -489,17 +489,17 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 障碍随机生成，但核心安全半径与刷怪点安全半径内不生成障碍、资源点和事件点。
 - 障碍放置会保持刷怪点到核心的地面路径连通，避免地图生成破坏夜晚基础路径。
 - 资源类型为木材、石材、魔力，当前每种目标 12 个；其中每种至少 2 个放在初始可见区外侧的近探索圈作为开局保底。
-- 随机事件点是格子属性，数量由 `event_point_count` 控制；当前 `data/map_generation.json` 中该值为 0，正式地图默认不生成事件点。
-- 事件点与资源点互斥；地图模块只负责放置和记录事件 ID，事件展示和效果结算由白天流程与随机事件模块负责。
+- 随机事件点数量由 `event_point_count` 控制；当前 `data/map_generation.json` 中该值为 8，正式地图默认生成 8 个事件点。
+- 事件点与资源点互斥；地图模块只负责生成事件点坐标，运行时事件覆盖层由 `RandomEventManager` 维护，事件展示和效果结算由白天流程与地图对象弹窗负责。
 
 各文件作用：
 
 - `map_manager.gd`
-  地图真相数据中心，统一对外提供格子状态查询。它持有格子的发现状态、地形、资源、事件标记、占用状态、核心位置和刷怪点位置。普通占用刷新不得重置玩家镜头；只有首次加载、生成新地图、重置地图或尺寸变化时才允许请求重置视角。
+  地图真相数据中心，统一对外提供格子状态查询。它持有格子的发现状态、地形、资源、占用状态、核心位置和刷怪点位置，并委托 `RandomEventManager` 查询运行时事件覆盖层。普通占用刷新不得重置玩家镜头；只有首次加载、生成新地图、重置地图或尺寸变化时才允许请求重置视角。
 - `path_service.gd`
   路径计算服务，负责根据地图阻挡情况重建路径网格。
 - `cell_data.gd`
-  单格数据结构，描述地形、发现状态、资源类型、随机事件 ID、可建造、可通行、占用等属性。
+  单格数据结构，描述地形、发现状态、资源类型、可建造、可通行、占用等属性；随机事件运行时状态由 `RandomEventManager` 维护。
 - `map_generator.gd`
   地图生成逻辑，负责按 `data/map_generation.json` 生成初始地图，包括核心、初始迷雾、刷怪点、障碍、资源点和随机事件点。
 - `map_root_view.gd`
@@ -707,7 +707,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
-  共用 UI 样式辅助函数，集中生成暗色玻璃面板、按钮和进度条等 `StyleBox`。
+  共用 UI 样式辅助函数，集中生成现代深色 matte tactical 面板、按钮和进度条等 `StyleBox`。
 - `ui_display_text.gd`
   统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
 - `combat/combat_hud.gd`
@@ -774,6 +774,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 提供配置表
 - 提供图片、音频、字体资源
 
+音频资源约定：
+
+- `assets/audio/bgm/` 存放较长的背景音乐，目前包含白天与夜晚 BGM。
+- 短音效后续放入 `assets/audio/sfx/`，通过 `AudioManager` 的逻辑 key 播放。
+- UI 面板只读写 `AudioManager` 暴露的音量接口，不直接持有音频资源路径；未来可以迁移到总设置面板下。
+
 ---
 
 ## 5. 数据归属
@@ -788,6 +794,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 | 场上单位、槽位部署映射、再部署状态、技能运行时状态 | `UnitManager` |
 | 商店库存 | `ShopManager` |
 | 场上敌人运行时状态 | `EnemyManager` |
+| BGM 切换、音效播放、音量设置 | `AudioManager` |
 | 波次进度与待生成队列 | `WaveManager` |
 | Buff 选择与 Buff 结算 | `BuffManager` |
 | 随机事件抽取与事件结算 | `RandomEventManager` |
@@ -941,7 +948,7 @@ data/units.json
 | `block` | `block_count` | 阻挡数 |
 | `attack_interval` | `attack_interval` | 普攻间隔 |
 | `damage_type` | `damage_type` | 伤害类型，部署时解析成枚举 |
-| `target_type` | `target_type` | 目标类型，例如地面或飞行 |
+| `target_type` | `target_type` | 目标类型；只使用 `ground`、`flying`、`all` |
 | `range_pattern` | `range_pattern` | 攻击范围格子偏移 |
 | `attack_delivery` | 普攻结算路径 | `instant` 即时命中；`projectile` 通过飞行物命中 |
 | `projectile_scene_key` | `launch_projectile()` | 飞行物场景逻辑名 |
@@ -961,6 +968,7 @@ data/units.json
 | `skill_description` | 技能描述 | UI 展示读取 |
 | `skill_behavior_key` | `SkillBehavior` 脚本选择 | 映射到某个 `UnitSkillBehavior` 子类 |
 | `sp_max` | SP 上限 | 技能行为或 `UnitActor` 读取 |
+| `sp_initial` | 初始 SP | 单位部署时由 `UnitActor` 读取，未配置默认 0 |
 | `sp_recover_per_sec` | SP 回复速度 | 技能行为或 `UnitActor` 读取 |
 | `skill_duration` | 技能持续时间 | 技能行为读取 |
 

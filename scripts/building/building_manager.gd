@@ -18,6 +18,7 @@ var _unit_heal_remainders: Dictionary = {}
 func _ready() -> void:
 	set_process(true)
 	_validator.map_manager = _map_manager
+	_validator.path_service = _path_service
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.request_build.connect(_on_request_build)
@@ -31,35 +32,38 @@ func _process(delta: float) -> void:
 
 
 func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
-	var check := _validator.can_place_building(cell, building_id)
-	if not check.get("ok", false):
-		return check
-
 	var data_repo = AppRefs.data_repo()
 	var run_state = AppRefs.run_state()
 	var event_bus = AppRefs.event_bus()
 	if data_repo == null or run_state == null:
 		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
 	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
+	var material_costs := BuildValidator.get_building_material_costs(cfg)
+	var check := _validator.can_place_building(cell, building_id, material_costs)
+	if not check.get("ok", false):
+		return check
+	var cost_wood := int(material_costs.get("wood", 0))
+	var cost_stone := int(material_costs.get("stone", 0))
+	var cost_mana := int(material_costs.get("mana", 0))
 	var material_result: Dictionary = run_state.spend_materials(
-		int(cfg.get("cost_wood", 0)),
-		int(cfg.get("cost_stone", 0)),
-		int(cfg.get("cost_mana", 0))
+		cost_wood,
+		cost_stone,
+		cost_mana
 	)
 	if not material_result.get("ok", false):
 		return material_result
 	var ap_result: Dictionary = run_state.consume_action_points(int(cfg.get("ap_cost", 0)))
 	if not ap_result.get("ok", false):
-		run_state.add_materials(int(cfg.get("cost_wood", 0)), int(cfg.get("cost_stone", 0)), int(cfg.get("cost_mana", 0)))
+		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		return ap_result
 
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
-		run_state.add_materials(int(cfg.get("cost_wood", 0)), int(cfg.get("cost_stone", 0)), int(cfg.get("cost_mana", 0)))
+		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
 		return ActionResult.err(&"SCENE_MISSING", "Building scene is missing")
 	if _building_root == null:
-		run_state.add_materials(int(cfg.get("cost_wood", 0)), int(cfg.get("cost_stone", 0)), int(cfg.get("cost_mana", 0)))
+		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
 		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot is missing")
 
@@ -82,6 +86,57 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	var created_runtime_id := _next_runtime_id
 	_next_runtime_id += 1
 	return ActionResult.ok({"runtime_id": created_runtime_id})
+
+
+func try_place_building_debug(cell: Vector2i, building_id: StringName) -> Dictionary:
+	var check := _can_place_building_debug(cell)
+	if not check.get("ok", false):
+		return check
+	var data_repo = AppRefs.data_repo()
+	var event_bus = AppRefs.event_bus()
+	if data_repo == null:
+		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
+	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
+	if cfg.is_empty():
+		return ActionResult.err(&"BUILDING_CONFIG_MISSING", "Building config is missing")
+	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
+	if scene == null:
+		return ActionResult.err(&"SCENE_MISSING", "Building scene is missing")
+	if _building_root == null:
+		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot is missing")
+
+	var actor: Node = scene.instantiate()
+	_building_root.add_child(actor)
+	actor.runtime_id = _next_runtime_id
+	if actor.has_method("setup_from_cfg"):
+		actor.setup_from_cfg(building_id, cfg, cell)
+
+	_buildings_by_runtime_id[_next_runtime_id] = actor
+	_buildings_by_cell[cell] = actor
+	if _map_manager != null:
+		_map_manager.set_building_occupy(cell, true, _next_runtime_id)
+	if bool(cfg.get("blocks_path", false)) and _path_service != null:
+		_path_service.set_cell_blocked(cell, true)
+	if event_bus != null:
+		event_bus.building_placed.emit(_next_runtime_id, building_id, cell)
+	if _is_path_blocking_cfg(cfg):
+		_emit_path_grid_changed()
+	var created_runtime_id := _next_runtime_id
+	_next_runtime_id += 1
+	return ActionResult.ok({"runtime_id": created_runtime_id})
+
+
+func remove_building_at_cell(cell: Vector2i) -> bool:
+	var actor := get_building_by_cell(cell)
+	if actor == null:
+		return false
+	remove_building(int(actor.get_runtime_id()))
+	return true
+
+
+func clear_all_buildings() -> void:
+	for runtime_id_variant in _buildings_by_runtime_id.keys().duplicate():
+		remove_building(int(runtime_id_variant))
 
 
 func try_repair_building(building_runtime_id: int) -> Dictionary:
@@ -200,11 +255,11 @@ func collect_day_income() -> void:
 		var effect_value := int(actor_cfg.get("effect_value", 0))
 		match effect_type:
 			&"collect_wood":
-				gained_wood += effect_value
+				gained_wood += _get_income_value(actor_cfg, effect_value, &"wood")
 			&"collect_stone":
-				gained_stone += effect_value
+				gained_stone += _get_income_value(actor_cfg, effect_value, &"stone")
 			&"collect_mana":
-				gained_mana += effect_value
+				gained_mana += _get_income_value(actor_cfg, effect_value, &"mana")
 	if gained_wood > 0 or gained_stone > 0 or gained_mana > 0:
 		run_state.add_materials(gained_wood, gained_stone, gained_mana)
 
@@ -233,6 +288,27 @@ func get_building_by_cell(cell: Vector2i) -> Node:
 
 func get_building_by_runtime_id(building_runtime_id: int) -> Node:
 	return _buildings_by_runtime_id.get(building_runtime_id)
+
+
+func _can_place_building_debug(cell: Vector2i) -> Dictionary:
+	if _map_manager == null:
+		return ActionResult.err(&"MAP_MANAGER_MISSING", "Map manager is unavailable")
+	if not _map_manager.is_inside(cell):
+		return ActionResult.err(&"CELL_OUT_OF_BOUNDS", "Cell is outside the map")
+	var data: CellData = _map_manager.get_cell_data(cell)
+	if data == null:
+		return ActionResult.err(&"CELL_MISSING", "Cell data is missing")
+	if data.is_core:
+		return ActionResult.err(&"CELL_IS_CORE", "Cannot place a building on the core")
+	if data.spawn_key != StringName():
+		return ActionResult.err(&"CELL_IS_SPAWN", "Cannot place a building on a spawn point")
+	if data.terrain == &"blocked" or not data.walkable:
+		return ActionResult.err(&"CELL_BLOCKED", "Cannot place a building on blocked terrain")
+	if data.unit_runtime_id >= 0:
+		return ActionResult.err(&"CELL_HAS_UNIT", "Cannot place a building on a deployed unit")
+	if data.building_runtime_id >= 0 or data.occupied:
+		return ActionResult.err(&"CELL_HAS_BUILDING", "Cell already has a building")
+	return ActionResult.ok()
 
 
 func _is_building_destroyed(actor: Node) -> bool:
@@ -286,6 +362,17 @@ func _half_repair_cost(value: int) -> int:
 	return int(ceil(float(value) * 0.5))
 
 
+func _get_income_value(cfg: Dictionary, base_value: int, material: StringName) -> int:
+	var run_state = AppRefs.run_state()
+	var value := float(base_value)
+	if run_state != null:
+		if run_state.has_method("get_buff_effect_total_for_building"):
+			value *= 1.0 + float(run_state.get_buff_effect_total_for_building(&"building_income_percent", cfg))
+		if run_state.has_method("get_buff_effect_total_for_material"):
+			value += float(run_state.get_buff_effect_total_for_material(&"building_income_add", material))
+	return max(int(round(value)), 0)
+
+
 func _apply_aura_effects(delta: float) -> void:
 	var units: Array = _get_deployed_units()
 	var enemies: Array = _get_alive_enemies()
@@ -315,6 +402,10 @@ func _apply_aura_effects(delta: float) -> void:
 		var effect_type := StringName(actor_cfg.get("effect_type", ""))
 		var effect_radius: int = int(actor_cfg.get("effect_radius", 0))
 		var effect_value: float = float(actor_cfg.get("effect_value", 0.0))
+		var run_state = AppRefs.run_state()
+		if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+			effect_radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", actor_cfg))))
+			effect_value *= 1.0 + float(run_state.get_buff_effect_total_for_building(&"building_aura_effect_percent", actor_cfg))
 		var building_cell: Vector2i = actor.get_current_cell()
 		match effect_type:
 			&"heal":
@@ -388,7 +479,10 @@ func _apply_enemy_aura_effects(enemies: Array, speed_multipliers: Dictionary) ->
 
 
 func _on_request_build(cell: Vector2i, building_id: StringName) -> void:
-	try_place_building(cell, building_id)
+	var result := try_place_building(cell, building_id)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.build_action_result.emit(building_id, cell, result)
 
 
 func _on_request_toggle_building(building_runtime_id: int) -> void:

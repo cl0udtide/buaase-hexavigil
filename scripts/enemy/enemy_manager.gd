@@ -50,6 +50,8 @@ func remove_enemy(enemy_runtime_id: int, defeated: bool = true) -> void:
 	var dead_enemy_id: StringName = enemy.enemy_id
 	_enemies_by_runtime_id.erase(enemy_runtime_id)
 	if defeated:
+		if enemy.has_method("apply_defeat_effects"):
+			enemy.apply_defeat_effects()
 		_award_prestige_for_defeat(enemy)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
@@ -102,6 +104,8 @@ func _award_prestige_for_defeat(enemy: Node) -> void:
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return
+	if run_state.has_method("get_buff_effect_total"):
+		reward += int(round(float(reward) * float(run_state.get_buff_effect_total(&"kill_prestige_percent"))))
 	run_state.add_prestige(reward)
 	_debug_log("击杀敌人 %s#%d，获得 %d 声望" % [enemy.enemy_id, int(enemy.get_runtime_id()), reward])
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/debug/combat_sandbox.gd" id="1_sandbox"]
 [ext_resource type="PackedScene" path="res://scenes/world/MapRoot.tscn" id="2_map"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/combat/unit_manager.gd" id="7_unit_manager"]
 [ext_resource type="Script" path="res://scripts/enemy/enemy_manager.gd" id="8_enemy_manager"]
 [ext_resource type="PackedScene" path="res://scenes/ui/combat/CombatHud.tscn" id="9_combat_hud"]
+[ext_resource type="Script" path="res://scripts/building/building_manager.gd" id="10_building_manager"]
 
 [node name="CombatSandbox" type="Node"]
 script = ExtResource("1_sandbox")
@@ -40,6 +41,9 @@ script = ExtResource("5_map_manager")
 [node name="PathService" type="Node" parent="Managers"]
 script = ExtResource("6_path_service")
 
+[node name="BuildingManager" type="Node" parent="Managers"]
+script = ExtResource("10_building_manager")
+
 [node name="UnitManager" type="Node" parent="Managers"]
 script = ExtResource("7_unit_manager")
 
@@ -54,7 +58,7 @@ script = ExtResource("8_enemy_manager")
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -720.0
+offset_left = -900.0
 offset_bottom = 900.0
 grow_horizontal = 0
 

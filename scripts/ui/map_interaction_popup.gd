@@ -4,6 +4,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
+const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
 const RESOURCE_COLLECT_AMOUNT := 1
 const POPUP_MIN_WIDTH := 228.0
@@ -14,6 +15,9 @@ var _current_cell := INVALID_CELL
 var _current_phase := GameEnums.PHASE_MENU
 
 @onready var _title_label: Label = %TitleLabel
+@onready var _event_section: VBoxContainer = %EventSection
+@onready var _event_info_label: Label = %EventInfoLabel
+@onready var _trigger_event_button: Button = %TriggerEventButton
 @onready var _resource_section: VBoxContainer = %ResourceSection
 @onready var _resource_info_label: Label = %ResourceInfoLabel
 @onready var _collect_button: Button = %CollectButton
@@ -43,6 +47,7 @@ func _notification(what: int) -> void:
 
 
 func _bind_buttons() -> void:
+	_trigger_event_button.pressed.connect(_on_trigger_event_pressed)
 	_collect_button.pressed.connect(_on_collect_pressed)
 	_repair_button.pressed.connect(_on_repair_pressed)
 	_demolish_button.pressed.connect(_on_demolish_pressed)
@@ -85,16 +90,33 @@ func _refresh_content() -> bool:
 	if data == null:
 		return false
 	var building := _get_building_by_cell(_current_cell)
+	var has_event := _has_event_at_cell(_current_cell)
 	var has_resource := data.resource_type != StringName()
 	var has_building := building != null
-	if not has_resource and not has_building:
+	if not has_event and not has_resource and not has_building:
 		_clear_building_range_preview()
 		return false
 	_title_label.text = _make_title(data, building)
+	_refresh_event_section(_current_cell)
 	_refresh_resource_section(data)
 	_refresh_building_section(building)
 	_refresh_building_range_preview(building)
 	return true
+
+
+func _refresh_event_section(cell: Vector2i) -> void:
+	var event_cfg := _get_event_cfg_at_cell(cell)
+	var has_event := not event_cfg.is_empty()
+	_event_section.visible = has_event
+	if not has_event:
+		return
+	var run_state = AppRefs.run_state()
+	var enough_ap: bool = run_state != null and int(run_state.action_points) >= EVENT_TRIGGER_AP_COST
+	var event_name := String(event_cfg.get("name", event_cfg.get("id", "Event")))
+	var event_desc := String(event_cfg.get("desc", ""))
+	_event_info_label.text = "%s\n%s\n消耗行动力：%d" % [event_name, event_desc, EVENT_TRIGGER_AP_COST]
+	_trigger_event_button.disabled = _current_phase != GameEnums.PHASE_DAY or not enough_ap
+	_style_button(_trigger_event_button, GameUiStyle.ACCENT)
 
 
 func _refresh_resource_section(data: CellData) -> void:
@@ -141,6 +163,8 @@ func _refresh_building_section(building: Node) -> void:
 func _make_title(data: CellData, building: Node) -> String:
 	if building != null:
 		return String(building.cfg.get("name", building.building_id))
+	if _has_event_at_cell(_current_cell):
+		return "随机事件"
 	if data != null and data.resource_type != StringName():
 		return "%s资源点" % _resource_display_name(data.resource_type)
 	return "地图对象"
@@ -162,6 +186,20 @@ func _fit_to_content() -> void:
 	var fit_size := get_combined_minimum_size()
 	fit_size.x = max(fit_size.x, POPUP_MIN_WIDTH)
 	size = fit_size
+
+
+func _on_trigger_event_pressed() -> void:
+	var day_manager := _get_day_manager()
+	if day_manager == null or not day_manager.has_method("try_trigger_event"):
+		return
+	var result: Dictionary = day_manager.try_trigger_event(_current_cell)
+	_message_label.text = _format_event_result(result)
+	if result.get("ok", false):
+		_title_label.text = "事件已处理"
+		_event_section.visible = false
+		_fit_to_content()
+	else:
+		_refresh_or_hide()
 
 
 func _on_collect_pressed() -> void:
@@ -266,6 +304,24 @@ func _format_building_info(building: Node) -> String:
 	return text
 
 
+func _format_event_result(result: Dictionary) -> String:
+	if not result.get("ok", false):
+		return String(result.get("message", "事件处理失败"))
+	var payload: Dictionary = result.get("payload", {})
+	var event_id := StringName(payload.get("event_id", ""))
+	var event_name := _event_display_name(event_id)
+	return "%s已处理（-%d 行动力）" % [event_name, int(payload.get("ap_cost", EVENT_TRIGGER_AP_COST))]
+
+
+func _event_display_name(event_id: StringName) -> String:
+	var data_repo = AppRefs.data_repo()
+	if data_repo != null and data_repo.has_method("get_event_cfg"):
+		var cfg: Dictionary = data_repo.get_event_cfg(event_id)
+		if not cfg.is_empty():
+			return String(cfg.get("name", event_id))
+	return String(event_id)
+
+
 func _get_destroyed_repair_cost(building: Node) -> Dictionary:
 	var cfg: Dictionary = building.cfg if building != null else {}
 	return {
@@ -335,6 +391,22 @@ func _get_building_manager() -> Node:
 	return get_node_or_null("../../Managers/BuildingManager")
 
 
+func _get_random_event_manager() -> Node:
+	return get_node_or_null("../../Managers/RandomEventManager")
+
+
+func _has_event_at_cell(cell: Vector2i) -> bool:
+	var random_event_manager := _get_random_event_manager()
+	return random_event_manager != null and random_event_manager.has_method("has_event_at_cell") and random_event_manager.has_event_at_cell(cell)
+
+
+func _get_event_cfg_at_cell(cell: Vector2i) -> Dictionary:
+	var random_event_manager := _get_random_event_manager()
+	if random_event_manager == null or not random_event_manager.has_method("get_event_cfg_at_cell"):
+		return {}
+	return random_event_manager.get_event_cfg_at_cell(cell)
+
+
 func _get_building_by_cell(cell: Vector2i) -> Node:
 	var building_manager := _get_building_manager()
 	if building_manager == null or not building_manager.has_method("get_building_by_cell"):
@@ -378,10 +450,12 @@ func _get_square_range_cells(center: Vector2i, radius: int) -> Array[Vector2i]:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
 	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	if _event_info_label != null:
+		_event_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	if _resource_info_label != null:
 		_resource_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	if _building_info_label != null:

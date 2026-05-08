@@ -2,40 +2,48 @@ class_name GameUiStyle
 extends RefCounted
 
 
-const BG := Color(0.055, 0.075, 0.095, 0.88)
-const BG_DARK := Color(0.025, 0.035, 0.045, 0.94)
-const BG_GLASS := Color(0.035, 0.045, 0.052, 0.82)
-const BG_CARD := Color(0.065, 0.080, 0.088, 0.92)
-const BG_CARD_HOVER := Color(0.085, 0.105, 0.112, 0.96)
-const BG_DISABLED := Color(0.030, 0.034, 0.038, 0.82)
-const STROKE := Color(0.34, 0.48, 0.56, 0.65)
-const STROKE_SOFT := Color(0.25, 0.32, 0.36, 0.58)
-const STROKE_STRONG := Color(0.52, 0.72, 0.82, 0.82)
-const ACCENT := Color(0.12, 0.78, 0.88, 0.95)
-const AMBER := Color(1.0, 0.64, 0.18, 0.95)
-const DANGER := Color(0.92, 0.18, 0.14, 0.95)
-const SUCCESS := Color(0.30, 0.88, 0.56, 0.95)
-const TEXT := Color(0.90, 0.96, 0.98, 1.0)
-const TEXT_DIM := Color(0.72, 0.80, 0.84, 1.0)
-const TEXT_MUTED := Color(0.58, 0.66, 0.70, 1.0)
+const BG := Color(0.058, 0.071, 0.084, 0.98)
+const BG_DARK := Color(0.034, 0.043, 0.052, 0.99)
+const BG_GLASS := Color(0.070, 0.087, 0.100, 0.97)
+const BG_CARD := Color(0.092, 0.110, 0.124, 0.98)
+const BG_CARD_HOVER := Color(0.118, 0.148, 0.160, 1.0)
+const BG_DISABLED := Color(0.048, 0.056, 0.064, 0.97)
+const STROKE := Color(0.220, 0.355, 0.400, 0.78)
+const STROKE_SOFT := Color(0.145, 0.205, 0.232, 0.76)
+const STROKE_STRONG := Color(0.055, 0.690, 0.760, 0.88)
+const ACCENT := Color(0.000, 0.760, 0.840, 0.96)
+const AMBER := Color(1.000, 0.585, 0.145, 0.96)
+const DANGER := Color(0.940, 0.225, 0.170, 0.96)
+const SUCCESS := Color(0.265, 0.780, 0.465, 0.96)
+const VIOLET := Color(0.620, 0.475, 0.960, 0.96)
+const STEEL := Color(0.455, 0.590, 0.650, 0.92)
+const TEXT := Color(0.900, 0.945, 0.955, 1.0)
+const TEXT_DIM := Color(0.680, 0.755, 0.780, 1.0)
+const TEXT_MUTED := Color(0.455, 0.530, 0.560, 1.0)
+const TEXT_SHADOW := Color(0.0, 0.0, 0.0, 0.78)
 
-const UI_ROOT := "res://assets/UI/Wenrexa Assets GUI Dark Miko"
-const PANEL_GRAY := UI_ROOT + "/Panels Gray/Panel 10.png"
-const PANEL_GRAY_DARK := UI_ROOT + "/Panels Gray/Panel 12.png"
-const PANEL_GREEN := UI_ROOT + "/Panels Green/Panel 10.png"
-const PANEL_GREEN_DARK := UI_ROOT + "/Panels Green/Panel 12.png"
-const BUTTON_NORMAL := UI_ROOT + "/Standart Button V2/Standart Button Normal/Standart Button Normal 1.png"
-const BUTTON_HOVER := UI_ROOT + "/Standart Button V2/Standart Button Hover/Standart Button Hover 1.png"
-const BUTTON_PRESSED := UI_ROOT + "/Standart Button V2/Standart Button Active/Standart Button Active 1.png"
-const BUTTON_DISABLED := UI_ROOT + "/Standart Button V2/Standart Button Disable/Standart Button Disable 1.png"
-const BIG_BUTTON_NORMAL := UI_ROOT + "/Custom Big Buttons/Custom Buttons Normal/Custom Button Normal 1.png"
-const BIG_BUTTON_HOVER := UI_ROOT + "/Custom Big Buttons/Custom Buttons Hover/Custom Button Hover 1.png"
-const BIG_BUTTON_PRESSED := UI_ROOT + "/Custom Big Buttons/Custom Buttons Active/Custom Button Active 1.png"
-const BIG_BUTTON_DISABLED := UI_ROOT + "/Custom Big Buttons/Custom Buttons Disable/Custom Button Disable 1.png"
-const PROGRESS_BLUE_BG := UI_ROOT + "/ProgressBar Blue/V4/Background Static.png"
-const PROGRESS_BLUE_FILL := UI_ROOT + "/ProgressBar Blue/V4/Foreground.png"
-const PROGRESS_GREEN_FILL := UI_ROOT + "/ProgressBar Green/V4/Foreground.png"
-const PROGRESS_RED_FILL := UI_ROOT + "/ProgressBar Red/V4/Foreground.png"
+const HOLOGRAM_ROOT := "res://assets/UI/1. Free Hologram Interface Wenrexa"
+const HOLOGRAM_BUTTON_NORMAL := HOLOGRAM_ROOT + "/Button 1/Button Normal.png"
+const HOLOGRAM_BUTTON_HOVER := HOLOGRAM_ROOT + "/Button 1/Button Hover.png"
+const HOLOGRAM_BUTTON_PRESSED := HOLOGRAM_ROOT + "/Button 1/Button Active.png"
+const HOLOGRAM_BUTTON_DISABLED := HOLOGRAM_ROOT + "/Button 1/Button Disable.png"
+const HOLOGRAM_CARD := HOLOGRAM_ROOT + "/Card X1/Card X1.png"
+const HOLOGRAM_CARD_WIDE := HOLOGRAM_ROOT + "/Card X1/Card X2.png"
+const HOLOGRAM_PANEL_EMPTY := HOLOGRAM_ROOT + "/Card X1/Panel Empty.png"
+const HOLOGRAM_PANEL_GREEN := HOLOGRAM_ROOT + "/Card X1/Panel Empty Green.png"
+const HOLOGRAM_PANEL_RED := HOLOGRAM_ROOT + "/Card X1/Panel Red.png"
+
+const MIKO_ROOT := "res://assets/UI/Wenrexa Assets GUI Dark Miko"
+const MIKO_PANEL_GRAY := MIKO_ROOT + "/Panels Gray/Panel 10.png"
+const MIKO_PANEL_GREEN := MIKO_ROOT + "/Panels Green/Panel 10.png"
+const MIKO_BUTTON_NORMAL := MIKO_ROOT + "/Standart Button V1/Standart Button Normal/Standart Button Normal 1.png"
+const MIKO_BUTTON_HOVER := MIKO_ROOT + "/Standart Button V1/Standart Button Hover/Standart Button Hover 1.png"
+const MIKO_BUTTON_PRESSED := MIKO_ROOT + "/Standart Button V1/Standart Button Active/Standart Button Active 1.png"
+const MIKO_BUTTON_DISABLED := MIKO_ROOT + "/Standart Button V1/Standart Button Disable/Standart Button Disable 1.png"
+const MIKO_PROGRESS_BLUE_BG := MIKO_ROOT + "/ProgressBar Blue/V4/Background Static.png"
+const MIKO_PROGRESS_BLUE_FILL := MIKO_ROOT + "/ProgressBar Blue/V4/Foreground.png"
+const MIKO_PROGRESS_GREEN_FILL := MIKO_ROOT + "/ProgressBar Green/V4/Foreground.png"
+const MIKO_PROGRESS_RED_FILL := MIKO_ROOT + "/ProgressBar Red/V4/Foreground.png"
 
 
 static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
@@ -56,6 +64,15 @@ static func texture_box(path: String, fallback_fill: Color, fallback_border: Col
 	return style
 
 
+static func hologram_texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 22.0) -> StyleBox:
+	var style := texture_box(path, fallback_fill, fallback_border, margin)
+	style.content_margin_left = 12.0
+	style.content_margin_top = 10.0
+	style.content_margin_right = 12.0
+	style.content_margin_bottom = 10.0
+	return style
+
+
 static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
@@ -68,27 +85,30 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	style.corner_radius_top_right = int(radius)
 	style.corner_radius_bottom_left = int(radius)
 	style.corner_radius_bottom_right = int(radius)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
-	style.shadow_size = 8
-	style.shadow_offset = Vector2(0.0, 3.0)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0.0, 5.0)
+	return style
+
+
+static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
+	var style := panel(fill, border, border_width, radius)
+	style.shadow_size = 0
+	style.shadow_offset = Vector2.ZERO
+	style.shadow_color = Color.TRANSPARENT
 	return style
 
 
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
 	if border == AMBER:
-		return texture_box(BUTTON_PRESSED, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
-	if border == ACCENT or border == SUCCESS:
-		return texture_box(BUTTON_HOVER, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
-	return texture_box(BUTTON_NORMAL, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
+		return hologram_texture_box(HOLOGRAM_BUTTON_PRESSED, Color(border.r * 0.16, border.g * 0.16, border.b * 0.16, fill_alpha), border, 18.0)
+	if border == STROKE_SOFT:
+		return hologram_texture_box(HOLOGRAM_BUTTON_NORMAL, Color(border.r * 0.16, border.g * 0.16, border.b * 0.16, fill_alpha), border, 18.0)
+	return hologram_texture_box(HOLOGRAM_BUTTON_HOVER, Color(border.r * 0.16, border.g * 0.16, border.b * 0.16, fill_alpha), border, 18.0)
 
 
 static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBox:
-	var path := PANEL_GRAY
-	if border == ACCENT or border == SUCCESS:
-		path = PANEL_GREEN
-	elif border == AMBER:
-		path = PANEL_GREEN_DARK
-	var style := texture_box(path, fill, border, 18.0)
+	var style := hologram_texture_box(HOLOGRAM_CARD, fill, AMBER, 24.0)
 	style.content_margin_left = 8.0
 	style.content_margin_top = 8.0
 	style.content_margin_right = 8.0
@@ -106,26 +126,39 @@ static func top_card() -> StyleBox:
 
 
 static func accent_button(accent: Color) -> StyleBox:
-	var path := BIG_BUTTON_NORMAL
 	if accent == AMBER:
-		path = BIG_BUTTON_PRESSED
-	elif accent == ACCENT or accent == SUCCESS:
-		path = BIG_BUTTON_HOVER
-	return texture_box(path, Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.34), accent, 18.0)
+		return hologram_texture_box(HOLOGRAM_BUTTON_PRESSED, Color(accent.r * 0.16, accent.g * 0.16, accent.b * 0.16, 0.34), accent, 18.0)
+	return hologram_texture_box(HOLOGRAM_BUTTON_HOVER, Color(accent.r * 0.16, accent.g * 0.16, accent.b * 0.16, 0.34), accent, 18.0)
 
 
 static func disabled_button() -> StyleBox:
-	return texture_box(BUTTON_DISABLED, BG_DISABLED, STROKE_SOFT, 12.0)
+	return hologram_texture_box(HOLOGRAM_BUTTON_DISABLED, BG_DISABLED, STROKE_SOFT, 18.0)
+
+
+static func miko_button(state: StringName = &"normal") -> StyleBox:
+	var path := MIKO_BUTTON_NORMAL
+	if state == &"hover":
+		path = MIKO_BUTTON_HOVER
+	elif state == &"pressed":
+		path = MIKO_BUTTON_PRESSED
+	elif state == &"disabled":
+		path = MIKO_BUTTON_DISABLED
+	return texture_box(path, BG_CARD, STROKE_SOFT, 12.0)
+
+
+static func miko_panel(highlighted: bool = false) -> StyleBox:
+	var path := MIKO_PANEL_GREEN if highlighted else MIKO_PANEL_GRAY
+	return texture_box(path, BG_CARD, SUCCESS if highlighted else STROKE_SOFT, 18.0)
 
 
 static func progress_background() -> StyleBox:
-	return texture_box(PROGRESS_BLUE_BG, Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 8.0)
+	return texture_box(MIKO_PROGRESS_BLUE_BG, Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 8.0)
 
 
 static func progress_fill(color: Color) -> StyleBox:
-	var path := PROGRESS_BLUE_FILL
+	var path := MIKO_PROGRESS_BLUE_FILL
 	if color.r > color.b and color.r > color.g:
-		path = PROGRESS_RED_FILL
+		path = MIKO_PROGRESS_RED_FILL
 	elif color.g > color.b:
-		path = PROGRESS_GREEN_FILL
+		path = MIKO_PROGRESS_GREEN_FILL
 	return texture_box(path, color, color, 8.0)

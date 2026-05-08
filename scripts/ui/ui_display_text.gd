@@ -97,7 +97,7 @@ static func phase_label(phase: int) -> String:
 		GameEnums.PHASE_NIGHT:
 			return "夜晚"
 		GameEnums.PHASE_BLESSING:
-			return "祝福"
+			return "遗物"
 		GameEnums.PHASE_RESULT:
 			return "结算"
 		_:
