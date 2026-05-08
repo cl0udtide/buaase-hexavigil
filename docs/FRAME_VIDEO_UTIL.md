@@ -23,6 +23,8 @@ python tools/frames_to_video.py path\to\frames -o preview.mp4 --fps 12 --out-fps
 
 工具会按文件名自然排序，因此 `frame_2.png` 会排在 `frame_10.png` 前面。
 
+工具会检查首帧尺寸。如果输入帧或 `--scale` 指定的输出尺寸宽高不能被 2 整除，会自动把整批视频输出放大到下一个偶数尺寸，例如 `1279x721 -> 1280x722`，避免 `yuv420p` / `libx264` 编码时报错。默认假设同一批序列帧尺寸一致。
+
 ## 开启补帧
 
 ```powershell

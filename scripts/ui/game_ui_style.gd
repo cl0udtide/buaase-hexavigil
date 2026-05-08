@@ -20,6 +20,42 @@ const TEXT_DIM := Color(0.680, 0.755, 0.780, 1.0)
 const TEXT_MUTED := Color(0.455, 0.530, 0.560, 1.0)
 const TEXT_SHADOW := Color(0.0, 0.0, 0.0, 0.78)
 
+const UI_ROOT := "res://assets/UI/Wenrexa Assets GUI Dark Miko"
+const PANEL_GRAY := UI_ROOT + "/Panels Gray/Panel 10.png"
+const PANEL_GRAY_DARK := UI_ROOT + "/Panels Gray/Panel 12.png"
+const PANEL_GREEN := UI_ROOT + "/Panels Green/Panel 10.png"
+const PANEL_GREEN_DARK := UI_ROOT + "/Panels Green/Panel 12.png"
+const BUTTON_NORMAL := UI_ROOT + "/Standart Button V2/Standart Button Normal/Standart Button Normal 1.png"
+const BUTTON_HOVER := UI_ROOT + "/Standart Button V2/Standart Button Hover/Standart Button Hover 1.png"
+const BUTTON_PRESSED := UI_ROOT + "/Standart Button V2/Standart Button Active/Standart Button Active 1.png"
+const BUTTON_DISABLED := UI_ROOT + "/Standart Button V2/Standart Button Disable/Standart Button Disable 1.png"
+const BIG_BUTTON_NORMAL := UI_ROOT + "/Custom Big Buttons/Custom Buttons Normal/Custom Button Normal 1.png"
+const BIG_BUTTON_HOVER := UI_ROOT + "/Custom Big Buttons/Custom Buttons Hover/Custom Button Hover 1.png"
+const BIG_BUTTON_PRESSED := UI_ROOT + "/Custom Big Buttons/Custom Buttons Active/Custom Button Active 1.png"
+const BIG_BUTTON_DISABLED := UI_ROOT + "/Custom Big Buttons/Custom Buttons Disable/Custom Button Disable 1.png"
+const PROGRESS_BLUE_BG := UI_ROOT + "/ProgressBar Blue/V4/Background Static.png"
+const PROGRESS_BLUE_FILL := UI_ROOT + "/ProgressBar Blue/V4/Foreground.png"
+const PROGRESS_GREEN_FILL := UI_ROOT + "/ProgressBar Green/V4/Foreground.png"
+const PROGRESS_RED_FILL := UI_ROOT + "/ProgressBar Red/V4/Foreground.png"
+
+
+static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
+	var texture := load(path) as Texture2D
+	if texture == null:
+		return panel(fallback_fill, fallback_border, 1.0, 6.0)
+
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.set_texture_margin(SIDE_LEFT, margin)
+	style.set_texture_margin(SIDE_TOP, margin)
+	style.set_texture_margin(SIDE_RIGHT, margin)
+	style.set_texture_margin(SIDE_BOTTOM, margin)
+	style.content_margin_left = 10.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 10.0
+	style.content_margin_bottom = 8.0
+	return style
+
 
 static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -39,12 +75,21 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	return style
 
 
-static func button(border: Color, fill_alpha: float = 0.18) -> StyleBoxFlat:
-	return panel(Color(border.r * 0.20, border.g * 0.20, border.b * 0.20, fill_alpha), border, 1.0, 6.0)
+static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
+	if border == AMBER:
+		return texture_box(BUTTON_PRESSED, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
+	if border == ACCENT or border == SUCCESS:
+		return texture_box(BUTTON_HOVER, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
+	return texture_box(BUTTON_NORMAL, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
 
 
-static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBoxFlat:
-	var style := panel(fill, border, border_width, 6.0)
+static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBox:
+	var path := PANEL_GRAY
+	if border == ACCENT or border == SUCCESS:
+		path = PANEL_GREEN
+	elif border == AMBER:
+		path = PANEL_GREEN_DARK
+	var style := texture_box(path, fill, border, 18.0)
 	style.content_margin_left = 8.0
 	style.content_margin_top = 8.0
 	style.content_margin_right = 8.0
@@ -52,7 +97,7 @@ static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0
 	return style
 
 
-static func top_card() -> StyleBoxFlat:
+static func top_card() -> StyleBox:
 	var style := card(STROKE_SOFT, BG_GLASS, 1.0)
 	style.content_margin_left = 12.0
 	style.content_margin_top = 8.0
@@ -61,13 +106,27 @@ static func top_card() -> StyleBoxFlat:
 	return style
 
 
-static func accent_button(accent: Color) -> StyleBoxFlat:
-	return panel(Color(accent.r * 0.22, accent.g * 0.22, accent.b * 0.22, 0.42), accent, 1.0, 6.0)
+static func accent_button(accent: Color) -> StyleBox:
+	var path := BIG_BUTTON_NORMAL
+	if accent == AMBER:
+		path = BIG_BUTTON_PRESSED
+	elif accent == ACCENT or accent == SUCCESS:
+		path = BIG_BUTTON_HOVER
+	return texture_box(path, Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.34), accent, 18.0)
 
 
-static func progress_background() -> StyleBoxFlat:
-	return panel(Color(0.020, 0.027, 0.032, 0.72), Color(0.160, 0.220, 0.250, 0.90), 1.0, 3.0)
+static func disabled_button() -> StyleBox:
+	return texture_box(BUTTON_DISABLED, BG_DISABLED, STROKE_SOFT, 12.0)
 
 
-static func progress_fill(color: Color) -> StyleBoxFlat:
-	return panel(color, color, 0.0, 3.0)
+static func progress_background() -> StyleBox:
+	return texture_box(PROGRESS_BLUE_BG, Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 8.0)
+
+
+static func progress_fill(color: Color) -> StyleBox:
+	var path := PROGRESS_BLUE_FILL
+	if color.r > color.b and color.r > color.g:
+		path = PROGRESS_RED_FILL
+	elif color.g > color.b:
+		path = PROGRESS_GREEN_FILL
+	return texture_box(path, color, color, 8.0)
