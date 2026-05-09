@@ -161,7 +161,7 @@ func _refresh_mode_label() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
 	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
 	if content_margin != null:
 		content_margin.add_theme_constant_override("margin_left", 8)

@@ -66,7 +66,7 @@ func _style_choice_button(button: Button) -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
 
 
 func _place_centered() -> void:

@@ -90,7 +90,7 @@ func _format_percent(value: float) -> String:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, 1.0))
 	custom_minimum_size = Vector2(280.0, 0.0)
 	for label in find_children("*", "Label", true, false):
 		(label as Label).add_theme_color_override("font_color", GameUiStyle.TEXT)

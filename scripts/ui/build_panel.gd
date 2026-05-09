@@ -400,7 +400,7 @@ func _on_data_loaded() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
 	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_style_tab_button(_build_mode_button, true)
