@@ -42,7 +42,7 @@ const PROGRESS_RED_FILL := UI_ROOT + "/ProgressBar Red/V4/Foreground.png"
 static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	var texture := load(path) as Texture2D
 	if texture == null:
-		return panel(fallback_fill, fallback_border, 1.0, 6.0)
+		return flat_panel(fallback_fill, fallback_border, 1.0, 6.0)
 
 	var style := StyleBoxTexture.new()
 	style.texture = texture
@@ -57,7 +57,7 @@ static func texture_box(path: String, fallback_fill: Color, fallback_border: Col
 	return style
 
 
-static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
+static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.border_color = border
@@ -72,6 +72,30 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
 	style.shadow_size = 12
 	style.shadow_offset = Vector2(0.0, 5.0)
+	return style
+
+
+static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBox:
+	var path := PANEL_GRAY
+	var margin := 18.0
+	if fill == BG_DARK or fill == BG_GLASS or fill.a >= 0.98:
+		path = PANEL_GRAY_DARK
+	if border == ACCENT or border == SUCCESS:
+		path = PANEL_GREEN
+	elif border == AMBER:
+		path = PANEL_GREEN_DARK
+	elif border == STROKE_STRONG:
+		path = PANEL_GRAY_DARK
+	if radius <= 4.0:
+		margin = 10.0
+	elif radius <= 5.0:
+		margin = 14.0
+
+	var style := texture_box(path, fill, border, margin)
+	style.content_margin_left = 8.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_bottom = 8.0
 	return style
 
 
