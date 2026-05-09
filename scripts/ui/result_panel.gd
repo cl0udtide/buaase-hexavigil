@@ -21,4 +21,4 @@ func _ready() -> void:
 func _apply_visual_style() -> void:
 	var card := get_node_or_null("%ResultCard") as PanelContainer
 	if card != null:
-		card.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.0, 6.0))
+		card.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))

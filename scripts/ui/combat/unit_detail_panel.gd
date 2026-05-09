@@ -32,7 +32,7 @@ var _last_skill_scroll_key := ""
 
 func _ready() -> void:
 	AppTheme.apply(self)
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
 	_skill_card.custom_minimum_size = Vector2(0.0, 128.0)
 	_skill_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -44,7 +44,7 @@ func _ready() -> void:
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_portrait_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.035, 0.046, 0.055, 0.98), GameUiStyle.STROKE_SOFT, 1.0, 5.0))
-	_skill_card.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT, 1.0, 5.0))
+	_skill_card.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, 1.0))
 	_skill_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.170, 0.076, 0.030, 0.96), GameUiStyle.AMBER, 1.0, 4.0))
 	_title_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
@@ -56,7 +56,7 @@ func _ready() -> void:
 	_portrait_label.add_theme_color_override("font_color", Color(0.40, 0.48, 0.52, 0.95))
 	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_hp_bar.add_theme_stylebox_override("background", GameUiStyle.progress_background())
-	_hp_bar.add_theme_stylebox_override("fill", GameUiStyle.progress_fill(GameUiStyle.ACCENT))
+	_hp_bar.add_theme_stylebox_override("fill", GameUiStyle.progress_fill(GameUiStyle.DANGER))
 	_sp_bar.add_theme_stylebox_override("background", GameUiStyle.progress_background())
 	_sp_bar.add_theme_stylebox_override("fill", GameUiStyle.progress_fill(Color(0.18, 0.72, 0.95, 0.95)))
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
