@@ -49,7 +49,7 @@ const MIKO_PROGRESS_RED_FILL := MIKO_ROOT + "/ProgressBar Red/V4/Foreground.png"
 static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	var texture := load(path) as Texture2D
 	if texture == null:
-		return panel(fallback_fill, fallback_border, 1.0, 6.0)
+		return flat_panel(fallback_fill, fallback_border, 1.0, 6.0)
 
 	var style := StyleBoxTexture.new()
 	style.texture = texture
@@ -73,7 +73,7 @@ static func hologram_texture_box(path: String, fallback_fill: Color, fallback_bo
 	return style
 
 
-static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
+static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.border_color = border
@@ -91,8 +91,31 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	return style
 
 
+static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBox:
+	var path := HOLOGRAM_PANEL_EMPTY
+	var margin := 20.0
+	if border == SUCCESS:
+		path = HOLOGRAM_PANEL_GREEN
+	elif border == DANGER:
+		path = HOLOGRAM_PANEL_RED
+	elif border == AMBER or border == ACCENT or border == STROKE_STRONG:
+		path = HOLOGRAM_CARD
+		margin = 24.0
+	elif radius <= 4.0:
+		margin = 14.0
+	elif radius <= 5.0:
+		margin = 18.0
+
+	var style := hologram_texture_box(path, fill, border, margin)
+	style.content_margin_left = 8.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_bottom = 8.0
+	return style
+
+
 static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
-	var style := panel(fill, border, border_width, radius)
+	var style := flat_panel(fill, border, border_width, radius)
 	style.shadow_size = 0
 	style.shadow_offset = Vector2.ZERO
 	style.shadow_color = Color.TRANSPARENT
