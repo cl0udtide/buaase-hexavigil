@@ -39,13 +39,14 @@ const PROGRESS_GREEN_FILL := UI_ROOT + "/ProgressBar Green/V4/Foreground.png"
 const PROGRESS_RED_FILL := UI_ROOT + "/ProgressBar Red/V4/Foreground.png"
 
 
-static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
+static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0, tint: Color = Color.WHITE) -> StyleBox:
 	var texture := load(path) as Texture2D
 	if texture == null:
 		return flat_panel(fallback_fill, fallback_border, 1.0, 6.0)
 
 	var style := StyleBoxTexture.new()
 	style.texture = texture
+	style.modulate_color = tint
 	style.set_texture_margin(SIDE_LEFT, margin)
 	style.set_texture_margin(SIDE_TOP, margin)
 	style.set_texture_margin(SIDE_RIGHT, margin)
@@ -55,6 +56,20 @@ static func texture_box(path: String, fallback_fill: Color, fallback_border: Col
 	style.content_margin_right = 10.0
 	style.content_margin_bottom = 8.0
 	return style
+
+
+static func _surface_tint(border: Color, fill: Color) -> Color:
+	if border == DANGER:
+		return Color(1.18, 0.70, 0.66, 1.0)
+	if border == AMBER:
+		return Color(1.16, 0.94, 0.58, 1.0)
+	if border == SUCCESS:
+		return Color(0.70, 1.08, 0.82, 1.0)
+	if border == ACCENT or border == STROKE_STRONG:
+		return Color(0.62, 0.90, 1.10, 1.0)
+	if fill == BG_DISABLED:
+		return Color(0.46, 0.52, 0.56, 1.0)
+	return Color(0.76, 0.86, 0.92, 1.0)
 
 
 static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
@@ -91,7 +106,7 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	elif radius <= 5.0:
 		margin = 14.0
 
-	var style := texture_box(path, fill, border, margin)
+	var style := texture_box(path, fill, border, margin, _surface_tint(border, fill))
 	style.content_margin_left = 8.0
 	style.content_margin_top = 8.0
 	style.content_margin_right = 8.0
@@ -101,10 +116,10 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
 	if border == AMBER:
-		return texture_box(BUTTON_PRESSED, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
+		return texture_box(BUTTON_PRESSED, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0, _surface_tint(border, BG_CARD_HOVER))
 	if border == SUCCESS:
-		return texture_box(BUTTON_HOVER, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
-	return texture_box(BUTTON_NORMAL, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
+		return texture_box(BUTTON_HOVER, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0, _surface_tint(border, BG_CARD_HOVER))
+	return texture_box(BUTTON_NORMAL, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0, _surface_tint(border, BG_CARD))
 
 
 static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBox:
@@ -113,7 +128,7 @@ static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0
 		path = PANEL_GREEN
 	elif border == AMBER:
 		path = PANEL_GREEN_DARK
-	var style := texture_box(path, fill, border, 18.0)
+	var style := texture_box(path, fill, border, 18.0, _surface_tint(border, fill))
 	style.content_margin_left = 8.0
 	style.content_margin_top = 8.0
 	style.content_margin_right = 8.0
@@ -136,15 +151,15 @@ static func accent_button(accent: Color) -> StyleBox:
 		path = BIG_BUTTON_PRESSED
 	elif accent == SUCCESS:
 		path = BIG_BUTTON_HOVER
-	return texture_box(path, Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.34), accent, 18.0)
+	return texture_box(path, Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.34), accent, 18.0, _surface_tint(accent, BG_CARD_HOVER))
 
 
 static func disabled_button() -> StyleBox:
-	return texture_box(BUTTON_DISABLED, BG_DISABLED, STROKE_SOFT, 12.0)
+	return texture_box(BUTTON_DISABLED, BG_DISABLED, STROKE_SOFT, 12.0, _surface_tint(STROKE_SOFT, BG_DISABLED))
 
 
 static func progress_background() -> StyleBox:
-	return texture_box(PROGRESS_BLUE_BG, Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 8.0)
+	return texture_box(PROGRESS_BLUE_BG, Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 8.0, Color(0.58, 0.68, 0.76, 1.0))
 
 
 static func progress_fill(color: Color) -> StyleBox:
@@ -153,4 +168,4 @@ static func progress_fill(color: Color) -> StyleBox:
 		path = PROGRESS_RED_FILL
 	elif color.g > color.b:
 		path = PROGRESS_GREEN_FILL
-	return texture_box(path, color, color, 8.0)
+	return texture_box(path, color, color, 8.0, _surface_tint(color, BG_CARD))
