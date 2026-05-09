@@ -345,8 +345,8 @@ func _set_descendant_mouse_filter(root: Node, filter: int) -> void:
 
 
 func _apply_style() -> void:
-	_text_box.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.5, 6.0))
-	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.055, 0.120, 0.135, 0.98), GameUiStyle.ACCENT, 1.0, 5.0))
+	_text_box.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.5))
+	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.ACCENT, Color(0.055, 0.120, 0.135, 0.98), 1.0))
 	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_speaker_label.add_theme_font_size_override("font_size", 22)
 	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT)

@@ -450,7 +450,7 @@ func _get_square_range_cells(center: Vector2i, radius: int) -> Array[Vector2i]:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, 1.0, 6.0))
+	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
 	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
