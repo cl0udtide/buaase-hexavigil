@@ -2,22 +2,22 @@ class_name GameUiStyle
 extends RefCounted
 
 
-const BG := Color(0.058, 0.071, 0.084, 0.98)
-const BG_DARK := Color(0.034, 0.043, 0.052, 0.99)
-const BG_GLASS := Color(0.070, 0.087, 0.100, 0.97)
-const BG_CARD := Color(0.092, 0.110, 0.124, 0.98)
-const BG_CARD_HOVER := Color(0.118, 0.148, 0.160, 1.0)
-const BG_DISABLED := Color(0.048, 0.056, 0.064, 0.97)
-const STROKE := Color(0.220, 0.355, 0.400, 0.78)
-const STROKE_SOFT := Color(0.145, 0.205, 0.232, 0.76)
-const STROKE_STRONG := Color(0.055, 0.690, 0.760, 0.88)
-const ACCENT := Color(0.000, 0.760, 0.840, 0.96)
-const AMBER := Color(1.000, 0.585, 0.145, 0.96)
-const DANGER := Color(0.940, 0.225, 0.170, 0.96)
-const SUCCESS := Color(0.265, 0.780, 0.465, 0.96)
-const TEXT := Color(0.900, 0.945, 0.955, 1.0)
-const TEXT_DIM := Color(0.680, 0.755, 0.780, 1.0)
-const TEXT_MUTED := Color(0.455, 0.530, 0.560, 1.0)
+const BG := Color(0.050, 0.061, 0.073, 0.98)
+const BG_DARK := Color(0.026, 0.033, 0.041, 0.99)
+const BG_GLASS := Color(0.060, 0.073, 0.086, 0.97)
+const BG_CARD := Color(0.078, 0.093, 0.108, 0.98)
+const BG_CARD_HOVER := Color(0.096, 0.126, 0.146, 1.0)
+const BG_DISABLED := Color(0.042, 0.048, 0.056, 0.97)
+const STROKE := Color(0.205, 0.305, 0.360, 0.78)
+const STROKE_SOFT := Color(0.125, 0.178, 0.215, 0.76)
+const STROKE_STRONG := Color(0.105, 0.540, 0.670, 0.88)
+const ACCENT := Color(0.080, 0.690, 0.880, 0.96)
+const AMBER := Color(0.960, 0.610, 0.200, 0.96)
+const DANGER := Color(0.900, 0.240, 0.200, 0.96)
+const SUCCESS := Color(0.300, 0.720, 0.500, 0.96)
+const TEXT := Color(0.910, 0.948, 0.962, 1.0)
+const TEXT_DIM := Color(0.670, 0.745, 0.780, 1.0)
+const TEXT_MUTED := Color(0.430, 0.505, 0.545, 1.0)
 const TEXT_SHADOW := Color(0.0, 0.0, 0.0, 0.78)
 
 const UI_ROOT := "res://assets/UI/Wenrexa Assets GUI Dark Miko"
@@ -80,7 +80,7 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 	var margin := 18.0
 	if fill == BG_DARK or fill == BG_GLASS or fill.a >= 0.98:
 		path = PANEL_GRAY_DARK
-	if border == ACCENT or border == SUCCESS:
+	if border == SUCCESS:
 		path = PANEL_GREEN
 	elif border == AMBER:
 		path = PANEL_GREEN_DARK
@@ -102,14 +102,14 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
 	if border == AMBER:
 		return texture_box(BUTTON_PRESSED, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
-	if border == ACCENT or border == SUCCESS:
+	if border == SUCCESS:
 		return texture_box(BUTTON_HOVER, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
 	return texture_box(BUTTON_NORMAL, Color(border.r * 0.22, border.g * 0.22, border.b * 0.22, fill_alpha), border, 12.0)
 
 
 static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBox:
 	var path := PANEL_GRAY
-	if border == ACCENT or border == SUCCESS:
+	if border == SUCCESS:
 		path = PANEL_GREEN
 	elif border == AMBER:
 		path = PANEL_GREEN_DARK
@@ -134,7 +134,7 @@ static func accent_button(accent: Color) -> StyleBox:
 	var path := BIG_BUTTON_NORMAL
 	if accent == AMBER:
 		path = BIG_BUTTON_PRESSED
-	elif accent == ACCENT or accent == SUCCESS:
+	elif accent == SUCCESS:
 		path = BIG_BUTTON_HOVER
 	return texture_box(path, Color(accent.r * 0.24, accent.g * 0.24, accent.b * 0.24, 0.34), accent, 18.0)
 
