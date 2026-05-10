@@ -3,7 +3,6 @@ extends Control
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
-const HUD_BOTTOM_RAIL_TEXTURE := preload("res://assets/UI/FantasyStone/panel_hud_bottom_rail_generated.png")
 
 signal operator_card_pressed(operator_key: StringName)
 signal pause_pressed
@@ -25,7 +24,6 @@ const UNIT_DETAIL_MIN_TOP := 250.0
 var _cards_by_operator_key: Dictionary = {}
 var _left_reserved_width := 0.0
 var _layout_profile: Dictionary = {}
-var _top_bottom_rail: TextureRect
 
 @onready var _top_bar: PanelContainer = %TopBar
 @onready var _core_label: Label = %CoreLabel
@@ -54,13 +52,6 @@ func _ready() -> void:
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_top_bar.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
-	_top_bottom_rail = TextureRect.new()
-	_top_bottom_rail.name = "TopBottomRail"
-	_top_bottom_rail.texture = HUD_BOTTOM_RAIL_TEXTURE
-	_top_bottom_rail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_top_bottom_rail.stretch_mode = TextureRect.STRETCH_SCALE
-	_top_bottom_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_top_bottom_rail)
 	_apply_frame_margins()
 	_style_top_cards()
 	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, false))
@@ -224,7 +215,7 @@ func _style_button(button: Button, accent: Color) -> void:
 
 
 func _apply_frame_margins() -> void:
-	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(20.0, 0.0, 20.0, 0.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD)
 	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
@@ -268,7 +259,6 @@ func _apply_responsive_layout() -> void:
 	_layout_profile = UiLayoutRules.hud_profile(viewport_size, detail_visible, _left_reserved_width)
 	var top_rect: Rect2 = _layout_profile.get("top_rect", Rect2())
 	_place_control(_top_bar, top_rect)
-	_place_control(_top_bottom_rail, Rect2(top_rect.position.x + 24.0, top_rect.position.y + top_rect.size.y - 24.0, maxf(0.0, top_rect.size.x - 48.0), 28.0))
 	_place_control(_deck_panel, _layout_profile.get("deck_rect", Rect2()))
 	_place_control(_detail_panel, _layout_profile.get("detail_rect", Rect2()))
 	_apply_top_bar_density(viewport_size.x)
@@ -293,23 +283,24 @@ func _place_control(control: Control, rect: Rect2) -> void:
 
 func _apply_top_bar_density(viewport_width: float) -> void:
 	var widths := UiLayoutRules.top_card_widths(viewport_width)
-	var top_height := float(_layout_profile.get("top_card_height", 68.0))
+	var top_height := float(_layout_profile.get("top_card_height", 50.0))
 	var compact := bool(_layout_profile.get("compact", false))
 	var row := get_node_or_null("TopBar/TopMargin/Row") as HBoxContainer
 	if row != null:
-		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)))
-	_set_top_card_min("TopBar/TopMargin/Row/StageCard", widths.get("stage", 190.0), top_height)
-	_set_top_card_min("TopBar/TopMargin/Row/CoreCard", widths.get("core", 190.0), top_height)
-	_set_top_card_min("TopBar/TopMargin/Row/DeployCard", widths.get("deploy", 160.0), top_height)
-	_set_top_card_min("TopBar/TopMargin/Row/MessageCard", widths.get("message", 260.0), top_height)
-	_set_top_card_min("TopBar/TopMargin/Row/TimeCard", widths.get("time", 200.0), top_height)
-	_set_top_card_min("TopBar/TopMargin/Row/ResourceCard", widths.get("resource", 245.0), top_height)
-	_debug_button.custom_minimum_size = Vector2(float(widths.get("debug", 76.0)), top_height)
+		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)) + 2)
+	var card_height := maxf(36.0, top_height - 8.0)
+	_set_top_card_min("TopBar/TopMargin/Row/StageCard", widths.get("stage", 190.0), card_height)
+	_set_top_card_min("TopBar/TopMargin/Row/CoreCard", widths.get("core", 190.0), card_height)
+	_set_top_card_min("TopBar/TopMargin/Row/DeployCard", widths.get("deploy", 160.0), card_height)
+	_set_top_card_min("TopBar/TopMargin/Row/MessageCard", widths.get("message", 260.0), card_height)
+	_set_top_card_min("TopBar/TopMargin/Row/TimeCard", widths.get("time", 200.0), card_height)
+	_set_top_card_min("TopBar/TopMargin/Row/ResourceCard", widths.get("resource", 245.0), card_height)
+	_debug_button.custom_minimum_size = Vector2(float(widths.get("debug", 76.0)), card_height)
 	var label_size := 12 if compact else 13
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_font_size_override("font_size", label_size)
 	_resource_label.add_theme_font_size_override("font_size", 12)
-	var button_height := 34.0 if compact else 36.0
+	var button_height := 30.0 if compact else 32.0
 	_pause_button.custom_minimum_size = Vector2(68.0 if compact else 74.0, button_height)
 	_speed_1_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)
 	_speed_2_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)

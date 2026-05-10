@@ -400,8 +400,8 @@ func _on_data_loaded() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(2.0, 18.0, 2.0, 30.0))
+	add_theme_stylebox_override("panel", GameUiStyle.build_side_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_BUILD_SIDE_PANEL, Vector4(2.0, 0.0, 2.0, 8.0))
 	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	GameUiStyle.center_label_text(_selection_label)
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)

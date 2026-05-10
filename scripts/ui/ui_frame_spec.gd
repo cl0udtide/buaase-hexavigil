@@ -4,15 +4,20 @@ extends RefCounted
 
 const FANTASY_STONE_ROOT := "res://assets/UI/FantasyStone"
 const FS_PANEL_TOP_HUD := FANTASY_STONE_ROOT + "/panel_top_hud.png"
+const FS_PANEL_TOP_HUD_PLAIN_GENERATED := FANTASY_STONE_ROOT + "/panel_top_hud_plain_generated.png"
 const FS_PANEL_SIDE_SCROLL := FANTASY_STONE_ROOT + "/panel_side_scroll.png"
+const FS_PANEL_BUILD_SIDE_PLAIN_GENERATED := FANTASY_STONE_ROOT + "/panel_build_side_plain_generated.png"
 const FS_PANEL_DETAIL := FANTASY_STONE_ROOT + "/panel_detail.png"
 const FS_PANEL_BADGE := FANTASY_STONE_ROOT + "/panel_badge.png"
 const FS_PANEL_STRIP := FANTASY_STONE_ROOT + "/panel_strip.png"
 const FS_PANEL_CARD_SQUARE := FANTASY_STONE_ROOT + "/panel_card_square.png"
 const FS_PANEL_CARD_SMALL := FANTASY_STONE_ROOT + "/panel_card_small.png"
 const FS_PANEL_HUD_CELL_GENERATED := FANTASY_STONE_ROOT + "/panel_hud_cell_generated.png"
+const FS_PANEL_HUD_CELL_SLIM_GENERATED := FANTASY_STONE_ROOT + "/panel_hud_cell_slim_generated.png"
+const FS_PANEL_HUD_CELL_SLIM_SELECTED_GENERATED := FANTASY_STONE_ROOT + "/panel_hud_cell_slim_selected_generated.png"
 const FS_PANEL_HUD_BOTTOM_RAIL_GENERATED := FANTASY_STONE_ROOT + "/panel_hud_bottom_rail_generated.png"
 const FS_PANEL_DETAIL_SECTION_GENERATED := FANTASY_STONE_ROOT + "/panel_detail_section_generated.png"
+const FS_PANEL_DETAIL_SECTION_SLIM_GENERATED := FANTASY_STONE_ROOT + "/panel_detail_section_slim_generated.png"
 const FS_BUTTON_NORMAL := FANTASY_STONE_ROOT + "/button_normal.png"
 const FS_BUTTON_HOVER := FANTASY_STONE_ROOT + "/button_hover.png"
 const FS_BUTTON_PRESSED := FANTASY_STONE_ROOT + "/button_pressed.png"
@@ -29,7 +34,9 @@ const FS_PROGRESS_RED := FANTASY_STONE_ROOT + "/progress_fill_red.png"
 const TOP_HUD := &"top_hud"
 const TOP_CARD := &"top_card"
 const HUD_CELL := &"hud_cell"
+const HUD_CELL_SELECTED := &"hud_cell_selected"
 const SIDE_PANEL := &"side_panel"
+const BUILD_SIDE_PANEL := &"build_side_panel"
 const DECK_PANEL := &"deck_panel"
 const HUD_BOTTOM_RAIL := &"hud_bottom_rail"
 const DETAIL_SECTION := &"detail_section"
@@ -57,10 +64,10 @@ const DEFAULT_INSETS := Vector4(12.0, 9.0, 12.0, 9.0)
 # and content values are the measured text-safe pixels after bevel/decor areas.
 const SPECS := {
 	TOP_HUD: {
-		"path": FS_PANEL_TOP_HUD,
-		"native": Vector2(1382.0, 152.0),
-		"slice": Vector4(34.0, 28.0, 34.0, 28.0),
-		"content": ZERO_INSETS,
+		"path": FS_PANEL_TOP_HUD_PLAIN_GENERATED,
+		"native": Vector2(1200.0, 86.0),
+		"slice": Vector4(42.0, 24.0, 42.0, 24.0),
+		"content": Vector4(24.0, 8.0, 24.0, 8.0),
 	},
 	TOP_CARD: {
 		"path": FS_PANEL_BADGE,
@@ -69,16 +76,28 @@ const SPECS := {
 		"content": Vector4(14.0, 10.0, 14.0, 10.0),
 	},
 	HUD_CELL: {
-		"path": FS_PANEL_HUD_CELL_GENERATED,
-		"native": Vector2(360.0, 82.0),
-		"slice": Vector4(42.0, 24.0, 42.0, 24.0),
-		"content": Vector4(16.0, 8.0, 16.0, 8.0),
+		"path": FS_PANEL_HUD_CELL_SLIM_GENERATED,
+		"native": Vector2(320.0, 50.0),
+		"slice": Vector4(26.0, 15.0, 26.0, 15.0),
+		"content": Vector4(12.0, 4.0, 12.0, 4.0),
+	},
+	HUD_CELL_SELECTED: {
+		"path": FS_PANEL_HUD_CELL_SLIM_SELECTED_GENERATED,
+		"native": Vector2(320.0, 50.0),
+		"slice": Vector4(26.0, 15.0, 26.0, 15.0),
+		"content": Vector4(12.0, 4.0, 12.0, 4.0),
 	},
 	SIDE_PANEL: {
 		"path": FS_PANEL_SIDE_SCROLL,
 		"native": Vector2(453.0, 689.0),
 		"slice": Vector4(34.0, 34.0, 34.0, 34.0),
 		"content": Vector4(20.0, 18.0, 20.0, 18.0),
+	},
+	BUILD_SIDE_PANEL: {
+		"path": FS_PANEL_BUILD_SIDE_PLAIN_GENERATED,
+		"native": Vector2(314.0, 720.0),
+		"slice": Vector4(34.0, 34.0, 34.0, 34.0),
+		"content": Vector4(22.0, 20.0, 22.0, 20.0),
 	},
 	DECK_PANEL: {
 		"path": FS_PANEL_STRIP,
@@ -93,10 +112,10 @@ const SPECS := {
 		"content": ZERO_INSETS,
 	},
 	DETAIL_SECTION: {
-		"path": FS_PANEL_DETAIL_SECTION_GENERATED,
-		"native": Vector2(360.0, 74.0),
-		"slice": Vector4(34.0, 22.0, 34.0, 22.0),
-		"content": Vector4(14.0, 8.0, 14.0, 8.0),
+		"path": FS_PANEL_DETAIL_SECTION_SLIM_GENERATED,
+		"native": Vector2(360.0, 92.0),
+		"slice": Vector4(22.0, 18.0, 22.0, 18.0),
+		"content": Vector4(12.0, 8.0, 12.0, 8.0),
 	},
 	CARD: {
 		"path": FS_PANEL_BADGE,
