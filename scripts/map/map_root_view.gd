@@ -3,7 +3,18 @@ extends Node2D
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 const CELL_SIZE := 64.0
-const GRID_COLOR := Color(0.12, 0.18, 0.22, 0.85)
+const TILE_PLAIN: Texture2D = preload("res://assets/map/CommandMap/tile_plain.png")
+const TILE_HIDDEN: Texture2D = preload("res://assets/map/CommandMap/tile_hidden.png")
+const TILE_BLOCKED: Texture2D = preload("res://assets/map/CommandMap/tile_blocked.png")
+const TILE_OBSTACLE: Texture2D = preload("res://assets/map/CommandMap/tile_obstacle.png")
+const TILE_CORE: Texture2D = preload("res://assets/map/CommandMap/tile_core.png")
+const TILE_SPAWN: Texture2D = preload("res://assets/map/CommandMap/tile_spawn.png")
+const TILE_RESOURCE_WOOD: Texture2D = preload("res://assets/map/CommandMap/tile_resource_wood.png")
+const TILE_RESOURCE_STONE: Texture2D = preload("res://assets/map/CommandMap/tile_resource_stone.png")
+const TILE_RESOURCE_MANA: Texture2D = preload("res://assets/map/CommandMap/tile_resource_mana.png")
+const TILE_EVENT: Texture2D = preload("res://assets/map/CommandMap/tile_event.png")
+const TILE_OCCUPIED: Texture2D = preload("res://assets/map/CommandMap/tile_occupied.png")
+const GRID_COLOR := Color(0.02, 0.045, 0.065, 0.36)
 const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
 const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
@@ -123,7 +134,7 @@ func _draw() -> void:
 			if data == null:
 				continue
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
-			draw_rect(rect, _get_cell_color(data))
+			_draw_cell_tile(rect, data)
 			draw_rect(rect, GRID_COLOR, false, 1.0)
 			if _deploy_range_preview_cells.has(cell):
 				_draw_deploy_range_cell(rect)
@@ -395,6 +406,38 @@ func _get_cell_color(data) -> Color:
 	if _has_event_at_cell(data.cell):
 		return COLOR_EVENT
 	return COLOR_PLAIN
+
+
+func _draw_cell_tile(rect: Rect2, data) -> void:
+	var texture := _get_cell_texture(data)
+	if texture != null:
+		draw_texture_rect(texture, rect, false)
+	else:
+		draw_rect(rect, _get_cell_color(data))
+
+
+func _get_cell_texture(data) -> Texture2D:
+	if not data.discovered:
+		return TILE_HIDDEN
+	if data.is_core:
+		return TILE_CORE
+	if data.spawn_key != StringName():
+		return TILE_SPAWN
+	if data.terrain == &"obstacle":
+		return TILE_OBSTACLE
+	if data.terrain == &"blocked" or not data.walkable:
+		return TILE_BLOCKED
+	if data.occupied or data.unit_runtime_id >= 0 or data.building_runtime_id >= 0:
+		return TILE_OCCUPIED
+	if data.resource_type == &"wood":
+		return TILE_RESOURCE_WOOD
+	if data.resource_type == &"stone":
+		return TILE_RESOURCE_STONE
+	if data.resource_type == &"mana":
+		return TILE_RESOURCE_MANA
+	if _has_event_at_cell(data.cell):
+		return TILE_EVENT
+	return TILE_PLAIN
 
 
 func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> void:
