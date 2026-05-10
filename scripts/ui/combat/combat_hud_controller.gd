@@ -701,22 +701,28 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var cfg := _get_unit_cfg(unit_id)
 	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
 	var class_text := UiDisplayText.class_label(str(cfg.get("class", "")))
-	var state_text := "可部署"
+	var hp_text := "HP %d" % int(cfg.get("max_hp", 0))
+	var sp_text := "SP 0/%d" % int(cfg.get("sp_max", 0))
+	var cd_text := "CD READY"
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
-			state_text = "HP %d/%d  SP %.0f/%.0f" % [int(unit.current_hp), int(unit.max_hp), float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+			hp_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
+			sp_text = "SP %.0f/%.0f" % [float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+			cd_text = "CD 在场"
 			var ammo_text := _format_unit_ammo_status(unit)
 			if not ammo_text.is_empty():
-				state_text = "%s  %s" % [state_text, ammo_text]
+				sp_text = "%s  %s" % [sp_text, ammo_text]
 		else:
-			state_text = "已部署"
+			cd_text = "CD 在场"
 	elif state == &"cooldown":
 		var remain := float(_unit_manager.get_operator_redeploy_remaining(operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
-		state_text = "冷却 %.1f秒" % remain
+		hp_text = "HP --"
+		sp_text = "SP --"
+		cd_text = "CD %.1f秒" % remain
 	elif not _can_deploy_now():
-		state_text = "当前阶段不可部署"
-	return "%s\n%s  费用 %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
+		cd_text = "CD 阶段限制"
+	return "%s\n%s COST %s\n%s\n%s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), hp_text, sp_text, cd_text]
 
 
 func _format_unit_ammo_status(unit: Node) -> String:

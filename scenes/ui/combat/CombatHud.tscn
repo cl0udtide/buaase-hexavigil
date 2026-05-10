@@ -250,6 +250,101 @@ offset_bottom = -12.0
 grow_horizontal = 0
 grow_vertical = 2
 
+[node name="LegendPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 1444.0
+offset_top = 714.0
+offset_right = 1704.0
+offset_bottom = 882.0
+mouse_filter = 0
+
+[node name="LegendMargin" type="MarginContainer" parent="LegendPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="LegendVBox" type="VBoxContainer" parent="LegendPanel/LegendMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LegendTitleLabel" type="Label" parent="LegendPanel/LegendMargin/LegendVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "战场图例"
+horizontal_alignment = 1
+
+[node name="LegendRows" type="VBoxContainer" parent="LegendPanel/LegendMargin/LegendVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EnemyPathRow" type="HBoxContainer" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow"]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.9, 0.36, 0.22, 0.9)
+
+[node name="Label" type="Label" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow"]
+layout_mode = 2
+text = "敌人路径"
+
+[node name="DeployTileRow" type="HBoxContainer" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow"]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.26, 0.76, 0.92, 0.85)
+
+[node name="Label" type="Label" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow"]
+layout_mode = 2
+text = "可部署地块"
+
+[node name="FriendlyBuildingRow" type="HBoxContainer" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow"]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.29, 0.7, 0.43, 0.85)
+
+[node name="Label" type="Label" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow"]
+layout_mode = 2
+text = "我方建筑"
+
+[node name="BlockerRow" type="HBoxContainer" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow"]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.95, 0.65, 0.22, 0.9)
+
+[node name="Label" type="Label" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow"]
+layout_mode = 2
+text = "阻挡单元"
+
+[node name="CoreAreaRow" type="HBoxContainer" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow"]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.5, 0.42, 0.76, 0.9)
+
+[node name="Label" type="Label" parent="LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow"]
+layout_mode = 2
+text = "核心区域"
+
 [node name="RelicPanel" parent="." instance=ExtResource("4_relic_panel")]
 unique_name_in_owner = true
 anchors_preset = 8
