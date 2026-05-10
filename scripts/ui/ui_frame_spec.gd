@@ -79,13 +79,13 @@ const SPECS := {
 		"path": FS_PANEL_HUD_CELL_SLIM_GENERATED,
 		"native": Vector2(320.0, 50.0),
 		"slice": Vector4(26.0, 15.0, 26.0, 15.0),
-		"content": Vector4(12.0, 4.0, 12.0, 4.0),
+		"content": Vector4(18.0, 7.0, 18.0, 7.0),
 	},
 	HUD_CELL_SELECTED: {
 		"path": FS_PANEL_HUD_CELL_SLIM_SELECTED_GENERATED,
 		"native": Vector2(320.0, 50.0),
 		"slice": Vector4(26.0, 15.0, 26.0, 15.0),
-		"content": Vector4(12.0, 4.0, 12.0, 4.0),
+		"content": Vector4(18.0, 7.0, 18.0, 7.0),
 	},
 	SIDE_PANEL: {
 		"path": FS_PANEL_SIDE_SCROLL,
@@ -163,13 +163,13 @@ const SPECS := {
 		"path": FS_BUTTON_COMPACT_GENERATED,
 		"native": Vector2(174.0, 54.0),
 		"slice": Vector4(24.0, 16.0, 24.0, 16.0),
-		"content": Vector4(10.0, 4.0, 10.0, 4.0),
+		"content": Vector4(12.0, 6.0, 12.0, 6.0),
 	},
 	BUTTON_COMPACT_SELECTED: {
 		"path": FS_BUTTON_COMPACT_SELECTED_GENERATED,
 		"native": Vector2(174.0, 54.0),
 		"slice": Vector4(24.0, 16.0, 24.0, 16.0),
-		"content": Vector4(10.0, 4.0, 10.0, 4.0),
+		"content": Vector4(12.0, 6.0, 12.0, 6.0),
 	},
 	TAB: {
 		"path": FS_TAB_IDLE,

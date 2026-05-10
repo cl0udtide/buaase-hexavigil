@@ -1549,7 +1549,6 @@ signal operator_card_pressed(operator_key: StringName)
 signal pause_pressed
 signal speed_1_pressed
 signal speed_2_pressed
-signal debug_drawer_toggle_pressed
 signal cast_skill_requested
 signal retreat_requested
 ```
@@ -1561,7 +1560,6 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 func show_message(text_value: String) -> void
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void
 func set_time_controls(paused: bool, speed: float) -> void
-func set_debug_drawer_open(open: bool) -> void
 func set_operators(operators: Array[Dictionary]) -> void
 func set_operator_card(operator_key: StringName, text_value: String, state: StringName) -> void
 func show_drag_ghost(text_value: String) -> void
@@ -1599,7 +1597,6 @@ func clear_unit_detail() -> void
 ```text
 ../CombatHud
 ../ActionPanel
-../DebugPanel
 ../../World/MapRoot
 ../../Managers/MapManager
 ../../Managers/UnitManager
@@ -1613,7 +1610,7 @@ func clear_unit_detail() -> void
 - 执行底部干员卡拖拽、落点锁定、二段朝向选择和部署确认。
 - 点击已部署单位时显示详情和攻击范围。
 - 点击空地图格时取消选中并清除攻击范围。
-- 转接技能、撤退、暂停、1x/2x 和调试面板开关。
+- 转接技能、撤退、暂停和 1x/2x。
 
 #### `OperatorCard`
 
@@ -1741,7 +1738,6 @@ func hide_panel() -> void
 | `request_start_night` | 无 | UI | `GameController` / `DayManager` | 请求结束白天 |
 | `request_buy_shop_slot` | `slot_index: int` | UI | `ShopManager` | 请求购买指定商店槽位 |
 | `request_refresh_shop` | 无 | UI | `ShopManager` | 请求刷新商店 |
-| `request_debug_set_day` | `day: int` | DebugPanel | `GameController` | 调试请求直接切换到指定天数 |
 | `blessing_chosen` | `buff_id: StringName` | UI | `GameController`、`BuffManager` | 选择某个祝福 |
 
 ### 4.4 世界事件信号
@@ -1776,7 +1772,6 @@ func hide_panel() -> void
 - 购买商店槽位：`EventBus.request_buy_shop_slot.emit(slot_index)`
 - 刷新商店：`EventBus.request_refresh_shop.emit()`
 - 选择祝福：`EventBus.blessing_chosen.emit(buff_id)`
-- 调试切换天数：`EventBus.request_debug_set_day.emit(day)`
 
 地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`、`MapInteractionPopup`、`CombatHudController` 或 `CombatSandbox` 根据当前模式解释为探索、建造、地图对象交互、选中单位或部署流程。
 
@@ -1791,7 +1786,6 @@ func hide_panel() -> void
 监听：
 
 - `request_start_night`
-- `request_debug_set_day`
 - `night_cleared`
 - `core_destroyed`
 - `blessing_chosen`

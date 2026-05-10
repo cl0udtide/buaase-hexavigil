@@ -72,13 +72,13 @@ vertical_alignment = 1
 [node name="MessageCard" type="PanelContainer" parent="TopBar/TopMargin/Row"]
 custom_minimum_size = Vector2(260, 68)
 layout_mode = 2
-size_flags_horizontal = 3
 
 [node name="MessageLabel" type="Label" parent="TopBar/TopMargin/Row/MessageCard"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "拖拽底部干员卡开始部署"
+horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
@@ -88,7 +88,8 @@ layout_mode = 2
 
 [node name="TimeRow" type="HBoxContainer" parent="TopBar/TopMargin/Row/TimeCard"]
 layout_mode = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 4
+alignment = 1
 
 [node name="PauseButton" type="Button" parent="TopBar/TopMargin/Row/TimeCard/TimeRow"]
 unique_name_in_owner = true
@@ -120,15 +121,9 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "资源\n--"
+horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
-
-[node name="DebugButton" type="Button" parent="TopBar/TopMargin/Row"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(76, 68)
-layout_mode = 2
-focus_mode = 0
-text = "调试"
 
 [node name="WavePreviewPanel" type="PanelContainer" parent="."]
 unique_name_in_owner = true

@@ -19,7 +19,6 @@ var _locked_deploy_cell := INVALID_CELL
 var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
-var _debug_panel_open := false
 var _cooldown_message_operator_key := StringName()
 var _last_wave_preview_signature := ""
 var _wave_preview_active := false
@@ -32,7 +31,6 @@ var _wave_preview_refresh_queued := false
 @onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
 @onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
 @onready var _build_panel: Control = get_node_or_null("../BuildPanel") as Control
-@onready var _debug_panel: Control = get_node_or_null("../DebugPanel") as Control
 @onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
 @onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
 @onready var _path_service: Node = get_node_or_null("../../Managers/PathService")
@@ -46,8 +44,6 @@ func _ready() -> void:
 	_configure_pause_boundaries()
 	set_process(true)
 	set_process_unhandled_input(true)
-	if _debug_panel != null:
-		_debug_panel_open = _debug_panel.visible
 	_bind_combat_hud()
 	_refresh_hud_reserved_width()
 	_connect_events()
@@ -117,8 +113,6 @@ func _bind_combat_hud() -> void:
 		_combat_hud.connect(&"speed_1_pressed", Callable(self, "_on_speed_1_pressed"))
 	if _combat_hud.has_signal("speed_2_pressed"):
 		_combat_hud.connect(&"speed_2_pressed", Callable(self, "_on_speed_2_pressed"))
-	if _combat_hud.has_signal("debug_drawer_toggle_pressed"):
-		_combat_hud.connect(&"debug_drawer_toggle_pressed", Callable(self, "_on_debug_toggle_pressed"))
 	if _combat_hud.has_signal("cast_skill_requested"):
 		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
 	if _combat_hud.has_signal("retreat_requested"):
@@ -449,16 +443,6 @@ func _on_speed_2_pressed() -> void:
 	get_tree().paused = false
 	Engine.time_scale = 2.0
 	_refresh_time_controls()
-
-
-func _on_debug_toggle_pressed() -> void:
-	if _debug_panel == null:
-		_show_message("调试面板不可用")
-		return
-	_debug_panel_open = not _debug_panel_open
-	_debug_panel.visible = _debug_panel_open
-	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
-		_combat_hud.set_debug_drawer_open(_debug_panel_open)
 
 
 func _refresh_top_hud() -> void:

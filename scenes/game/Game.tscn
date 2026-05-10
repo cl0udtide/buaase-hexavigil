@@ -21,7 +21,6 @@
 [ext_resource type="PackedScene" uid="uid://c0oceoqeshmf3" path="res://scenes/ui/EventPanel.tscn" id="29_rpato"]
 [ext_resource type="PackedScene" uid="uid://d2uqqs7dick5f" path="res://scenes/ui/BlessingPanel.tscn" id="31_nqblw"]
 [ext_resource type="PackedScene" uid="uid://dvwiq3vkovrcv" path="res://scenes/ui/ResultPanel.tscn" id="33_nkbyr"]
-[ext_resource type="PackedScene" path="res://scenes/ui/DebugPanel.tscn" id="34_dbg"]
 [ext_resource type="PackedScene" path="res://scenes/ui/combat/CombatHud.tscn" id="35_combat_hud"]
 [ext_resource type="Script" path="res://scripts/ui/combat/combat_hud_controller.gd" id="36_combat_hud_controller"]
 [ext_resource type="Script" path="res://scripts/ui/map_interaction_popup.gd" id="37_map_popup"]
@@ -248,18 +247,6 @@ offset_bottom = -5.0
 visible = false
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="DebugPanel" parent="UI" unique_id=1826645197 instance=ExtResource("34_dbg")]
-visible = false
-anchors_preset = 0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 42.0
-offset_top = 83.0
-offset_right = 398.0
-offset_bottom = 280.0
-grow_horizontal = 1
-grow_vertical = 1
 
 [node name="AudioSettingsButton" type="Button" parent="UI"]
 anchors_preset = 3
