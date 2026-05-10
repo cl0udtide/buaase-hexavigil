@@ -1,7 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1y4fnhl7k2gv"]
+[gd_scene load_steps=7 format=3 uid="uid://b1y4fnhl7k2gv"]
 
 [ext_resource type="Script" path="res://scripts/ui/combat/combat_hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="2_detail"]
+[ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicStrip.tscn" id="3_relic_strip"]
+[ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicPanel.tscn" id="4_relic_panel"]
+[ext_resource type="Script" path="res://scripts/ui/audio_settings_button.gd" id="5_audio_button"]
+[ext_resource type="Script" path="res://scripts/ui/audio_settings_panel.gd" id="6_audio_panel"]
 
 [node name="CombatHud" type="Control"]
 anchors_preset = 15
@@ -12,11 +16,24 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_hud")
 
+[node name="SettingsButton" type="Button" parent="."]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = 58.0
+offset_bottom = 52.0
+focus_mode = 0
+text = "⚙"
+script = ExtResource("5_audio_button")
+panel_path = NodePath("../AudioSettingsPanel")
+auto_toggle_panel = false
+
 [node name="TopBar" type="PanelContainer" parent="."]
 unique_name_in_owner = true
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 14.0
+offset_left = 66.0
 offset_top = 8.0
 offset_right = -14.0
 offset_bottom = 76.0
@@ -125,6 +142,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
+[node name="RelicStrip" parent="." instance=ExtResource("3_relic_strip")]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 340.0
+offset_top = 72.0
+offset_right = 920.0
+offset_bottom = 116.0
+
 [node name="WavePreviewPanel" type="PanelContainer" parent="."]
 unique_name_in_owner = true
 visible = false
@@ -224,6 +249,124 @@ offset_right = -18.0
 offset_bottom = -12.0
 grow_horizontal = 0
 grow_vertical = 2
+
+[node name="RelicPanel" parent="." instance=ExtResource("4_relic_panel")]
+unique_name_in_owner = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -450.0
+offset_top = -320.0
+offset_right = 450.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AudioSettingsPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 0
+offset_left = 14.0
+offset_top = 58.0
+offset_right = 434.0
+offset_bottom = 284.0
+mouse_filter = 0
+script = ExtResource("6_audio_panel")
+
+[node name="ContentMargin" type="MarginContainer" parent="AudioSettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="AudioSettingsPanel/ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="AudioSettingsPanel/ContentMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "声音设置"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 28)
+layout_mode = 2
+focus_mode = 0
+text = "×"
+
+[node name="MasterRow" type="HBoxContainer" parent="AudioSettingsPanel/ContentMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MasterLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/MasterRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "主音量"
+
+[node name="MasterSlider" type="HSlider" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/MasterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MasterValueLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/MasterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="AudioSettingsPanel/ContentMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MusicLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/MusicRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "音乐"
+
+[node name="MusicSlider" type="HSlider" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/MusicRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MusicValueLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/MusicRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="SfxRow" type="HBoxContainer" parent="AudioSettingsPanel/ContentMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SfxLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/SfxRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "音效"
+
+[node name="SfxSlider" type="HSlider" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/SfxRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SfxValueLabel" type="Label" parent="AudioSettingsPanel/ContentMargin/VBoxContainer/SfxRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+horizontal_alignment = 2
 
 [node name="DragGhost" type="PanelContainer" parent="."]
 unique_name_in_owner = true
