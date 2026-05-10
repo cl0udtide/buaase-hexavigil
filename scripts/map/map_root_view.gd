@@ -45,6 +45,11 @@ const ROUTE_PREVIEW_COLORS: Array[Color] = [
 const ROUTE_WARNING_COLOR := Color(1.0, 0.22, 0.20, 0.96)
 const ROUTE_DEMOLISHER_COLOR := Color(1.0, 0.88, 0.34, 0.96)
 const ROUTE_FLYING_COLOR := Color(0.36, 0.90, 1.0, 0.92)
+const ROUTE_LABEL_DISTANCE_FROM_CORE_TILES := 2
+const ROUTE_LABEL_BADGE_BG := Color(0.015, 0.032, 0.048, 0.90)
+const ROUTE_LABEL_BADGE_RADIUS := 13.0
+const ROUTE_LABEL_GROUP_OFFSET_STEP := 30.0
+const ROUTE_LABEL_GROUP_BACK_OFFSET := 7.0
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_BLOCKED := Color(0.33, 0.34, 0.38, 1.0)
@@ -350,6 +355,7 @@ func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: floa
 func _draw_wave_route_previews(map_manager: Node) -> void:
 	if _wave_route_previews.is_empty():
 		return
+	var label_infos: Array[Dictionary] = []
 	for index in range(_wave_route_previews.size()):
 		var route: Dictionary = _wave_route_previews[index]
 		var color := _get_route_color(route, index)
@@ -357,9 +363,10 @@ func _draw_wave_route_previews(map_manager: Node) -> void:
 		var path: Array = route.get("path", [])
 		if not path.is_empty():
 			_draw_route_path(map_manager, path, color, offset, StringName(route.get("effective_path_mode", route.get("path_mode", &"normal"))))
-		var spawn_cell: Vector2i = route.get("spawn_cell", Vector2i(-1, -1))
-		if map_manager.is_inside(spawn_cell) and map_manager.is_discovered(spawn_cell):
-			_draw_route_endpoint(map_manager.cell_to_world(spawn_cell) + offset, color, String(route.get("spawn_key", "")))
+			var label_info := _make_route_label_info(map_manager, path, offset, color, route)
+			if not label_info.is_empty():
+				label_infos.append(label_info)
+	_draw_route_label_badges(label_infos)
 
 
 func _draw_route_path(map_manager: Node, path: Array, color: Color, offset: Vector2, path_mode: StringName) -> void:
@@ -411,12 +418,121 @@ func _draw_route_markers(points: PackedVector2Array, color: Color, spacing: floa
 				draw_circle(point, spacing * 0.32, Color(color.r, color.g, color.b, 0.45))
 
 
-func _draw_route_endpoint(center: Vector2, color: Color, label_text: String) -> void:
-	draw_circle(center, 16.0, Color(color.r, color.g, color.b, 0.18))
-	draw_circle(center, 9.0, color)
+func _make_route_label_info(map_manager: Node, path: Array, offset: Vector2, color: Color, route: Dictionary) -> Dictionary:
+	var anchor_info := _get_route_label_anchor(map_manager, path, offset)
+	if anchor_info.is_empty():
+		return {}
+	var label_text := String(route.get("route_label", ""))
 	if label_text.is_empty():
+		label_text = String(route.get("spawn_key", "?"))
+	return {
+		"anchor_cell": anchor_info.get("cell", Vector2i(-1, -1)),
+		"anchor": anchor_info.get("position", Vector2.ZERO),
+		"direction": anchor_info.get("direction", Vector2.RIGHT),
+		"color": color,
+		"label": label_text
+	}
+
+
+func _get_route_label_anchor(map_manager: Node, path: Array, offset: Vector2) -> Dictionary:
+	if path.is_empty():
+		return {}
+	var desired_index: int = max(path.size() - 1 - ROUTE_LABEL_DISTANCE_FROM_CORE_TILES, 0)
+	var candidate_indexes: Array[int] = [desired_index]
+	for step in range(1, path.size()):
+		var toward_core := desired_index + step
+		var toward_spawn := desired_index - step
+		if toward_core < path.size():
+			candidate_indexes.append(toward_core)
+		if toward_spawn >= 0:
+			candidate_indexes.append(toward_spawn)
+	for index in candidate_indexes:
+		var cell: Vector2i = path[index]
+		if not map_manager.is_inside(cell) or not map_manager.is_discovered(cell):
+			continue
+		return {
+			"cell": cell,
+			"position": map_manager.cell_to_world(cell) + offset,
+			"direction": _get_route_direction_at_index(path, index)
+		}
+	return {}
+
+
+func _get_route_direction_at_index(path: Array, index: int) -> Vector2:
+	if path.size() <= 1:
+		return Vector2.RIGHT
+	var previous_index: int = max(index - 1, 0)
+	var next_index: int = min(index + 1, path.size() - 1)
+	if previous_index == next_index:
+		next_index = min(index + 1, path.size() - 1)
+	var from_cell: Vector2i = path[previous_index]
+	var to_cell: Vector2i = path[next_index]
+	var direction := Vector2(float(to_cell.x - from_cell.x), float(to_cell.y - from_cell.y))
+	if direction.length() > 0.01:
+		return direction.normalized()
+	if index > 0:
+		from_cell = path[index - 1]
+		to_cell = path[index]
+		direction = Vector2(float(to_cell.x - from_cell.x), float(to_cell.y - from_cell.y))
+		if direction.length() > 0.01:
+			return direction.normalized()
+	return Vector2.RIGHT
+
+
+func _draw_route_label_badges(label_infos: Array[Dictionary]) -> void:
+	if label_infos.is_empty():
 		return
-	draw_string(ThemeDB.fallback_font, center + Vector2(12.0, -12.0), label_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 14, color)
+	var groups: Dictionary = {}
+	var group_order: PackedStringArray = []
+	for info in label_infos:
+		var anchor_cell: Vector2i = info.get("anchor_cell", Vector2i(-1, -1))
+		var group_key := "%d,%d" % [anchor_cell.x, anchor_cell.y]
+		if not groups.has(group_key):
+			groups[group_key] = []
+			group_order.append(group_key)
+		var group: Array = groups[group_key]
+		group.append(info)
+		groups[group_key] = group
+	for group_key in group_order:
+		var group: Array = groups[group_key]
+		for index in range(group.size()):
+			var info: Dictionary = group[index]
+			var anchor: Vector2 = info.get("anchor", Vector2.ZERO)
+			var direction: Vector2 = info.get("direction", Vector2.RIGHT)
+			var color: Color = info.get("color", Color.WHITE)
+			var label_text := String(info.get("label", "?"))
+			var label_offset := _get_route_label_group_offset(index, group.size(), direction)
+			var label_center := anchor + label_offset
+			if label_offset.length() > 1.0:
+				draw_line(anchor, label_center, Color(color.r, color.g, color.b, 0.64), 2.0, true)
+			_draw_route_label_badge(label_center, color, label_text)
+
+
+func _get_route_label_group_offset(index: int, count: int, direction: Vector2) -> Vector2:
+	if count <= 1:
+		return Vector2.ZERO
+	var normalized := direction.normalized()
+	if normalized.length() <= 0.01:
+		normalized = Vector2.RIGHT
+	var tangent := Vector2(-normalized.y, normalized.x)
+	var centered_index := float(index) - (float(count) - 1.0) * 0.5
+	return tangent * centered_index * ROUTE_LABEL_GROUP_OFFSET_STEP - normalized * ROUTE_LABEL_GROUP_BACK_OFFSET
+
+
+func _draw_route_label_badge(center: Vector2, color: Color, label_text: String) -> void:
+	draw_circle(center, ROUTE_LABEL_BADGE_RADIUS + 5.0, Color(color.r, color.g, color.b, 0.18))
+	draw_circle(center, ROUTE_LABEL_BADGE_RADIUS + 1.0, ROUTE_LABEL_BADGE_BG)
+	draw_arc(center, ROUTE_LABEL_BADGE_RADIUS + 1.5, 0.0, TAU, 28, color, 2.5, true)
+	draw_circle(center, ROUTE_LABEL_BADGE_RADIUS - 2.0, Color(color.r, color.g, color.b, 0.20))
+	draw_string(
+		ThemeDB.fallback_font,
+		center + Vector2(-ROUTE_LABEL_BADGE_RADIUS, 5.0),
+		label_text,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		ROUTE_LABEL_BADGE_RADIUS * 2.0,
+		15,
+		Color.WHITE
+	)
 
 
 func _get_route_color(route: Dictionary, index: int) -> Color:
