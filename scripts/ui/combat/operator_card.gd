@@ -1,8 +1,10 @@
 extends Control
 
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
+const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const UiTokens = preload("res://scripts/ui/ui_tokens.gd")
 
 signal operator_card_pressed(operator_key: StringName)
@@ -18,11 +20,15 @@ var _compact := false
 var _pressing := false
 var _press_start_position := Vector2.ZERO
 var _drag_started := false
+var _operator_info: Dictionary = {}
 var _unit_cfg: Dictionary = {}
+var _class_icon_texture: TextureRect
+var _cooldown_icon_texture: TextureRect
 
 @onready var _card_base: Panel = %CardBase
 @onready var _card_content: MarginContainer = %CardContent
 @onready var _title_strip: Panel = %TitleStrip
+@onready var _class_icon_label: Label = %ClassIcon
 @onready var _name_label: Label = %NameLabel
 @onready var _cost_badge: Panel = %CostBadge
 @onready var _cost_label: Label = %CostLabel
@@ -33,9 +39,8 @@ var _unit_cfg: Dictionary = {}
 @onready var _portrait_label: Label = %PortraitLabel
 @onready var _selected_overlay: Panel = %SelectedOverlay
 @onready var _deployed_overlay: Panel = %DeployedOverlay
-@onready var _cooldown_overlay: TextureRect = %CooldownOverlay
+@onready var _cooldown_overlay: ColorRect = %CooldownOverlay
 @onready var _cooldown_label: Label = %CooldownLabel
-@onready var _class_icon_texture: TextureRect = %ClassIcon
 @onready var _class_label: Label = %ClassLabel
 @onready var _state_label: Label = %StateLabel
 @onready var _hp_stat_row: Panel = %HpStatRow
@@ -80,37 +85,30 @@ func _ready() -> void:
 	_add_label_shadow(_sp_stat_label)
 	_add_label_shadow(_cd_stat_label)
 	GameUiStyle.apply_frame_margin(_card_content, GameUiStyle.FRAME_OPERATOR_CARD)
-	_title_strip.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_TITLE_STRIP, GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, false))
+	_prepare_class_icon_texture()
+	_prepare_cooldown_icon_texture()
+	_title_strip.add_theme_stylebox_override("panel", GameUiStyle.operator_title_strip())
 	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.operator_cost_badge())
 	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.operator_portrait_slot())
 	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.operator_portrait_frame())
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_class_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_class_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_class_icon_texture.custom_minimum_size = Vector2(18.0, 18.0)
-	_class_icon_texture.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	for row in [_hp_stat_row, _sp_stat_row, _cd_stat_row]:
 		row.add_theme_stylebox_override("panel", GameUiStyle.operator_stat_row())
-	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD_SELECTED, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
-	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD_DEPLOYED, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
-	_cooldown_overlay.texture = UiArtRegistry.get_texture(GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN, &"frame")
+	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
+	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
+	_cooldown_overlay.color = Color(0.160, 0.035, 0.032, 0.72)
 	_cooldown_overlay.visible = false
-	_apply_layering()
 	_apply_density()
-	_apply_visual_textures()
 	_apply_card_style()
 
 
-func setup(new_operator_key: StringName) -> void:
+func setup(new_operator_key: StringName, operator_info: Dictionary = {}) -> void:
 	operator_key = new_operator_key
-
-
-func configure(operator_info: Dictionary, unit_cfg: Dictionary) -> void:
-	operator_key = StringName(operator_info.get("key", operator_key))
-	_unit_cfg = unit_cfg.duplicate(true)
+	_operator_info = operator_info.duplicate(true)
+	_unit_cfg = _resolve_unit_cfg()
 	if is_node_ready():
-		_apply_visual_textures()
+		_apply_unit_art()
 
 
 func set_compact(compact: bool) -> void:
@@ -153,11 +151,11 @@ func _parse_display_text(text_value: String) -> void:
 		else:
 			_normalize_meta_without_cost(meta)
 	_cost_label.text = "◆%s" % cost
+	_apply_unit_art()
 	_state_label.text = _state_label_text()
 	_hp_stat_label.text = lines[2] if lines.size() > 2 else "HP --"
 	_sp_stat_label.text = lines[3] if lines.size() > 3 else "SP --"
 	_cd_stat_label.text = lines[4] if lines.size() > 4 else "CD READY"
-	_refresh_class_icon()
 
 
 func _update_cooldown_overlay(state: StringName) -> void:
@@ -168,6 +166,8 @@ func _update_cooldown_overlay(state: StringName) -> void:
 		return
 	_cooldown_overlay.visible = true
 	_cooldown_label.text = _format_cooldown_overlay_text(_cd_stat_label.text)
+	if _cooldown_icon_texture != null:
+		_cooldown_icon_texture.visible = true
 
 
 func _format_cooldown_overlay_text(status: String) -> String:
@@ -217,23 +217,10 @@ func _apply_card_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.operator_card_state(_state, _hovered))
 	_selected_overlay.visible = _hovered and _state != &"cooldown"
 	_deployed_overlay.visible = _state == &"deployed"
-	_cooldown_overlay.visible = _state == &"cooldown"
-	if _cooldown_overlay.visible:
-		var overlay_key := GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN_SELECTED if _hovered else GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN
-		_cooldown_overlay.texture = UiArtRegistry.get_texture(overlay_key, &"frame")
-
-
-func _apply_layering() -> void:
-	_card_base.z_index = 0
-	_selected_overlay.z_index = 1
-	_deployed_overlay.z_index = 1
-	_cooldown_overlay.z_index = 1
-	_card_content.z_index = 5
-	_cooldown_label.z_index = 10
-	_portrait_backplate.z_index = 0
-	_portrait_frame.z_index = 3
-	_portrait_texture.z_index = 5
-	_portrait_label.z_index = 5
+	if _state != &"cooldown":
+		_cooldown_overlay.visible = false
+		if _cooldown_icon_texture != null:
+			_cooldown_icon_texture.visible = false
 
 
 func _apply_density() -> void:
@@ -253,32 +240,6 @@ func _apply_density() -> void:
 	_cooldown_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
 
 
-func _apply_visual_textures() -> void:
-	var portrait := UiArtRegistry.get_portrait_texture(_unit_cfg)
-	_portrait_texture.texture = portrait
-	_portrait_texture.visible = portrait != null
-	_portrait_label.visible = portrait == null
-	if portrait == null:
-		_portrait_label.text = _icon_text(_unit_cfg, "*")
-	_refresh_class_icon()
-
-
-func _refresh_class_icon() -> void:
-	if _class_icon_texture == null:
-		return
-	var class_key := String(_unit_cfg.get("class", "")).strip_edges()
-	var texture := UiArtRegistry.get_texture(StringName("icon_class_%s" % class_key), &"icon") if not class_key.is_empty() else null
-	_class_icon_texture.texture = texture
-	_class_icon_texture.visible = texture != null
-
-
-func _icon_text(cfg: Dictionary, fallback_text: String) -> String:
-	var icon := String(cfg.get("icon_text", "")).strip_edges()
-	if not icon.is_empty():
-		return icon.substr(0, 1)
-	return fallback_text
-
-
 func _state_label_text() -> String:
 	match _state:
 		&"deployed":
@@ -287,6 +248,70 @@ func _state_label_text() -> String:
 			return "冷却"
 		_:
 			return "待部署"
+
+
+func _resolve_unit_cfg() -> Dictionary:
+	var unit_id := StringName(_operator_info.get("unit_id", ""))
+	if unit_id == StringName():
+		return {}
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return {}
+	return data_repo.get_unit_cfg(unit_id)
+
+
+func _apply_unit_art() -> void:
+	if _unit_cfg.is_empty():
+		return
+	var portrait_texture := UiArtRegistry.get_portrait_texture(_unit_cfg)
+	_portrait_texture.texture = portrait_texture
+	_portrait_texture.visible = portrait_texture != null
+	_portrait_label.visible = portrait_texture == null
+	_portrait_label.text = UiDisplayText.icon_text(_unit_cfg, "*")
+	var class_texture := UiArtRegistry.get_class_icon_texture(_unit_cfg)
+	if _class_icon_texture != null:
+		_class_icon_texture.texture = class_texture
+		_class_icon_texture.visible = class_texture != null
+	if _class_icon_label != null:
+		_class_icon_label.visible = class_texture == null
+		_class_icon_label.text = UiDisplayText.class_label(String(_unit_cfg.get("class", ""))).substr(0, 1)
+
+
+func _prepare_class_icon_texture() -> void:
+	if _class_icon_label == null or _class_icon_texture != null:
+		return
+	var parent := _class_icon_label.get_parent()
+	if parent == null:
+		return
+	_class_icon_texture = TextureRect.new()
+	_class_icon_texture.name = "ClassIconTexture"
+	_class_icon_texture.custom_minimum_size = Vector2(18.0, 18.0)
+	_class_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_class_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_class_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(_class_icon_texture)
+	parent.move_child(_class_icon_texture, _class_icon_label.get_index())
+
+
+func _prepare_cooldown_icon_texture() -> void:
+	if _cooldown_overlay == null or _cooldown_icon_texture != null:
+		return
+	_cooldown_icon_texture = TextureRect.new()
+	_cooldown_icon_texture.name = "CooldownIconTexture"
+	_cooldown_icon_texture.anchor_left = 0.5
+	_cooldown_icon_texture.anchor_top = 0.5
+	_cooldown_icon_texture.anchor_right = 0.5
+	_cooldown_icon_texture.anchor_bottom = 0.5
+	_cooldown_icon_texture.offset_left = -14.0
+	_cooldown_icon_texture.offset_top = -34.0
+	_cooldown_icon_texture.offset_right = 14.0
+	_cooldown_icon_texture.offset_bottom = -6.0
+	_cooldown_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_cooldown_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_cooldown_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cooldown_icon_texture.texture = UiArtRegistry.get_catalog_icon(&"combat_cooldown")
+	_cooldown_icon_texture.visible = false
+	_cooldown_overlay.add_child(_cooldown_icon_texture)
 
 
 func _add_label_shadow(label: Label) -> void:

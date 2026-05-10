@@ -5,9 +5,6 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
-const ICON_FRAME_SIZE := Vector2(34.0, 34.0)
-const ICON_TEXTURE_SIZE := Vector2(22.0, 22.0)
-
 signal pressed(buff_id: StringName)
 
 var buff_id := StringName()
@@ -17,7 +14,7 @@ var _highlighted := false
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _rarity_overlay: Panel = %RarityOverlay
+@onready var _rarity_overlay: ColorRect = %RarityOverlay
 @onready var _new_highlight_overlay: Panel = %NewHighlightOverlay
 @onready var _icon_label: Label = %IconLabel
 
@@ -32,10 +29,9 @@ func _ready() -> void:
 	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	GameUiStyle.fit_centered_icon(_icon_texture, ICON_TEXTURE_SIZE)
-	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
+	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(22.0, 22.0))
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
 	_new_highlight_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON, Color(0.950, 0.650, 0.220, 0.09), GameUiStyle.AMBER, false))
-	_apply_layering()
 	_apply_config()
 
 
@@ -55,8 +51,8 @@ func set_highlighted(highlighted: bool) -> void:
 
 func _apply_config() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	custom_minimum_size = ICON_FRAME_SIZE
-	var texture := UiArtRegistry.get_texture(buff_id, &"icon")
+	custom_minimum_size = Vector2(34.0, 34.0)
+	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
 	_icon_label.visible = texture == null
@@ -68,18 +64,10 @@ func _apply_config() -> void:
 
 func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
+	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, _highlighted))
-	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_rarity_overlay(rarity))
+	_rarity_overlay.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.10)
 	_new_highlight_overlay.visible = _highlighted
-
-
-func _apply_layering() -> void:
-	_icon_backplate.z_index = 0
-	_rarity_overlay.z_index = 1
-	_new_highlight_overlay.z_index = 2
-	_icon_texture.z_index = 5
-	_icon_label.z_index = 5
-	_icon_frame.z_index = 3
 
 
 func _on_gui_input(event: InputEvent) -> void:

@@ -5,9 +5,6 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
-const ICON_FRAME_SIZE := Vector2(58.0, 58.0)
-const ICON_TEXTURE_SIZE := Vector2(42.0, 42.0)
-
 signal pressed
 
 var _pending_config: Dictionary = {}
@@ -18,7 +15,6 @@ var _selected := false
 var _hovered := false
 
 @onready var _card_base: Panel = %CardBase
-@onready var _icon_stack: Control = %IconStack
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
@@ -64,13 +60,12 @@ func _ready() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
 	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.build_icon_backplate())
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame())
-	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_COST_BADGE, GameUiStyle.AMBER_SOFT, GameUiStyle.AMBER))
+	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.cost_badge())
 	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_LIST_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
 	_disabled_overlay.color = Color(0.02, 0.03, 0.035, 0.38)
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_fit_icon_layout()
-	_apply_layering()
+	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(42.0, 42.0))
 	if not _pending_config.is_empty():
 		_apply_config(_pending_config)
 	else:
@@ -107,7 +102,9 @@ func _apply_config(config: Dictionary) -> void:
 
 
 func _apply_icon_texture(config: Dictionary) -> void:
-	var texture := UiArtRegistry.get_icon_texture(config.get("source_cfg", {}) as Dictionary)
+	var cfg: Dictionary = config.get("source_cfg", {})
+	var fallback_key := StringName(config.get("fallback_icon_key", ""))
+	var texture := UiArtRegistry.get_icon_texture(cfg, fallback_key)
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
 	_icon_label.visible = texture == null
@@ -115,30 +112,10 @@ func _apply_icon_texture(config: Dictionary) -> void:
 
 func _apply_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
-	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame(_accent))
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, _accent, false))
 	_selected_overlay.visible = _selected or _hovered
 	_disabled_overlay.visible = _disabled
 	modulate.a = 0.86 if _disabled else 1.0
-
-
-func _apply_layering() -> void:
-	_card_base.z_index = 0
-	_selected_overlay.z_index = 1
-	_disabled_overlay.z_index = 2
-	_icon_backplate.z_index = 0
-	_icon_frame.z_index = 3
-	_icon_texture.z_index = 5
-	_icon_label.z_index = 5
-	var content := get_node_or_null("ContentMargin") as Control
-	if content != null:
-		content.z_index = 5
-
-
-func _fit_icon_layout() -> void:
-	if _icon_stack != null:
-		_icon_stack.custom_minimum_size = ICON_FRAME_SIZE
-		_icon_stack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	GameUiStyle.fit_centered_icon(_icon_texture, ICON_TEXTURE_SIZE)
 
 
 func _add_label_shadow(label: Label) -> void:

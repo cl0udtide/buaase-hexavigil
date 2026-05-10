@@ -3,6 +3,7 @@ extends PanelContainer
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
 
 var _current_mode: StringName = &"idle"
@@ -168,7 +169,7 @@ func _refresh_mode_label() -> void:
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.action_bar_panel())
 	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
-	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_ACTION_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
+	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_DECK_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
 	if _mode_label != null:
 		_mode_label.visible = false
 		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -210,6 +211,7 @@ func _style_action_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
 	var accent := GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT
 	var normal_style := GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD, accent)
+	GameUiStyle.set_button_texture_icon(button, _icon_for_action_button(button), Vector2(16.0, 16.0), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", normal_style)
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.26))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
@@ -217,6 +219,20 @@ func _style_action_button(button: Button, selected: bool) -> void:
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED if selected else GameUiStyle.TEXT_INVERTED_DIM)
+
+
+func _icon_for_action_button(button: Button) -> Texture2D:
+	if button == _explore_button:
+		return UiArtRegistry.get_catalog_icon(&"map_marker")
+	if button == _start_night_button:
+		return UiArtRegistry.get_catalog_icon(&"phase_night")
+	if button == _repair_building_button:
+		return UiArtRegistry.get_catalog_icon(&"button_confirm")
+	if button == _demolish_building_button:
+		return UiArtRegistry.get_catalog_icon(&"button_cancel")
+	if button == _toggle_building_button:
+		return UiArtRegistry.get_catalog_icon(&"button_refresh")
+	return null
 
 
 func _get_building_manager() -> Node:

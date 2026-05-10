@@ -186,6 +186,7 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"subtitle": _format_building_cost(cfg),
 		"detail": _format_building_detail(cfg),
 		"icon_text": UiDisplayText.icon_text(cfg),
+		"fallback_icon_key": &"",
 		"source_cfg": cfg,
 		"accent": GameUiStyle.STROKE_SOFT,
 		"title_color": GameUiStyle.TEXT,
@@ -231,6 +232,7 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"detail": detail,
 		"state": state,
 		"icon_text": _unit_icon_text(unit_id),
+		"fallback_icon_key": StringName("class_%s" % String(cfg.get("class", ""))),
 		"source_cfg": cfg,
 		"accent": accent,
 		"title_color": title_color,
@@ -549,7 +551,7 @@ func _style_command_button(button: Button, accent: Color) -> void:
 		return
 	GameUiStyle.center_button_text(button)
 	if button == _refresh_shop_button:
-		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_texture(&"icon_refresh", &"icon"), Vector2(15.0, 15.0), &"left", 8.0)
+		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_refresh"), Vector2(15.0, 15.0), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.34))

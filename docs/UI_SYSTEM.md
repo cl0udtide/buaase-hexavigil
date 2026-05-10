@@ -14,7 +14,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - 中心：地图、部署拖拽、落点锁定、朝向选择、攻击范围和路径提示。
 - 白天底部/左下：`ActionPanel` 显示模式、探索、入夜、建筑维修/拆除/启停等上下文操作。
 
-当前工程基线仍允许无资产运行：面板、按钮、进度条先由 Godot 默认控件和 `StyleBoxFlat` 生成。后续接入图片资产时，只能通过统一样式与资源入口接入，不能让组件脚本各自拼路径。
+当前工程已接入 `assets/ui/generated/` 分层图片资产：面板、按钮、进度条、图标框、状态覆盖层通过统一样式与资源入口读取。仍需保留无资产兜底，缺图时回退到 `StyleBoxFlat` 或文本占位；组件脚本不得各自拼接图片路径。
 
 ## 2. 遗物展示方案
 
@@ -80,12 +80,12 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 ## 5. 现有 UI 基线
 
 - `scripts/ui/app_theme.gd`：使用 Godot 默认字体，只设置字号、颜色和控件样式。
-- `scripts/ui/game_ui_style.gd`：唯一主题入口，当前只生成 `StyleBoxFlat`。
-- `scripts/ui/ui_frame_spec.gd`：只保存组件内容边距，不保存贴图路径。
+- `scripts/ui/game_ui_style.gd`：唯一主题入口，按语义组件请求 frame、按钮、进度条、滚动条和滑条样式。
+- `scripts/ui/ui_frame_spec.gd`：集中维护 frame 资产 key、九宫格边距和内容边距；缺图时返回 `StyleBoxFlat`。
 - `scripts/ui/ui_layout_rules.gd`：作战 HUD 响应式矩形计算。
 - `scripts/ui/ui_tokens.gd`：断点、间距、字号和固定组件尺寸。
 - `scripts/ui/ui_display_text.gd`：跨 UI 显示文本转换。
-- `scripts/ui/ui_art_registry.gd`：当前固定不返回贴图，保留未来资源接入点。
+- `scripts/ui/ui_art_registry.gd`：统一图标接口，优先读取 JSON 中的显式路径，其次兼容旧字段和 catalog fallback。
 
 ## 6. UI 资产生成规范
 
@@ -591,7 +591,7 @@ AudioSettingsPanel
       └─ SfxRow
 ```
 
-设置面板底板不画具体三条滑杆。当前可继续使用 Godot `HSlider`，后续接资产时通过统一主题替换 track/fill/handle。
+设置面板底板不画具体三条滑杆。当前继续使用 Godot `HSlider`，但 track/fill/handle 通过统一主题资产替换。
 
 #### `ActionPanel`
 
@@ -788,7 +788,7 @@ ActionPanel
 ## 7. 重构顺序
 
 1. 先确认顶部最左侧设置按钮和设置面板的节点归属，复用或迁移现有音量设置脚本，保证主音量、音乐、音效滑条可用。
-2. 实现 `RelicStrip`、`RelicPanel`、`RelicIcon`、`RelicCard` 的无资产版本。
+2. `RelicStrip`、`RelicPanel`、`RelicIcon`、`RelicCard` 使用遗物数据中的 `icon_path`，并保留无资产兜底。
 3. 把 `CombatHudController` 里的遗物 tooltip 文本迁到 `UiDisplayText` 和遗物组件。
 4. 将 `BlessingPanel` 的三选一按钮改为遗物卡组件。
 5. 按参考图重排 `CombatHud.tscn`，把设置按钮放到顶部最左，把 `RelicStrip` 放进顶部区域下方。

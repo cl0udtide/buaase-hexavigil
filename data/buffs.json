@@ -1,286 +1,408 @@
-[
-  {
-    "id": "relic_battle_standard",
-    "name": "边境战旗",
-    "desc": "所有单位攻击力 +8%。",
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.08,
-    "rarity": 1
-  },
-  {
-    "id": "relic_sharpened_orders",
-    "name": "磨损军令",
-    "desc": "所有单位攻击力 +15%，再部署时间 +10%。",
-    "rarity": 2,
-    "effects": [
-      {"effect_type": "unit_atk_percent", "effect_value": 0.15},
-      {"effect_type": "unit_redeploy_percent", "effect_value": 0.10}
-    ]
-  },
-  {
-    "id": "relic_vanguard_frame",
-    "name": "预备队框架",
-    "desc": "部署上限 +1。",
-    "effect_type": "deploy_limit_add",
-    "effect_value": 1,
-    "rarity": 1
-  },
-  {
-    "id": "relic_mobile_command",
-    "name": "机动指挥台",
-    "desc": "部署上限 +2，所有单位攻击力 -6%。",
-    "rarity": 3,
-    "effects": [
-      {"effect_type": "deploy_limit_add", "effect_value": 2},
-      {"effect_type": "unit_atk_percent", "effect_value": -0.06}
-    ]
-  },
-  {
-    "id": "relic_core_patch",
-    "name": "核心补丁包",
-    "desc": "立即恢复核心生命 3 点。",
-    "effect_type": "core_heal",
-    "effect_value": 3,
-    "rarity": 1
-  },
-  {
-    "id": "relic_core_capacitor",
-    "name": "备用核心电容",
-    "desc": "核心生命上限 +2，并立即恢复 2 点生命。",
-    "effect_type": "core_max_hp_add",
-    "effect_value": 2,
-    "rarity": 2
-  },
-  {
-    "id": "relic_guard_manual",
-    "name": "近卫手册",
-    "desc": "近卫攻击力 +18%。",
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.18,
-    "class_filter": "guard",
-    "rarity": 1
-  },
-  {
-    "id": "relic_bayonet_drill",
-    "name": "刺刀操典",
-    "desc": "近卫攻击力 +12%，近卫防御 +20%。",
-    "rarity": 2,
-    "effects": [
-      {"effect_type": "unit_atk_percent", "effect_value": 0.12, "class_filter": "guard"},
-      {"effect_type": "unit_def_percent", "effect_value": 0.20, "class_filter": "guard"}
-    ]
-  },
-  {
-    "id": "relic_duelist_contract",
-    "name": "决斗者契约",
-    "desc": "近卫攻击力 +30%，近卫阻挡数 -1。",
-    "rarity": 3,
-    "effects": [
-      {"effect_type": "unit_atk_percent", "effect_value": 0.30, "class_filter": "guard"},
-      {"effect_type": "unit_block_add", "effect_value": -1, "class_filter": "guard"}
-    ]
-  },
-  {
-    "id": "relic_sniper_scope",
-    "name": "校准瞄具",
-    "desc": "狙击攻击力 +16%。",
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.16,
-    "class_filter": "sniper",
-    "rarity": 1
-  },
-  {
-    "id": "relic_recurve_string",
-    "name": "复合弓弦",
-    "desc": "狙击攻击间隔 -12%。",
-    "effect_type": "unit_attack_interval_percent",
-    "effect_value": -0.12,
-    "class_filter": "sniper",
-    "rarity": 2
-  },
-  {
-    "id": "relic_glass_barrel",
-    "name": "玻璃枪管",
-    "desc": "狙击攻击力 +28%，狙击生命 -15%。",
-    "rarity": 3,
-    "effects": [
-      {"effect_type": "unit_atk_percent", "effect_value": 0.28, "class_filter": "sniper"},
-      {"effect_type": "unit_hp_percent", "effect_value": -0.15, "class_filter": "sniper"}
-    ]
-  },
-  {
-    "id": "relic_caster_focus",
-    "name": "术式焦镜",
-    "desc": "术士攻击力 +18%。",
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.18,
-    "class_filter": "caster",
-    "rarity": 1
-  },
-  {
-    "id": "relic_mana_resonator",
-    "name": "魔力谐振器",
-    "desc": "术士 SP 回复速度 +20%。",
-    "effect_type": "unit_sp_recover_percent",
-    "effect_value": 0.20,
-    "class_filter": "caster",
-    "rarity": 2
-  },
-  {
-    "id": "relic_overclocked_core",
-    "name": "过载法芯",
-    "desc": "术士攻击力 +32%，术士攻击间隔 +15%。",
-    "rarity": 3,
-    "effects": [
-      {"effect_type": "unit_atk_percent", "effect_value": 0.32, "class_filter": "caster"},
-      {"effect_type": "unit_attack_interval_percent", "effect_value": 0.15, "class_filter": "caster"}
-    ]
-  },
-  {
-    "id": "relic_defender_plate",
-    "name": "加厚盾板",
-    "desc": "重装生命 +18%，重装防御 +18%。",
-    "rarity": 1,
-    "effects": [
-      {"effect_type": "unit_hp_percent", "effect_value": 0.18, "class_filter": "defender"},
-      {"effect_type": "unit_def_percent", "effect_value": 0.18, "class_filter": "defender"}
-    ]
-  },
-  {
-    "id": "relic_bastion_anchor",
-    "name": "堡垒锚钉",
-    "desc": "重装阻挡数 +1，重装再部署时间 +20%。",
-    "rarity": 2,
-    "effects": [
-      {"effect_type": "unit_block_add", "effect_value": 1, "class_filter": "defender"},
-      {"effect_type": "unit_redeploy_percent", "effect_value": 0.20, "class_filter": "defender"}
-    ]
-  },
-  {
-    "id": "relic_compressed_bulwark",
-    "name": "压缩壁垒装具",
-    "desc": "一阶重装不占部署上限，一阶重装攻击力 -20%。",
-    "rarity": 3,
-    "effects": [
-      {"effect_type": "unit_deploy_slot_cost_add", "effect_value": -1, "class_filter": "defender", "max_cost_prestige": 1},
-      {"effect_type": "unit_atk_percent", "effect_value": -0.20, "class_filter": "defender", "max_cost_prestige": 1}
-    ]
-  },
-  {
-    "id": "relic_travel_pack",
-    "name": "远征背包",
-    "desc": "一阶单位购买价格 -1，最低为 0。",
-    "effect_type": "shop_unit_cost_add",
-    "effect_value": -1,
-    "max_cost_prestige": 1,
-    "rarity": 1
-  },
-  {
-    "id": "relic_black_market_token",
-    "name": "黑市代币",
-    "desc": "三阶单位购买价格 -2，商店刷新价格 +1。",
-    "rarity": 2,
-    "effects": [
-      {"effect_type": "shop_unit_cost_add", "effect_value": -2, "min_cost_prestige": 7},
-      {"effect_type": "shop_refresh_cost_add", "effect_value": 1}
-    ]
-  },
-  {
-    "id": "relic_bounty_ledger",
-    "name": "赏金账本",
-    "desc": "击杀获得声望 +20%。",
-    "effect_type": "kill_prestige_percent",
-    "effect_value": 0.20,
-    "rarity": 2
-  },
-  {
-    "id": "relic_greedy_seal",
-    "name": "贪婪印章",
-    "desc": "击杀获得声望 +35%。",
-    "effect_type": "kill_prestige_percent",
-    "effect_value": 0.35,
-    "rarity": 3
-  },
-  {
-    "id": "relic_lumber_contract",
-    "name": "木材契约",
-    "desc": "伐木站每天额外产出 1 木材。",
-    "effect_type": "building_income_add",
-    "effect_value": 1,
-    "material_filter": "wood",
-    "rarity": 1
-  },
-  {
-    "id": "relic_quarry_glyph",
-    "name": "采石符文",
-    "desc": "石矿场每天额外产出 1 石材。",
-    "effect_type": "building_income_add",
-    "effect_value": 1,
-    "material_filter": "stone",
-    "rarity": 1
-  },
-  {
-    "id": "relic_mana_siphon",
-    "name": "魔力虹吸管",
-    "desc": "魔力矿场每天额外产出 1 魔力矿。",
-    "effect_type": "building_income_add",
-    "effect_value": 1,
-    "material_filter": "mana",
-    "rarity": 1
-  },
-  {
-    "id": "relic_industrial_blueprint",
-    "name": "工业蓝图",
-    "desc": "所有采集建筑产量 +25%。",
-    "effect_type": "building_income_percent",
-    "effect_value": 0.25,
-    "building_type_filter": "resource",
-    "rarity": 2
-  },
-  {
-    "id": "relic_aura_lens",
-    "name": "光环透镜",
-    "desc": "所有增益建筑效果 +25%。",
-    "effect_type": "building_aura_effect_percent",
-    "effect_value": 0.25,
-    "building_type_filter": "aura",
-    "rarity": 2
-  },
-  {
-    "id": "relic_range_pylon",
-    "name": "扩散塔芯",
-    "desc": "所有增益建筑范围 +1，增益建筑木材、石材、魔力成本各 +1。",
-    "rarity": 3,
-    "effects": [
-      {"effect_type": "building_aura_radius_add", "effect_value": 1, "building_type_filter": "aura"},
-      {"effect_type": "building_cost_add", "effect_value": 1, "building_type_filter": "aura"}
-    ]
-  },
-  {
-    "id": "relic_wallwright_kit",
-    "name": "筑墙匠工具包",
-    "desc": "所有建筑的木材成本 -1，最低为 0。",
-    "effect_type": "building_material_cost_add",
-    "effect_value": -1,
-    "material_filter": "wood",
-    "rarity": 1
-  },
-  {
-    "id": "relic_iron_patience",
-    "name": "铁质耐心",
-    "desc": "所有单位生命 +12%，攻击力 -5%。",
-    "rarity": 1,
-    "effects": [
-      {"effect_type": "unit_hp_percent", "effect_value": 0.12},
-      {"effect_type": "unit_atk_percent", "effect_value": -0.05}
-    ]
-  },
-  {
-    "id": "relic_rapid_recall",
-    "name": "快速召回绳",
-    "desc": "所有单位再部署时间 -25%。",
-    "effect_type": "unit_redeploy_percent",
-    "effect_value": -0.25,
-    "rarity": 2
-  }
+﻿[
+    {
+        "id":  "relic_battle_standard",
+        "name":  "边境战旗",
+        "desc":  "所有单位攻击力 +8%。",
+        "effect_type":  "unit_atk_percent",
+        "effect_value":  0.08,
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_battle_standard.png"
+    },
+    {
+        "id":  "relic_sharpened_orders",
+        "name":  "磨损军令",
+        "desc":  "所有单位攻击力 +15%，再部署时间 +10%。",
+        "rarity":  2,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  0.15
+                        },
+                        {
+                            "effect_type":  "unit_redeploy_percent",
+                            "effect_value":  0.10
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_sharpened_orders.png"
+    },
+    {
+        "id":  "relic_vanguard_frame",
+        "name":  "预备队框架",
+        "desc":  "部署上限 +1。",
+        "effect_type":  "deploy_limit_add",
+        "effect_value":  1,
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_vanguard_frame.png"
+    },
+    {
+        "id":  "relic_mobile_command",
+        "name":  "机动指挥台",
+        "desc":  "部署上限 +2，所有单位攻击力 -6%。",
+        "rarity":  3,
+        "effects":  [
+                        {
+                            "effect_type":  "deploy_limit_add",
+                            "effect_value":  2
+                        },
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  -0.06
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_mobile_command.png"
+    },
+    {
+        "id":  "relic_core_patch",
+        "name":  "核心补丁包",
+        "desc":  "立即恢复核心生命 3 点。",
+        "effect_type":  "core_heal",
+        "effect_value":  3,
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_core_patch.png"
+    },
+    {
+        "id":  "relic_core_capacitor",
+        "name":  "备用核心电容",
+        "desc":  "核心生命上限 +2，并立即恢复 2 点生命。",
+        "effect_type":  "core_max_hp_add",
+        "effect_value":  2,
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_core_capacitor.png"
+    },
+    {
+        "id":  "relic_guard_manual",
+        "name":  "近卫手册",
+        "desc":  "近卫攻击力 +18%。",
+        "effect_type":  "unit_atk_percent",
+        "effect_value":  0.18,
+        "class_filter":  "guard",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_guard_manual.png"
+    },
+    {
+        "id":  "relic_bayonet_drill",
+        "name":  "刺刀操典",
+        "desc":  "近卫攻击力 +12%，近卫防御 +20%。",
+        "rarity":  2,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  0.12,
+                            "class_filter":  "guard"
+                        },
+                        {
+                            "effect_type":  "unit_def_percent",
+                            "effect_value":  0.20,
+                            "class_filter":  "guard"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_bayonet_drill.png"
+    },
+    {
+        "id":  "relic_duelist_contract",
+        "name":  "决斗者契约",
+        "desc":  "近卫攻击力 +30%，近卫阻挡数 -1。",
+        "rarity":  3,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  0.30,
+                            "class_filter":  "guard"
+                        },
+                        {
+                            "effect_type":  "unit_block_add",
+                            "effect_value":  -1,
+                            "class_filter":  "guard"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_duelist_contract.png"
+    },
+    {
+        "id":  "relic_sniper_scope",
+        "name":  "校准瞄具",
+        "desc":  "狙击攻击力 +16%。",
+        "effect_type":  "unit_atk_percent",
+        "effect_value":  0.16,
+        "class_filter":  "sniper",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_sniper_scope.png"
+    },
+    {
+        "id":  "relic_recurve_string",
+        "name":  "复合弓弦",
+        "desc":  "狙击攻击间隔 -12%。",
+        "effect_type":  "unit_attack_interval_percent",
+        "effect_value":  -0.12,
+        "class_filter":  "sniper",
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_recurve_string.png"
+    },
+    {
+        "id":  "relic_glass_barrel",
+        "name":  "玻璃枪管",
+        "desc":  "狙击攻击力 +28%，狙击生命 -15%。",
+        "rarity":  3,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  0.28,
+                            "class_filter":  "sniper"
+                        },
+                        {
+                            "effect_type":  "unit_hp_percent",
+                            "effect_value":  -0.15,
+                            "class_filter":  "sniper"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_glass_barrel.png"
+    },
+    {
+        "id":  "relic_caster_focus",
+        "name":  "术式焦镜",
+        "desc":  "术士攻击力 +18%。",
+        "effect_type":  "unit_atk_percent",
+        "effect_value":  0.18,
+        "class_filter":  "caster",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_caster_focus.png"
+    },
+    {
+        "id":  "relic_mana_resonator",
+        "name":  "魔力谐振器",
+        "desc":  "术士 SP 回复速度 +20%。",
+        "effect_type":  "unit_sp_recover_percent",
+        "effect_value":  0.20,
+        "class_filter":  "caster",
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_mana_resonator.png"
+    },
+    {
+        "id":  "relic_overclocked_core",
+        "name":  "过载法芯",
+        "desc":  "术士攻击力 +32%，术士攻击间隔 +15%。",
+        "rarity":  3,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  0.32,
+                            "class_filter":  "caster"
+                        },
+                        {
+                            "effect_type":  "unit_attack_interval_percent",
+                            "effect_value":  0.15,
+                            "class_filter":  "caster"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_overclocked_core.png"
+    },
+    {
+        "id":  "relic_defender_plate",
+        "name":  "加厚盾板",
+        "desc":  "重装生命 +18%，重装防御 +18%。",
+        "rarity":  1,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_hp_percent",
+                            "effect_value":  0.18,
+                            "class_filter":  "defender"
+                        },
+                        {
+                            "effect_type":  "unit_def_percent",
+                            "effect_value":  0.18,
+                            "class_filter":  "defender"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_defender_plate.png"
+    },
+    {
+        "id":  "relic_bastion_anchor",
+        "name":  "堡垒锚钉",
+        "desc":  "重装阻挡数 +1，重装再部署时间 +20%。",
+        "rarity":  2,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_block_add",
+                            "effect_value":  1,
+                            "class_filter":  "defender"
+                        },
+                        {
+                            "effect_type":  "unit_redeploy_percent",
+                            "effect_value":  0.20,
+                            "class_filter":  "defender"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_bastion_anchor.png"
+    },
+    {
+        "id":  "relic_compressed_bulwark",
+        "name":  "压缩壁垒装具",
+        "desc":  "一阶重装不占部署上限，一阶重装攻击力 -20%。",
+        "rarity":  3,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_deploy_slot_cost_add",
+                            "effect_value":  -1,
+                            "class_filter":  "defender",
+                            "max_cost_prestige":  1
+                        },
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  -0.20,
+                            "class_filter":  "defender",
+                            "max_cost_prestige":  1
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_compressed_bulwark.png"
+    },
+    {
+        "id":  "relic_travel_pack",
+        "name":  "远征背包",
+        "desc":  "一阶单位购买价格 -1，最低为 0。",
+        "effect_type":  "shop_unit_cost_add",
+        "effect_value":  -1,
+        "max_cost_prestige":  1,
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_travel_pack.png"
+    },
+    {
+        "id":  "relic_black_market_token",
+        "name":  "黑市代币",
+        "desc":  "三阶单位购买价格 -2，商店刷新价格 +1。",
+        "rarity":  2,
+        "effects":  [
+                        {
+                            "effect_type":  "shop_unit_cost_add",
+                            "effect_value":  -2,
+                            "min_cost_prestige":  7
+                        },
+                        {
+                            "effect_type":  "shop_refresh_cost_add",
+                            "effect_value":  1
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_black_market_token.png"
+    },
+    {
+        "id":  "relic_bounty_ledger",
+        "name":  "赏金账本",
+        "desc":  "击杀获得声望 +20%。",
+        "effect_type":  "kill_prestige_percent",
+        "effect_value":  0.20,
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_bounty_ledger.png"
+    },
+    {
+        "id":  "relic_greedy_seal",
+        "name":  "贪婪印章",
+        "desc":  "击杀获得声望 +35%。",
+        "effect_type":  "kill_prestige_percent",
+        "effect_value":  0.35,
+        "rarity":  3,
+        "icon_path":  "res://assets/ui/generated/icon_relic_greedy_seal.png"
+    },
+    {
+        "id":  "relic_lumber_contract",
+        "name":  "木材契约",
+        "desc":  "伐木站每天额外产出 1 木材。",
+        "effect_type":  "building_income_add",
+        "effect_value":  1,
+        "material_filter":  "wood",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_lumber_contract.png"
+    },
+    {
+        "id":  "relic_quarry_glyph",
+        "name":  "采石符文",
+        "desc":  "石矿场每天额外产出 1 石材。",
+        "effect_type":  "building_income_add",
+        "effect_value":  1,
+        "material_filter":  "stone",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_quarry_glyph.png"
+    },
+    {
+        "id":  "relic_mana_siphon",
+        "name":  "魔力虹吸管",
+        "desc":  "魔力矿场每天额外产出 1 魔力矿。",
+        "effect_type":  "building_income_add",
+        "effect_value":  1,
+        "material_filter":  "mana",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_mana_siphon.png"
+    },
+    {
+        "id":  "relic_industrial_blueprint",
+        "name":  "工业蓝图",
+        "desc":  "所有采集建筑产量 +25%。",
+        "effect_type":  "building_income_percent",
+        "effect_value":  0.25,
+        "building_type_filter":  "resource",
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_industrial_blueprint.png"
+    },
+    {
+        "id":  "relic_aura_lens",
+        "name":  "光环透镜",
+        "desc":  "所有增益建筑效果 +25%。",
+        "effect_type":  "building_aura_effect_percent",
+        "effect_value":  0.25,
+        "building_type_filter":  "aura",
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_aura_lens.png"
+    },
+    {
+        "id":  "relic_range_pylon",
+        "name":  "扩散塔芯",
+        "desc":  "所有增益建筑范围 +1，增益建筑木材、石材、魔力成本各 +1。",
+        "rarity":  3,
+        "effects":  [
+                        {
+                            "effect_type":  "building_aura_radius_add",
+                            "effect_value":  1,
+                            "building_type_filter":  "aura"
+                        },
+                        {
+                            "effect_type":  "building_cost_add",
+                            "effect_value":  1,
+                            "building_type_filter":  "aura"
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_range_pylon.png"
+    },
+    {
+        "id":  "relic_wallwright_kit",
+        "name":  "筑墙匠工具包",
+        "desc":  "所有建筑的木材成本 -1，最低为 0。",
+        "effect_type":  "building_material_cost_add",
+        "effect_value":  -1,
+        "material_filter":  "wood",
+        "rarity":  1,
+        "icon_path":  "res://assets/ui/generated/icon_relic_wallwright_kit.png"
+    },
+    {
+        "id":  "relic_iron_patience",
+        "name":  "铁质耐心",
+        "desc":  "所有单位生命 +12%，攻击力 -5%。",
+        "rarity":  1,
+        "effects":  [
+                        {
+                            "effect_type":  "unit_hp_percent",
+                            "effect_value":  0.12
+                        },
+                        {
+                            "effect_type":  "unit_atk_percent",
+                            "effect_value":  -0.05
+                        }
+                    ],
+        "icon_path":  "res://assets/ui/generated/icon_relic_iron_patience.png"
+    },
+    {
+        "id":  "relic_rapid_recall",
+        "name":  "快速召回绳",
+        "desc":  "所有单位再部署时间 -25%。",
+        "effect_type":  "unit_redeploy_percent",
+        "effect_value":  -0.25,
+        "rarity":  2,
+        "icon_path":  "res://assets/ui/generated/icon_relic_rapid_recall.png"
+    }
 ]

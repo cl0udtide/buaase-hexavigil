@@ -12,7 +12,8 @@ data/
 ├─ buffs.json
 ├─ events.json
 ├─ waves.json
-└─ map_generation.json
+├─ map_generation.json
+└─ ui_icons.json
 ```
 
 各文件用途：
@@ -31,6 +32,8 @@ data/
   夜晚波次配置。
 - `map_generation.json`
   地图生成与探索相关调参配置。
+- `ui_icons.json`
+  非实体 UI 图标目录，例如资源、阶段、属性、图例、通用按钮和音量图标。
 
 这些文件只保存静态配置，不保存一局游戏的运行时状态。
 
@@ -91,10 +94,19 @@ enemy_actor -> scenes/actors/EnemyActor.tscn
 building_actor -> scenes/actors/BuildingActor.tscn
 ```
 
-### 2.6 `icon_key`
+### 2.6 UI 图标字段
 
-如果某条配置需要在 UI 中显示图标，则使用 `icon_key`。  
-`icon_key` 是图标资源的逻辑名，不直接写贴图路径。当前 UI 基线不加载图片资产，界面统一回退到 `icon_text` 或文本占位；后续如重新接入资产，也应通过统一资源入口恢复。
+如果某条配置需要在 UI 中显示图标，新数据优先写明确资源路径：
+
+- `icon_path`：实体主图标，完整 `res://` 路径。
+- `class_icon_path`：单位职业图标，完整 `res://` 路径。
+- `skill_icon_path`：单位技能图标，完整 `res://` 路径。
+- `portrait_path`：单位头像路径；当前没有头像资产时可以省略。
+- `ui_icon_path`：历史兼容字段，优先级低于 `icon_path`。
+- `icon_key`：旧逻辑键，仅用于旧数据兼容，不应作为新 UI 的正常图标来源。
+- `icon_text`：图片缺失时的最终文本兜底。
+
+UI 必须通过 `UiArtRegistry` 读取图标，读取优先级为：显式路径字段、兼容路径字段、旧 `icon_key`、调用方传入的 catalog fallback，最后才显示 `icon_text`。
 
 ### 2.7 UI 显示字段与统一显示工具
 
@@ -102,8 +114,8 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 - `name`：显示名称。
 - `desc`：说明文本。
-- `icon_key`：图标逻辑名，当前仅保留为未来扩展键。
-- `icon_text`：无真实图标时的占位图标文本。
+- `icon_path` / `class_icon_path` / `skill_icon_path` / `portrait_path`：图片资产路径。
+- `icon_text`：无真实图标时的占位图标文本，只作兜底。
 
 跨 UI 复用的显示规则不应散落在各 UI 脚本中，例如：
 
@@ -152,7 +164,9 @@ building_actor -> scenes/actors/BuildingActor.tscn
     "skill_block_bonus": 1,
     "scene_key": "unit_actor",
     "skill_behavior_key": "guard_hold_line",
-    "icon_key": "guard_01_icon"
+    "class_icon_path": "res://assets/ui/generated/icon_class_guard.png",
+    "skill_icon_path": "res://assets/ui/generated/icon_skill_guard_hold_line.png",
+    "icon_text": "煌"
   }
 ]
 ```
@@ -191,7 +205,10 @@ building_actor -> scenes/actors/BuildingActor.tscn
 | `sp_recover_per_sec` | `float` | 每秒回复 SP |
 | `skill_id` | `String` | 技能标识 |
 | `skill_behavior_key` | `String` | 技能行为脚本逻辑名，未配置时默认回退到 `skill_id` |
-| `icon_key` | `String` | 图标逻辑名 |
+| `class_icon_path` | `String` | 职业图标路径，优先用于干员卡与详情 UI |
+| `skill_icon_path` | `String` | 技能图标路径，优先用于技能展示 |
+| `portrait_path` | `String` | 头像路径；当前没有头像资产时可省略 |
+| `icon_text` | `String` | 图片缺失时的文本兜底 |
 
 ### 3.1 运行时干员槽位
 
@@ -311,7 +328,7 @@ Boss 多阶段规则：
     "desc": "一定范围内的友军持续回复 2 生命/秒",
     "building_type": "aura",
     "sort_order": 110,
-    "icon_key": "medical_station_icon",
+    "icon_path": "res://assets/ui/generated/icon_building_medical_station.png",
     "icon_text": "疗",
     "visual_key": "medical_station",
     "destroyed_visual_key": "generic_destroyed_building",
@@ -357,8 +374,8 @@ Boss 多阶段规则：
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
 | `sort_order` | `int` | UI 排序值；`BuildPanel` 按该值从小到大显示，同值按 `id` 排序 |
-| `icon_key` | `String` | 建筑图标逻辑名，后续可映射到真实图标资源 |
-| `icon_text` | `String` | 当前占位 UI 使用的单字图标文本；有真实图标资源后可逐步替换 |
+| `icon_path` | `String` | 建筑图标路径，`BuildPanel` 优先通过统一接口读取 |
+| `icon_text` | `String` | 图片缺失时的文本兜底 |
 | `visual_key` | `String` | 建筑正常状态贴图逻辑名，默认按 `assets/sprites/buildings/` 下的同名资源查找 |
 | `active_visual_key` | `String` | 可开关建筑开启状态贴图逻辑名，例如战火圣坛开启态 |
 | `inactive_visual_key` | `String` | 可开关建筑关闭状态贴图逻辑名，例如战火圣坛关闭态 |
@@ -466,6 +483,7 @@ Boss 多阶段规则：
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
 | `rarity` | `int` | 稀有度 |
+| `icon_path` | `String` | 遗物图标路径，用于 `RelicStrip`、`RelicPanel`、`RelicCard` 和祝福候选卡 |
 | `effects` | `Array` | 可选，复合遗物使用；每项包含 `effect_type`、`effect_value` 和过滤字段 |
 | `class_filter` | `String` | 可选，仅影响指定职业，例如 `guard`、`sniper`、`caster`、`defender` |
 | `building_type_filter` | `String` | 可选，仅影响指定建筑类别，例如 `resource`、`aura` |
@@ -642,6 +660,23 @@ Boss 多阶段规则：
 - 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。
 - 地图侧只负责“这个格子是否有事件”；探索发现后的展示和事件效果结算属于白天流程与随机事件模块。
 
+### 10.1 `ui_icons.json`
+
+作用：
+
+- 集中维护非实体 UI 图标路径。
+- 覆盖资源、阶段、按钮、音量、职业 fallback、属性、伤害类型、朝向、地图标记和战场图例等。
+- UI 通过 `UiArtRegistry.get_catalog_icon(id)` 读取，不在组件脚本中拼接图片路径。
+
+结构为顶层对象：
+
+```json
+{
+  "resource_wood": "res://assets/ui/generated/icon_wood.png",
+  "button_close": "res://assets/ui/generated/icon_close.png"
+}
+```
+
 ---
 
 ## 11. 配置表之间的引用关系
@@ -650,7 +685,9 @@ Boss 多阶段规则：
 
 - `units.json[].skill_id` 引用技能逻辑标识
 - `units.json[].scene_key` 引用单位模板
-- `units.json[].icon_key` 引用单位图标
+- `units.json[].class_icon_path` 引用职业图标
+- `units.json[].skill_icon_path` 引用技能图标
+- `units.json[].portrait_path` 可选引用头像图标
 
 ### 11.2 敌人
 
@@ -659,6 +696,7 @@ Boss 多阶段规则：
 ### 11.3 建筑
 
 - `buildings.json[].scene_key` 引用建筑模板
+- `buildings.json[].icon_path` 引用建筑 UI 图标
 
 ### 11.4 波次
 
@@ -668,5 +706,6 @@ Boss 多阶段规则：
 ### 11.5 Buff 与事件
 
 - `buffs.json[].effect_type` 决定 Buff 的结算逻辑
+- `buffs.json[].icon_path` 引用遗物 UI 图标
 - `events.json[].effect_type` 决定事件的结算逻辑
 - `events.json[].payload` 为对应结算逻辑提供参数
