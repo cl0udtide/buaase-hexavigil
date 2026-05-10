@@ -29,6 +29,12 @@ const DEPLOY_LOCKED_FILL := Color(1.0, 0.68, 0.18, 0.32)
 const DEPLOY_LOCKED_BORDER := Color(1.0, 0.84, 0.32, 0.95)
 const DEPLOY_RANGE_FILL := Color(0.95, 0.65, 0.18, 0.20)
 const DEPLOY_RANGE_BORDER := Color(1.0, 0.78, 0.26, 0.82)
+const UNIT_VISUAL_TEXTURE_ROOT := "res://assets/sprites/units"
+const UNIT_VISUAL_IDLE_ANIM := "idle"
+const UNIT_VISUAL_TEXTURE_SIZE := 128.0
+const UNIT_VISUAL_DISPLAY_SIZE := 72.0
+const UNIT_VISUAL_OFFSET := Vector2(0.0, -8.0)
+const UNIT_PREVIEW_MODULATE := Color(1.0, 1.0, 1.0, 0.78)
 const ROUTE_PREVIEW_COLORS: Array[Color] = [
 	Color(1.0, 0.54, 0.20, 0.95),
 	Color(0.20, 0.78, 1.0, 0.95),
@@ -71,6 +77,8 @@ var _deploy_preview_valid := false
 var _deploy_locked_cell := Vector2i(-1, -1)
 var _deploy_preview_facing := Vector2i.ZERO
 var _deploy_range_preview_cells: Array[Vector2i] = []
+var _deploy_preview_visual_key := ""
+var _deploy_preview_texture: Texture2D = null
 var _wave_route_previews: Array[Dictionary] = []
 
 
@@ -150,6 +158,7 @@ func _draw() -> void:
 			if cell == _selected_cell:
 				draw_rect(rect.grow(-6.0), SELECT_COLOR)
 	_draw_wave_route_previews(map_manager)
+	_draw_deploy_visual_preview(map_manager)
 	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
 		_draw_deploy_direction_arrow(map_manager)
 
@@ -174,20 +183,22 @@ func clear_building_effect_range() -> void:
 	queue_redraw()
 
 
-func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = []) -> void:
+func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = [], visual_key: String = "") -> void:
 	_deploy_preview_cell = cell
 	_deploy_preview_valid = is_valid
 	_deploy_locked_cell = Vector2i(-1, -1)
 	_deploy_preview_facing = Vector2i.ZERO
 	_deploy_range_preview_cells = range_cells.duplicate()
+	_set_deploy_preview_visual(visual_key if is_valid else "")
 	queue_redraw()
 
 
-func set_deploy_direction_preview(cell: Vector2i, facing: Vector2i, range_cells: Array[Vector2i] = []) -> void:
+func set_deploy_direction_preview(cell: Vector2i, facing: Vector2i, range_cells: Array[Vector2i] = [], visual_key: String = "") -> void:
 	_deploy_preview_cell = Vector2i(-1, -1)
 	_deploy_locked_cell = cell
 	_deploy_preview_facing = _normalize_direction(facing)
 	_deploy_range_preview_cells = range_cells.duplicate()
+	_set_deploy_preview_visual(visual_key)
 	queue_redraw()
 
 
@@ -197,6 +208,7 @@ func clear_deploy_preview() -> void:
 	_deploy_locked_cell = Vector2i(-1, -1)
 	_deploy_preview_facing = Vector2i.ZERO
 	_deploy_range_preview_cells.clear()
+	_set_deploy_preview_visual("")
 	queue_redraw()
 
 
@@ -235,6 +247,51 @@ func _draw_deploy_preview_cell(rect: Rect2, is_valid: bool) -> void:
 func _draw_deploy_locked_cell(rect: Rect2) -> void:
 	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_FILL)
 	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_BORDER, false, 3.0)
+
+
+func _draw_deploy_visual_preview(map_manager: Node) -> void:
+	if _deploy_preview_texture == null:
+		return
+	var cell := _deploy_locked_cell if _deploy_locked_cell.x >= 0 else _deploy_preview_cell
+	if cell.x < 0:
+		return
+	if cell == _deploy_preview_cell and not _deploy_preview_valid:
+		return
+	var facing := _deploy_preview_facing if _deploy_locked_cell.x >= 0 else Vector2i.RIGHT
+	_draw_unit_preview_texture(map_manager.cell_to_world(cell), facing)
+
+
+func _draw_unit_preview_texture(center: Vector2, facing: Vector2i) -> void:
+	var texture_size := _deploy_preview_texture.get_size()
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return
+	var visual_scale := UNIT_VISUAL_DISPLAY_SIZE / UNIT_VISUAL_TEXTURE_SIZE
+	var scale_x := -visual_scale if _should_visual_face_left(facing) else visual_scale
+	draw_set_transform(center + UNIT_VISUAL_OFFSET, 0.0, Vector2(scale_x, visual_scale))
+	draw_texture_rect(_deploy_preview_texture, Rect2(-texture_size * 0.5, texture_size), false, UNIT_PREVIEW_MODULATE)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _set_deploy_preview_visual(visual_key: String) -> void:
+	var normalized_key := visual_key.strip_edges()
+	if normalized_key == _deploy_preview_visual_key:
+		return
+	_deploy_preview_visual_key = normalized_key
+	_deploy_preview_texture = _load_unit_visual_texture(normalized_key)
+
+
+func _load_unit_visual_texture(visual_key: String) -> Texture2D:
+	if visual_key.is_empty():
+		return null
+	var path := "%s/%s/%s/%s_%s_000.png" % [UNIT_VISUAL_TEXTURE_ROOT, visual_key, UNIT_VISUAL_IDLE_ANIM, visual_key, UNIT_VISUAL_IDLE_ANIM]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+
+func _should_visual_face_left(direction: Vector2i) -> bool:
+	var normalized := _normalize_direction(direction)
+	return normalized == Vector2i.LEFT or normalized == Vector2i.UP
 
 
 func _normalize_direction(direction: Vector2i) -> Vector2i:
