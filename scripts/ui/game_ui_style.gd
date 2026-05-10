@@ -43,29 +43,6 @@ const DANGER_SOFT := Color(0.355, 0.120, 0.110, 1.0)
 const SUCCESS_SOFT := Color(0.145, 0.285, 0.190, 1.0)
 const VIOLET_SOFT := Color(0.225, 0.170, 0.315, 1.0)
 
-const HOLOGRAM_ROOT := "res://assets/UI/1. Free Hologram Interface Wenrexa"
-const HOLOGRAM_BUTTON_NORMAL := HOLOGRAM_ROOT + "/Button 1/Button Normal.png"
-const HOLOGRAM_BUTTON_HOVER := HOLOGRAM_ROOT + "/Button 1/Button Hover.png"
-const HOLOGRAM_BUTTON_PRESSED := HOLOGRAM_ROOT + "/Button 1/Button Active.png"
-const HOLOGRAM_BUTTON_DISABLED := HOLOGRAM_ROOT + "/Button 1/Button Disable.png"
-const HOLOGRAM_CARD := HOLOGRAM_ROOT + "/Card X1/Card X1.png"
-const HOLOGRAM_CARD_WIDE := HOLOGRAM_ROOT + "/Card X1/Card X2.png"
-const HOLOGRAM_PANEL_EMPTY := HOLOGRAM_ROOT + "/Card X1/Panel Empty.png"
-const HOLOGRAM_PANEL_GREEN := HOLOGRAM_ROOT + "/Card X1/Panel Empty Green.png"
-const HOLOGRAM_PANEL_RED := HOLOGRAM_ROOT + "/Card X1/Panel Red.png"
-
-const MIKO_ROOT := "res://assets/UI/Wenrexa Assets GUI Dark Miko"
-const MIKO_PANEL_GRAY := MIKO_ROOT + "/Panels Gray/Panel 10.png"
-const MIKO_PANEL_GREEN := MIKO_ROOT + "/Panels Green/Panel 10.png"
-const MIKO_BUTTON_NORMAL := MIKO_ROOT + "/Standart Button V1/Standart Button Normal/Standart Button Normal 1.png"
-const MIKO_BUTTON_HOVER := MIKO_ROOT + "/Standart Button V1/Standart Button Hover/Standart Button Hover 1.png"
-const MIKO_BUTTON_PRESSED := MIKO_ROOT + "/Standart Button V1/Standart Button Active/Standart Button Active 1.png"
-const MIKO_BUTTON_DISABLED := MIKO_ROOT + "/Standart Button V1/Standart Button Disable/Standart Button Disable 1.png"
-const MIKO_PROGRESS_BLUE_BG := MIKO_ROOT + "/ProgressBar Blue/V4/Background Static.png"
-const MIKO_PROGRESS_BLUE_FILL := MIKO_ROOT + "/ProgressBar Blue/V4/Foreground.png"
-const MIKO_PROGRESS_GREEN_FILL := MIKO_ROOT + "/ProgressBar Green/V4/Foreground.png"
-const MIKO_PROGRESS_RED_FILL := MIKO_ROOT + "/ProgressBar Red/V4/Foreground.png"
-
 static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	var texture := load(path) as Texture2D
 	if texture == null:
@@ -106,15 +83,6 @@ static func center_label_text(label: Label) -> void:
 	if label == null:
 		return
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-
-static func hologram_texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 22.0) -> StyleBox:
-	var style := texture_box(path, fallback_fill, fallback_border, margin)
-	style.content_margin_left = 12.0
-	style.content_margin_top = 10.0
-	style.content_margin_right = 12.0
-	style.content_margin_bottom = 10.0
-	return style
 
 
 static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
@@ -225,22 +193,6 @@ static func accent_button(accent: Color) -> StyleBox:
 
 static func disabled_button() -> StyleBox:
 	return button(STROKE_SOFT, 0.08)
-
-
-static func miko_button(state: StringName = &"normal") -> StyleBox:
-	var path := MIKO_BUTTON_NORMAL
-	if state == &"hover":
-		path = MIKO_BUTTON_HOVER
-	elif state == &"pressed":
-		path = MIKO_BUTTON_PRESSED
-	elif state == &"disabled":
-		path = MIKO_BUTTON_DISABLED
-	return texture_box(path, BG_CARD, STROKE_SOFT, 12.0)
-
-
-static func miko_panel(highlighted: bool = false) -> StyleBox:
-	var path := MIKO_PANEL_GREEN if highlighted else MIKO_PANEL_GRAY
-	return texture_box(path, BG_CARD, SUCCESS if highlighted else STROKE_SOFT, 18.0)
 
 
 static func progress_background() -> StyleBox:
