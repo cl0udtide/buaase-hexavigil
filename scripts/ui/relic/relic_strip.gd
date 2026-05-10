@@ -4,6 +4,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
+const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 
 const RELIC_ICON_SCENE := preload("res://scenes/ui/relic/RelicIcon.tscn")
 const MAX_VISIBLE_RELICS := 14
@@ -52,6 +53,7 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 
 func _refresh() -> void:
 	_entry_button.text = "遗物 %d" % _relic_ids.size()
+	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_catalog_icon(&"relic_bag"), Vector2(16.0, 16.0), &"left", 7.0)
 	_entry_button.tooltip_text = "点击或按 R 查看全部遗物"
 	for child in _icon_row.get_children():
 		child.queue_free()
@@ -100,9 +102,8 @@ func _icon_capacity_for_width(width: float) -> int:
 
 func _style_entry_button() -> void:
 	_entry_button.custom_minimum_size = Vector2(86.0, 30.0)
-	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_texture(&"icon_relic_bag", &"icon"), Vector2(16.0, 16.0), &"left", 7.0)
 	GameUiStyle.center_button_text(_entry_button)
-	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
+	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(UiFrameSpec.RELIC_ENTRY_BUTTON, GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT))
 	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
 	_entry_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
 	_entry_button.add_theme_color_override("font_color", GameUiStyle.TEXT)

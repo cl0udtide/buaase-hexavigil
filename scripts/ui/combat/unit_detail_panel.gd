@@ -71,7 +71,7 @@ func _ready() -> void:
 	var main_vbox := get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
 	if main_vbox != null:
 		main_vbox.add_theme_constant_override("separation", 12)
-	_header_strip.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_HEADER_STRIP, GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, false))
+	_header_strip.add_theme_stylebox_override("panel", GameUiStyle.unit_header_strip())
 	_damage_pill.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
 	_facing_pill.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
 	for section_base in [_vitals_base, _stats_base, _skill_base]:
@@ -85,6 +85,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_skill_scroll.add_theme_stylebox_override("panel", GameUiStyle.skill_desc_box())
+	GameUiStyle.apply_scroll_style(_skill_scroll)
 	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_skill_scroll.resized.connect(_refresh_skill_layout)
 	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -94,11 +96,10 @@ func _ready() -> void:
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	GameUiStyle.fit_centered_icon(_skill_icon_texture, Vector2(38.0, 38.0))
-	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
-	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
-	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
-	_skill_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
-	_apply_icon_layering()
+	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.unit_portrait_backplate())
+	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.unit_portrait_frame())
+	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.skill_icon_backplate())
+	_skill_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.skill_icon_frame())
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_damage_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -128,12 +129,14 @@ func _ready() -> void:
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
 	_style_action_button(_retreat_button, GameUiStyle.STROKE_SOFT)
 	_style_action_button(_purchase_button, GameUiStyle.AMBER)
+	_ensure_stat_icon_rows()
 	_detail_source_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_purchase_reason_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
 	_purchase_button.pressed.connect(_on_purchase_pressed)
 	_ensure_scroll_wrapper()
+	GameUiStyle.apply_scroll_style(_detail_scroll)
 	gui_input.connect(_on_detail_gui_input)
 	clear_unit()
 
@@ -194,6 +197,7 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 		_cast_button.text = "激活技能"
 	_cast_button.disabled = active_remaining != 0.0 or not unit.can_cast_skill()
 	_retreat_button.disabled = false
+	_refresh_action_icons()
 
 
 func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
@@ -249,6 +253,7 @@ func clear_unit() -> void:
 	_cast_button.disabled = true
 	_retreat_button.disabled = true
 	_set_action_mode(&"empty", "选择单位、干员或商店商品", false, "")
+	_refresh_action_icons()
 
 
 func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, source_text: String, skill_status_text: String = "Preview") -> void:
@@ -279,6 +284,7 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_refresh_skill_layout()
 	call_deferred("_refresh_skill_layout")
 	_skill_scroll.scroll_vertical = 0
+	_refresh_action_icons()
 
 
 func _set_action_mode(mode: StringName, source_text: String, can_purchase: bool, reason: String, price: int = 0) -> void:
@@ -296,6 +302,7 @@ func _set_action_mode(mode: StringName, source_text: String, can_purchase: bool,
 	if mode == &"preview":
 		_cast_button.visible = false
 		_retreat_button.visible = false
+	_refresh_action_icons()
 
 
 func _ensure_scroll_wrapper() -> void:
@@ -317,6 +324,7 @@ func _ensure_scroll_wrapper() -> void:
 	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_detail_scroll = scroll
+	GameUiStyle.apply_scroll_style(_detail_scroll)
 
 
 func _on_detail_scroll_gui_input(event: InputEvent) -> void:
@@ -407,17 +415,6 @@ func _update_fill(bar: Control, fill: Control, ratio: float) -> void:
 	fill.offset_bottom = 0.0
 
 
-func _apply_icon_layering() -> void:
-	_portrait_backplate.z_index = 0
-	_portrait_frame.z_index = 3
-	_portrait_texture.z_index = 5
-	_portrait_label.z_index = 5
-	_skill_icon_backplate.z_index = 0
-	_skill_icon_frame.z_index = 3
-	_skill_icon_texture.z_index = 5
-	_skill_icon_label.z_index = 5
-
-
 func _style_action_button(button: Button, accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
 	var normal_style := GameUiStyle.skill_button_primary() if accent == GameUiStyle.ACCENT else GameUiStyle.secondary_button()
@@ -431,8 +428,50 @@ func _style_action_button(button: Button, accent: Color) -> void:
 
 
 func _skill_icon_texture_from_cfg(cfg: Dictionary) -> Texture2D:
-	var key := StringName(cfg.get("skill_icon_key", cfg.get("skill_id", cfg.get("icon_key", ""))))
-	return UiArtRegistry.get_texture(key, &"skill")
+	return UiArtRegistry.get_skill_icon_texture(cfg)
+
+
+func _refresh_action_icons() -> void:
+	GameUiStyle.set_button_texture_icon(_cast_button, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"), Vector2(16.0, 16.0), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(_retreat_button, UiArtRegistry.get_catalog_icon(&"combat_retreat"), Vector2(16.0, 16.0), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(_purchase_button, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"), Vector2(16.0, 16.0), &"left", 8.0)
+
+
+func _ensure_stat_icon_rows() -> void:
+	_ensure_icon_row_for_label(_atk_stat_label, &"stat_atk")
+	_ensure_icon_row_for_label(_def_stat_label, &"stat_def")
+	_ensure_icon_row_for_label(_res_stat_label, &"stat_res")
+	_ensure_icon_row_for_label(_block_stat_label, &"stat_block")
+	_ensure_icon_row_for_label(_aspd_stat_label, &"stat_attack_speed")
+
+
+func _ensure_icon_row_for_label(label: Label, icon_id: StringName) -> void:
+	if label == null:
+		return
+	var parent := label.get_parent()
+	if parent == null or parent.get_node_or_null("%sRow" % label.name) != null:
+		return
+	var texture := UiArtRegistry.get_catalog_icon(icon_id)
+	if texture == null:
+		return
+	var row := HBoxContainer.new()
+	row.name = "%sRow" % label.name
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_theme_constant_override("separation", 6)
+	var insert_index := label.get_index()
+	parent.remove_child(label)
+	parent.add_child(row)
+	parent.move_child(row, insert_index)
+	var icon_rect := TextureRect.new()
+	icon_rect.name = "IconTexture"
+	icon_rect.custom_minimum_size = Vector2(18.0, 18.0)
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon_rect)
+	row.add_child(label)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	icon_rect.texture = texture
 
 
 func _apply_texture_or_text(texture_rect: TextureRect, label: Label, texture: Texture2D, fallback_text: String) -> void:

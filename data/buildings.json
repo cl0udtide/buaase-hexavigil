@@ -4,7 +4,6 @@
     "name": "伐木站",
     "desc": "每天产出 6 木材",
     "sort_order": 10,
-    "icon_key": "lumber_station_icon",
     "icon_text": "木",
     "building_type": "resource",
     "max_hp": 300,
@@ -19,14 +18,14 @@
     "effect_type": "collect_wood",
     "effect_value": 6,
     "place_rule": "wood_resource_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_lumber_station.png"
   },
   {
     "id": "stone_quarry",
     "name": "石矿场",
     "desc": "每天产出 4 石材",
     "sort_order": 20,
-    "icon_key": "stone_quarry_icon",
     "icon_text": "石",
     "building_type": "resource",
     "max_hp": 320,
@@ -41,14 +40,14 @@
     "effect_type": "collect_stone",
     "effect_value": 4,
     "place_rule": "stone_resource_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_stone_quarry.png"
   },
   {
     "id": "mana_extractor",
     "name": "魔力矿场",
     "desc": "每天产出 4 魔力矿",
     "sort_order": 30,
-    "icon_key": "mana_extractor_icon",
     "icon_text": "魔",
     "building_type": "resource",
     "max_hp": 320,
@@ -63,14 +62,14 @@
     "effect_type": "collect_mana",
     "effect_value": 4,
     "place_rule": "mana_resource_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_mana_extractor.png"
   },
   {
     "id": "medical_station",
     "name": "医疗站",
     "desc": "一定范围内的友军持续回复 2 生命/秒",
     "sort_order": 110,
-    "icon_key": "medical_station_icon",
     "icon_text": "疗",
     "building_type": "aura",
     "max_hp": 380,
@@ -86,14 +85,14 @@
     "effect_type": "heal",
     "effect_value": 2,
     "place_rule": "plain_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_medical_station.png"
   },
   {
     "id": "gravity_tower",
     "name": "重力塔",
     "desc": "一定范围内的敌人移速降低 30%",
     "sort_order": 120,
-    "icon_key": "gravity_tower_icon",
     "icon_text": "缓",
     "building_type": "aura",
     "max_hp": 400,
@@ -109,14 +108,14 @@
     "effect_type": "slow",
     "effect_value": 0.3,
     "place_rule": "plain_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_gravity_tower.png"
   },
   {
     "id": "inspiring_monolith",
     "name": "鼓舞石碑",
     "desc": "一定范围内的友军攻击间隔降低 10%",
     "sort_order": 130,
-    "icon_key": "inspiring_monolith_icon",
     "icon_text": "速",
     "building_type": "aura",
     "max_hp": 400,
@@ -132,14 +131,14 @@
     "effect_type": "attack_interval_reduce",
     "effect_value": 0.1,
     "place_rule": "plain_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_inspiring_monolith.png"
   },
   {
     "id": "war_shrine",
     "name": "战火圣坛",
     "desc": "一定范围内的友军攻击 +5，夜晚开启时消耗 1 魔力矿",
     "sort_order": 140,
-    "icon_key": "war_shrine_icon",
     "icon_text": "攻",
     "building_type": "aura",
     "max_hp": 420,
@@ -159,14 +158,14 @@
     "night_mana_cost": 1,
     "initial_enabled": false,
     "place_rule": "plain_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_war_shrine.png"
   },
   {
     "id": "wood_wall",
     "name": "木墙",
     "desc": "阻挡敌人路径",
     "sort_order": 210,
-    "icon_key": "wood_wall_icon",
     "icon_text": "墙",
     "building_type": "block",
     "max_hp": 700,
@@ -182,6 +181,7 @@
     "effect_type": "none",
     "effect_value": 0,
     "place_rule": "plain_only",
-    "scene_key": "building_actor"
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_wood_wall.png"
   }
 ]

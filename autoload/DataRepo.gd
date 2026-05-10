@@ -14,7 +14,8 @@ const DATA_FILES := {
 }
 
 const CONFIG_FILES := {
-	"map_generation": "res://data/map_generation.json"
+	"map_generation": "res://data/map_generation.json",
+	"ui_icons": "res://data/ui_icons.json"
 }
 
 const SCENE_REGISTRY := {
@@ -37,7 +38,8 @@ var _tables: Dictionary = {
 }
 
 var _configs: Dictionary = {
-	"map_generation": {}
+	"map_generation": {},
+	"ui_icons": {}
 }
 
 var _loaded := false
@@ -92,6 +94,10 @@ func get_wave_cfg(day: int) -> Dictionary:
 
 func get_map_generation_cfg() -> Dictionary:
 	return _configs["map_generation"].duplicate(true)
+
+
+func get_ui_icon_catalog() -> Dictionary:
+	return _configs["ui_icons"].duplicate(true)
 
 
 func get_scene_by_key(scene_key: StringName) -> PackedScene:

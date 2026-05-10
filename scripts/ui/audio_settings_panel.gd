@@ -81,13 +81,7 @@ func _configure_slider(slider: HSlider) -> void:
 	slider.min_value = 0.0
 	slider.max_value = 1.0
 	slider.step = 0.01
-	slider.add_theme_stylebox_override("slider", GameUiStyle.frame_box(&"frame_slider_track", GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, false))
-	slider.add_theme_stylebox_override("grabber_area", GameUiStyle.frame_box(&"frame_slider_fill", GameUiStyle.ACCENT_SOFT, GameUiStyle.ACCENT, false))
-	slider.add_theme_stylebox_override("grabber_area_highlight", GameUiStyle.frame_box(&"frame_slider_fill", GameUiStyle.ACCENT_SOFT, GameUiStyle.AMBER, false))
-	var handle := UiArtRegistry.get_texture(&"frame_slider_handle", &"frame")
-	if handle != null:
-		slider.add_theme_icon_override("grabber", handle)
-		slider.add_theme_icon_override("grabber_highlight", handle)
+	GameUiStyle.apply_slider_style(slider)
 
 
 func _on_master_changed(value: float) -> void:
@@ -118,6 +112,7 @@ func _refresh_value_labels() -> void:
 	_master_value_label.text = _format_percent(_master_slider.value)
 	_music_value_label.text = _format_percent(_music_slider.value)
 	_sfx_value_label.text = _format_percent(_sfx_slider.value)
+	_refresh_volume_icons()
 
 
 func _format_percent(value: float) -> String:
@@ -134,13 +129,12 @@ func _apply_visual_style() -> void:
 	GameUiStyle.center_label_text(title_label)
 	for row_base in find_children("RowBase", "Panel", true, false):
 		(row_base as Panel).add_theme_stylebox_override("panel", GameUiStyle.settings_row())
-	_apply_volume_icon("MasterRow", &"icon_volume_master")
-	_apply_volume_icon("MusicRow", &"icon_volume_music")
-	_apply_volume_icon("SfxRow", &"icon_volume_sfx")
+	_refresh_volume_icons()
 
 
 func _style_close_button() -> void:
 	_close_button.custom_minimum_size = Vector2(30.0, 28.0)
+	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(14.0, 14.0), &"center")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
@@ -167,22 +161,29 @@ func _resolve_audio_manager() -> Node:
 	return null
 
 
-func _apply_volume_icon(row_name: String, icon_key: StringName) -> void:
-	var label := get_node_or_null("ContentMargin/MainVBox/%s/RowMargin/RowContent/VolumeIcon" % row_name) as Label
+func _refresh_volume_icons() -> void:
+	_apply_label_icon(get_node_or_null("%MasterRow/RowMargin/RowContent/VolumeIcon") as Label, &"volume_mute" if is_zero_approx(_master_slider.value) else &"volume_master")
+	_apply_label_icon(get_node_or_null("%MusicRow/RowMargin/RowContent/VolumeIcon") as Label, &"volume_mute" if is_zero_approx(_music_slider.value) else &"volume_music")
+	_apply_label_icon(get_node_or_null("%SfxRow/RowMargin/RowContent/VolumeIcon") as Label, &"volume_mute" if is_zero_approx(_sfx_slider.value) else &"volume_sfx")
+
+
+func _apply_label_icon(label: Label, icon_id: StringName) -> void:
 	if label == null:
 		return
-	var texture := UiArtRegistry.get_texture(icon_key, &"icon")
+	var texture := UiArtRegistry.get_catalog_icon(icon_id)
 	if texture == null:
 		return
 	label.text = ""
-	var icon := label.get_node_or_null("IconTexture") as TextureRect
-	if icon == null:
-		icon = TextureRect.new()
-		icon.name = "IconTexture"
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.add_child(icon)
-	icon.texture = texture
-	icon.visible = true
-	GameUiStyle.fit_centered_icon(icon, Vector2(18.0, 18.0))
+	var texture_rect := label.get_node_or_null("IconTexture") as TextureRect
+	if texture_rect == null:
+		texture_rect = TextureRect.new()
+		texture_rect.name = "IconTexture"
+		texture_rect.anchor_right = 1.0
+		texture_rect.anchor_bottom = 1.0
+		texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		texture_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_child(texture_rect)
+	texture_rect.texture = texture
+	texture_rect.visible = true
+	GameUiStyle.fit_centered_icon(texture_rect, Vector2(18.0, 18.0))

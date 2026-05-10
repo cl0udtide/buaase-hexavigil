@@ -4,16 +4,17 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
+const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 const RELIC_CARD_SCENE := preload("res://scenes/ui/relic/RelicCard.tscn")
 const FILTERS := [
-	{"category": &"all", "label": "全部", "icon": &"icon_filter_all"},
-	{"category": &"unit", "label": "单位", "icon": &"icon_filter_unit"},
-	{"category": &"building", "label": "建筑", "icon": &"icon_filter_building"},
-	{"category": &"economy", "label": "经济", "icon": &"icon_filter_economy"},
-	{"category": &"core", "label": "核心", "icon": &"icon_filter_core"},
-	{"category": &"risk", "label": "风险", "icon": &"icon_filter_risk"},
+	{"category": &"all", "label": "全部"},
+	{"category": &"unit", "label": "单位"},
+	{"category": &"building", "label": "建筑"},
+	{"category": &"economy", "label": "经济"},
+	{"category": &"core", "label": "核心"},
+	{"category": &"risk", "label": "风险"},
 ]
 
 signal close_requested
@@ -27,6 +28,7 @@ var _selected_buff_id := StringName()
 @onready var _count_label: Label = %CountLabel
 @onready var _close_button: Button = %CloseButton
 @onready var _filter_bar: Container = %FilterBar
+@onready var _card_scroll: ScrollContainer = %CardScroll
 @onready var _card_grid: VBoxContainer = %CardGrid
 @onready var _empty_label: Label = %EmptyLabel
 @onready var _detail_panel: Panel = %DetailPanel
@@ -43,6 +45,7 @@ func _ready() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_PANEL)
 	_style_labels()
 	_detail_panel.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
+	GameUiStyle.apply_scroll_style(_card_scroll)
 	_bind_filter_buttons()
 	_close_button.pressed.connect(func() -> void: close_requested.emit())
 	_style_close_button()
@@ -150,7 +153,6 @@ func _bind_filter_buttons() -> void:
 		button.custom_minimum_size = Vector2(72.0, 32.0)
 		button.set_meta("category", filter_def.get("category", &"all"))
 		_filter_bar.add_child(button)
-		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_texture(StringName(filter_def.get("icon", "")), &"icon"), Vector2(14.0, 14.0), &"left", 7.0)
 		var category := StringName(filter_def.get("category", &"all"))
 		button.pressed.connect(_on_filter_pressed.bind(category))
 		_style_filter_button(button, category == _current_filter)
@@ -184,19 +186,18 @@ func _style_labels() -> void:
 
 func _style_filter_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
-	button.add_theme_stylebox_override("normal", GameUiStyle.tab(selected))
-	button.add_theme_stylebox_override("hover", GameUiStyle.tab(true))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.tab(true))
+	var normal_component := UiFrameSpec.RELIC_FILTER_SELECTED if selected else UiFrameSpec.RELIC_FILTER_TAB
+	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(StringName("filter_%s" % String(button.get_meta("category", &"all")))), Vector2(14.0, 14.0), &"left", 7.0)
+	button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(normal_component, GameUiStyle.BG_CARD, GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT))
+	button.add_theme_stylebox_override("hover", GameUiStyle.frame_box(UiFrameSpec.RELIC_FILTER_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.frame_box(UiFrameSpec.RELIC_FILTER_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if selected else GameUiStyle.TEXT_DIM)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 
 
 func _style_close_button() -> void:
 	_close_button.custom_minimum_size = Vector2(34.0, 30.0)
-	var close_texture := UiArtRegistry.get_texture(&"icon_close", &"icon")
-	if close_texture != null:
-		_close_button.text = ""
-	GameUiStyle.set_button_texture_icon(_close_button, close_texture, Vector2(14.0, 14.0), &"center")
+	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(14.0, 14.0), &"center")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))

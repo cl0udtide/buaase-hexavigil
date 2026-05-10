@@ -3,6 +3,7 @@ extends PanelContainer
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
@@ -491,6 +492,7 @@ func _style_button(button: Button, accent: Color) -> void:
 		return
 	GameUiStyle.center_button_text(button)
 	button.custom_minimum_size = Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0))
+	GameUiStyle.set_button_texture_icon(button, _icon_for_popup_button(button), Vector2(15.0, 15.0), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(accent, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
@@ -498,3 +500,17 @@ func _style_button(button: Button, accent: Color) -> void:
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
+
+
+func _icon_for_popup_button(button: Button) -> Texture2D:
+	if button == _trigger_event_button:
+		return UiArtRegistry.get_catalog_icon(&"phase_blessing")
+	if button == _collect_button:
+		return UiArtRegistry.get_catalog_icon(&"button_confirm")
+	if button == _repair_button:
+		return UiArtRegistry.get_catalog_icon(&"button_confirm")
+	if button == _demolish_button:
+		return UiArtRegistry.get_catalog_icon(&"button_cancel")
+	if button == _toggle_button:
+		return UiArtRegistry.get_catalog_icon(&"button_refresh")
+	return null
