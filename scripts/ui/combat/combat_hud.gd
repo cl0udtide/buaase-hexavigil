@@ -54,7 +54,7 @@ func _ready() -> void:
 	_top_bar.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
 	_apply_frame_margins()
 	_style_top_cards()
-	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SIDE_PANEL, GameUiStyle.BG_GLASS, GameUiStyle.ACCENT, false))
+	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, false))
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
@@ -65,6 +65,8 @@ func _ready() -> void:
 	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 0)
 	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 0)
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_wave_route_toggle.custom_minimum_size = Vector2(68.0, 30.0)
+	_style_button(_wave_route_toggle, GameUiStyle.STROKE_SOFT)
 	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
 	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
@@ -214,7 +216,7 @@ func _style_button(button: Button, accent: Color) -> void:
 
 func _apply_frame_margins() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD)
-	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(12.0, 4.0, 4.0, 0.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
 

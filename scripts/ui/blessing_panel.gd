@@ -69,6 +69,12 @@ func _style_choice_button(button: Button) -> void:
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
+	var title := get_node_or_null("ContentMargin/VBoxContainer/TitleLabel") as Label
+	if title != null:
+		title.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
+		title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+		title.add_theme_font_size_override("font_size", 18)
+		GameUiStyle.center_label_text(title)
 
 
 func _place_centered() -> void:
