@@ -62,11 +62,13 @@ func _style_choice_button(button: Button) -> void:
 	button.add_theme_stylebox_override("pressed", GameUiStyle.card(GameUiStyle.AMBER, GameUiStyle.BG_CARD_HOVER, 2.0))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DISABLED, 1.0))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.ACCENT)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
+	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
 
 
 func _place_centered() -> void:

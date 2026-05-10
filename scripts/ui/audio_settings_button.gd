@@ -24,8 +24,11 @@ func _on_pressed() -> void:
 
 
 func _apply_visual_style() -> void:
+	custom_minimum_size = Vector2(94.0, 36.0)
+	GameUiStyle.center_button_text(self)
 	add_theme_stylebox_override("normal", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.18))
 	add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
 	add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
-	add_theme_color_override("font_color", GameUiStyle.TEXT)
+	add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)

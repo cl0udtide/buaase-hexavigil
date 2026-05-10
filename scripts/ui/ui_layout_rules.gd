@@ -44,29 +44,29 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 static func top_card_widths(viewport_width: float) -> Dictionary:
 	if viewport_width <= UiTokens.BREAKPOINT_NARROW:
 		return {
-			"stage": 132.0,
-			"core": 138.0,
-			"deploy": 116.0,
-			"message": 150.0,
-			"time": 166.0,
-			"resource": 152.0,
-			"debug": 58.0,
+			"stage": 138.0,
+			"core": 142.0,
+			"deploy": 122.0,
+			"message": 178.0,
+			"time": 178.0,
+			"resource": 160.0,
+			"debug": 62.0,
 		}
 	if viewport_width <= UiTokens.BREAKPOINT_COMPACT:
 		return {
-			"stage": 150.0,
-			"core": 150.0,
-			"deploy": 126.0,
-			"message": 184.0,
-			"time": 176.0,
-			"resource": 178.0,
-			"debug": 64.0,
+			"stage": 158.0,
+			"core": 158.0,
+			"deploy": 132.0,
+			"message": 220.0,
+			"time": 178.0,
+			"resource": 188.0,
+			"debug": 68.0,
 		}
 	return {
 		"stage": 190.0,
 		"core": 190.0,
 		"deploy": 160.0,
-		"message": 260.0,
+		"message": 300.0,
 		"time": 200.0,
 		"resource": 245.0,
 		"debug": 76.0,

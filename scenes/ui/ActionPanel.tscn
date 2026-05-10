@@ -23,33 +23,34 @@ theme_override_constants/separation = 4
 
 [node name="ModeLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1780032100]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "待机"
 text_overrun_behavior = 3
 
-[node name="ActionButtonFlow" type="HFlowContainer" parent="ContentMargin/VBoxContainer" unique_id=836670440]
+[node name="ActionButtonFlow" type="HBoxContainer" parent="ContentMargin/VBoxContainer" unique_id=836670440]
 layout_mode = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 4
+theme_override_constants/separation = 6
+alignment = 1
 
 [node name="IdleButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=1068372288]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "待机"
 
 [node name="ExploreButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=1093985431]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "探索"
 
 [node name="StartNightButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=875692889]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "夜晚"
@@ -61,21 +62,21 @@ theme_override_constants/v_separation = 4
 
 [node name="RepairBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "修复"
 
 [node name="DemolishBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "拆除"
 
 [node name="ToggleBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "开关"

@@ -41,26 +41,30 @@ func _on_random_event_triggered(event_id: StringName, _cell: Vector2i) -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
+	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
 	var title := get_node_or_null("%TitleLabel") as Label
 	var desc := get_node_or_null("%DescLabel") as Label
 	var close_button := get_node_or_null("%CloseButton") as Button
 	if title != null:
-		title.add_theme_color_override("font_color", GameUiStyle.ACCENT)
+		title.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 		title.add_theme_font_size_override("font_size", 22)
+		GameUiStyle.center_label_text(title)
 	if desc != null:
-		desc.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+		desc.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	if close_button != null:
 		_style_button(close_button, GameUiStyle.ACCENT)
 
 
 func _style_button(button: Button, accent: Color) -> void:
+	GameUiStyle.center_button_text(button)
 	button.add_theme_stylebox_override("normal", GameUiStyle.accent_button(accent))
 	button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.AMBER))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.42))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
 
 
 func _place_centered() -> void:
