@@ -61,6 +61,7 @@ const ZOOM_STEP := 0.9
 const PAN_OVERSCROLL_VIEWPORT_RATIO := 0.75
 
 var _map_manager: Node
+var _building_manager: Node
 var _random_event_manager: Node
 var _hovered_cell := Vector2i(-1, -1)
 var _selected_cell := Vector2i(-1, -1)
@@ -451,6 +452,8 @@ func _get_cell_color(data) -> Color:
 		return COLOR_WATER
 	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
 		return COLOR_BLOCKED
+	if _is_resource_hidden_by_operational_building(data):
+		return COLOR_PLAIN
 	if data.resource_type == &"wood":
 		return COLOR_RESOURCE_WOOD
 	if data.resource_type == &"stone":
@@ -481,6 +484,8 @@ func _get_cell_texture(data) -> Texture2D:
 		return TILE_WATER
 	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
 		return TILE_MOUNTAIN
+	if _is_resource_hidden_by_operational_building(data):
+		return TILE_PLAIN_ALT if _uses_alternate_plain(data.cell) else TILE_PLAIN
 	if data.resource_type == &"wood":
 		return TILE_RESOURCE_WOOD
 	if data.resource_type == &"stone":
@@ -496,6 +501,32 @@ func _get_cell_texture(data) -> Texture2D:
 
 func _uses_alternate_plain(cell: Vector2i) -> bool:
 	return int(abs(cell.x * 37 + cell.y * 19)) % 5 == 0
+
+
+func _is_resource_hidden_by_operational_building(data) -> bool:
+	if data == null or data.resource_type == StringName() or int(data.building_runtime_id) < 0:
+		return false
+	var building := _get_building_by_runtime_id(int(data.building_runtime_id))
+	if building == null:
+		return true
+	return not _is_building_destroyed(building)
+
+
+func _get_building_by_runtime_id(building_runtime_id: int) -> Node:
+	var building_manager := _get_building_manager()
+	if building_manager == null or not building_manager.has_method("get_building_by_runtime_id"):
+		return null
+	var building: Node = building_manager.get_building_by_runtime_id(building_runtime_id)
+	return building if building != null and is_instance_valid(building) else null
+
+
+func _is_building_destroyed(building: Node) -> bool:
+	if building == null:
+		return false
+	if building.has_method("is_destroyed"):
+		return bool(building.is_destroyed())
+	var current_hp_variant: Variant = building.get("current_hp")
+	return current_hp_variant != null and int(current_hp_variant) <= 0
 
 
 func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> void:
@@ -618,6 +649,13 @@ func _get_map_manager() -> Node:
 		return _map_manager
 	_map_manager = get_node_or_null("../../Managers/MapManager")
 	return _map_manager
+
+
+func _get_building_manager() -> Node:
+	if _building_manager != null:
+		return _building_manager
+	_building_manager = get_node_or_null("../../Managers/BuildingManager")
+	return _building_manager
 
 
 func _has_event_at_cell(cell: Vector2i) -> bool:
