@@ -1534,7 +1534,7 @@ static func phase_label(phase: int) -> String
   行为：映射为白天、夜晚、祝福、结算等中文阶段标签。
   返回：`String`。
 
-详细设计见 `docs/UI_DISPLAY_TEXT.md`。该工具只做显示转换，不加载配置、不保存 UI 状态、不修改玩法数据。
+UI 分层与重构构想见 `docs/UI_SYSTEM.md`。该工具只做显示转换，不加载配置、不保存 UI 状态、不修改玩法数据。
 
 #### `CombatHud`
 

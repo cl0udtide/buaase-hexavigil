@@ -17,51 +17,37 @@ const FRAME_TAB := UiFrameSpec.TAB
 const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
 
 
-const BG := Color(0.070, 0.090, 0.095, 1.0)
-const BG_DARK := Color(0.040, 0.050, 0.055, 1.0)
-const BG_GLASS := Color(0.105, 0.135, 0.145, 0.96)
-const BG_CARD := Color(0.120, 0.165, 0.170, 0.98)
-const BG_CARD_HOVER := Color(0.205, 0.345, 0.325, 1.0)
-const BG_DISABLED := Color(0.215, 0.215, 0.205, 0.96)
-const STROKE := Color(0.555, 0.555, 0.480, 1.0)
-const STROKE_SOFT := Color(0.415, 0.440, 0.405, 1.0)
-const STROKE_STRONG := Color(0.780, 0.675, 0.420, 1.0)
-const ACCENT := Color(0.250, 0.615, 0.555, 1.0)
-const AMBER := Color(0.875, 0.570, 0.155, 1.0)
-const DANGER := Color(0.760, 0.145, 0.130, 1.0)
-const SUCCESS := Color(0.250, 0.610, 0.385, 1.0)
-const VIOLET := Color(0.445, 0.300, 0.645, 1.0)
-const STEEL := Color(0.480, 0.500, 0.470, 1.0)
-const TEXT := Color(0.910, 0.875, 0.760, 1.0)
-const TEXT_DIM := Color(0.705, 0.700, 0.620, 1.0)
-const TEXT_MUTED := Color(0.500, 0.520, 0.485, 1.0)
-const TEXT_INVERTED := Color(0.965, 0.920, 0.775, 1.0)
-const TEXT_INVERTED_DIM := Color(0.760, 0.760, 0.670, 1.0)
-const TEXT_ON_PARCHMENT := Color(0.190, 0.145, 0.090, 1.0)
-const TEXT_SHADOW := Color(0.025, 0.020, 0.015, 0.65)
+const BG := Color(0.035, 0.045, 0.052, 1.0)
+const BG_DARK := Color(0.015, 0.020, 0.026, 1.0)
+const BG_GLASS := Color(0.045, 0.060, 0.068, 0.94)
+const BG_CARD := Color(0.065, 0.080, 0.088, 0.96)
+const BG_CARD_HOVER := Color(0.095, 0.140, 0.155, 0.98)
+const BG_DISABLED := Color(0.055, 0.060, 0.064, 0.82)
+const STROKE := Color(0.300, 0.365, 0.385, 1.0)
+const STROKE_SOFT := Color(0.180, 0.230, 0.245, 1.0)
+const STROKE_STRONG := Color(0.760, 0.530, 0.180, 1.0)
+const ACCENT := Color(0.260, 0.760, 0.920, 1.0)
+const AMBER := Color(0.950, 0.650, 0.220, 1.0)
+const DANGER := Color(0.860, 0.230, 0.185, 1.0)
+const SUCCESS := Color(0.290, 0.700, 0.430, 1.0)
+const VIOLET := Color(0.500, 0.420, 0.760, 1.0)
+const STEEL := Color(0.500, 0.570, 0.600, 1.0)
+const TEXT := Color(0.900, 0.940, 0.960, 1.0)
+const TEXT_DIM := Color(0.620, 0.700, 0.735, 1.0)
+const TEXT_MUTED := Color(0.390, 0.460, 0.490, 1.0)
+const TEXT_INVERTED := Color(0.930, 0.970, 0.990, 1.0)
+const TEXT_INVERTED_DIM := Color(0.620, 0.710, 0.760, 1.0)
+const TEXT_ON_PARCHMENT := Color(0.930, 0.970, 0.990, 1.0)
+const TEXT_SHADOW := Color(0.000, 0.000, 0.000, 0.65)
 
-const ACCENT_SOFT := Color(0.175, 0.330, 0.310, 1.0)
-const AMBER_SOFT := Color(0.365, 0.260, 0.120, 1.0)
-const DANGER_SOFT := Color(0.355, 0.120, 0.110, 1.0)
-const SUCCESS_SOFT := Color(0.145, 0.285, 0.190, 1.0)
-const VIOLET_SOFT := Color(0.225, 0.170, 0.315, 1.0)
+const ACCENT_SOFT := Color(0.070, 0.175, 0.210, 1.0)
+const AMBER_SOFT := Color(0.235, 0.160, 0.060, 1.0)
+const DANGER_SOFT := Color(0.220, 0.070, 0.060, 1.0)
+const SUCCESS_SOFT := Color(0.070, 0.170, 0.105, 1.0)
+const VIOLET_SOFT := Color(0.120, 0.105, 0.190, 1.0)
 
-static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
-	var texture := load(path) as Texture2D
-	if texture == null:
-		return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
-
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.set_texture_margin(SIDE_LEFT, margin)
-	style.set_texture_margin(SIDE_TOP, margin)
-	style.set_texture_margin(SIDE_RIGHT, margin)
-	style.set_texture_margin(SIDE_BOTTOM, margin)
-	style.content_margin_left = 12.0
-	style.content_margin_top = 9.0
-	style.content_margin_right = 12.0
-	style.content_margin_bottom = 9.0
-	return style
+static func texture_box(_path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
+	return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
 
 
 static func frame_box(component: StringName, fallback_fill: Color, fallback_border: Color, include_content := true) -> StyleBox:

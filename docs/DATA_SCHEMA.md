@@ -94,7 +94,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 ### 2.6 `icon_key`
 
 如果某条配置需要在 UI 中显示图标，则使用 `icon_key`。  
-`icon_key` 是图标资源的逻辑名，不直接写贴图路径。
+`icon_key` 是图标资源的逻辑名，不直接写贴图路径。当前 UI 基线不加载图片资产，界面统一回退到 `icon_text` 或文本占位；后续如重新接入资产，也应通过统一资源入口恢复。
 
 ### 2.7 UI 显示字段与统一显示工具
 
@@ -102,7 +102,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 
 - `name`：显示名称。
 - `desc`：说明文本。
-- `icon_key`：真实图标资源逻辑名。
+- `icon_key`：图标逻辑名，当前仅保留为未来扩展键。
 - `icon_text`：无真实图标时的占位图标文本。
 
 跨 UI 复用的显示规则不应散落在各 UI 脚本中，例如：
@@ -113,7 +113,7 @@ building_actor -> scenes/actors/BuildingActor.tscn
 - 阶段枚举到中文标签。
 - 朝向向量到中文标签。
 
-这些规则由 `scripts/ui/ui_display_text.gd` 统一提供。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
+这些规则由 `scripts/ui/ui_display_text.gd` 统一提供。UI 分层与重构构想见 `docs/UI_SYSTEM.md`。
 
 ---
 
