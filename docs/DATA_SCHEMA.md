@@ -308,7 +308,7 @@ Boss 多阶段规则：
   {
     "id": "medical_station",
     "name": "医疗站",
-    "desc": "以建筑为中心 3x3 范围内的友军持续回复 2 生命/秒",
+    "desc": "一定范围内的友军持续回复 2 生命/秒",
     "building_type": "aura",
     "sort_order": 110,
     "icon_key": "medical_station_icon",
@@ -321,7 +321,8 @@ Boss 多阶段规则：
     "cost_mana": 0,
     "ap_cost": 2,
     "blocks_path": false,
-    "effect_radius": 1,
+    "effect_radius": 2,
+    "effect_shape": "trimmed_square",
     "effect_type": "heal",
     "effect_value": 2,
     "place_rule": "plain_only",
@@ -336,7 +337,7 @@ Boss 多阶段规则：
 |---|---|---|
 | `id` | `String` | 建筑唯一标识 |
 | `name` | `String` | 显示名称 |
-| `desc` | `String` | 建筑说明，`BuildPanel` 建筑卡片直接展示该字段 |
+| `desc` | `String` | 建筑说明；部分动态效果建筑会在 UI 中按效果字段生成说明 |
 | `building_type` | `String` | 建筑类别 |
 | `max_hp` | `int` | 最大生命 |
 | `cost_wood` | `int` | 木材消耗 |
@@ -352,6 +353,7 @@ Boss 多阶段规则：
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `effect_radius` | `int` | 效果半径 |
+| `effect_shape` | `String` | 效果范围形状；`trimmed_square` 表示方形范围去掉四个角 |
 | `effect_type` | `String` | 效果类型 |
 | `effect_value` | `int` / `float` | 效果数值 |
 | `sort_order` | `int` | UI 排序值；`BuildPanel` 按该值从小到大显示，同值按 `id` 排序 |

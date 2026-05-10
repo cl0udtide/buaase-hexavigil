@@ -269,13 +269,16 @@ func _format_building_cost(cfg: Dictionary) -> String:
 
 
 func _format_building_detail(cfg: Dictionary) -> String:
+	if int(cfg.get("effect_radius", 0)) > 0:
+		return _format_effect_text(cfg)
 	return UiDisplayText.config_desc(cfg, _format_effect_text(cfg))
 
 
 func _format_effect_text(cfg: Dictionary) -> String:
 	var effect_type := StringName(cfg.get("effect_type", ""))
 	var effect_value := float(cfg.get("effect_value", 0.0))
-	var radius := int(cfg.get("effect_radius", 0))
+	var radius := _get_effective_building_radius(cfg)
+	var range_text := _format_building_range_text(radius)
 	if bool(cfg.get("blocks_path", false)):
 		return "阻挡敌人路径，损毁后不再挡路"
 	match effect_type:
@@ -286,19 +289,35 @@ func _format_effect_text(cfg: Dictionary) -> String:
 		&"collect_mana":
 			return "每天产出 %d 魔力" % int(effect_value)
 		&"heal":
-			return "范围 %d 内友军持续恢复生命" % radius
+			return "%s内友军持续回复 %d 生命/秒" % [range_text, int(effect_value)]
 		&"slow":
-			return "范围 %d 内敌人移速降低 %.0f%%" % [radius, effect_value * 100.0]
+			return "%s内敌人移速降低 %.0f%%" % [range_text, effect_value * 100.0]
 		&"attack_interval_reduce":
-			return "范围 %d 内友军攻击间隔降低 %.0f%%" % [radius, effect_value * 100.0]
+			return "%s内友军攻击间隔降低 %.0f%%" % [range_text, effect_value * 100.0]
 		&"attack_bonus_flat":
-			return "范围 %d 内友军攻击 +%d，夜晚消耗魔力 %d" % [
-				radius,
+			return "%s内友军攻击 +%d，夜晚开启时消耗 %d 魔力矿" % [
+				range_text,
 				int(effect_value),
 				int(cfg.get("night_mana_cost", 0))
 			]
 		_:
 			return "暂无说明"
+
+
+func _format_building_range_text(radius: int) -> String:
+	if radius <= 0:
+		return "自身格"
+	return "一定范围"
+
+
+func _get_effective_building_radius(cfg: Dictionary) -> int:
+	var radius := int(cfg.get("effect_radius", 0))
+	if radius <= 0:
+		return radius
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+		radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", cfg))))
+	return max(radius, 0)
 
 
 func _on_building_card_pressed(building_id: StringName) -> void:
