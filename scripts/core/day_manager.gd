@@ -5,7 +5,8 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const EXPLORE_AP_COST := 2
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
-const RESOURCE_COLLECT_AMOUNT := 1
+const WOOD_RESOURCE_COLLECT_AMOUNT := 2
+const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _random_event_manager: Node = get_node_or_null("../RandomEventManager")
@@ -118,26 +119,31 @@ func try_collect_resource(cell: Vector2i) -> Dictionary:
 	var ap_result: Dictionary = run_state.consume_action_points(RESOURCE_COLLECT_AP_COST)
 	if not ap_result.get("ok", false):
 		return ap_result
+	var collect_amount: int = _get_resource_collect_amount(data.resource_type)
 	match data.resource_type:
 		&"wood":
-			run_state.add_materials(RESOURCE_COLLECT_AMOUNT, 0, 0)
+			run_state.add_materials(collect_amount, 0, 0)
 		&"stone":
-			run_state.add_materials(0, RESOURCE_COLLECT_AMOUNT, 0)
+			run_state.add_materials(0, collect_amount, 0)
 		&"mana":
-			run_state.add_materials(0, 0, RESOURCE_COLLECT_AMOUNT)
+			run_state.add_materials(0, 0, collect_amount)
 	_collected_resource_cells[cell] = true
 	if event_bus != null:
-		event_bus.resource_collected.emit(cell, data.resource_type, RESOURCE_COLLECT_AMOUNT)
+		event_bus.resource_collected.emit(cell, data.resource_type, collect_amount)
 	return ActionResult.ok({
 		"cell": cell,
 		"resource_type": data.resource_type,
-		"amount": RESOURCE_COLLECT_AMOUNT,
+		"amount": collect_amount,
 		"ap_cost": RESOURCE_COLLECT_AP_COST
 	}, "资源已采集")
 
 
 func is_resource_collected_today(cell: Vector2i) -> bool:
 	return _collected_resource_cells.has(cell)
+
+
+func _get_resource_collect_amount(resource_type: StringName) -> int:
+	return WOOD_RESOURCE_COLLECT_AMOUNT if resource_type == &"wood" else DEFAULT_RESOURCE_COLLECT_AMOUNT
 
 
 func request_start_night() -> Dictionary:
