@@ -4,8 +4,10 @@ extends RefCounted
 const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const FRAME_TOP_HUD := UiFrameSpec.TOP_HUD
 const FRAME_TOP_CARD := UiFrameSpec.TOP_CARD
+const FRAME_HUD_CELL := UiFrameSpec.HUD_CELL
 const FRAME_SIDE_PANEL := UiFrameSpec.SIDE_PANEL
 const FRAME_DECK_PANEL := UiFrameSpec.DECK_PANEL
+const FRAME_DETAIL_SECTION := UiFrameSpec.DETAIL_SECTION
 const FRAME_CARD := UiFrameSpec.CARD
 const FRAME_LIST_CARD := UiFrameSpec.LIST_CARD
 const FRAME_OPERATOR_CARD := UiFrameSpec.OPERATOR_CARD
@@ -151,14 +153,7 @@ static func top_card() -> StyleBox:
 
 
 static func hud_cell(selected: bool = false) -> StyleBox:
-	var fill := Color(0.075, 0.120, 0.125, 0.54) if selected else Color(0.055, 0.080, 0.085, 0.42)
-	var border := Color(0.710, 0.655, 0.500, 0.34) if selected else Color(0.520, 0.550, 0.490, 0.26)
-	var style := flat_box(fill, border, 1.0, 4.0)
-	style.content_margin_left = 10.0
-	style.content_margin_top = 5.0
-	style.content_margin_right = 10.0
-	style.content_margin_bottom = 5.0
-	return style
+	return frame_box(UiFrameSpec.HUD_CELL, BG_CARD, AMBER if selected else STROKE_SOFT)
 
 
 static func top_hud_panel() -> StyleBox:
@@ -200,8 +195,12 @@ static func tab(selected: bool) -> StyleBox:
 
 static func compact_button(selected: bool = false) -> StyleBox:
 	if selected:
-		return frame_box(UiFrameSpec.BUTTON_PRESSED, BG_CARD, AMBER)
-	return frame_box(UiFrameSpec.BUTTON, BG_CARD, STROKE_SOFT)
+		return frame_box(UiFrameSpec.BUTTON_COMPACT_SELECTED, BG_CARD, AMBER)
+	return frame_box(UiFrameSpec.BUTTON_COMPACT, BG_CARD, STROKE_SOFT)
+
+
+static func detail_section() -> StyleBox:
+	return frame_box(UiFrameSpec.DETAIL_SECTION, BG_CARD, STROKE_SOFT, false)
 
 
 static func accent_button(accent: Color) -> StyleBox:

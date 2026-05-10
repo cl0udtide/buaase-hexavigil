@@ -3,6 +3,7 @@ extends Control
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
+const HUD_BOTTOM_RAIL_TEXTURE := preload("res://assets/UI/FantasyStone/panel_hud_bottom_rail_generated.png")
 
 signal operator_card_pressed(operator_key: StringName)
 signal pause_pressed
@@ -24,6 +25,7 @@ const UNIT_DETAIL_MIN_TOP := 250.0
 var _cards_by_operator_key: Dictionary = {}
 var _left_reserved_width := 0.0
 var _layout_profile: Dictionary = {}
+var _top_bottom_rail: TextureRect
 
 @onready var _top_bar: PanelContainer = %TopBar
 @onready var _core_label: Label = %CoreLabel
@@ -52,6 +54,13 @@ func _ready() -> void:
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_top_bar.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
+	_top_bottom_rail = TextureRect.new()
+	_top_bottom_rail.name = "TopBottomRail"
+	_top_bottom_rail.texture = HUD_BOTTOM_RAIL_TEXTURE
+	_top_bottom_rail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_top_bottom_rail.stretch_mode = TextureRect.STRETCH_SCALE
+	_top_bottom_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_top_bottom_rail)
 	_apply_frame_margins()
 	_style_top_cards()
 	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, false))
@@ -257,7 +266,9 @@ func _apply_responsive_layout() -> void:
 	var viewport_size := get_viewport_rect().size
 	var detail_visible := _detail_panel != null and _detail_panel.visible
 	_layout_profile = UiLayoutRules.hud_profile(viewport_size, detail_visible, _left_reserved_width)
-	_place_control(_top_bar, _layout_profile.get("top_rect", Rect2()))
+	var top_rect: Rect2 = _layout_profile.get("top_rect", Rect2())
+	_place_control(_top_bar, top_rect)
+	_place_control(_top_bottom_rail, Rect2(top_rect.position.x + 24.0, top_rect.position.y + top_rect.size.y - 24.0, maxf(0.0, top_rect.size.x - 48.0), 28.0))
 	_place_control(_deck_panel, _layout_profile.get("deck_rect", Rect2()))
 	_place_control(_detail_panel, _layout_profile.get("detail_rect", Rect2()))
 	_apply_top_bar_density(viewport_size.x)

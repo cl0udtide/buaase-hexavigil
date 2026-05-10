@@ -39,8 +39,11 @@ func _ready() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
 	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(0.0, -8.0, 0.0, 0.0))
 	_header_plate.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	_vitals_card.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
-	_stats_card.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
+	_vitals_card.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
+	_stats_card.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/VitalsCard/VitalsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION)
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/StatsCard/StatsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION)
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/SkillCard/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION)
 	_skill_card.custom_minimum_size = Vector2(0.0, 210.0)
 	_skill_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -53,7 +56,7 @@ func _ready() -> void:
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_portrait_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
-	_skill_card.add_theme_stylebox_override("panel", GameUiStyle.list_card(false))
+	_skill_card.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
 	_skill_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)

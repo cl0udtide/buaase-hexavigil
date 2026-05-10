@@ -10,10 +10,15 @@ const FS_PANEL_BADGE := FANTASY_STONE_ROOT + "/panel_badge.png"
 const FS_PANEL_STRIP := FANTASY_STONE_ROOT + "/panel_strip.png"
 const FS_PANEL_CARD_SQUARE := FANTASY_STONE_ROOT + "/panel_card_square.png"
 const FS_PANEL_CARD_SMALL := FANTASY_STONE_ROOT + "/panel_card_small.png"
+const FS_PANEL_HUD_CELL_GENERATED := FANTASY_STONE_ROOT + "/panel_hud_cell_generated.png"
+const FS_PANEL_HUD_BOTTOM_RAIL_GENERATED := FANTASY_STONE_ROOT + "/panel_hud_bottom_rail_generated.png"
+const FS_PANEL_DETAIL_SECTION_GENERATED := FANTASY_STONE_ROOT + "/panel_detail_section_generated.png"
 const FS_BUTTON_NORMAL := FANTASY_STONE_ROOT + "/button_normal.png"
 const FS_BUTTON_HOVER := FANTASY_STONE_ROOT + "/button_hover.png"
 const FS_BUTTON_PRESSED := FANTASY_STONE_ROOT + "/button_pressed.png"
 const FS_BUTTON_DISABLED := FANTASY_STONE_ROOT + "/button_disabled.png"
+const FS_BUTTON_COMPACT_GENERATED := FANTASY_STONE_ROOT + "/button_compact_generated.png"
+const FS_BUTTON_COMPACT_SELECTED_GENERATED := FANTASY_STONE_ROOT + "/button_compact_selected_generated.png"
 const FS_TAB_SELECTED := FANTASY_STONE_ROOT + "/tab_selected.png"
 const FS_TAB_IDLE := FANTASY_STONE_ROOT + "/tab_idle.png"
 const FS_PROGRESS_TRACK := FANTASY_STONE_ROOT + "/progress_track.png"
@@ -23,8 +28,11 @@ const FS_PROGRESS_RED := FANTASY_STONE_ROOT + "/progress_fill_red.png"
 
 const TOP_HUD := &"top_hud"
 const TOP_CARD := &"top_card"
+const HUD_CELL := &"hud_cell"
 const SIDE_PANEL := &"side_panel"
 const DECK_PANEL := &"deck_panel"
+const HUD_BOTTOM_RAIL := &"hud_bottom_rail"
+const DETAIL_SECTION := &"detail_section"
 const CARD := &"card"
 const LIST_CARD := &"list_card"
 const OPERATOR_CARD := &"operator_card"
@@ -32,6 +40,8 @@ const BUTTON := &"button"
 const BUTTON_HOVER := &"button_hover"
 const BUTTON_PRESSED := &"button_pressed"
 const BUTTON_DISABLED := &"button_disabled"
+const BUTTON_COMPACT := &"button_compact"
+const BUTTON_COMPACT_SELECTED := &"button_compact_selected"
 const TAB := &"tab"
 const TAB_SELECTED := &"tab_selected"
 const ICON_TILE := &"icon_tile"
@@ -58,6 +68,12 @@ const SPECS := {
 		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(14.0, 10.0, 14.0, 10.0),
 	},
+	HUD_CELL: {
+		"path": FS_PANEL_HUD_CELL_GENERATED,
+		"native": Vector2(360.0, 82.0),
+		"slice": Vector4(42.0, 24.0, 42.0, 24.0),
+		"content": Vector4(16.0, 8.0, 16.0, 8.0),
+	},
 	SIDE_PANEL: {
 		"path": FS_PANEL_SIDE_SCROLL,
 		"native": Vector2(453.0, 689.0),
@@ -69,6 +85,18 @@ const SPECS := {
 		"native": Vector2(494.0, 74.0),
 		"slice": Vector4(30.0, 24.0, 30.0, 24.0),
 		"content": Vector4(32.0, 12.0, 32.0, 12.0),
+	},
+	HUD_BOTTOM_RAIL: {
+		"path": FS_PANEL_HUD_BOTTOM_RAIL_GENERATED,
+		"native": Vector2(640.0, 52.0),
+		"slice": Vector4(42.0, 20.0, 42.0, 20.0),
+		"content": ZERO_INSETS,
+	},
+	DETAIL_SECTION: {
+		"path": FS_PANEL_DETAIL_SECTION_GENERATED,
+		"native": Vector2(360.0, 74.0),
+		"slice": Vector4(34.0, 22.0, 34.0, 22.0),
+		"content": Vector4(14.0, 8.0, 14.0, 8.0),
 	},
 	CARD: {
 		"path": FS_PANEL_BADGE,
@@ -111,6 +139,18 @@ const SPECS := {
 		"native": Vector2(198.0, 85.0),
 		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(10.0, 6.0, 10.0, 6.0),
+	},
+	BUTTON_COMPACT: {
+		"path": FS_BUTTON_COMPACT_GENERATED,
+		"native": Vector2(174.0, 54.0),
+		"slice": Vector4(24.0, 16.0, 24.0, 16.0),
+		"content": Vector4(10.0, 4.0, 10.0, 4.0),
+	},
+	BUTTON_COMPACT_SELECTED: {
+		"path": FS_BUTTON_COMPACT_SELECTED_GENERATED,
+		"native": Vector2(174.0, 54.0),
+		"slice": Vector4(24.0, 16.0, 24.0, 16.0),
+		"content": Vector4(10.0, 4.0, 10.0, 4.0),
 	},
 	TAB: {
 		"path": FS_TAB_IDLE,
