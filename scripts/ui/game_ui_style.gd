@@ -194,6 +194,14 @@ static func deck_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.DECK_PANEL, BG_GLASS, STROKE_SOFT, false)
 
 
+static func action_bar_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.DECK_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func compact_panel(border: Color = STROKE_SOFT, fill: Color = BG_GLASS, include_content := false) -> StyleBox:
+	return frame_box(UiFrameSpec.CARD, fill, border, include_content)
+
+
 static func operator_card(border: Color = ACCENT) -> StyleBox:
 	return frame_box(UiFrameSpec.OPERATOR_CARD, BG_CARD, border, false)
 
