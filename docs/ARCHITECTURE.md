@@ -34,7 +34,6 @@ res://
 │     ├─ EventPanel.tscn
 │     ├─ BlessingPanel.tscn
 │     ├─ ResultPanel.tscn
-│     ├─ DebugPanel.tscn
 │     └─ combat/               [作战 HUD 组件]
 │        ├─ CombatHud.tscn
 │        ├─ OperatorCard.tscn
@@ -189,8 +188,7 @@ UI
 ├─ CombatHudController
 ├─ EventPanel
 ├─ BlessingPanel
-├─ ResultPanel
-└─ DebugPanel
+└─ ResultPanel
 ```
 
 各节点作用如下：
@@ -200,7 +198,7 @@ UI
 - `BuildPanel`
   左侧建筑/商店复合面板。建筑模式下显示资源/增益类建筑；商店模式下显示招募槽位、价格和刷新入口。
 - `CombatHud`
-  作战 HUD，主场景夜晚和 `CombatSandbox` 共用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示、单位详情面板和调试抽屉入口。
+  作战 HUD，主场景夜晚和 `CombatSandbox` 共用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示和单位详情面板。
 - `CombatHudController`
   主场景作战 UI 适配器，连接 `CombatHud`、`MapRoot`、`UnitManager` 和 `EnemyManager`，处理拖拽部署、二段朝向、单位选中、技能、撤退、暂停和倍速。
 - `EventPanel`
@@ -209,8 +207,6 @@ UI
   祝福面板，展示三选一祝福并发出选择请求。
 - `ResultPanel`
   结算信息面板，用于在游戏结束时展示胜负结果和统计信息。
-- `DebugPanel`
-  正式主场景中的调试入口，默认仅用于开发验证。
 
 ### 2.4 固定命名
 
@@ -682,7 +678,6 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scenes/ui/EventPanel.tscn`
 - `scenes/ui/BlessingPanel.tscn`
 - `scenes/ui/ResultPanel.tscn`
-- `scenes/ui/DebugPanel.tscn`
 - `scenes/ui/combat/CombatHud.tscn`
 - `scenes/ui/combat/OperatorCard.tscn`
 - `scenes/ui/combat/UnitDetailPanel.tscn`
@@ -711,7 +706,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `ui_display_text.gd`
   统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
 - `combat/combat_hud.gd`
-  作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示、单位详情面板和调试抽屉按钮。它只发出 UI 信号，不直接修改单位或地图真相数据。
+  作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示和单位详情面板。它只发出 UI 信号，不直接修改单位或地图真相数据。
 - `combat/combat_hud_controller.gd`
   主场景作战 UI 适配器，负责把 `CombatHud` 信号转成部署、选中、技能、撤退、暂停、倍速和预览绘制。
 - `combat/operator_card.gd`
@@ -884,7 +879,7 @@ UI -> UnitManager -> RunState -> UnitRoot
 
 部署请求使用 `operator_key` 指向一个已拥有干员槽位。`UnitManager` 负责检查该槽位是否已在场、是否处于再部署冷却、当前部署数是否达到上限，以及目标格是否合法。撤退或死亡后只让该槽位进入再部署冷却，不影响同类单位的其他槽位。
 
-主场景和 `CombatSandbox` 统一使用场景化 `CombatHud` 验证作战交互。主场景由 `CombatHudController` 转接 UI 信号；沙盒由 `combat_sandbox.gd` 转接同一套 HUD 信号并保留调试抽屉。部署采用两段式拖拽：
+主场景和 `CombatSandbox` 统一使用场景化 `CombatHud` 验证作战交互。主场景由 `CombatHudController` 转接 UI 信号；沙盒由 `combat_sandbox.gd` 转接同一套 HUD 信号。部署采用两段式拖拽：
 
 1. 从底部待部署干员卡拖到地图格并松手，`UnitManager.validate_deploy_operator()` 只做合法性校验和预览，不创建单位。
 2. 落点锁定后，从落点向外拖拽选择上下左右朝向并松手确认，最终调用 `UnitManager.try_deploy_operator()` 完成部署。
