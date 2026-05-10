@@ -3,6 +3,7 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 signal pressed
 
@@ -57,9 +58,9 @@ func _ready() -> void:
 	_add_label_shadow(_icon_label)
 	_add_label_shadow(_cost_label)
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
-	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
-	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
-	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.operator_cost_badge())
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.build_icon_backplate())
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame())
+	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_COST_BADGE, GameUiStyle.AMBER_SOFT, GameUiStyle.AMBER))
 	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_LIST_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
 	_disabled_overlay.color = Color(0.02, 0.03, 0.035, 0.38)
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -99,15 +100,16 @@ func _apply_config(config: Dictionary) -> void:
 	_apply_style()
 
 
-func _apply_icon_texture(_config: Dictionary) -> void:
-	_icon_texture.texture = null
-	_icon_texture.visible = false
-	_icon_label.visible = true
+func _apply_icon_texture(config: Dictionary) -> void:
+	var texture := UiArtRegistry.get_icon_texture(config.get("source_cfg", {}) as Dictionary)
+	_icon_texture.texture = texture
+	_icon_texture.visible = texture != null
+	_icon_label.visible = texture == null
 
 
 func _apply_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
-	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, _accent, false))
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame(_accent))
 	_selected_overlay.visible = _selected or _hovered
 	_disabled_overlay.visible = _disabled
 	modulate.a = 0.86 if _disabled else 1.0

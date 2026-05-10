@@ -2,6 +2,7 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 signal pressed(buff_id: StringName)
@@ -18,7 +19,7 @@ var _hovered := false
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _rarity_overlay: ColorRect = %RarityOverlay
+@onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _hover_overlay: Panel = %HoverOverlay
 @onready var _icon_label: Label = %IconLabel
 @onready var _name_label: Label = %NameLabel
@@ -39,7 +40,7 @@ func _ready() -> void:
 		_hovered = false
 		_apply_style()
 	)
-	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
 	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_rarity_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_desc_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
@@ -84,9 +85,10 @@ func _apply_config() -> void:
 	custom_minimum_size = Vector2(0.0, 104.0 if _compact else 116.0)
 	if _choice_mode:
 		custom_minimum_size.y = 96.0
-	_icon_texture.texture = null
-	_icon_texture.visible = false
-	_icon_label.visible = true
+	var texture := UiArtRegistry.get_texture(buff_id, &"icon")
+	_icon_texture.texture = texture
+	_icon_texture.visible = texture != null
+	_icon_label.visible = texture == null
 	_icon_label.text = UiDisplayText.icon_text(_cfg, "遗")
 	_icon_label.add_theme_color_override("font_color", UiDisplayText.relic_rarity_color(rarity))
 	_name_label.text = UiDisplayText.config_name(_cfg, buff_id)
@@ -112,14 +114,13 @@ func _apply_density() -> void:
 
 func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
 	if _choice_mode:
 		_card_base.add_theme_stylebox_override("panel", GameUiStyle.blessing_choice_card(_selected or _hovered))
 	else:
 		_card_base.add_theme_stylebox_override("panel", GameUiStyle.relic_card(rarity, _selected or _hovered))
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, false))
-	_rarity_overlay.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.08)
-	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
+	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_rarity_overlay(rarity))
+	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD_HOVER, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
 	_hover_overlay.visible = _selected or _hovered
 	modulate.a = 1.0 if _selectable else 0.72
 

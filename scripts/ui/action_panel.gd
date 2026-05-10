@@ -168,7 +168,7 @@ func _refresh_mode_label() -> void:
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.action_bar_panel())
 	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
-	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_DECK_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
+	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_ACTION_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
 	if _mode_label != null:
 		_mode_label.visible = false
 		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -209,7 +209,7 @@ func _style_action_button(button: Button, selected: bool) -> void:
 		return
 	GameUiStyle.center_button_text(button)
 	var accent := GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT
-	var normal_style := GameUiStyle.button(accent, 0.32 if selected else 0.18)
+	var normal_style := GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD, accent)
 	button.add_theme_stylebox_override("normal", normal_style)
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.26))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))

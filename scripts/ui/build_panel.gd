@@ -3,6 +3,7 @@ extends Control
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
@@ -547,6 +548,8 @@ func _style_command_button(button: Button, accent: Color) -> void:
 	if button == null:
 		return
 	GameUiStyle.center_button_text(button)
+	if button == _refresh_shop_button:
+		button.icon = UiArtRegistry.get_texture(&"icon_refresh", &"icon")
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.34))

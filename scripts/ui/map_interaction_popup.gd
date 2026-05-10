@@ -469,8 +469,8 @@ func _get_effective_building_radius(cfg: Dictionary) -> int:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.list_card(false))
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
+	add_theme_stylebox_override("panel", GameUiStyle.map_popup())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_MAP_POPUP)
 	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)

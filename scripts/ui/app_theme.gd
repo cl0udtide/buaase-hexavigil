@@ -40,6 +40,8 @@ static func get_theme() -> Theme:
 	theme.set_constant("shadow_offset_y", "Label", 0)
 	theme.set_color("font_outline_color", "Label", Color.TRANSPARENT)
 	theme.set_font_size("font_size", "TooltipLabel", SIZE_SMALL)
+	theme.set_stylebox("panel", "TooltipPanel", GameUiStyle.tooltip_panel())
+	theme.set_color("font_color", "TooltipLabel", GameUiStyle.TEXT_INVERTED)
 
 	_theme = theme
 	return _theme

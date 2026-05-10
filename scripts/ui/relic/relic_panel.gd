@@ -3,16 +3,17 @@ extends Control
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 const RELIC_CARD_SCENE := preload("res://scenes/ui/relic/RelicCard.tscn")
 const FILTERS := [
-	{"category": &"all", "label": "全部"},
-	{"category": &"unit", "label": "单位"},
-	{"category": &"building", "label": "建筑"},
-	{"category": &"economy", "label": "经济"},
-	{"category": &"core", "label": "核心"},
-	{"category": &"risk", "label": "风险"},
+	{"category": &"all", "label": "全部", "icon": &"icon_filter_all"},
+	{"category": &"unit", "label": "单位", "icon": &"icon_filter_unit"},
+	{"category": &"building", "label": "建筑", "icon": &"icon_filter_building"},
+	{"category": &"economy", "label": "经济", "icon": &"icon_filter_economy"},
+	{"category": &"core", "label": "核心", "icon": &"icon_filter_core"},
+	{"category": &"risk", "label": "风险", "icon": &"icon_filter_risk"},
 ]
 
 signal close_requested
@@ -145,6 +146,7 @@ func _bind_filter_buttons() -> void:
 	for filter_def in FILTERS:
 		var button := Button.new()
 		button.text = String(filter_def.get("label", ""))
+		button.icon = UiArtRegistry.get_texture(StringName(filter_def.get("icon", "")), &"icon")
 		button.focus_mode = Control.FOCUS_NONE
 		button.custom_minimum_size = Vector2(72.0, 32.0)
 		button.set_meta("category", filter_def.get("category", &"all"))
@@ -191,6 +193,7 @@ func _style_filter_button(button: Button, selected: bool) -> void:
 
 func _style_close_button() -> void:
 	_close_button.custom_minimum_size = Vector2(34.0, 30.0)
+	_close_button.icon = UiArtRegistry.get_texture(&"icon_close", &"icon")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
