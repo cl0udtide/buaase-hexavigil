@@ -26,8 +26,8 @@ const FONT_MD := 15
 const FONT_LG := 16
 const FONT_XL := 22
 
-const TOP_BAR_HEIGHT := 68.0
-const TOP_BAR_HEIGHT_COMPACT := 64.0
+const TOP_BAR_HEIGHT := 58.0
+const TOP_BAR_HEIGHT_COMPACT := 54.0
 const TOP_BAR_Y := 8.0
 
 const DETAIL_WIDTH := 384.0

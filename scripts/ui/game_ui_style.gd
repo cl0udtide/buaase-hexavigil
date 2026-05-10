@@ -6,6 +6,7 @@ const FRAME_TOP_HUD := UiFrameSpec.TOP_HUD
 const FRAME_TOP_CARD := UiFrameSpec.TOP_CARD
 const FRAME_HUD_CELL := UiFrameSpec.HUD_CELL
 const FRAME_SIDE_PANEL := UiFrameSpec.SIDE_PANEL
+const FRAME_BUILD_SIDE_PANEL := UiFrameSpec.BUILD_SIDE_PANEL
 const FRAME_DECK_PANEL := UiFrameSpec.DECK_PANEL
 const FRAME_DETAIL_SECTION := UiFrameSpec.DETAIL_SECTION
 const FRAME_CARD := UiFrameSpec.CARD
@@ -153,7 +154,7 @@ static func top_card() -> StyleBox:
 
 
 static func hud_cell(selected: bool = false) -> StyleBox:
-	return frame_box(UiFrameSpec.HUD_CELL, BG_CARD, AMBER if selected else STROKE_SOFT)
+	return frame_box(UiFrameSpec.HUD_CELL_SELECTED if selected else UiFrameSpec.HUD_CELL, BG_CARD, AMBER if selected else STROKE_SOFT)
 
 
 static func top_hud_panel() -> StyleBox:
@@ -162,6 +163,10 @@ static func top_hud_panel() -> StyleBox:
 
 static func side_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.SIDE_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func build_side_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.BUILD_SIDE_PANEL, BG_GLASS, STROKE_SOFT, false)
 
 
 static func deck_panel() -> StyleBox:
