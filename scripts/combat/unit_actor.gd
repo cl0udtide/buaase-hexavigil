@@ -13,6 +13,10 @@ const TARGET_TYPE_FLYING: StringName = &"flying"
 const TARGET_TYPE_ALL: StringName = &"all"
 const MOVE_TYPE_GROUND: StringName = &"ground"
 const MOVE_TYPE_FLYING: StringName = &"flying"
+const VISUAL_TEXTURE_ROOT := "res://assets/sprites/units"
+const VISUAL_IDLE_ANIM := "idle"
+const VISUAL_TEXTURE_SIZE := 128.0
+const VISUAL_DISPLAY_SIZE := 72.0
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -72,6 +76,7 @@ var _damage_reduction_effects: Dictionary = {}
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _skill_behavior: Node = get_node_or_null("%SkillBehavior")
+@onready var _visual_root: Node2D = get_node_or_null("%VisualRoot") as Node2D
 
 
 func _ready() -> void:
@@ -134,6 +139,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 		label.size = Vector2(64.0, 23.0)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_setup_visual_sprite()
 	_configure_skill_behavior()
 	if _skill_behavior != null and _skill_behavior.has_method("setup"):
 		_skill_behavior.setup(self)
@@ -453,6 +459,37 @@ func _configure_skill_behavior() -> void:
 		push_warning("Failed to load skill behavior script: %s" % script_path)
 		return
 	_skill_behavior.set_script(behavior_script)
+
+
+func _setup_visual_sprite() -> void:
+	var texture := _load_visual_texture()
+	if texture == null:
+		return
+	if _visual_root == null:
+		_visual_root = Node2D.new()
+		_visual_root.name = "VisualRoot"
+		_visual_root.unique_name_in_owner = true
+		add_child(_visual_root)
+	var sprite := _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	if sprite == null:
+		sprite = Sprite2D.new()
+		sprite.name = "IdleSprite"
+		_visual_root.add_child(sprite)
+	sprite.texture = texture
+	sprite.centered = true
+	sprite.position = Vector2(0.0, -20.0)
+	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
+	sprite.z_index = -10
+
+
+func _load_visual_texture() -> Texture2D:
+	var visual_key := String(cfg.get("visual_key", unit_id)).strip_edges()
+	if visual_key.is_empty():
+		visual_key = String(unit_id)
+	var path := "%s/%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, visual_key, VISUAL_IDLE_ANIM, visual_key, VISUAL_IDLE_ANIM]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
 
 
 func _recover_sp(delta: float) -> void:
