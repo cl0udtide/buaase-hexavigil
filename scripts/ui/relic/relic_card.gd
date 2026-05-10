@@ -19,7 +19,7 @@ var _hovered := false
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _rarity_overlay: ColorRect = %RarityOverlay
+@onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _hover_overlay: Panel = %HoverOverlay
 @onready var _icon_label: Label = %IconLabel
 @onready var _name_label: Label = %NameLabel
@@ -121,7 +121,7 @@ func _apply_style() -> void:
 	else:
 		_card_base.add_theme_stylebox_override("panel", GameUiStyle.relic_card(rarity, _selected or _hovered))
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, false))
-	_rarity_overlay.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.08)
+	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.flat_panel(Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.08), Color.TRANSPARENT, 0.0, 0.0))
 	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
 	_hover_overlay.visible = _selected or _hovered
 	modulate.a = 1.0 if _selectable else 0.72
