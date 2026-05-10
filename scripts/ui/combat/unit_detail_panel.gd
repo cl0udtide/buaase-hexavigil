@@ -204,7 +204,7 @@ func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dict
 
 
 func clear_unit() -> void:
-	visible = true
+	visible = false
 	_shop_slot_index = -1
 	_last_skill_scroll_key = ""
 	_title_label.text = "未选中"

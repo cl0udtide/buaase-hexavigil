@@ -17,22 +17,23 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var settings_size: float = UiTokens.SETTINGS_BUTTON_SIZE_COMPACT if compact else UiTokens.SETTINGS_BUTTON_SIZE
 	var relic_height := UiTokens.RELIC_STRIP_HEIGHT_COMPACT if compact else UiTokens.RELIC_STRIP_HEIGHT
 	var content_top := UiTokens.TOP_BAR_Y + top_height + UiTokens.SPACE_XS + relic_height + UiTokens.SPACE_LG
+	var right_column_top := maxf(UiTokens.TOP_BAR_Y + top_height + UiTokens.SPACE_XS + relic_height + UiTokens.SPACE_2XS, content_top - _right_column_top_shift_for_width(width))
 	var deck_height: float = UiTokens.DEPLOY_DECK_HEIGHT_COMPACT if compact else UiTokens.DEPLOY_DECK_HEIGHT
 	var detail_left: float = width - edge - detail_width
 	var deck_y := height - edge - deck_height
 	var legend_size := _legend_size_for_width(width)
 	var wave_height := _wave_preview_height_for_width(width)
-	var right_bottom_limit := deck_y - UiTokens.SPACE_SM
-	var legend_visible := detail_visible
+	var right_bottom_limit := deck_y - UiTokens.RIGHT_COLUMN_BOTTOM_GAP
+	var legend_visible := true
 	var legend_y := right_bottom_limit - legend_size.y
-	var min_right_height_with_legend := wave_height + UiTokens.SPACE_LG + detail_min_height + UiTokens.SPACE_SM + legend_size.y
-	if right_bottom_limit - content_top < min_right_height_with_legend:
+	var min_right_height_with_legend := wave_height + UiTokens.SPACE_LG + (detail_min_height if detail_visible else 0.0) + UiTokens.SPACE_SM + legend_size.y
+	if right_bottom_limit - right_column_top < min_right_height_with_legend:
 		legend_visible = false
 	var legend_rect := Rect2(width - edge - legend_size.x, legend_y, legend_size.x, legend_size.y)
 	if not legend_visible:
 		legend_rect = Rect2(width - edge, right_bottom_limit, 0.0, 0.0)
 	var detail_bottom := legend_rect.position.y - UiTokens.SPACE_SM if legend_visible else right_bottom_limit
-	var right_column_rect := Rect2(detail_left, content_top, detail_width, maxf(detail_min_height, detail_bottom - content_top))
+	var right_column_rect := Rect2(detail_left, right_column_top, detail_width, maxf(detail_min_height if detail_visible else wave_height, detail_bottom - right_column_top))
 	var detail_rect := right_column_rect
 	var action_size := _action_panel_size_for_width(width)
 	var action_rect := Rect2(edge, height - edge - action_size.y, action_size.x, action_size.y)
@@ -167,6 +168,14 @@ static func _wave_preview_height_for_width(width: float) -> float:
 	if width <= UiTokens.BREAKPOINT_COMPACT:
 		return UiTokens.WAVE_PREVIEW_HEIGHT_COMPACT
 	return UiTokens.WAVE_PREVIEW_HEIGHT
+
+
+static func _right_column_top_shift_for_width(width: float) -> float:
+	if width <= UiTokens.BREAKPOINT_NARROW:
+		return UiTokens.RIGHT_COLUMN_TOP_SHIFT_NARROW
+	if width <= UiTokens.BREAKPOINT_COMPACT:
+		return UiTokens.RIGHT_COLUMN_TOP_SHIFT_COMPACT
+	return UiTokens.RIGHT_COLUMN_TOP_SHIFT
 
 
 static func _action_panel_size_for_width(width: float) -> Vector2:
