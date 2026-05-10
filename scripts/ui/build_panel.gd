@@ -419,9 +419,9 @@ func _style_tab_button(button: Button, selected: bool) -> void:
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.30))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.tab(true))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_ON_PARCHMENT)
 
 
 func _style_command_button(button: Button, accent: Color) -> void:

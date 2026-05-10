@@ -9,7 +9,7 @@
 				10,
 				3
 			],
-			"blocked": []
+			"mountain": []
 		},
 		"spawns": [
 			{
@@ -74,7 +74,7 @@
 				10,
 				3
 			],
-			"blocked": []
+			"mountain": []
 		},
 		"spawns": [
 			{
