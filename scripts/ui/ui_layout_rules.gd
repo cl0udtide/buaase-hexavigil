@@ -11,6 +11,7 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var narrow: bool = UiTokens.is_narrow(width)
 	var edge: float = UiTokens.edge_for_width(width)
 	var detail_width: float = _detail_width_for_width(width)
+	var detail_min_height: float = _detail_min_height_for_width(width)
 	var left_panel_width: float = _left_panel_width_for_width(width)
 	var top_height: float = UiTokens.TOP_BAR_HEIGHT_COMPACT if compact else UiTokens.TOP_BAR_HEIGHT
 	var settings_size: float = UiTokens.SETTINGS_BUTTON_SIZE_COMPACT if compact else UiTokens.SETTINGS_BUTTON_SIZE
@@ -18,17 +19,25 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var content_top := UiTokens.TOP_BAR_Y + top_height + UiTokens.SPACE_XS + relic_height + UiTokens.SPACE_LG
 	var deck_height: float = UiTokens.DEPLOY_DECK_HEIGHT_COMPACT if compact else UiTokens.DEPLOY_DECK_HEIGHT
 	var detail_left: float = width - edge - detail_width
-	var legend_size := _legend_size_for_width(width)
 	var deck_y := height - edge - deck_height
-	var legend_y := maxf(content_top + 220.0 + UiTokens.SPACE_SM, deck_y - UiTokens.SPACE_LG - legend_size.y)
-	if legend_y + legend_size.y > deck_y - UiTokens.SPACE_LG:
-		legend_y = maxf(content_top, deck_y - UiTokens.SPACE_LG - legend_size.y)
+	var legend_size := _legend_size_for_width(width)
+	var wave_height := _wave_preview_height_for_width(width)
+	var right_bottom_limit := deck_y - UiTokens.SPACE_SM
+	var legend_visible := detail_visible
+	var legend_y := right_bottom_limit - legend_size.y
+	var min_right_height_with_legend := wave_height + UiTokens.SPACE_LG + detail_min_height + UiTokens.SPACE_SM + legend_size.y
+	if right_bottom_limit - content_top < min_right_height_with_legend:
+		legend_visible = false
 	var legend_rect := Rect2(width - edge - legend_size.x, legend_y, legend_size.x, legend_size.y)
-	var detail_bottom := legend_rect.position.y - UiTokens.SPACE_SM
-	if not detail_visible:
-		detail_bottom = deck_y - UiTokens.SPACE_SM
-	var detail_rect := Rect2(detail_left, content_top, detail_width, maxf(220.0, detail_bottom - content_top))
-	var left_panel_rect := Rect2(edge, content_top, left_panel_width, maxf(UiTokens.LEFT_PANEL_MIN_HEIGHT, deck_y - content_top - UiTokens.SPACE_LG))
+	if not legend_visible:
+		legend_rect = Rect2(width - edge, right_bottom_limit, 0.0, 0.0)
+	var detail_bottom := legend_rect.position.y - UiTokens.SPACE_SM if legend_visible else right_bottom_limit
+	var right_column_rect := Rect2(detail_left, content_top, detail_width, maxf(detail_min_height, detail_bottom - content_top))
+	var detail_rect := right_column_rect
+	var action_size := _action_panel_size_for_width(width)
+	var action_rect := Rect2(edge, height - edge - action_size.y, action_size.x, action_size.y)
+	var left_panel_bottom := action_rect.position.y - UiTokens.SPACE_LG
+	var left_panel_rect := Rect2(edge, content_top, left_panel_width, maxf(UiTokens.LEFT_PANEL_MIN_HEIGHT, left_panel_bottom - content_top))
 	var deck_left: float = maxf(edge, left_reserved_width + UiTokens.SPACE_LG)
 	var deck_right_x: float = width - edge
 	if detail_visible:
@@ -68,12 +77,16 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 		"relic_panel_rect": Rect2((width - relic_panel_width) * 0.5, (height - relic_panel_height) * 0.5, relic_panel_width, relic_panel_height),
 		"top_card_height": top_height,
 		"top_separation": UiTokens.SPACE_SM if compact else UiTokens.SPACE_LG,
+		"right_column_rect": right_column_rect,
+		"wave_preview_height": wave_height,
 		"detail_panel_rect": detail_rect,
 		"detail_rect": detail_rect,
 		"legend_panel_rect": legend_rect,
+		"legend_visible": legend_visible,
 		"deploy_deck_rect": Rect2(deck_left, deck_y, maxf(0.0, deck_right_x - deck_left), deck_height),
 		"deck_rect": Rect2(deck_left, deck_y, maxf(0.0, deck_right_x - deck_left), deck_height),
 		"deck_height": deck_height,
+		"action_panel_rect": action_rect,
 		"operator_card_size": UiTokens.OPERATOR_CARD_COMPACT_SIZE if compact else UiTokens.OPERATOR_CARD_SIZE,
 	}
 
@@ -86,33 +99,33 @@ static func top_card_widths(viewport_width: float) -> Dictionary:
 			"deploy": 100.0,
 			"message": 0.0,
 			"time": 164.0,
-			"resource": 188.0,
+			"resource_item": 58.0,
 		}
 	if viewport_width <= UiTokens.BREAKPOINT_NARROW:
 		return {
 			"stage": 132.0,
 			"core": 136.0,
 			"deploy": 118.0,
-			"message": 210.0,
+			"message": 0.0,
 			"time": 188.0,
-			"resource": 220.0,
+			"resource_item": 64.0,
 		}
 	if viewport_width <= UiTokens.BREAKPOINT_COMPACT:
 		return {
 			"stage": 152.0,
 			"core": 154.0,
 			"deploy": 128.0,
-			"message": 260.0,
+			"message": 0.0,
 			"time": 198.0,
-			"resource": 250.0,
+			"resource_item": 70.0,
 		}
 	return {
 		"stage": 180.0,
 		"core": 180.0,
 		"deploy": 150.0,
-		"message": 360.0,
+		"message": 300.0 if viewport_width <= 1680.0 else 360.0,
 		"time": 216.0,
-		"resource": 340.0,
+		"resource_item": 78.0 if viewport_width <= 1680.0 else 86.0,
 	}
 
 
@@ -122,6 +135,14 @@ static func _detail_width_for_width(width: float) -> float:
 	if width <= UiTokens.BREAKPOINT_COMPACT:
 		return UiTokens.DETAIL_WIDTH_COMPACT
 	return UiTokens.DETAIL_WIDTH
+
+
+static func _detail_min_height_for_width(width: float) -> float:
+	if width <= UiTokens.BREAKPOINT_NARROW:
+		return UiTokens.DETAIL_MIN_HEIGHT_NARROW
+	if width <= UiTokens.BREAKPOINT_COMPACT:
+		return UiTokens.DETAIL_MIN_HEIGHT_COMPACT
+	return UiTokens.DETAIL_MIN_HEIGHT
 
 
 static func _left_panel_width_for_width(width: float) -> float:
@@ -138,3 +159,19 @@ static func _legend_size_for_width(width: float) -> Vector2:
 	if width <= UiTokens.BREAKPOINT_COMPACT:
 		return UiTokens.LEGEND_SIZE_COMPACT
 	return UiTokens.LEGEND_SIZE
+
+
+static func _wave_preview_height_for_width(width: float) -> float:
+	if width <= UiTokens.BREAKPOINT_NARROW:
+		return UiTokens.WAVE_PREVIEW_HEIGHT_NARROW
+	if width <= UiTokens.BREAKPOINT_COMPACT:
+		return UiTokens.WAVE_PREVIEW_HEIGHT_COMPACT
+	return UiTokens.WAVE_PREVIEW_HEIGHT
+
+
+static func _action_panel_size_for_width(width: float) -> Vector2:
+	if width <= UiTokens.BREAKPOINT_NARROW:
+		return UiTokens.ACTION_PANEL_SIZE_NARROW
+	if width <= UiTokens.BREAKPOINT_COMPACT:
+		return UiTokens.ACTION_PANEL_SIZE_COMPACT
+	return UiTokens.ACTION_PANEL_SIZE
