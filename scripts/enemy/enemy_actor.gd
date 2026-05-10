@@ -8,6 +8,10 @@ const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controll
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
 const INVALID_DEATH_SPAWN_CELL := Vector2i(-9999, -9999)
+const VISUAL_TEXTURE_ROOT := "res://assets/sprites/enemies"
+const VISUAL_IDLE_ANIM := "idle"
+const VISUAL_TEXTURE_SIZE := 128.0
+const VISUAL_DISPLAY_SIZE := 70.0
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -37,6 +41,8 @@ var _max_shield_hp := 0
 var _regen_carry := 0.0
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
+@onready var _visual_root: Node2D = get_node_or_null("%VisualRoot") as Node2D
+var _has_visual_sprite := false
 
 
 func _ready() -> void:
@@ -110,11 +116,14 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", enemy_id))
 		label.position = Vector2(-30.0, -58.0)
+	_setup_visual_sprite()
 	_update_status_view()
 	queue_redraw()
 
 
 func _draw() -> void:
+	if _has_visual_sprite:
+		return
 	var rect: Rect2 = Rect2(Vector2.ONE * (-DEBUG_SIZE * 0.5), Vector2.ONE * DEBUG_SIZE)
 	draw_rect(rect, DEBUG_COLOR, false, 2.0)
 	draw_line(Vector2(-8.0, 0.0), Vector2(8.0, 0.0), DEBUG_COLOR, 1.5)
@@ -349,6 +358,41 @@ func _setup_attack_controller() -> void:
 		_attack_controller = EnemyAttackController.new()
 		add_child(_attack_controller)
 	_attack_controller.setup(self)
+
+
+func _setup_visual_sprite() -> void:
+	_has_visual_sprite = false
+	var texture := _load_visual_texture()
+	if texture == null:
+		queue_redraw()
+		return
+	if _visual_root == null:
+		_visual_root = Node2D.new()
+		_visual_root.name = "VisualRoot"
+		_visual_root.unique_name_in_owner = true
+		add_child(_visual_root)
+	var sprite := _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	if sprite == null:
+		sprite = Sprite2D.new()
+		sprite.name = "IdleSprite"
+		_visual_root.add_child(sprite)
+	sprite.texture = texture
+	sprite.centered = true
+	sprite.position = Vector2(0.0, -19.0)
+	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
+	sprite.z_index = -10
+	_has_visual_sprite = true
+	queue_redraw()
+
+
+func _load_visual_texture() -> Texture2D:
+	var visual_key := String(cfg.get("visual_key", enemy_id)).strip_edges()
+	if visual_key.is_empty():
+		visual_key = String(enemy_id)
+	var path := "%s/%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, visual_key, VISUAL_IDLE_ANIM, visual_key, VISUAL_IDLE_ANIM]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
 
 
 func _setup_boss_controller() -> void:
