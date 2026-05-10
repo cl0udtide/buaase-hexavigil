@@ -9,6 +9,7 @@ signal pressed
 var _pending_config: Dictionary = {}
 var _accent := GameUiStyle.STROKE_SOFT
 var _disabled := false
+var _pressable_when_disabled := false
 var _selected := false
 var _hovered := false
 
@@ -79,6 +80,7 @@ func _apply_config(config: Dictionary) -> void:
 	custom_minimum_size = Vector2(float(config.get("min_width", 0.0)), float(config.get("min_height", 96.0)))
 	_accent = config.get("accent", GameUiStyle.STROKE_SOFT) as Color
 	_disabled = bool(config.get("disabled", false))
+	_pressable_when_disabled = bool(config.get("pressable_when_disabled", false))
 	_selected = bool(config.get("selected", false))
 	_title_label.text = String(config.get("title", ""))
 	_subtitle_label.text = String(config.get("subtitle", ""))
@@ -120,7 +122,7 @@ func _add_label_shadow(label: Label) -> void:
 
 
 func _on_gui_input(event: InputEvent) -> void:
-	if _disabled or not (event is InputEventMouseButton):
+	if (_disabled and not _pressable_when_disabled) or not (event is InputEventMouseButton):
 		return
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:

@@ -5,12 +5,18 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiTokens = preload("res://scripts/ui/ui_tokens.gd")
 
 signal operator_card_pressed(operator_key: StringName)
+signal operator_card_drag_started(operator_key: StringName)
+
+const DRAG_START_THRESHOLD := 10.0
 
 var operator_key := StringName()
 var _state := &"ready"
 var _accent := GameUiStyle.ACCENT
 var _hovered := false
 var _compact := false
+var _pressing := false
+var _press_start_position := Vector2.ZERO
+var _drag_started := false
 
 @onready var _card_base: Panel = %CardBase
 @onready var _card_content: MarginContainer = %CardContent
@@ -40,7 +46,8 @@ var _compact := false
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
-	size_flags_vertical = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_set_descendant_mouse_filter_ignore(self)
 	gui_input.connect(_on_gui_input)
 	mouse_entered.connect(func() -> void:
 		_hovered = true
@@ -168,12 +175,25 @@ func _normalize_meta_without_cost(meta: String) -> void:
 
 
 func _on_gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton):
-		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-		operator_card_pressed.emit(operator_key)
-		accept_event()
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mouse_event.pressed:
+			_pressing = true
+			_drag_started = false
+			_press_start_position = get_global_mouse_position()
+			accept_event()
+		elif _pressing:
+			_pressing = false
+			if not _drag_started:
+				operator_card_pressed.emit(operator_key)
+			accept_event()
+	elif event is InputEventMouseMotion and _pressing and not _drag_started:
+		if get_global_mouse_position().distance_to(_press_start_position) >= DRAG_START_THRESHOLD:
+			_drag_started = true
+			operator_card_drag_started.emit(operator_key)
+			accept_event()
 
 
 func _apply_card_style() -> void:
@@ -186,6 +206,8 @@ func _apply_card_style() -> void:
 
 func _apply_density() -> void:
 	custom_minimum_size = UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE
+	size = custom_minimum_size
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_portrait_stack.custom_minimum_size = Vector2(0.0, 48.0 if _compact else 54.0)
 	_name_label.add_theme_font_size_override("font_size", 14 if _compact else 15)
 	_cost_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
@@ -215,3 +237,10 @@ func _add_label_shadow(label: Label) -> void:
 	label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 	label.add_theme_constant_override("shadow_offset_x", 0)
 	label.add_theme_constant_override("shadow_offset_y", 0)
+
+
+func _set_descendant_mouse_filter_ignore(node: Node) -> void:
+	for child in node.get_children():
+		if child is Control:
+			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_set_descendant_mouse_filter_ignore(child)

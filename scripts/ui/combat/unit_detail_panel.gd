@@ -3,9 +3,11 @@ extends Control
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
+const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 signal cast_skill_requested
 signal retreat_requested
+signal purchase_requested(slot_index: int)
 
 @onready var _panel_base: Panel = %PanelBase
 @onready var _title_label: Label = %TitleLabel
@@ -43,12 +45,16 @@ signal retreat_requested
 @onready var _skill_status_label: Label = %SkillStatusLabel
 @onready var _skill_scroll: ScrollContainer = %SkillScroll
 @onready var _skill_label: Label = %SkillLabel
+@onready var _detail_source_label: Label = %DetailSourceLabel
+@onready var _purchase_button: Button = %PurchaseButton
+@onready var _purchase_reason_label: Label = %PurchaseReasonLabel
 @onready var _cast_button: Button = %CastSkillButton
 @onready var _retreat_button: Button = %RetreatButton
 
 var _last_skill_scroll_key := ""
 var _hp_ratio := 0.0
 var _sp_ratio := 0.0
+var _shop_slot_index := -1
 
 
 func _ready() -> void:
@@ -108,8 +114,13 @@ func _ready() -> void:
 	_sp_bar.resized.connect(_refresh_progress_fills)
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
 	_style_action_button(_retreat_button, GameUiStyle.STROKE_SOFT)
+	_style_action_button(_purchase_button, GameUiStyle.AMBER)
+	_detail_source_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	_purchase_reason_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
+	_purchase_button.pressed.connect(_on_purchase_pressed)
+	_ensure_scroll_wrapper()
 	clear_unit()
 
 
@@ -118,6 +129,8 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 		clear_unit()
 		return
 	visible = true
+	_shop_slot_index = -1
+	_set_action_mode(&"deployed", "已部署单位", false, "")
 	var sp_max := float(unit.cfg.get("sp_max", 0.0))
 	_title_label.text = display_name
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(unit.cfg), _icon_text(unit.cfg, "◆"))
@@ -167,8 +180,32 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	_retreat_button.disabled = false
 
 
+func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
+	_shop_slot_index = -1
+	var display_name := String(operator_info.get("name", unit_cfg.get("name", operator_info.get("unit_id", ""))))
+	var source_text := "待部署干员"
+	if state == &"cooldown":
+		source_text = "再部署冷却"
+	if not status_text.strip_edges().is_empty():
+		source_text = "%s  %s" % [source_text, status_text]
+	_show_cfg_preview(display_name, unit_cfg, "#--", source_text)
+	_set_action_mode(&"preview", source_text, false, "")
+
+
+func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
+	var display_name := UiDisplayText.config_name(unit_cfg, unit_id)
+	var source_text := "招募商店  槽位 %d  价格 %d 声望" % [slot_index + 1, price]
+	_show_cfg_preview(display_name, unit_cfg, "#%d" % (slot_index + 1), source_text)
+	_shop_slot_index = slot_index
+	var reason := disabled_reason
+	if can_purchase:
+		reason = ""
+	_set_action_mode(&"shop", source_text, can_purchase, reason, price)
+
+
 func clear_unit() -> void:
 	visible = true
+	_shop_slot_index = -1
 	_last_skill_scroll_key = ""
 	_title_label.text = "未选中"
 	_level_label.text = "#--"
@@ -195,6 +232,85 @@ func clear_unit() -> void:
 	_cast_button.text = "激活技能"
 	_cast_button.disabled = true
 	_retreat_button.disabled = true
+	_set_action_mode(&"empty", "选择单位、干员或商店商品", false, "")
+
+
+func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, source_text: String) -> void:
+	visible = true
+	_last_skill_scroll_key = ""
+	_title_label.text = display_name
+	_level_label.text = level_text
+	_damage_label.text = "伤害 %s" % _damage_label_from_cfg(cfg)
+	_facing_label.text = "来源 预览"
+	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(cfg), _icon_text(cfg, "*"))
+	_apply_texture_or_text(_skill_icon_texture, _skill_icon_label, _skill_icon_texture_from_cfg(cfg), _icon_text(cfg, "*"))
+	var max_hp := int(cfg.get("max_hp", 0))
+	var sp_max := float(cfg.get("sp_max", 0.0))
+	_set_progress(_hp_bar, _hp_fill, float(max_hp), maxf(float(max_hp), 1.0))
+	_set_progress(_sp_bar, _sp_fill, 0.0, maxf(sp_max, 1.0))
+	_hp_bar.tooltip_text = "HP %d" % max_hp
+	_sp_bar.tooltip_text = "SP 0/%.0f" % sp_max
+	_hp_value_label.text = "生命 %d" % max_hp
+	_sp_value_label.text = "SP 0/%.0f" % sp_max
+	_atk_stat_label.text = "攻击 %d" % int(cfg.get("atk", 0))
+	_def_stat_label.text = "防御 %d" % int(cfg.get("def", 0))
+	_res_stat_label.text = "法抗 %d" % int(cfg.get("res", 0))
+	_block_stat_label.text = "阻挡 %d" % int(cfg.get("block", 0))
+	_aspd_stat_label.text = "攻速 %.2fs" % float(cfg.get("attack_interval", 0.0))
+	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
+	_skill_status_label.text = source_text
+	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
+	_skill_scroll.scroll_vertical = 0
+
+
+func _set_action_mode(mode: StringName, source_text: String, can_purchase: bool, reason: String, price: int = 0) -> void:
+	_detail_source_label.text = source_text
+	_detail_source_label.visible = not source_text.strip_edges().is_empty()
+	var is_shop := mode == &"shop"
+	var is_deployed := mode == &"deployed"
+	_purchase_button.visible = is_shop
+	_purchase_reason_label.visible = is_shop and not reason.strip_edges().is_empty()
+	_purchase_reason_label.text = reason
+	_purchase_button.disabled = not can_purchase
+	_purchase_button.text = "购买 %d 声望" % price if is_shop and price > 0 else "购买"
+	_cast_button.visible = is_deployed or mode == &"empty"
+	_retreat_button.visible = is_deployed or mode == &"empty"
+	if mode == &"preview":
+		_cast_button.visible = false
+		_retreat_button.visible = false
+
+
+func _ensure_scroll_wrapper() -> void:
+	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
+	var main_vbox := get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
+	if content_margin == null or main_vbox == null:
+		return
+	var scroll := ScrollContainer.new()
+	scroll.name = "DetailScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	content_margin.remove_child(main_vbox)
+	content_margin.add_child(scroll)
+	scroll.add_child(main_vbox)
+	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+
+func _on_purchase_pressed() -> void:
+	if _shop_slot_index >= 0:
+		purchase_requested.emit(_shop_slot_index)
+
+
+func _damage_label_from_cfg(cfg: Dictionary) -> String:
+	match String(cfg.get("damage_type", "physical")):
+		"magic":
+			return UiDisplayText.damage_type_label(GameEnums.DAMAGE_MAGIC)
+		"true":
+			return UiDisplayText.damage_type_label(GameEnums.DAMAGE_TRUE)
+		_:
+			return UiDisplayText.damage_type_label(GameEnums.DAMAGE_PHYSICAL)
 
 
 func _set_progress(bar: Control, fill: Control, value: float, max_value: float) -> void:
