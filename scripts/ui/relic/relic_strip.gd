@@ -3,6 +3,7 @@ extends Control
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 const RELIC_ICON_SCENE := preload("res://scenes/ui/relic/RelicIcon.tscn")
 const MAX_VISIBLE_RELICS := 14
@@ -99,6 +100,7 @@ func _icon_capacity_for_width(width: float) -> int:
 
 func _style_entry_button() -> void:
 	_entry_button.custom_minimum_size = Vector2(86.0, 30.0)
+	_entry_button.icon = UiArtRegistry.get_texture(&"icon_relic_bag", &"icon")
 	GameUiStyle.center_button_text(_entry_button)
 	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))

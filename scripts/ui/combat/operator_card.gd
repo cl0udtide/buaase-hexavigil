@@ -2,6 +2,7 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiTokens = preload("res://scripts/ui/ui_tokens.gd")
 
 signal operator_card_pressed(operator_key: StringName)
@@ -17,6 +18,7 @@ var _compact := false
 var _pressing := false
 var _press_start_position := Vector2.ZERO
 var _drag_started := false
+var _unit_cfg: Dictionary = {}
 
 @onready var _card_base: Panel = %CardBase
 @onready var _card_content: MarginContainer = %CardContent
@@ -31,8 +33,9 @@ var _drag_started := false
 @onready var _portrait_label: Label = %PortraitLabel
 @onready var _selected_overlay: Panel = %SelectedOverlay
 @onready var _deployed_overlay: Panel = %DeployedOverlay
-@onready var _cooldown_overlay: ColorRect = %CooldownOverlay
+@onready var _cooldown_overlay: TextureRect = %CooldownOverlay
 @onready var _cooldown_label: Label = %CooldownLabel
+@onready var _class_icon_texture: TextureRect = %ClassIcon
 @onready var _class_label: Label = %ClassLabel
 @onready var _state_label: Label = %StateLabel
 @onready var _hp_stat_row: Panel = %HpStatRow
@@ -77,24 +80,34 @@ func _ready() -> void:
 	_add_label_shadow(_sp_stat_label)
 	_add_label_shadow(_cd_stat_label)
 	GameUiStyle.apply_frame_margin(_card_content, GameUiStyle.FRAME_OPERATOR_CARD)
-	_title_strip.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, false))
+	_title_strip.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_TITLE_STRIP, GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, false))
 	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.operator_cost_badge())
 	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.operator_portrait_slot())
-	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_PORTRAIT_SLOT, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
+	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.operator_portrait_frame())
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_class_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_class_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	for row in [_hp_stat_row, _sp_stat_row, _cd_stat_row]:
 		row.add_theme_stylebox_override("panel", GameUiStyle.operator_stat_row())
-	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
-	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
-	_cooldown_overlay.color = Color(0.160, 0.035, 0.032, 0.72)
+	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD_SELECTED, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
+	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD_DEPLOYED, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
+	_cooldown_overlay.texture = UiArtRegistry.get_texture(GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN, &"frame")
 	_cooldown_overlay.visible = false
 	_apply_density()
+	_apply_visual_textures()
 	_apply_card_style()
 
 
 func setup(new_operator_key: StringName) -> void:
 	operator_key = new_operator_key
+
+
+func configure(operator_info: Dictionary, unit_cfg: Dictionary) -> void:
+	operator_key = StringName(operator_info.get("key", operator_key))
+	_unit_cfg = unit_cfg.duplicate(true)
+	if is_node_ready():
+		_apply_visual_textures()
 
 
 func set_compact(compact: bool) -> void:
@@ -141,6 +154,7 @@ func _parse_display_text(text_value: String) -> void:
 	_hp_stat_label.text = lines[2] if lines.size() > 2 else "HP --"
 	_sp_stat_label.text = lines[3] if lines.size() > 3 else "SP --"
 	_cd_stat_label.text = lines[4] if lines.size() > 4 else "CD READY"
+	_refresh_class_icon()
 
 
 func _update_cooldown_overlay(state: StringName) -> void:
@@ -200,8 +214,10 @@ func _apply_card_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.operator_card_state(_state, _hovered))
 	_selected_overlay.visible = _hovered and _state != &"cooldown"
 	_deployed_overlay.visible = _state == &"deployed"
-	if _state != &"cooldown":
-		_cooldown_overlay.visible = false
+	_cooldown_overlay.visible = _state == &"cooldown"
+	if _cooldown_overlay.visible:
+		var overlay_key := GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN_SELECTED if _hovered else GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN
+		_cooldown_overlay.texture = UiArtRegistry.get_texture(overlay_key, &"frame")
 
 
 func _apply_density() -> void:
@@ -219,6 +235,32 @@ func _apply_density() -> void:
 		row.custom_minimum_size.y = 17.0 if _compact else 18.0
 	_portrait_label.add_theme_font_size_override("font_size", 24 if _compact else 26)
 	_cooldown_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
+
+
+func _apply_visual_textures() -> void:
+	var portrait := UiArtRegistry.get_portrait_texture(_unit_cfg)
+	_portrait_texture.texture = portrait
+	_portrait_texture.visible = portrait != null
+	_portrait_label.visible = portrait == null
+	if portrait == null:
+		_portrait_label.text = _icon_text(_unit_cfg, "*")
+	_refresh_class_icon()
+
+
+func _refresh_class_icon() -> void:
+	if _class_icon_texture == null:
+		return
+	var class_key := String(_unit_cfg.get("class", "")).strip_edges()
+	var texture := UiArtRegistry.get_texture(StringName("icon_class_%s" % class_key), &"icon") if not class_key.is_empty() else null
+	_class_icon_texture.texture = texture
+	_class_icon_texture.visible = texture != null
+
+
+func _icon_text(cfg: Dictionary, fallback_text: String) -> String:
+	var icon := String(cfg.get("icon_text", "")).strip_edges()
+	if not icon.is_empty():
+		return icon.substr(0, 1)
+	return fallback_text
 
 
 func _state_label_text() -> String:

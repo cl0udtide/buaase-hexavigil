@@ -1,7 +1,9 @@
 extends Control
 
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
 const UiTokens = preload("res://scripts/ui/ui_tokens.gd")
 
@@ -30,6 +32,7 @@ var _layout_profile: Dictionary = {}
 var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
 var _wave_preview_text_min_height := WAVE_PREVIEW_MIN_TEXT_HEIGHT
+var _chip_icon_textures: Dictionary = {}
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
@@ -82,9 +85,10 @@ func _ready() -> void:
 	_core_fill.add_theme_stylebox_override("panel", GameUiStyle.progress_fill(GameUiStyle.AMBER))
 	_core_track.resized.connect(_refresh_core_fill)
 	_ensure_top_bar_groups()
+	_ensure_top_chip_icons()
 	_apply_frame_margins()
 	_style_top_cards()
-	_wave_preview_base.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, false))
+	_wave_preview_base.add_theme_stylebox_override("panel", GameUiStyle.wave_preview_panel())
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
@@ -157,6 +161,7 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 	_deploy_label.text = deploy_text
 	_queue_label.text = queue_text
 	_set_core_progress_from_text(core_text)
+	_update_stage_icon_from_text(queue_text)
 
 
 func show_message(text_value: String) -> void:
@@ -178,9 +183,10 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 			continue
 		var root := item.get("root") as Control
 		var icon_label := item.get("icon") as Label
+		var icon_texture := item.get("icon_texture") as TextureRect
 		var value_label := item.get("value") as Label
 		var delta_label := item.get("delta") as Label
-		if root == null or icon_label == null or value_label == null or delta_label == null:
+		if root == null or icon_label == null or icon_texture == null or value_label == null or delta_label == null:
 			continue
 		var data: Dictionary = resource_items.get(resource_key, {})
 		if data.is_empty():
@@ -188,6 +194,10 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 			continue
 		root.visible = true
 		root.tooltip_text = String(data.get("tooltip", tooltip_text_value))
+		var texture := UiArtRegistry.get_texture(resource_key, &"icon")
+		icon_texture.texture = texture
+		icon_texture.visible = texture != null
+		icon_label.visible = texture == null
 		icon_label.text = String(data.get("icon", _resource_default_icon(resource_key)))
 		value_label.text = String(data.get("value", "--"))
 		var delta_text := String(data.get("delta", ""))
@@ -259,6 +269,7 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 		speed_1_selected = is_equal_approx(speed, 1.0)
 		speed_2_selected = is_equal_approx(speed, 2.0)
 	_pause_button.text = "暂停"
+	_pause_button.icon = UiArtRegistry.get_texture(&"icon_play" if pause_selected else &"icon_pause", &"icon")
 	_style_top_button(_pause_button, pause_selected)
 	_style_top_button(_speed_1_button, speed_1_selected)
 	_style_top_button(_speed_2_button, speed_2_selected)
@@ -272,6 +283,9 @@ func set_operators(operators: Array[Dictionary]) -> void:
 		var operator_key := StringName((operator_info as Dictionary).get("key", ""))
 		var card = OPERATOR_CARD_SCENE.instantiate()
 		card.setup(operator_key)
+		if card.has_method("configure"):
+			var unit_id := StringName((operator_info as Dictionary).get("unit_id", ""))
+			card.configure(operator_info as Dictionary, _get_unit_cfg(unit_id))
 		if card.has_method("set_compact"):
 			card.set_compact(bool(_layout_profile.get("compact", false)))
 		card.operator_card_pressed.connect(func(key: StringName) -> void: operator_card_pressed.emit(key))
@@ -421,6 +435,7 @@ func _build_resource_items() -> void:
 			"root": item_root,
 			"base": item_root.get_node_or_null("ResourceItemBase"),
 			"icon": item_root.get_node_or_null("ItemMargin/ItemRow/IconLabel"),
+			"icon_texture": item_root.get_node_or_null("ItemMargin/ItemRow/IconTexture"),
 			"value": item_root.get_node_or_null("ItemMargin/ItemRow/ValueLabel"),
 			"delta": item_root.get_node_or_null("ItemMargin/ItemRow/DeltaLabel")
 		}
@@ -462,6 +477,15 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon_label)
+	var icon_texture := TextureRect.new()
+	icon_texture.name = "IconTexture"
+	icon_texture.custom_minimum_size = Vector2(22.0, 0.0)
+	icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_texture.visible = false
+	row.add_child(icon_texture)
+	row.move_child(icon_texture, icon_label.get_index())
 	var value_label := Label.new()
 	value_label.name = "ValueLabel"
 	value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -479,6 +503,58 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	delta_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(delta_label)
 	return item_root
+
+
+func _ensure_top_chip_icons() -> void:
+	_chip_icon_textures.clear()
+	_chip_icon_textures[&"stage"] = _ensure_chip_icon(_stage_chip, _queue_label, &"icon_phase_day")
+	_chip_icon_textures[&"core"] = _ensure_chip_icon(_core_chip, _core_label, &"icon_core_hp")
+	_chip_icon_textures[&"deploy"] = _ensure_chip_icon(_deploy_chip, _deploy_label, &"icon_deploy_limit")
+	_chip_icon_textures[&"message"] = _ensure_chip_icon(_message_chip, _message_label, &"icon_enemy_queue")
+
+
+func _ensure_chip_icon(chip: Control, label: Label, texture_key: StringName) -> TextureRect:
+	if chip == null:
+		return null
+	var icon := chip.get_node_or_null("ChipIcon") as TextureRect
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = "ChipIcon"
+		icon.anchor_left = 0.0
+		icon.anchor_top = 0.0
+		icon.anchor_right = 0.0
+		icon.anchor_bottom = 1.0
+		icon.offset_left = 10.0
+		icon.offset_top = 8.0
+		icon.offset_right = 32.0
+		icon.offset_bottom = -8.0
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.add_child(icon)
+	icon.texture = UiArtRegistry.get_texture(texture_key, &"icon")
+	icon.visible = icon.texture != null
+	if label != null:
+		label.offset_left = 30.0 if icon.visible else 0.0
+	return icon
+
+
+func _update_stage_icon_from_text(text_value: String) -> void:
+	var icon := _chip_icon_textures.get(&"stage") as TextureRect
+	if icon == null:
+		return
+	var key := &"icon_phase_day"
+	if text_value.contains("夜晚") or text_value.contains("Night"):
+		key = &"icon_phase_night"
+	elif text_value.contains("遗物") or text_value.contains("Blessing"):
+		key = &"icon_phase_blessing"
+	icon.texture = UiArtRegistry.get_texture(key, &"icon")
+	icon.visible = icon.texture != null
+
+
+func _get_unit_cfg(unit_id: StringName) -> Dictionary:
+	var data_repo = AppRefs.data_repo()
+	return data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
 
 
 func _resource_node_prefix(resource_key: StringName) -> String:
@@ -515,6 +591,10 @@ func _resource_default_icon(resource_key: StringName) -> String:
 
 func _style_top_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
+	if button == _speed_1_button:
+		button.icon = UiArtRegistry.get_texture(&"icon_speed_1x", &"icon")
+	elif button == _speed_2_button:
+		button.icon = UiArtRegistry.get_texture(&"icon_speed_2x", &"icon")
 	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
 	button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
@@ -544,6 +624,8 @@ func _style_top_cards() -> void:
 	]:
 		if card != null:
 			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
+	if _speed_toggle_base != null:
+		_speed_toggle_base.add_theme_stylebox_override("panel", GameUiStyle.frame_box(&"frame_speed_toggle_base", GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT, false))
 	for item in _resource_item_controls.values():
 		var item_base := (item as Dictionary).get("base") as Panel
 		if item_base != null:
@@ -589,6 +671,36 @@ func _style_legend_panel() -> void:
 		title.add_theme_font_size_override("font_size", 14)
 		title.add_theme_color_override("font_color", GameUiStyle.TEXT)
 		GameUiStyle.center_label_text(title)
+	_apply_legend_icons()
+
+
+func _apply_legend_icons() -> void:
+	var icon_keys := {
+		"EnemyPathRow": &"icon_legend_enemy_path",
+		"DeployTileRow": &"icon_legend_deploy_tile",
+		"FriendlyBuildingRow": &"icon_legend_friendly_building",
+		"BlockerRow": &"icon_legend_blocker_tile",
+		"CoreAreaRow": &"icon_legend_core_area",
+	}
+	for row_name in icon_keys.keys():
+		var row := get_node_or_null("HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/%s" % row_name) as Control
+		if row == null:
+			continue
+		var swatch := row.get_node_or_null("Swatch") as Control
+		if swatch != null:
+			swatch.visible = false
+		var icon := row.get_node_or_null("LegendIcon") as TextureRect
+		if icon == null:
+			icon = TextureRect.new()
+			icon.name = "LegendIcon"
+			icon.custom_minimum_size = Vector2(18.0, 18.0)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(icon)
+			row.move_child(icon, 0)
+		icon.texture = UiArtRegistry.get_texture(icon_keys[row_name], &"icon")
+		icon.visible = icon.texture != null
 
 
 func _on_viewport_size_changed() -> void:
