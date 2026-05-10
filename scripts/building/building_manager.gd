@@ -472,7 +472,7 @@ func _apply_aura_effects(delta: float) -> void:
 				for unit in units:
 					if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
 						continue
-					if not _is_target_within_square_range(building_cell, unit.get_current_cell(), effect_radius):
+					if not _is_target_within_building_range(building_cell, unit.get_current_cell(), effect_radius, actor_cfg):
 						continue
 					var unit_runtime_id: int = int(unit.get_runtime_id())
 					unit_heal_amounts[unit_runtime_id] = float(unit_heal_amounts.get(unit_runtime_id, 0.0)) + effect_value * delta
@@ -481,7 +481,7 @@ func _apply_aura_effects(delta: float) -> void:
 				for enemy in enemies:
 					if enemy == null or not is_instance_valid(enemy) or int(enemy.current_hp) <= 0:
 						continue
-					if not _is_target_within_square_range(building_cell, enemy.get_current_cell(), effect_radius):
+					if not _is_target_within_building_range(building_cell, enemy.get_current_cell(), effect_radius, actor_cfg):
 						continue
 					var enemy_runtime_id: int = int(enemy.get_runtime_id())
 					enemy_speed_multipliers[enemy_runtime_id] = min(float(enemy_speed_multipliers.get(enemy_runtime_id, 1.0)), slow_multiplier)
@@ -490,7 +490,7 @@ func _apply_aura_effects(delta: float) -> void:
 				for unit in units:
 					if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
 						continue
-					if not _is_target_within_square_range(building_cell, unit.get_current_cell(), effect_radius):
+					if not _is_target_within_building_range(building_cell, unit.get_current_cell(), effect_radius, actor_cfg):
 						continue
 					var unit_runtime_id: int = int(unit.get_runtime_id())
 					unit_interval_multipliers[unit_runtime_id] = min(float(unit_interval_multipliers.get(unit_runtime_id, 1.0)), attack_interval_multiplier)
@@ -498,7 +498,7 @@ func _apply_aura_effects(delta: float) -> void:
 				for unit in units:
 					if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
 						continue
-					if not _is_target_within_square_range(building_cell, unit.get_current_cell(), effect_radius):
+					if not _is_target_within_building_range(building_cell, unit.get_current_cell(), effect_radius, actor_cfg):
 						continue
 					var unit_runtime_id: int = int(unit.get_runtime_id())
 					unit_attack_bonuses[unit_runtime_id] = int(unit_attack_bonuses.get(unit_runtime_id, 0)) + int(effect_value)
@@ -605,10 +605,16 @@ func _is_building_operational(actor: Node) -> bool:
 	return true
 
 
-func _is_target_within_square_range(origin: Vector2i, target: Vector2i, range_size: int) -> bool:
-	if range_size <= 0:
+func _is_target_within_building_range(origin: Vector2i, target: Vector2i, radius: int, cfg: Dictionary) -> bool:
+	if radius <= 0:
 		return origin == target
-	return abs(origin.x - target.x) <= range_size and abs(origin.y - target.y) <= range_size
+	var dx: int = abs(origin.x - target.x)
+	var dy: int = abs(origin.y - target.y)
+	if dx > radius or dy > radius:
+		return false
+	if StringName(cfg.get("effect_shape", "")) == &"trimmed_square" and dx == radius and dy == radius:
+		return false
+	return true
 
 
 func _emit_building_state_changed(actor: Node, enabled: bool) -> void:
