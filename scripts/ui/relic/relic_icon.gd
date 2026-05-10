@@ -14,7 +14,7 @@ var _highlighted := false
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _rarity_overlay: ColorRect = %RarityOverlay
+@onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _new_highlight_overlay: Panel = %NewHighlightOverlay
 @onready var _icon_label: Label = %IconLabel
 
@@ -66,7 +66,7 @@ func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
 	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, _highlighted))
-	_rarity_overlay.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.10)
+	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.flat_panel(Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.10), Color.TRANSPARENT, 0.0, 0.0))
 	_new_highlight_overlay.visible = _highlighted
 
 
