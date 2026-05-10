@@ -37,13 +37,16 @@ var _last_skill_scroll_key := ""
 func _ready() -> void:
 	AppTheme.apply(self)
 	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(0.0, -8.0, 0.0, 0.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(2.0, -4.0, 2.0, 2.0))
+	var main_vbox := get_node_or_null("MarginContainer/MainVBox") as VBoxContainer
+	if main_vbox != null:
+		main_vbox.add_theme_constant_override("separation", 12)
 	_header_plate.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_vitals_card.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
 	_stats_card.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
-	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/VitalsCard/VitalsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION)
-	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/StatsCard/StatsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION)
-	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/SkillCard/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION)
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/VitalsCard/VitalsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/StatsCard/StatsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer/MainVBox/SkillCard/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(4.0, 4.0, 4.0, 4.0))
 	_skill_card.custom_minimum_size = Vector2(0.0, 210.0)
 	_skill_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -74,8 +77,10 @@ func _ready() -> void:
 	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_hp_bar.add_theme_stylebox_override("background", GameUiStyle.progress_background())
 	_hp_bar.add_theme_stylebox_override("fill", GameUiStyle.progress_fill(GameUiStyle.DANGER))
+	_hp_bar.custom_minimum_size = Vector2(0.0, 12.0)
 	_sp_bar.add_theme_stylebox_override("background", GameUiStyle.progress_background())
 	_sp_bar.add_theme_stylebox_override("fill", GameUiStyle.progress_fill(Color(0.18, 0.72, 0.95, 0.95)))
+	_sp_bar.custom_minimum_size = Vector2(0.0, 12.0)
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
 	_style_action_button(_retreat_button, GameUiStyle.STROKE_SOFT)
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
