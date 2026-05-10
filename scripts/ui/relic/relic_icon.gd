@@ -35,6 +35,7 @@ func _ready() -> void:
 	GameUiStyle.fit_centered_icon(_icon_texture, ICON_TEXTURE_SIZE)
 	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
 	_new_highlight_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON, Color(0.950, 0.650, 0.220, 0.09), GameUiStyle.AMBER, false))
+	_apply_layering()
 	_apply_config()
 
 
@@ -70,6 +71,15 @@ func _apply_style() -> void:
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, _highlighted))
 	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_rarity_overlay(rarity))
 	_new_highlight_overlay.visible = _highlighted
+
+
+func _apply_layering() -> void:
+	_icon_backplate.z_index = 0
+	_rarity_overlay.z_index = 1
+	_new_highlight_overlay.z_index = 2
+	_icon_texture.z_index = 5
+	_icon_label.z_index = 5
+	_icon_frame.z_index = 3
 
 
 func _on_gui_input(event: InputEvent) -> void:
