@@ -186,25 +186,27 @@
 3. `frame_operator_card_selected_overlay`
 4. `frame_operator_card_deployed_overlay`
 5. `frame_operator_card_cooldown_overlay`
-6. `frame_operator_title_strip`
-7. `frame_operator_portrait_backplate`
-8. `frame_operator_portrait_frame`
-9. `frame_operator_cost_badge`
-10. `frame_operator_stat_row`
+6. `frame_operator_card_cooldown_selected_overlay`
+7. `frame_operator_title_strip`
+8. `frame_operator_portrait_backplate`
+9. `frame_operator_portrait_frame`
+10. `frame_operator_cost_badge`
+11. `frame_operator_stat_row`
 
 ```text
-请生成一张 UI 资产源图，纯色背景 #79C7B6，包含 10 个独立资产，不要文字、数字、人物、头像、职业图标。
+请生成一张 UI 资产源图，纯色背景 #79C7B6，包含 11 个独立资产，不要文字、数字、人物、头像、职业图标。
 
 1. frame_bottom_deploy_rail_base：底部待部署区承托背景，约 980x176。不要画固定卡槽、分隔槽、卡牌轮廓或干员数量。
 2. frame_operator_card_base：单张干员卡底板，约 164x148。只画卡片整体轻薄底，不画头像框、状态行、费用徽标或标题条。
 3. frame_operator_card_selected_overlay：干员卡选中/拖拽叠层，约 164x148。轻微青色状态，不厚边。
 4. frame_operator_card_deployed_overlay：干员卡已部署叠层，约 164x148。低饱和琥珀或灰绿状态。
-5. frame_operator_card_cooldown_overlay：干员卡冷却遮罩，约 164x148。暗红灰半透明感，不写冷却数字。
-6. frame_operator_title_strip：干员卡顶部标题条底，约 140x28。不写名字。
-7. frame_operator_portrait_backplate：干员头像下方暗底，约 128x72。不画剪影。
-8. frame_operator_portrait_frame：干员头像覆盖框，约 128x72。中心保持 #79C7B6，后续抠透明。
-9. frame_operator_cost_badge：费用徽标底，约 48x36。不写数字。
-10. frame_operator_stat_row：HP/SP/CD 单行底纹，约 140x20。不写 HP/SP/CD，不写数值。
+5. frame_operator_card_cooldown_overlay：干员卡未选中冷却遮罩，约 164x148。暗红灰半透明感，不写冷却数字，不带选中高亮。
+6. frame_operator_card_cooldown_selected_overlay：干员卡选中冷却遮罩，约 164x148。暗红灰半透明感，并带非常轻的青色选中提示；不写冷却数字，不要厚边框。
+7. frame_operator_title_strip：干员卡顶部标题条底，约 140x28。不写名字。
+8. frame_operator_portrait_backplate：干员头像下方暗底，约 128x72。不画剪影。
+9. frame_operator_portrait_frame：干员头像覆盖框，约 128x72。中心保持 #79C7B6，后续抠透明。
+10. frame_operator_cost_badge：费用徽标底，约 48x36。不写数字。
+11. frame_operator_stat_row：HP/SP/CD 单行底纹，约 140x20。不写 HP/SP/CD，不写数值。
 ```
 
 ## 8. 第 6 轮：右侧单位详情栏
