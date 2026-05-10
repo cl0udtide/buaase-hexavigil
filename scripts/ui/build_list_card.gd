@@ -5,6 +5,9 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
+const ICON_FRAME_SIZE := Vector2(58.0, 58.0)
+const ICON_TEXTURE_SIZE := Vector2(42.0, 42.0)
+
 signal pressed
 
 var _pending_config: Dictionary = {}
@@ -15,6 +18,7 @@ var _selected := false
 var _hovered := false
 
 @onready var _card_base: Panel = %CardBase
+@onready var _icon_stack: Control = %IconStack
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
@@ -65,6 +69,7 @@ func _ready() -> void:
 	_disabled_overlay.color = Color(0.02, 0.03, 0.035, 0.38)
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_fit_icon_layout()
 	if not _pending_config.is_empty():
 		_apply_config(_pending_config)
 	else:
@@ -113,6 +118,13 @@ func _apply_style() -> void:
 	_selected_overlay.visible = _selected or _hovered
 	_disabled_overlay.visible = _disabled
 	modulate.a = 0.86 if _disabled else 1.0
+
+
+func _fit_icon_layout() -> void:
+	if _icon_stack != null:
+		_icon_stack.custom_minimum_size = ICON_FRAME_SIZE
+		_icon_stack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	GameUiStyle.fit_centered_icon(_icon_texture, ICON_TEXTURE_SIZE)
 
 
 func _add_label_shadow(label: Label) -> void:

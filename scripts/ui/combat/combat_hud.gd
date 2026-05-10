@@ -268,8 +268,9 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	if enabled and not effective_paused:
 		speed_1_selected = is_equal_approx(speed, 1.0)
 		speed_2_selected = is_equal_approx(speed, 2.0)
-	_pause_button.text = "暂停"
-	_pause_button.icon = UiArtRegistry.get_texture(&"icon_play" if pause_selected else &"icon_pause", &"icon")
+	var pause_texture := UiArtRegistry.get_texture(&"icon_play" if pause_selected else &"icon_pause", &"icon")
+	_pause_button.text = "" if pause_texture != null else "暂停"
+	GameUiStyle.set_button_texture_icon(_pause_button, pause_texture, Vector2(18.0, 18.0), &"center")
 	_style_top_button(_pause_button, pause_selected)
 	_style_top_button(_speed_1_button, speed_1_selected)
 	_style_top_button(_speed_2_button, speed_2_selected)
@@ -479,7 +480,8 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	row.add_child(icon_label)
 	var icon_texture := TextureRect.new()
 	icon_texture.name = "IconTexture"
-	icon_texture.custom_minimum_size = Vector2(22.0, 0.0)
+	icon_texture.custom_minimum_size = Vector2(18.0, 18.0)
+	icon_texture.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -591,10 +593,15 @@ func _resource_default_icon(resource_key: StringName) -> String:
 
 func _style_top_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
+	var button_texture: Texture2D = null
 	if button == _speed_1_button:
-		button.icon = UiArtRegistry.get_texture(&"icon_speed_1x", &"icon")
+		button_texture = UiArtRegistry.get_texture(&"icon_speed_1x", &"icon")
+		button.text = "" if button_texture != null else "1X"
 	elif button == _speed_2_button:
-		button.icon = UiArtRegistry.get_texture(&"icon_speed_2x", &"icon")
+		button_texture = UiArtRegistry.get_texture(&"icon_speed_2x", &"icon")
+		button.text = "" if button_texture != null else "2X"
+	if button == _speed_1_button or button == _speed_2_button:
+		GameUiStyle.set_button_texture_icon(button, button_texture, Vector2(24.0, 14.0), &"center")
 	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
 	button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
@@ -694,6 +701,7 @@ func _apply_legend_icons() -> void:
 			icon = TextureRect.new()
 			icon.name = "LegendIcon"
 			icon.custom_minimum_size = Vector2(18.0, 18.0)
+			icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -146,11 +146,11 @@ func _bind_filter_buttons() -> void:
 	for filter_def in FILTERS:
 		var button := Button.new()
 		button.text = String(filter_def.get("label", ""))
-		button.icon = UiArtRegistry.get_texture(StringName(filter_def.get("icon", "")), &"icon")
 		button.focus_mode = Control.FOCUS_NONE
 		button.custom_minimum_size = Vector2(72.0, 32.0)
 		button.set_meta("category", filter_def.get("category", &"all"))
 		_filter_bar.add_child(button)
+		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_texture(StringName(filter_def.get("icon", "")), &"icon"), Vector2(14.0, 14.0), &"left", 7.0)
 		var category := StringName(filter_def.get("category", &"all"))
 		button.pressed.connect(_on_filter_pressed.bind(category))
 		_style_filter_button(button, category == _current_filter)
@@ -193,7 +193,10 @@ func _style_filter_button(button: Button, selected: bool) -> void:
 
 func _style_close_button() -> void:
 	_close_button.custom_minimum_size = Vector2(34.0, 30.0)
-	_close_button.icon = UiArtRegistry.get_texture(&"icon_close", &"icon")
+	var close_texture := UiArtRegistry.get_texture(&"icon_close", &"icon")
+	if close_texture != null:
+		_close_button.text = ""
+	GameUiStyle.set_button_texture_icon(_close_button, close_texture, Vector2(14.0, 14.0), &"center")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
