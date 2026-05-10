@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
@@ -6,6 +6,14 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 const RELIC_CARD_SCENE := preload("res://scenes/ui/relic/RelicCard.tscn")
+const FILTERS := [
+	{"category": &"all", "label": "全部"},
+	{"category": &"unit", "label": "单位"},
+	{"category": &"building", "label": "建筑"},
+	{"category": &"economy", "label": "经济"},
+	{"category": &"core", "label": "核心"},
+	{"category": &"risk", "label": "风险"},
+]
 
 signal close_requested
 
@@ -13,13 +21,14 @@ var _relic_ids: Array[StringName] = []
 var _current_filter := &"all"
 var _selected_buff_id := StringName()
 
+@onready var _panel_base: Panel = %PanelBase
 @onready var _title_label: Label = %TitleLabel
 @onready var _count_label: Label = %CountLabel
 @onready var _close_button: Button = %CloseButton
 @onready var _filter_bar: Container = %FilterBar
 @onready var _card_grid: VBoxContainer = %CardGrid
 @onready var _empty_label: Label = %EmptyLabel
-@onready var _detail_panel: PanelContainer = %DetailPanel
+@onready var _detail_panel: Panel = %DetailPanel
 @onready var _detail_title_label: Label = %DetailTitleLabel
 @onready var _detail_meta_label: Label = %DetailMetaLabel
 @onready var _detail_effect_label: Label = %DetailEffectLabel
@@ -29,7 +38,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	visible = false
-	add_theme_stylebox_override("panel", GameUiStyle.relic_panel())
+	_panel_base.add_theme_stylebox_override("panel", GameUiStyle.relic_panel())
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_PANEL)
 	_style_labels()
 	_detail_panel.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
@@ -131,11 +140,18 @@ func _on_card_pressed(buff_id: StringName) -> void:
 
 
 func _bind_filter_buttons() -> void:
-	for button in _filter_bar.get_children():
-		if button is Button:
-			var category := StringName((button as Button).get_meta("category", &"all"))
-			(button as Button).pressed.connect(_on_filter_pressed.bind(category))
-			_style_filter_button(button as Button, category == _current_filter)
+	for child in _filter_bar.get_children():
+		child.free()
+	for filter_def in FILTERS:
+		var button := Button.new()
+		button.text = String(filter_def.get("label", ""))
+		button.focus_mode = Control.FOCUS_NONE
+		button.custom_minimum_size = Vector2(72.0, 32.0)
+		button.set_meta("category", filter_def.get("category", &"all"))
+		_filter_bar.add_child(button)
+		var category := StringName(filter_def.get("category", &"all"))
+		button.pressed.connect(_on_filter_pressed.bind(category))
+		_style_filter_button(button, category == _current_filter)
 
 
 func _on_filter_pressed(category: StringName) -> void:
