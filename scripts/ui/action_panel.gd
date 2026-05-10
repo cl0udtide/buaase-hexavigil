@@ -169,7 +169,7 @@ func _refresh_mode_label() -> void:
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.action_bar_panel())
 	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
-	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_DECK_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
+	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_ACTION_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
 	if _mode_label != null:
 		_mode_label.visible = false
 		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)

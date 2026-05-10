@@ -30,7 +30,7 @@ func _ready() -> void:
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(22.0, 22.0))
-	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.RELIC_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
 	_new_highlight_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON, Color(0.950, 0.650, 0.220, 0.09), GameUiStyle.AMBER, false))
 	_apply_config()
 
