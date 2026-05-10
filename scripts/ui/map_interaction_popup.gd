@@ -425,7 +425,7 @@ func _refresh_building_range_preview(building: Node) -> void:
 	if building == null or not is_instance_valid(building):
 		_clear_building_range_preview()
 		return
-	var radius := int(building.cfg.get("effect_radius", 0))
+	var radius := _get_effective_building_radius(building.cfg)
 	if radius <= 0:
 		_clear_building_range_preview()
 		return
@@ -433,7 +433,7 @@ func _refresh_building_range_preview(building: Node) -> void:
 	var map_root := get_node_or_null("../../World/MapRoot")
 	if map_manager == null or map_root == null or not map_root.has_method("set_building_effect_range"):
 		return
-	map_root.set_building_effect_range(_get_square_range_cells(building.get_current_cell(), radius))
+	map_root.set_building_effect_range(_get_building_range_cells(building.get_current_cell(), radius, building.cfg))
 
 
 func _clear_building_range_preview() -> void:
@@ -442,17 +442,30 @@ func _clear_building_range_preview() -> void:
 		map_root.clear_building_effect_range()
 
 
-func _get_square_range_cells(center: Vector2i, radius: int) -> Array[Vector2i]:
+func _get_building_range_cells(center: Vector2i, radius: int, cfg: Dictionary) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	var map_manager := _get_map_manager()
 	if map_manager == null:
 		return cells
+	var trimmed_square: bool = StringName(cfg.get("effect_shape", "")) == &"trimmed_square"
 	for y in range(center.y - radius, center.y + radius + 1):
 		for x in range(center.x - radius, center.x + radius + 1):
 			var cell := Vector2i(x, y)
+			if trimmed_square and abs(cell.x - center.x) == radius and abs(cell.y - center.y) == radius:
+				continue
 			if map_manager.is_inside(cell):
 				cells.append(cell)
 	return cells
+
+
+func _get_effective_building_radius(cfg: Dictionary) -> int:
+	var radius := int(cfg.get("effect_radius", 0))
+	if radius <= 0:
+		return radius
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+		radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", cfg))))
+	return max(radius, 0)
 
 
 func _apply_visual_style() -> void:
