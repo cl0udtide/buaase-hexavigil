@@ -17,7 +17,9 @@ const VISUAL_TEXTURE_ROOT := "res://assets/sprites/units"
 const VISUAL_IDLE_ANIM := "idle"
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 72.0
-const VISUAL_IDLE_FPS := 8.0
+const VISUAL_OFFSET := Vector2(0.0, -8.0)
+const VISUAL_Z_INDEX := 2
+const OVERLAY_Z_INDEX := 20
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -140,6 +142,9 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 		label.size = Vector2(64.0, 23.0)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.z_index = OVERLAY_Z_INDEX
+	if _status_view is CanvasItem:
+		(_status_view as CanvasItem).z_index = OVERLAY_Z_INDEX
 	_setup_visual_sprite()
 	_configure_skill_behavior()
 	if _skill_behavior != null and _skill_behavior.has_method("setup"):
@@ -484,7 +489,10 @@ func _setup_static_idle_sprite(texture: Texture2D) -> void:
 	_visual_root.add_child(sprite)
 	sprite.texture = texture
 	sprite.centered = true
-	_apply_visual_node_layout(sprite)
+	sprite.position = VISUAL_OFFSET
+	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
+	sprite.flip_h = _should_visual_face_left(facing)
+	sprite.z_index = VISUAL_Z_INDEX
 
 
 func _setup_animated_idle_sprite(textures: Array[Texture2D]) -> void:
@@ -539,6 +547,19 @@ func _load_visual_textures() -> Array[Texture2D]:
 		if texture != null:
 			textures.append(texture)
 	return textures
+
+
+func _should_visual_face_left(direction: Vector2i) -> bool:
+	var normalized := _normalize_visual_direction(direction)
+	return normalized == Vector2i.LEFT or normalized == Vector2i.UP
+
+
+func _normalize_visual_direction(direction: Vector2i) -> Vector2i:
+	if direction == Vector2i.ZERO:
+		return Vector2i.RIGHT
+	if abs(direction.x) >= abs(direction.y):
+		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
+	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
 
 
 func _recover_sp(delta: float) -> void:

@@ -20,3 +20,8 @@ mono_crash.*.json
 # User-specific ignores
 .local/
 build/
+.DS_Store
+tmp/
+assets/222/
+assets/source_ai/
+assets/*.zip

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cguardt1idle0"
-path="res://.godot/imported/guard_t1_idle_000.png-115e947a59ffda8f586d7fa7517207f4.ctex"
+uid="uid://bqs27fxa0l7qb"
+path="res://.godot/imported/pozyomka_idle_000.png-657635c01134b48792912b6f1b09add1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/units/guard_t1/idle/guard_t1_idle_000.png"
-dest_files=["res://.godot/imported/guard_t1_idle_000.png-115e947a59ffda8f586d7fa7517207f4.ctex"]
+source_file="res://assets/sprites/units/pozyomka/idle/pozyomka_idle_000.png"
+dest_files=["res://.godot/imported/pozyomka_idle_000.png-657635c01134b48792912b6f1b09add1.ctex"]
 
 [params]
 

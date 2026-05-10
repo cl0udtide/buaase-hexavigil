@@ -354,7 +354,7 @@ func _update_card_drag_preview() -> void:
 	if _current_drag_cell_valid:
 		preview_range = _get_operator_attack_range_cells(_drag_operator_key, cell, Vector2i.RIGHT)
 	if _map_root != null and _map_root.has_method("set_deploy_preview"):
-		_map_root.set_deploy_preview(cell, _current_drag_cell_valid, preview_range)
+		_map_root.set_deploy_preview(cell, _current_drag_cell_valid, preview_range, _get_operator_visual_key(_drag_operator_key))
 
 
 func _lock_deploy_cell(cell: Vector2i) -> void:
@@ -372,7 +372,7 @@ func _update_locked_deploy_preview(facing: Vector2i) -> void:
 		return
 	var preview_range := _get_operator_attack_range_cells(_drag_operator_key, _locked_deploy_cell, facing)
 	if _map_root != null and _map_root.has_method("set_deploy_direction_preview"):
-		_map_root.set_deploy_direction_preview(_locked_deploy_cell, facing, preview_range)
+		_map_root.set_deploy_direction_preview(_locked_deploy_cell, facing, preview_range, _get_operator_visual_key(_drag_operator_key))
 
 
 func _confirm_locked_deploy() -> void:
@@ -2405,6 +2405,16 @@ func _get_operator_display_name(operator_key: StringName) -> String:
 	if operator_info.is_empty():
 		return String(operator_key)
 	return String(operator_info.get("name", operator_key))
+
+
+func _get_operator_visual_key(operator_key: StringName) -> String:
+	var operator_info := _get_operator_info(operator_key)
+	if operator_info.is_empty():
+		return ""
+	var data_repo = AppRefs.data_repo()
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+	return String(cfg.get("visual_key", unit_id)).strip_edges()
 
 
 func _get_operator_state_text(operator_key: StringName) -> String:

@@ -6,7 +6,8 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
-const RESOURCE_COLLECT_AMOUNT := 1
+const WOOD_RESOURCE_COLLECT_AMOUNT := 2
+const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
 const POPUP_MIN_WIDTH := 300.0
 const POPUP_OFFSET := Vector2(14.0, 14.0)
 const INVALID_CELL := Vector2i(-1, -1)
@@ -128,10 +129,11 @@ func _refresh_resource_section(data: CellData) -> void:
 	var run_state = AppRefs.run_state()
 	var collected: bool = day_manager != null and day_manager.has_method("is_resource_collected_today") and day_manager.is_resource_collected_today(_current_cell)
 	var enough_ap: bool = run_state != null and int(run_state.action_points) >= RESOURCE_COLLECT_AP_COST
+	var collect_amount: int = _get_resource_collect_amount(data.resource_type)
 	_resource_info_label.text = "%s资源点\n手动采集：行动力 %d，获得 %d %s\n%s" % [
 		_resource_display_name(data.resource_type),
 		RESOURCE_COLLECT_AP_COST,
-		RESOURCE_COLLECT_AMOUNT,
+		collect_amount,
 		_resource_unit_name(data.resource_type),
 		"今日已采集" if collected else "今日未采集"
 	]
@@ -370,6 +372,10 @@ func _resource_unit_name(resource_type: StringName) -> String:
 		&"mana":
 			return "魔力矿"
 	return "资源"
+
+
+func _get_resource_collect_amount(resource_type: StringName) -> int:
+	return WOOD_RESOURCE_COLLECT_AMOUNT if resource_type == &"wood" else DEFAULT_RESOURCE_COLLECT_AMOUNT
 
 
 func _is_idle_action_mode() -> bool:

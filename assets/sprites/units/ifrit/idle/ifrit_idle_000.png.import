@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://csnipert2idle0"
-path="res://.godot/imported/sniper_t2_idle_000.png-ab38c29ea91f7a987c4be16674440dcb.ctex"
+uid="uid://bkbh6p5mypy71"
+path="res://.godot/imported/ifrit_idle_000.png-1ae8d76b2d928233a829827d85f797b8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/units/sniper_t2/idle/sniper_t2_idle_000.png"
-dest_files=["res://.godot/imported/sniper_t2_idle_000.png-ab38c29ea91f7a987c4be16674440dcb.ctex"]
+source_file="res://assets/sprites/units/ifrit/idle/ifrit_idle_000.png"
+dest_files=["res://.godot/imported/ifrit_idle_000.png-1ae8d76b2d928233a829827d85f797b8.ctex"]
 
 [params]
 

@@ -2,6 +2,18 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+const WALL_NORTH := 1
+const WALL_EAST := 2
+const WALL_SOUTH := 4
+const WALL_WEST := 8
+const WALL_REFRESH_OFFSETS: Array[Vector2i] = [
+	Vector2i.ZERO,
+	Vector2i.UP,
+	Vector2i.RIGHT,
+	Vector2i.DOWN,
+	Vector2i.LEFT
+]
+
 var _next_runtime_id := 1
 var _buildings_by_runtime_id: Dictionary = {}
 var _buildings_by_cell: Dictionary = {}
@@ -81,6 +93,7 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 		_path_service.set_cell_blocked(cell, true)
 	if event_bus != null:
 		event_bus.building_placed.emit(_next_runtime_id, building_id, cell)
+	_refresh_wall_connections_around(cell)
 	if _is_path_blocking_cfg(cfg):
 		_emit_path_grid_changed("路径阻挡更新：放置 %s#%d，通知敌人重新寻路" % [String(cfg.get("name", building_id)), _next_runtime_id])
 	var created_runtime_id := _next_runtime_id
@@ -119,6 +132,7 @@ func try_place_building_debug(cell: Vector2i, building_id: StringName) -> Dictio
 		_path_service.set_cell_blocked(cell, true)
 	if event_bus != null:
 		event_bus.building_placed.emit(_next_runtime_id, building_id, cell)
+	_refresh_wall_connections_around(cell)
 	if _is_path_blocking_cfg(cfg):
 		_emit_path_grid_changed()
 	var created_runtime_id := _next_runtime_id
@@ -160,6 +174,8 @@ func try_repair_building(building_runtime_id: int) -> Dictionary:
 	if not spend_result.get("ok", false):
 		return spend_result
 	actor.repair_full()
+	_refresh_map_layers()
+	_refresh_wall_connections_around(actor.get_current_cell())
 	if bool(actor.cfg.get("blocks_path", false)) and _path_service != null:
 		_path_service.set_cell_blocked(actor.get_current_cell(), true)
 	if _is_path_blocking_cfg(actor.cfg):
@@ -231,6 +247,7 @@ func remove_building(building_runtime_id: int) -> void:
 		_map_manager.set_building_occupy(cell, false)
 	if bool(cfg.get("blocks_path", false)) and _path_service != null:
 		_path_service.set_cell_blocked(cell, false)
+	_refresh_wall_connections_around(cell)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		if not was_destroyed:
@@ -339,6 +356,8 @@ func _mark_building_destroyed(actor: Node) -> void:
 		actor.set_enabled(false)
 	if bool(cfg.get("blocks_path", false)) and _path_service != null:
 		_path_service.set_cell_blocked(cell, false)
+	_refresh_map_layers()
+	_refresh_wall_connections_around(cell)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.building_destroyed.emit(int(actor.get_runtime_id()), actor.building_id, cell)
@@ -360,6 +379,47 @@ func _half_repair_cost(value: int) -> int:
 	if value <= 0:
 		return 0
 	return int(ceil(float(value) * 0.5))
+
+
+func _refresh_map_layers() -> void:
+	if _map_manager != null and _map_manager.has_method("refresh_all_layers"):
+		_map_manager.refresh_all_layers()
+
+
+func _refresh_wall_connections_around(cell: Vector2i) -> void:
+	for offset in WALL_REFRESH_OFFSETS:
+		_refresh_wall_connection_at(cell + offset)
+
+
+func _refresh_wall_connection_at(cell: Vector2i) -> void:
+	var actor := get_building_by_cell(cell)
+	if not _is_connectable_wall(actor):
+		return
+	var mask := 0
+	if _has_connectable_wall(cell + Vector2i.UP):
+		mask |= WALL_NORTH
+	if _has_connectable_wall(cell + Vector2i.RIGHT):
+		mask |= WALL_EAST
+	if _has_connectable_wall(cell + Vector2i.DOWN):
+		mask |= WALL_SOUTH
+	if _has_connectable_wall(cell + Vector2i.LEFT):
+		mask |= WALL_WEST
+	if actor.has_method("set_wall_connection_mask"):
+		actor.set_wall_connection_mask(mask)
+
+
+func _has_connectable_wall(cell: Vector2i) -> bool:
+	if _map_manager != null and _map_manager.has_method("is_inside") and not _map_manager.is_inside(cell):
+		return false
+	return _is_connectable_wall(get_building_by_cell(cell))
+
+
+func _is_connectable_wall(actor: Node) -> bool:
+	if actor == null or not is_instance_valid(actor):
+		return false
+	if _is_building_destroyed(actor):
+		return false
+	return StringName(actor.get("building_id")) == &"wood_wall"
 
 
 func _get_income_value(cfg: Dictionary, base_value: int, material: StringName) -> int:

@@ -2,6 +2,7 @@
   {
     "id": "guard_t1",
     "name": "斯卡蒂",
+    "visual_key": "skadi",
     "class": "guard",
     "cost_prestige": 1,
     "max_hp": 95,
@@ -30,6 +31,7 @@
   {
     "id": "guard_01",
     "name": "煌",
+    "visual_key": "blaze",
     "class": "guard",
     "cost_prestige": 3,
     "max_hp": 135,
@@ -58,6 +60,7 @@
   {
     "id": "guard_t3",
     "name": "银灰",
+    "visual_key": "silverash",
     "class": "guard",
     "cost_prestige": 7,
     "max_hp": 190,
@@ -88,6 +91,7 @@
   {
     "id": "sniper_t1",
     "name": "鸿雪",
+    "visual_key": "pozyomka",
     "class": "sniper",
     "cost_prestige": 1,
     "max_hp": 70,
@@ -120,6 +124,7 @@
   {
     "id": "sniper_t2",
     "name": "能天使",
+    "visual_key": "exusiai",
     "class": "sniper",
     "cost_prestige": 3,
     "max_hp": 85,
@@ -153,6 +158,7 @@
   {
     "id": "archer_basic",
     "name": "菲亚梅塔",
+    "visual_key": "fiammetta",
     "class": "sniper",
     "cost_prestige": 7,
     "max_hp": 105,
@@ -190,6 +196,7 @@
   {
     "id": "caster_t1",
     "name": "刻俄柏",
+    "visual_key": "ceobe",
     "class": "caster",
     "cost_prestige": 1,
     "max_hp": 65,
@@ -218,6 +225,7 @@
   {
     "id": "caster_t2",
     "name": "艾雅法拉",
+    "visual_key": "eyjafjalla",
     "class": "caster",
     "cost_prestige": 3,
     "max_hp": 78,
@@ -249,6 +257,7 @@
   {
     "id": "caster_t3",
     "name": "异客",
+    "visual_key": "passenger",
     "class": "caster",
     "cost_prestige": 7,
     "max_hp": 92,
@@ -282,6 +291,7 @@
   {
     "id": "defender_t1",
     "name": "森蚺",
+    "visual_key": "eunectes",
     "class": "defender",
     "cost_prestige": 1,
     "max_hp": 160,
@@ -310,6 +320,7 @@
   {
     "id": "defender_t2",
     "name": "年",
+    "visual_key": "nian",
     "class": "defender",
     "cost_prestige": 3,
     "max_hp": 220,
@@ -340,6 +351,7 @@
   {
     "id": "defender_t3",
     "name": "星熊",
+    "visual_key": "hoshiguma",
     "class": "defender",
     "cost_prestige": 7,
     "max_hp": 290,
@@ -371,6 +383,7 @@
   {
     "id": "mountain",
     "name": "山",
+    "visual_key": "mountain",
     "class": "guard",
     "cost_prestige": 1,
     "max_hp": 185,
@@ -404,6 +417,7 @@
   {
     "id": "zuo_le",
     "name": "左乐",
+    "visual_key": "zuo_le",
     "class": "guard",
     "cost_prestige": 1,
     "max_hp": 170,
@@ -436,6 +450,7 @@
   {
     "id": "degenbrecher",
     "name": "锏",
+    "visual_key": "degenbrecher",
     "class": "guard",
     "cost_prestige": 3,
     "max_hp": 230,
@@ -469,6 +484,7 @@
   {
     "id": "surtr",
     "name": "史尔特尔",
+    "visual_key": "surtr",
     "class": "guard",
     "cost_prestige": 7,
     "max_hp": 265,
@@ -503,6 +519,7 @@
   {
     "id": "narantuya",
     "name": "娜仁图亚",
+    "visual_key": "narantuya",
     "class": "sniper",
     "cost_prestige": 1,
     "max_hp": 125,
@@ -538,6 +555,7 @@
   {
     "id": "ray",
     "name": "莱伊",
+    "visual_key": "ray",
     "class": "sniper",
     "cost_prestige": 1,
     "max_hp": 120,
@@ -574,6 +592,7 @@
   {
     "id": "typhon",
     "name": "提丰",
+    "visual_key": "typhon",
     "class": "sniper",
     "cost_prestige": 3,
     "max_hp": 150,
@@ -612,6 +631,7 @@
   {
     "id": "wisadel",
     "name": "维什戴尔",
+    "visual_key": "wisadel",
     "class": "sniper",
     "cost_prestige": 7,
     "max_hp": 165,
@@ -649,6 +669,7 @@
   {
     "id": "ifrit",
     "name": "伊芙利特",
+    "visual_key": "ifrit",
     "class": "caster",
     "cost_prestige": 1,
     "max_hp": 130,
@@ -684,6 +705,7 @@
   {
     "id": "nymph",
     "name": "妮芙",
+    "visual_key": "nymph",
     "class": "caster",
     "cost_prestige": 1,
     "max_hp": 120,
@@ -718,6 +740,7 @@
   {
     "id": "goldenglow",
     "name": "澄闪",
+    "visual_key": "goldenglow",
     "class": "caster",
     "cost_prestige": 3,
     "max_hp": 135,
@@ -752,6 +775,7 @@
   {
     "id": "logos",
     "name": "逻各斯",
+    "visual_key": "logos",
     "class": "caster",
     "cost_prestige": 7,
     "max_hp": 155,
@@ -783,6 +807,7 @@
   {
     "id": "saria",
     "name": "塞雷娅",
+    "visual_key": "saria",
     "class": "defender",
     "cost_prestige": 1,
     "max_hp": 210,
@@ -817,6 +842,7 @@
   {
     "id": "penance",
     "name": "斥罪",
+    "visual_key": "penance",
     "class": "defender",
     "cost_prestige": 1,
     "max_hp": 230,
@@ -850,6 +876,7 @@
   {
     "id": "jessica_alter",
     "name": "涤火杰西卡",
+    "visual_key": "jessica_the_liberated",
     "class": "defender",
     "cost_prestige": 3,
     "max_hp": 245,
@@ -884,6 +911,7 @@
   {
     "id": "shu",
     "name": "黍",
+    "visual_key": "shu",
     "class": "defender",
     "cost_prestige": 7,
     "max_hp": 270,
