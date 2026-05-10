@@ -179,11 +179,10 @@ func _apply_volume_icon(row_name: String, icon_key: StringName) -> void:
 	if icon == null:
 		icon = TextureRect.new()
 		icon.name = "IconTexture"
-		icon.anchor_right = 1.0
-		icon.anchor_bottom = 1.0
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.add_child(icon)
 	icon.texture = texture
 	icon.visible = true
+	GameUiStyle.fit_centered_icon(icon, Vector2(18.0, 18.0))

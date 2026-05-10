@@ -125,6 +125,58 @@ static func center_label_text(label: Label) -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
+static func set_button_texture_icon(button: Button, texture: Texture2D, icon_size: Vector2, placement: StringName = &"left", padding: float = 8.0) -> TextureRect:
+	if button == null:
+		return null
+	button.icon = null
+	var icon := button.get_node_or_null("FittedIcon") as TextureRect
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = "FittedIcon"
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		button.add_child(icon)
+	icon.texture = texture
+	icon.visible = texture != null
+	icon.custom_minimum_size = Vector2.ZERO
+	if placement == &"center":
+		_place_centered(icon, icon_size)
+	else:
+		_place_left_centered(icon, icon_size, padding)
+	return icon
+
+
+static func fit_centered_icon(control: Control, icon_size: Vector2) -> void:
+	if control == null:
+		return
+	control.custom_minimum_size = Vector2.ZERO
+	control.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_place_centered(control, icon_size)
+
+
+static func _place_centered(control: Control, icon_size: Vector2) -> void:
+	control.anchor_left = 0.5
+	control.anchor_top = 0.5
+	control.anchor_right = 0.5
+	control.anchor_bottom = 0.5
+	control.offset_left = -icon_size.x * 0.5
+	control.offset_top = -icon_size.y * 0.5
+	control.offset_right = icon_size.x * 0.5
+	control.offset_bottom = icon_size.y * 0.5
+
+
+static func _place_left_centered(control: Control, icon_size: Vector2, padding: float) -> void:
+	control.anchor_left = 0.0
+	control.anchor_top = 0.5
+	control.anchor_right = 0.0
+	control.anchor_bottom = 0.5
+	control.offset_left = padding
+	control.offset_top = -icon_size.y * 0.5
+	control.offset_right = padding + icon_size.x
+	control.offset_bottom = icon_size.y * 0.5
+
+
 static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill

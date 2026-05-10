@@ -93,6 +93,7 @@ func _ready() -> void:
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	GameUiStyle.fit_centered_icon(_skill_icon_texture, Vector2(38.0, 38.0))
 	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
 	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
 	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
