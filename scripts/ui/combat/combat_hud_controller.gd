@@ -9,17 +9,22 @@ const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
 const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
+const ROUTE_LABEL_ALPHABET := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var _operator_defs: Array[Dictionary] = []
 var _selected_unit_runtime_id := -1
 var _selected_operator_key := StringName()
+var _selected_shop_slot_index := -1
+var _selected_shop_unit_id := StringName()
+var _selected_shop_price := 0
+var _selected_shop_can_purchase := false
+var _selected_shop_disabled_reason := ""
 var _deploy_drag_state: StringName = DRAG_NONE
 var _drag_operator_key := StringName()
 var _locked_deploy_cell := INVALID_CELL
 var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
-var _debug_panel_open := false
 var _cooldown_message_operator_key := StringName()
 var _last_wave_preview_signature := ""
 var _wave_preview_active := false
@@ -32,7 +37,6 @@ var _wave_preview_refresh_queued := false
 @onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
 @onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
 @onready var _build_panel: Control = get_node_or_null("../BuildPanel") as Control
-@onready var _debug_panel: Control = get_node_or_null("../DebugPanel") as Control
 @onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
 @onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
 @onready var _path_service: Node = get_node_or_null("../../Managers/PathService")
@@ -46,8 +50,6 @@ func _ready() -> void:
 	_configure_pause_boundaries()
 	set_process(true)
 	set_process_unhandled_input(true)
-	if _debug_panel != null:
-		_debug_panel_open = _debug_panel.visible
 	_bind_combat_hud()
 	_refresh_hud_reserved_width()
 	_connect_events()
@@ -66,8 +68,16 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		_cancel_deploy_flow("Canceled")
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			if _combat_hud != null and _combat_hud.has_method("close_top_panel") and _combat_hud.close_top_panel():
+				return
+			_cancel_deploy_flow("Canceled")
+			return
+		if event.keycode == KEY_R:
+			if _combat_hud != null and _combat_hud.has_method("toggle_relic_panel"):
+				_combat_hud.toggle_relic_panel()
+				return
 		return
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -111,22 +121,26 @@ func _bind_combat_hud() -> void:
 		return
 	if _combat_hud.has_signal("operator_card_pressed"):
 		_combat_hud.connect(&"operator_card_pressed", Callable(self, "_on_operator_card_pressed"))
+	if _combat_hud.has_signal("operator_card_drag_started"):
+		_combat_hud.connect(&"operator_card_drag_started", Callable(self, "_on_operator_card_drag_started"))
 	if _combat_hud.has_signal("pause_pressed"):
 		_combat_hud.connect(&"pause_pressed", Callable(self, "_on_pause_pressed"))
 	if _combat_hud.has_signal("speed_1_pressed"):
 		_combat_hud.connect(&"speed_1_pressed", Callable(self, "_on_speed_1_pressed"))
 	if _combat_hud.has_signal("speed_2_pressed"):
 		_combat_hud.connect(&"speed_2_pressed", Callable(self, "_on_speed_2_pressed"))
-	if _combat_hud.has_signal("debug_drawer_toggle_pressed"):
-		_combat_hud.connect(&"debug_drawer_toggle_pressed", Callable(self, "_on_debug_toggle_pressed"))
 	if _combat_hud.has_signal("cast_skill_requested"):
 		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
 	if _combat_hud.has_signal("retreat_requested"):
 		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
 	if _combat_hud.has_signal("wave_route_preview_toggled"):
 		_combat_hud.connect(&"wave_route_preview_toggled", Callable(self, "_on_wave_route_preview_toggled"))
+	if _combat_hud.has_signal("shop_unit_purchase_requested"):
+		_combat_hud.connect(&"shop_unit_purchase_requested", Callable(self, "_on_shop_unit_purchase_requested"))
 	if _combat_hud.has_method("set_wave_route_preview_enabled"):
 		_combat_hud.set_wave_route_preview_enabled(_show_wave_routes)
+	if _build_panel != null and _build_panel.has_signal("shop_unit_preview_requested"):
+		_build_panel.connect(&"shop_unit_preview_requested", Callable(self, "_on_shop_unit_preview_requested"))
 
 
 func _connect_events() -> void:
@@ -135,6 +149,7 @@ func _connect_events() -> void:
 		event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
 		event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
 		event_bus.core_hp_changed.connect(_on_core_hp_changed)
+		event_bus.buffs_changed.connect(_on_buffs_changed)
 		event_bus.phase_changed.connect(_on_phase_changed)
 		event_bus.day_started.connect(_on_day_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
@@ -153,6 +168,8 @@ func _bootstrap_hud() -> void:
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_owned_operators"):
 		_on_owned_operators_changed(run_state.get_owned_operators())
+	if run_state != null and run_state.has_method("get_all_buffs"):
+		_on_buffs_changed(run_state.get_all_buffs())
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_show_message("拖拽底部干员卡开始部署")
@@ -177,11 +194,19 @@ func _on_core_hp_changed(_current: int, _max_value: int) -> void:
 	_refresh_top_hud()
 
 
+func _on_buffs_changed(buff_ids: Array[StringName]) -> void:
+	if _combat_hud != null and _combat_hud.has_method("set_relics"):
+		_combat_hud.set_relics(buff_ids)
+	_refresh_top_hud()
+
+
 func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 	_cancel_deploy_flow("")
 	if _new_phase != GameEnums.PHASE_NIGHT:
 		get_tree().paused = false
 		Engine.time_scale = 1.0
+	if _new_phase != GameEnums.PHASE_DAY and _selected_shop_slot_index >= 0:
+		_clear_detail_selection()
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_update_operator_cards()
@@ -194,22 +219,39 @@ func _on_day_started(_day: int) -> void:
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
 	var state := _get_operator_state(operator_key)
-	if state == &"ready":
-		if not _can_deploy_now():
-			_show_message("当前阶段不能部署干员")
-			return
-		_begin_operator_drag(operator_key)
-	elif state == &"deployed":
-		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
-		if unit != null:
-			_select_unit(unit)
+	if state == &"deployed":
+		var deployed_unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		if deployed_unit != null:
+			_select_unit(deployed_unit)
 	else:
+		_show_operator_preview(operator_key)
+		if state == &"cooldown":
+			_show_message("干员正在再部署冷却中", operator_key)
+	return
+
+
+func _on_operator_card_drag_started(operator_key: StringName) -> void:
+	var state := _get_operator_state(operator_key)
+	if state == &"deployed":
+		var deployed_unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		if deployed_unit != null:
+			_select_unit(deployed_unit)
+		return
+	if state != &"ready":
+		_show_operator_preview(operator_key)
 		_show_message("干员正在再部署冷却中", operator_key)
+		return
+	if not _can_deploy_now():
+		_show_operator_preview(operator_key)
+		_show_message("当前阶段不能部署干员")
+		return
+	_begin_operator_drag(operator_key)
 
 
 func _begin_operator_drag(operator_key: StringName) -> void:
 	_cancel_deploy_flow("")
 	_clear_selected_unit()
+	_clear_shop_preview_selection()
 	_drag_operator_key = operator_key
 	_selected_operator_key = operator_key
 	_deploy_drag_state = DRAG_CARD
@@ -313,13 +355,14 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 	if unit != null:
 		_select_unit(unit)
 	else:
-		_clear_selected_unit()
+		_clear_detail_selection()
 
 
 func _select_unit(unit: Node) -> void:
 	if unit == null or not is_instance_valid(unit):
 		return
 	_cancel_deploy_flow("")
+	_clear_shop_preview_selection()
 	_selected_unit_runtime_id = int(unit.get_runtime_id()) if unit.has_method("get_runtime_id") else -1
 	_selected_operator_key = StringName(unit.operator_key) if unit.get("operator_key") != null else StringName()
 	_refresh_attack_range_preview()
@@ -330,20 +373,104 @@ func _select_unit(unit: Node) -> void:
 func _clear_selected_unit() -> void:
 	_selected_unit_runtime_id = -1
 	_clear_attack_range_preview()
-	if _combat_hud != null and _combat_hud.has_method("clear_unit_detail"):
-		_combat_hud.clear_unit_detail()
 
 
 func _refresh_detail_panel() -> void:
 	var unit := _get_selected_unit()
 	if _combat_hud == null:
 		return
-	if unit == null:
-		if _combat_hud.has_method("clear_unit_detail"):
-			_combat_hud.clear_unit_detail()
+	if unit != null:
+		if _combat_hud.has_method("show_unit_detail"):
+			_combat_hud.show_unit_detail(unit, _get_unit_display_name(unit), UiDisplayText.damage_type_label(int(unit.damage_type)), UiDisplayText.direction_label(unit.facing))
 		return
-	if _combat_hud.has_method("show_unit_detail"):
-		_combat_hud.show_unit_detail(unit, _get_unit_display_name(unit), UiDisplayText.damage_type_label(int(unit.damage_type)), UiDisplayText.direction_label(unit.facing))
+	if _selected_shop_slot_index >= 0:
+		_refresh_shop_unit_preview()
+		return
+	if _selected_operator_key != StringName():
+		_refresh_owned_operator_preview()
+		return
+	if _combat_hud.has_method("clear_unit_detail"):
+		_combat_hud.clear_unit_detail()
+
+
+func _show_operator_preview(operator_key: StringName) -> void:
+	_cancel_deploy_flow("")
+	_selected_unit_runtime_id = -1
+	_selected_operator_key = operator_key
+	_clear_shop_preview_selection()
+	_clear_attack_range_preview()
+	_refresh_detail_panel()
+
+
+func _refresh_owned_operator_preview() -> void:
+	var operator_info := _get_operator_info(_selected_operator_key)
+	if operator_info.is_empty():
+		_clear_detail_selection()
+		return
+	var state := _get_operator_state(_selected_operator_key)
+	if state == &"deployed":
+		var deployed_unit = _unit_manager.get_unit_by_operator_key(_selected_operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		if deployed_unit != null:
+			_selected_unit_runtime_id = int(deployed_unit.get_runtime_id()) if deployed_unit.has_method("get_runtime_id") else -1
+			_refresh_detail_panel()
+		return
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var status_text := ""
+	if state == &"cooldown" and _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining"):
+		status_text = "%.1fs" % float(_unit_manager.get_operator_redeploy_remaining(_selected_operator_key))
+	if _combat_hud.has_method("show_operator_preview"):
+		_combat_hud.show_operator_preview(operator_info, _get_unit_cfg(unit_id), state, status_text)
+
+
+func _refresh_shop_unit_preview() -> void:
+	if _selected_shop_unit_id == StringName():
+		_clear_detail_selection()
+		return
+	if _combat_hud != null and _combat_hud.has_method("show_shop_unit_preview"):
+		_combat_hud.show_shop_unit_preview(
+			_selected_shop_slot_index,
+			_selected_shop_unit_id,
+			_get_unit_cfg(_selected_shop_unit_id),
+			_selected_shop_price,
+			_selected_shop_can_purchase,
+			_selected_shop_disabled_reason
+		)
+
+
+func _clear_shop_preview_selection() -> void:
+	_selected_shop_slot_index = -1
+	_selected_shop_unit_id = StringName()
+	_selected_shop_price = 0
+	_selected_shop_can_purchase = false
+	_selected_shop_disabled_reason = ""
+
+
+func _clear_detail_selection() -> void:
+	_selected_unit_runtime_id = -1
+	_selected_operator_key = StringName()
+	_clear_shop_preview_selection()
+	_clear_attack_range_preview()
+	if _combat_hud != null and _combat_hud.has_method("clear_unit_detail"):
+		_combat_hud.clear_unit_detail()
+
+
+func _on_shop_unit_preview_requested(slot_index: int, unit_id: StringName, price: int, can_purchase: bool, disabled_reason: String) -> void:
+	_cancel_deploy_flow("")
+	_selected_unit_runtime_id = -1
+	_selected_operator_key = StringName()
+	_selected_shop_slot_index = slot_index
+	_selected_shop_unit_id = unit_id
+	_selected_shop_price = price
+	_selected_shop_can_purchase = can_purchase
+	_selected_shop_disabled_reason = disabled_reason
+	_clear_attack_range_preview()
+	_refresh_detail_panel()
+
+
+func _on_shop_unit_purchase_requested(slot_index: int) -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.request_buy_shop_slot.emit(slot_index)
 
 
 func _refresh_attack_range_preview() -> void:
@@ -393,6 +520,7 @@ func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id:
 func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	if _selected_unit_runtime_id == unit_runtime_id:
 		_clear_selected_unit()
+		_refresh_detail_panel()
 	_update_operator_cards()
 
 
@@ -451,16 +579,6 @@ func _on_speed_2_pressed() -> void:
 	_refresh_time_controls()
 
 
-func _on_debug_toggle_pressed() -> void:
-	if _debug_panel == null:
-		_show_message("调试面板不可用")
-		return
-	_debug_panel_open = not _debug_panel_open
-	_debug_panel.visible = _debug_panel_open
-	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
-		_combat_hud.set_debug_drawer_open(_debug_panel_open)
-
-
 func _refresh_top_hud() -> void:
 	if _combat_hud == null or not _combat_hud.has_method("set_top_values"):
 		return
@@ -469,6 +587,13 @@ func _refresh_top_hud() -> void:
 	var deploy_text := "部署上限\n0/0"
 	var resource_text := "资源\n--"
 	var resource_tooltip := ""
+	var resource_items := {
+		&"ap": {"icon": "AP", "value": "--"},
+		&"wood": {"icon": "W", "value": "--"},
+		&"stone": {"icon": "S", "value": "--"},
+		&"mana": {"icon": "M", "value": "--"},
+		&"prestige": {"icon": "P", "value": "--"}
+	}
 	var phase_text := "准备"
 	if run_state != null:
 		core_text = "核心生命\n%d/%d" % [int(run_state.core_hp), int(run_state.core_hp_max)]
@@ -483,11 +608,20 @@ func _refresh_top_hud() -> void:
 			int(run_state.mana),
 			buff_ids.size()
 		]
+		resource_items = {
+			&"ap": {"icon": "AP", "value": "%d/%d" % [int(run_state.action_points), int(run_state.DEFAULT_ACTION_POINTS)], "tooltip": "行动点"},
+			&"wood": {"icon": "W", "value": str(int(run_state.wood)), "tooltip": "木材"},
+			&"stone": {"icon": "S", "value": str(int(run_state.stone)), "tooltip": "石材"},
+			&"mana": {"icon": "M", "value": str(int(run_state.mana)), "tooltip": "魔力"},
+			&"prestige": {"icon": "P", "value": str(int(run_state.prestige)), "tooltip": "声望"}
+		}
 		resource_tooltip = _format_resource_tooltip(buff_ids)
 		phase_text = "Day %d %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
 	var enemy_count: int = int(_enemy_manager.get_alive_enemy_count()) if _enemy_manager != null and _enemy_manager.has_method("get_alive_enemy_count") else 0
 	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s    敌人 %d" % [phase_text, enemy_count])
-	if _combat_hud.has_method("set_resource_values"):
+	if _combat_hud.has_method("set_resource_items"):
+		_combat_hud.set_resource_items(resource_items, resource_tooltip)
+	elif _combat_hud.has_method("set_resource_values"):
 		_combat_hud.set_resource_values(resource_text, resource_tooltip)
 
 
@@ -590,6 +724,7 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 		if routes_by_key.has(route_key):
 			var existing: Dictionary = routes_by_key[route_key]
 			existing["count"] = int(existing.get("count", 0)) + int(entry.get("count", 0))
+			_add_enemy_to_route(existing, entry)
 			continue
 		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(spawn_key)
 		var core_cell: Vector2i = _map_manager.get_core_cell()
@@ -603,8 +738,10 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			"ok": bool(path_result.get("ok", false)),
 			"status": StringName(path_result.get("status", &"no_path")),
 			"message": String(path_result.get("message", "")),
-			"count": int(entry.get("count", 0))
+			"count": int(entry.get("count", 0)),
+			"enemies": []
 		}
+		_add_enemy_to_route(route, entry)
 		routes_by_key[route_key] = route
 	var routes: Array[Dictionary] = []
 	for route in routes_by_key.values():
@@ -616,7 +753,59 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			return String(a.get("path_mode", "")) < String(b.get("path_mode", ""))
 		return spawn_a < spawn_b
 	)
+	for index in range(routes.size()):
+		var route: Dictionary = routes[index]
+		route["route_label"] = _route_label_for_index(index)
+		route["route_summary"] = _format_route_enemy_summary(route)
+		routes[index] = route
 	return routes
+
+
+func _add_enemy_to_route(route: Dictionary, entry: Dictionary) -> void:
+	var enemy_id := StringName(entry.get("enemy_id", ""))
+	var enemy_name := String(entry.get("enemy_name", entry.get("enemy_id", "")))
+	var count := int(entry.get("count", 0))
+	if enemy_id == StringName() or count <= 0:
+		return
+	var enemies: Array = route.get("enemies", [])
+	for index in range(enemies.size()):
+		var enemy_variant: Variant = enemies[index]
+		if typeof(enemy_variant) != TYPE_DICTIONARY:
+			continue
+		var enemy: Dictionary = enemy_variant
+		if StringName(enemy.get("enemy_id", "")) != enemy_id:
+			continue
+		enemy["count"] = int(enemy.get("count", 0)) + count
+		enemies[index] = enemy
+		route["enemies"] = enemies
+		return
+	enemies.append({
+		"enemy_id": enemy_id,
+		"enemy_name": enemy_name,
+		"count": count
+	})
+	route["enemies"] = enemies
+
+
+func _route_label_for_index(index: int) -> String:
+	if index >= 0 and index < ROUTE_LABEL_ALPHABET.length():
+		return ROUTE_LABEL_ALPHABET.substr(index, 1)
+	return str(index + 1)
+
+
+func _format_route_enemy_summary(route: Dictionary) -> String:
+	var enemies: Array = route.get("enemies", [])
+	var parts := PackedStringArray()
+	for enemy_variant: Variant in enemies:
+		if typeof(enemy_variant) != TYPE_DICTIONARY:
+			continue
+		var enemy: Dictionary = enemy_variant
+		var enemy_name := String(enemy.get("enemy_name", enemy.get("enemy_id", "")))
+		var count := int(enemy.get("count", 0))
+		if enemy_name.is_empty() or count <= 0:
+			continue
+		parts.append("%sx%d" % [enemy_name, count])
+	return "、".join(parts)
 
 
 func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], hover_cell: Vector2i) -> String:
@@ -640,9 +829,24 @@ func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], h
 	if hover_cell != INVALID_CELL:
 		lines.append("预览阻挡: %s" % str(hover_cell))
 	lines.append("路线预览: %s" % ("已开启" if _show_wave_routes else "关闭"))
+	var route_lines := _collect_route_legend_lines(routes)
+	if not route_lines.is_empty():
+		lines.append("路线: %s" % "；".join(route_lines))
 	if not warnings.is_empty():
 		lines.append("警告: %s" % "；".join(warnings))
 	return "\n".join(lines)
+
+
+func _collect_route_legend_lines(routes: Array[Dictionary]) -> PackedStringArray:
+	var lines := PackedStringArray()
+	for route in routes:
+		var route_label := String(route.get("route_label", "?"))
+		var spawn_key := String(route.get("spawn_key", ""))
+		var route_summary := String(route.get("route_summary", ""))
+		if route_summary.is_empty():
+			route_summary = "无敌人"
+		lines.append("%s线 %s: %s" % [route_label, spawn_key, route_summary])
+	return lines
 
 
 func _collect_route_warning_lines(routes: Array[Dictionary]) -> PackedStringArray:
@@ -700,22 +904,28 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var cfg := _get_unit_cfg(unit_id)
 	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
 	var class_text := UiDisplayText.class_label(str(cfg.get("class", "")))
-	var state_text := "可部署"
+	var hp_text := "HP %d" % int(cfg.get("max_hp", 0))
+	var sp_text := "SP 0/%d" % int(cfg.get("sp_max", 0))
+	var cd_text := "CD READY"
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
-			state_text = "HP %d/%d  SP %.0f/%.0f" % [int(unit.current_hp), int(unit.max_hp), float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+			hp_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
+			sp_text = "SP %.0f/%.0f" % [float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+			cd_text = "CD 在场"
 			var ammo_text := _format_unit_ammo_status(unit)
 			if not ammo_text.is_empty():
-				state_text = "%s  %s" % [state_text, ammo_text]
+				sp_text = "%s  %s" % [sp_text, ammo_text]
 		else:
-			state_text = "已部署"
+			cd_text = "CD 在场"
 	elif state == &"cooldown":
 		var remain := float(_unit_manager.get_operator_redeploy_remaining(operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
-		state_text = "冷却 %.1f秒" % remain
+		hp_text = "HP --"
+		sp_text = "SP --"
+		cd_text = "CD %.1f秒" % remain
 	elif not _can_deploy_now():
-		state_text = "当前阶段不可部署"
-	return "%s\n%s  费用 %s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), state_text]
+		cd_text = "CD 阶段限制"
+	return "%s\n%s COST %s\n%s\n%s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), hp_text, sp_text, cd_text]
 
 
 func _format_unit_ammo_status(unit: Node) -> String:
@@ -749,8 +959,8 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 	for buff_id in buff_ids:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
 		buff_lines.append("%s：%s" % [
-			String(cfg.get("name", buff_id)),
-			String(cfg.get("desc", "暂无效果说明"))
+			UiDisplayText.config_name(cfg, buff_id),
+			UiDisplayText.relic_effect_text(cfg)
 		])
 	lines.append("当前遗物：")
 	lines.append("\n".join(buff_lines))

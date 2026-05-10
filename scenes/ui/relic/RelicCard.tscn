@@ -1,0 +1,132 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/relic/relic_card.gd" id="1_wj53c"]
+
+[node name="RelicCard" type="Control" unique_id=1478045943]
+custom_minimum_size = Vector2(0, 116)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_wj53c")
+
+[node name="CardBase" type="Panel" parent="." unique_id=219335592]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RarityOverlay" type="ColorRect" parent="." unique_id=1530203976]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="ContentMargin" type="MarginContainer" parent="." unique_id=1388233875]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Row" type="HBoxContainer" parent="ContentMargin" unique_id=381544291]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="IconStack" type="Control" parent="ContentMargin/Row" unique_id=59476973]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="IconBackplate" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1195616625]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="IconTexture" type="TextureRect" parent="ContentMargin/Row/IconStack" unique_id=1308036082]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="ContentMargin/Row/IconStack" unique_id=1566480545]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 22
+text = "遗"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IconFrame" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1296919074]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextColumn" type="VBoxContainer" parent="ContentMargin/Row" unique_id=319058549]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="ContentMargin/Row/TextColumn" unique_id=59487148]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameLabel" type="Label" parent="ContentMargin/Row/TextColumn/Header" unique_id=1326873469]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "遗物名称"
+text_overrun_behavior = 3
+
+[node name="RarityLabel" type="Label" parent="ContentMargin/Row/TextColumn/Header" unique_id=290176599]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+text = "常见"
+horizontal_alignment = 2
+
+[node name="DescLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=1478680159]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = "效果说明"
+autowrap_mode = 3
+
+[node name="TagLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=504243963]
+unique_name_in_owner = true
+layout_mode = 2
+text = "单位 / 经济"
+text_overrun_behavior = 3
+
+[node name="HoverOverlay" type="Panel" parent="." unique_id=1214079419]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

@@ -16,9 +16,7 @@ const DEFAULT_TYPE_SPEED := 38.0
 
 var _script_data: Dictionary = {}
 var _lines: Array = []
-var _portraits: Dictionary = {}
 var _backgrounds: Dictionary = {}
-var _texture_cache: Dictionary = {}
 var _current_index := -1
 var _type_speed := DEFAULT_TYPE_SPEED
 var _typing := false
@@ -93,14 +91,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func play_script(script_data: Dictionary) -> void:
 	_script_data = script_data.duplicate(true)
 	_lines = _script_data.get("lines", [])
-	_portraits = _script_data.get("portraits", {})
 	_backgrounds = _script_data.get("backgrounds", {})
 	var settings: Dictionary = _script_data.get("settings", {})
 	_type_speed = max(float(settings.get("type_speed", DEFAULT_TYPE_SPEED)), 0.0)
 	_current_index = -1
 	_typing = false
 	_line_finished_emitted = false
-	_texture_cache.clear()
 	_active_side = StringName()
 	_clear_side(SIDE_LEFT)
 	_clear_side(SIDE_RIGHT)
@@ -267,16 +263,8 @@ func _apply_background(background_key: StringName) -> void:
 		_background.color = fallback
 
 
-func _get_portrait_texture(portrait_key: StringName) -> Texture2D:
-	if _texture_cache.has(portrait_key):
-		return _texture_cache[portrait_key]
-	var path := String(_portraits.get(String(portrait_key), _portraits.get(portrait_key, "")))
-	if path.is_empty() or not ResourceLoader.exists(path):
-		push_warning("Portrait is missing: %s -> %s" % [portrait_key, path])
-		return null
-	var texture := load(path) as Texture2D
-	_texture_cache[portrait_key] = texture
-	return texture
+func _get_portrait_texture(_portrait_key: StringName) -> Texture2D:
+	return null
 
 
 func _get_portrait_rect(side: StringName) -> TextureRect:

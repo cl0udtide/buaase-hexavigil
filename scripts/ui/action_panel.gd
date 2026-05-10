@@ -3,6 +3,7 @@ extends PanelContainer
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
 
 var _current_mode: StringName = &"idle"
 var _current_building_id: StringName = &""
@@ -26,6 +27,7 @@ func _ready() -> void:
 	_apply_visual_style()
 	_bind_buttons()
 	_bind_events()
+	get_viewport().size_changed.connect(_apply_responsive_layout)
 	set_process(true)
 	var run_state = AppRefs.run_state()
 	if run_state != null:
@@ -137,6 +139,8 @@ func _refresh_state() -> void:
 	_refresh_mode_label()
 	_refresh_building_controls()
 	var day_phase := _current_phase == GameEnums.PHASE_DAY
+	visible = day_phase
+	_apply_responsive_layout()
 	_idle_button.disabled = not day_phase
 	_explore_button.disabled = not day_phase
 	_start_night_button.disabled = not day_phase
@@ -183,6 +187,21 @@ func _apply_visual_style() -> void:
 	if _building_info_label != null:
 		_building_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 		_building_info_label.visible = false
+
+
+func _apply_responsive_layout() -> void:
+	if not is_inside_tree():
+		return
+	var profile := UiLayoutRules.hud_profile(get_viewport_rect().size, true, 0.0)
+	var rect: Rect2 = profile.get("action_panel_rect", Rect2())
+	anchor_left = 0.0
+	anchor_top = 0.0
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	offset_left = rect.position.x
+	offset_top = rect.position.y
+	offset_right = rect.position.x + rect.size.x
+	offset_bottom = rect.position.y + rect.size.y
 
 
 func _style_action_button(button: Button, selected: bool) -> void:

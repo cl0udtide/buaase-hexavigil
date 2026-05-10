@@ -1,0 +1,68 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/relic/relic_icon.gd" id="1_625ck"]
+
+[node name="RelicIcon" type="Control" unique_id=1519433248]
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_625ck")
+
+[node name="IconBackplate" type="Panel" parent="." unique_id=1053241277]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="IconTexture" type="TextureRect" parent="." unique_id=2832801]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="." unique_id=1475819723]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "遗"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IconFrame" type="Panel" parent="." unique_id=1444302616]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RarityOverlay" type="ColorRect" parent="." unique_id=1866139985]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="NewHighlightOverlay" type="Panel" parent="." unique_id=1849321386]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

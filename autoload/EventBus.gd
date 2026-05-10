@@ -43,8 +43,6 @@ signal request_buy_shop_slot(slot_index: int)
 @warning_ignore("unused_signal")
 signal request_refresh_shop()
 @warning_ignore("unused_signal")
-signal request_debug_set_day(day: int)
-@warning_ignore("unused_signal")
 signal blessing_chosen(buff_id: StringName)
 
 @warning_ignore("unused_signal")

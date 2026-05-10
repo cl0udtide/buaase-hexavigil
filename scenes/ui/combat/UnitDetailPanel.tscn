@@ -1,47 +1,63 @@
-[gd_scene load_steps=2 format=3 uid="uid://cccru63t3a3nx"]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_detail"]
+[ext_resource type="Script" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_5d67m"]
 
-[node name="UnitDetailPanel" type="PanelContainer"]
-anchors_preset = 15
+[node name="UnitDetailPanel" type="Control" unique_id=740705112]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 0
+script = ExtResource("1_5d67m")
+
+[node name="PanelBase" type="Panel" parent="." unique_id=611847481]
+unique_name_in_owner = true
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
-script = ExtResource("1_detail")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 54
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 18
+[node name="ContentMargin" type="MarginContainer" parent="." unique_id=61595390]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="MainVBox" type="VBoxContainer" parent="MarginContainer"]
+[node name="MainVBox" type="VBoxContainer" parent="ContentMargin" unique_id=1050191978]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="HeaderPlate" type="PanelContainer" parent="MarginContainer/MainVBox"]
+[node name="Header" type="Control" parent="ContentMargin/MainVBox" unique_id=693785272]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 
-[node name="HeaderMargin" type="MarginContainer" parent="MarginContainer/MainVBox/HeaderPlate"]
-layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 7
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 7
+[node name="HeaderStrip" type="Panel" parent="ContentMargin/MainVBox/Header" unique_id=1389518965]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="HeaderVBox" type="VBoxContainer" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin"]
+[node name="HeaderMargin" type="MarginContainer" parent="ContentMargin/MainVBox/Header" unique_id=195937055]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HeaderVBox" type="VBoxContainer" parent="ContentMargin/MainVBox/Header/HeaderMargin" unique_id=605922195]
 layout_mode = 2
 theme_override_constants/separation = 1
 
-[node name="TitleRow" type="HBoxContainer" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox"]
+[node name="TitleRow" type="HBoxContainer" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox" unique_id=568979123]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox/TitleRow"]
+[node name="TitleLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/TitleRow" unique_id=171253195]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -50,191 +66,375 @@ text = "未选中"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="LevelLabel" type="Label" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox/TitleRow"]
+[node name="LevelLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/TitleRow" unique_id=1740080164]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+text = "#--"
 horizontal_alignment = 2
 vertical_alignment = 1
-text = "#--"
-text_overrun_behavior = 3
 
-[node name="TypeLabel" type="Label" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox"]
-unique_name_in_owner = true
+[node name="HeaderMetaRow" type="HBoxContainer" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox" unique_id=1201041475]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "伤害 / 朝向"
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="DamagePill" type="Panel" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow" unique_id=1326765037]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 24)
+layout_mode = 2
+
+[node name="DamageLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow/DamagePill" unique_id=556766114]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "伤害 --"
 horizontal_alignment = 1
+vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="VitalsCard" type="PanelContainer" parent="MarginContainer/MainVBox"]
+[node name="FacingPill" type="Panel" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow" unique_id=1399786519]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 24)
 layout_mode = 2
 
-[node name="VitalsMargin" type="MarginContainer" parent="MarginContainer/MainVBox/VitalsCard"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+[node name="FacingLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow/FacingPill" unique_id=1615876878]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "朝向 --"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
 
-[node name="TopRow" type="HBoxContainer" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin"]
+[node name="VitalsSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1486827303]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 116)
+layout_mode = 2
+
+[node name="VitalsSectionBase" type="Panel" parent="ContentMargin/MainVBox/VitalsSection" unique_id=2070638421]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VitalsMargin" type="MarginContainer" parent="ContentMargin/MainVBox/VitalsSection" unique_id=91686885]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VitalsRow" type="HBoxContainer" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin" unique_id=1238328425]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="PortraitPanel" type="PanelContainer" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow"]
+[node name="PortraitStack" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow" unique_id=1114403929]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_vertical = 0
 
-[node name="PortraitTexture" type="TextureRect" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow/PortraitPanel"]
+[node name="PortraitBackplate" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=1005991571]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PortraitTexture" type="TextureRect" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=215726508]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
-[node name="PortraitLabel" type="Label" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow/PortraitPanel"]
+[node name="PortraitLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=428561234]
 unique_name_in_owner = true
-layout_mode = 2
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_font_sizes/font_size = 44
+text = "◆"
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "◆"
 
-[node name="VitalsColumn" type="VBoxContainer" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow"]
+[node name="PortraitFrame" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=3333384]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VitalsColumn" type="VBoxContainer" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow" unique_id=987401178]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="HpValueLabel" type="Label" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow/VitalsColumn"]
+[node name="HpValueLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=471523324]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
 text = "生命 --/--"
 text_overrun_behavior = 3
 
-[node name="HpBar" type="ProgressBar" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow/VitalsColumn"]
+[node name="HpBar" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=1560407174]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
-show_percentage = false
+size_flags_horizontal = 3
 
-[node name="SpValueLabel" type="Label" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow/VitalsColumn"]
+[node name="HpTrack" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/HpBar" unique_id=236623385]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HpFill" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/HpBar" unique_id=2106132034]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_bottom = 1.0
+
+[node name="SpValueLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=1257285730]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
 text = "SP --/--"
 text_overrun_behavior = 3
 
-[node name="SpBar" type="ProgressBar" parent="MarginContainer/MainVBox/VitalsCard/VitalsMargin/TopRow/VitalsColumn"]
+[node name="SpBar" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=413069968]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
-show_percentage = false
+size_flags_horizontal = 3
 
-[node name="StatsCard" type="PanelContainer" parent="MarginContainer/MainVBox"]
+[node name="SpTrack" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/SpBar" unique_id=1273541802]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SpFill" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/SpBar" unique_id=771368971]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_bottom = 1.0
+
+[node name="StatsSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1724440287]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 92)
 layout_mode = 2
 
-[node name="StatsMargin" type="MarginContainer" parent="MarginContainer/MainVBox/StatsCard"]
-layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
-
-[node name="StatsLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin"]
+[node name="StatsSectionBase" type="Panel" parent="ContentMargin/MainVBox/StatsSection" unique_id=123499350]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "攻击 --   防御 --   法抗 --"
-autowrap_mode = 2
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="SkillCard" type="PanelContainer" parent="MarginContainer/MainVBox"]
+[node name="StatsMargin" type="MarginContainer" parent="ContentMargin/MainVBox/StatsSection" unique_id=1481552703]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatRows" type="GridContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin" unique_id=1289660169]
+layout_mode = 2
+columns = 2
+
+[node name="AtkStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=345724679]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 210)
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+text = "攻击 --"
+text_overrun_behavior = 3
+
+[node name="DefStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=2032588346]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+text = "防御 --"
+text_overrun_behavior = 3
+
+[node name="ResStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=801542100]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+text = "法抗 --"
+text_overrun_behavior = 3
+
+[node name="BlockStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=524157900]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+text = "阻挡 --"
+text_overrun_behavior = 3
+
+[node name="AspdStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=336823004]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+text = "攻速 --"
+text_overrun_behavior = 3
+
+[node name="SkillSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1052511950]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 230)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SkillMargin" type="MarginContainer" parent="MarginContainer/MainVBox/SkillCard"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+[node name="SkillSectionBase" type="Panel" parent="ContentMargin/MainVBox/SkillSection" unique_id=1951818056]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="SkillVBox" type="VBoxContainer" parent="MarginContainer/MainVBox/SkillCard/SkillMargin"]
+[node name="SkillMargin" type="MarginContainer" parent="ContentMargin/MainVBox/SkillSection" unique_id=119127089]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SkillVBox" type="VBoxContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin" unique_id=227690351]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="SkillHeaderRow" type="HBoxContainer" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox"]
+[node name="SkillHeaderRow" type="HBoxContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=966195898]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="SkillIconPanel" type="PanelContainer" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox/SkillHeaderRow"]
+[node name="SkillIconStack" type="Control" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=417700747]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_vertical = 0
 
-[node name="SkillIconTexture" type="TextureRect" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconPanel"]
+[node name="SkillIconBackplate" type="Panel" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=1357369206]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SkillIconTexture" type="TextureRect" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=1597858128]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
-[node name="SkillIconLabel" type="Label" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconPanel"]
+[node name="SkillIconLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=2042709900]
 unique_name_in_owner = true
-layout_mode = 2
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_font_sizes/font_size = 26
+text = "◇"
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "◇"
 
-[node name="SkillTitleLabel" type="Label" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox/SkillHeaderRow"]
+[node name="SkillIconFrame" type="Panel" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=1975527192]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SkillTitleLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=1912957347]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 15
 text = "技能"
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="SkillScroll" type="ScrollContainer" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox"]
+[node name="SkillStatusLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=2058992784]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+text = "未就绪"
+horizontal_alignment = 2
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="SkillScroll" type="ScrollContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=556901269]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 horizontal_scroll_mode = 0
-vertical_scroll_mode = 1
+vertical_scroll_mode = 0
 
-[node name="SkillLabel" type="Label" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox/SkillScroll"]
+[node name="SkillLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillScroll" unique_id=1682618284]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
+mouse_filter = 2
 text = "技能信息"
-autowrap_mode = 2
+autowrap_mode = 3
 
-[node name="Actions" type="VBoxContainer" parent="MarginContainer/MainVBox"]
+[node name="Actions" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=267080745]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="CastSkillButton" type="Button" parent="MarginContainer/MainVBox/Actions"]
+[node name="DetailSourceLabel" type="Label" parent="ContentMargin/MainVBox/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text_overrun_behavior = 3
+autowrap_mode = 2
+
+[node name="PurchaseButton" type="Button" parent="ContentMargin/MainVBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "璐拱"
+
+[node name="PurchaseReasonLabel" type="Label" parent="ContentMargin/MainVBox/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text_overrun_behavior = 3
+autowrap_mode = 2
+
+[node name="CastSkillButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1282514617]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
@@ -242,7 +442,7 @@ size_flags_horizontal = 3
 focus_mode = 0
 text = "激活技能"
 
-[node name="RetreatButton" type="Button" parent="MarginContainer/MainVBox/Actions"]
+[node name="RetreatButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1465338668]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2

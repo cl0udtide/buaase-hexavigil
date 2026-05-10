@@ -4,14 +4,28 @@ extends RefCounted
 const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const FRAME_TOP_HUD := UiFrameSpec.TOP_HUD
 const FRAME_TOP_CARD := UiFrameSpec.TOP_CARD
+const FRAME_HUD_CELL := UiFrameSpec.HUD_CELL
 const FRAME_SIDE_PANEL := UiFrameSpec.SIDE_PANEL
+const FRAME_RIGHT_DETAIL_SIDEBAR := UiFrameSpec.RIGHT_DETAIL_SIDEBAR
+const FRAME_BUILD_SIDE_PANEL := UiFrameSpec.BUILD_SIDE_PANEL
 const FRAME_DECK_PANEL := UiFrameSpec.DECK_PANEL
+const FRAME_DETAIL_SECTION := UiFrameSpec.DETAIL_SECTION
 const FRAME_CARD := UiFrameSpec.CARD
 const FRAME_LIST_CARD := UiFrameSpec.LIST_CARD
 const FRAME_OPERATOR_CARD := UiFrameSpec.OPERATOR_CARD
+const FRAME_OPERATOR_PORTRAIT_SLOT := UiFrameSpec.OPERATOR_PORTRAIT_SLOT
+const FRAME_OPERATOR_COST_BADGE := UiFrameSpec.OPERATOR_COST_BADGE
+const FRAME_OPERATOR_STAT_ROW := UiFrameSpec.OPERATOR_STAT_ROW
 const FRAME_BUTTON := UiFrameSpec.BUTTON
 const FRAME_TAB := UiFrameSpec.TAB
 const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
+const FRAME_RELIC_STRIP := UiFrameSpec.RELIC_STRIP
+const FRAME_RELIC_ICON := UiFrameSpec.RELIC_ICON
+const FRAME_RELIC_PANEL := UiFrameSpec.RELIC_PANEL
+const FRAME_RELIC_CARD := UiFrameSpec.RELIC_CARD
+const FRAME_SETTINGS_PANEL := UiFrameSpec.SETTINGS_PANEL
+const FRAME_BLESSING_PANEL := UiFrameSpec.BLESSING_PANEL
+const FRAME_LEGEND_PANEL := UiFrameSpec.LEGEND_PANEL
 
 const HOLOGRAM_ROOT := "res://assets/UI/1. Free Hologram Interface Wenrexa"
 const HOLOGRAM_BUTTON_NORMAL := HOLOGRAM_ROOT + "/Button 1/Button Normal.png"
@@ -46,51 +60,37 @@ static func hologram_texture_box(path: String, fallback_fill: Color, fallback_bo
 	return style
 
 
-const BG := Color(0.070, 0.090, 0.095, 1.0)
-const BG_DARK := Color(0.040, 0.050, 0.055, 1.0)
-const BG_GLASS := Color(0.105, 0.135, 0.145, 0.96)
-const BG_CARD := Color(0.120, 0.165, 0.170, 0.98)
-const BG_CARD_HOVER := Color(0.205, 0.345, 0.325, 1.0)
-const BG_DISABLED := Color(0.215, 0.215, 0.205, 0.96)
-const STROKE := Color(0.555, 0.555, 0.480, 1.0)
-const STROKE_SOFT := Color(0.415, 0.440, 0.405, 1.0)
-const STROKE_STRONG := Color(0.780, 0.675, 0.420, 1.0)
-const ACCENT := Color(0.250, 0.615, 0.555, 1.0)
-const AMBER := Color(0.875, 0.570, 0.155, 1.0)
-const DANGER := Color(0.760, 0.145, 0.130, 1.0)
-const SUCCESS := Color(0.250, 0.610, 0.385, 1.0)
-const VIOLET := Color(0.445, 0.300, 0.645, 1.0)
-const STEEL := Color(0.480, 0.500, 0.470, 1.0)
-const TEXT := Color(0.910, 0.875, 0.760, 1.0)
-const TEXT_DIM := Color(0.705, 0.700, 0.620, 1.0)
-const TEXT_MUTED := Color(0.500, 0.520, 0.485, 1.0)
-const TEXT_INVERTED := Color(0.965, 0.920, 0.775, 1.0)
-const TEXT_INVERTED_DIM := Color(0.760, 0.760, 0.670, 1.0)
-const TEXT_ON_PARCHMENT := Color(0.190, 0.145, 0.090, 1.0)
-const TEXT_SHADOW := Color(0.025, 0.020, 0.015, 0.65)
+const BG := Color(0.035, 0.045, 0.052, 1.0)
+const BG_DARK := Color(0.015, 0.020, 0.026, 1.0)
+const BG_GLASS := Color(0.045, 0.060, 0.068, 0.94)
+const BG_CARD := Color(0.065, 0.080, 0.088, 0.96)
+const BG_CARD_HOVER := Color(0.095, 0.140, 0.155, 0.98)
+const BG_DISABLED := Color(0.055, 0.060, 0.064, 0.82)
+const STROKE := Color(0.300, 0.365, 0.385, 1.0)
+const STROKE_SOFT := Color(0.180, 0.230, 0.245, 1.0)
+const STROKE_STRONG := Color(0.760, 0.530, 0.180, 1.0)
+const ACCENT := Color(0.260, 0.760, 0.920, 1.0)
+const AMBER := Color(0.950, 0.650, 0.220, 1.0)
+const DANGER := Color(0.860, 0.230, 0.185, 1.0)
+const SUCCESS := Color(0.290, 0.700, 0.430, 1.0)
+const VIOLET := Color(0.500, 0.420, 0.760, 1.0)
+const STEEL := Color(0.500, 0.570, 0.600, 1.0)
+const TEXT := Color(0.900, 0.940, 0.960, 1.0)
+const TEXT_DIM := Color(0.620, 0.700, 0.735, 1.0)
+const TEXT_MUTED := Color(0.390, 0.460, 0.490, 1.0)
+const TEXT_INVERTED := Color(0.930, 0.970, 0.990, 1.0)
+const TEXT_INVERTED_DIM := Color(0.620, 0.710, 0.760, 1.0)
+const TEXT_ON_PARCHMENT := Color(0.930, 0.970, 0.990, 1.0)
+const TEXT_SHADOW := Color(0.000, 0.000, 0.000, 0.65)
 
-const ACCENT_SOFT := Color(0.175, 0.330, 0.310, 1.0)
-const AMBER_SOFT := Color(0.365, 0.260, 0.120, 1.0)
-const DANGER_SOFT := Color(0.355, 0.120, 0.110, 1.0)
-const SUCCESS_SOFT := Color(0.145, 0.285, 0.190, 1.0)
-const VIOLET_SOFT := Color(0.225, 0.170, 0.315, 1.0)
+const ACCENT_SOFT := Color(0.070, 0.175, 0.210, 1.0)
+const AMBER_SOFT := Color(0.235, 0.160, 0.060, 1.0)
+const DANGER_SOFT := Color(0.220, 0.070, 0.060, 1.0)
+const SUCCESS_SOFT := Color(0.070, 0.170, 0.105, 1.0)
+const VIOLET_SOFT := Color(0.120, 0.105, 0.190, 1.0)
 
-static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
-	var texture := load(path) as Texture2D
-	if texture == null:
-		return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
-
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.set_texture_margin(SIDE_LEFT, margin)
-	style.set_texture_margin(SIDE_TOP, margin)
-	style.set_texture_margin(SIDE_RIGHT, margin)
-	style.set_texture_margin(SIDE_BOTTOM, margin)
-	style.content_margin_left = 12.0
-	style.content_margin_top = 9.0
-	style.content_margin_right = 12.0
-	style.content_margin_bottom = 9.0
-	return style
+static func texture_box(_path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
+	return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
 
 
 static func frame_box(component: StringName, fallback_fill: Color, fallback_border: Color, include_content := true) -> StyleBox:
@@ -179,7 +179,11 @@ static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0
 
 
 static func top_card() -> StyleBox:
-	return frame_box(UiFrameSpec.TOP_CARD, BG_GLASS, STROKE_SOFT)
+	return hud_cell(false)
+
+
+static func hud_cell(selected: bool = false) -> StyleBox:
+	return frame_box(UiFrameSpec.HUD_CELL_SELECTED if selected else UiFrameSpec.HUD_CELL, BG_CARD, AMBER if selected else STROKE_SOFT)
 
 
 static func top_hud_panel() -> StyleBox:
@@ -188,6 +192,14 @@ static func top_hud_panel() -> StyleBox:
 
 static func side_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.SIDE_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func build_side_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.BUILD_SIDE_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func right_detail_sidebar() -> StyleBox:
+	return frame_box(UiFrameSpec.RIGHT_DETAIL_SIDEBAR, BG_GLASS, STROKE_SOFT, false)
 
 
 static func deck_panel() -> StyleBox:
@@ -206,6 +218,36 @@ static func operator_card(border: Color = ACCENT) -> StyleBox:
 	return frame_box(UiFrameSpec.OPERATOR_CARD, BG_CARD, border, false)
 
 
+static func operator_card_state(state: StringName, selected: bool = false) -> StyleBox:
+	var component := UiFrameSpec.OPERATOR_CARD
+	var border := ACCENT
+	var fill := BG_CARD
+	if selected:
+		component = UiFrameSpec.OPERATOR_CARD_SELECTED
+		border = AMBER
+		fill = BG_CARD_HOVER
+	elif state == &"deployed":
+		component = UiFrameSpec.OPERATOR_CARD_DEPLOYED
+		border = SUCCESS
+	elif state == &"cooldown":
+		component = UiFrameSpec.OPERATOR_CARD_COOLDOWN
+		border = DANGER
+		fill = BG_DISABLED
+	return frame_box(component, fill, border, false)
+
+
+static func operator_portrait_slot() -> StyleBox:
+	return frame_box(UiFrameSpec.OPERATOR_PORTRAIT_SLOT, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func operator_cost_badge() -> StyleBox:
+	return frame_box(UiFrameSpec.OPERATOR_COST_BADGE, AMBER_SOFT, AMBER)
+
+
+static func operator_stat_row() -> StyleBox:
+	return frame_box(UiFrameSpec.OPERATOR_STAT_ROW, BG_DARK, STROKE_SOFT)
+
+
 static func list_card(selected: bool = false) -> StyleBox:
 	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD, AMBER if selected else STROKE_SOFT, false)
 
@@ -214,13 +256,95 @@ static func icon_tile() -> StyleBox:
 	return frame_box(UiFrameSpec.ICON_TILE, ACCENT_SOFT, STROKE_SOFT)
 
 
+static func relic_strip() -> StyleBox:
+	return frame_box(UiFrameSpec.RELIC_STRIP, BG_GLASS, STROKE_SOFT, false)
+
+
+static func relic_icon(rarity: int = 1, highlighted: bool = false) -> StyleBox:
+	var border := relic_rarity_color(rarity)
+	if highlighted:
+		border = AMBER
+	var component := UiFrameSpec.RELIC_ICON_COMMON
+	if rarity == 3:
+		component = UiFrameSpec.RELIC_ICON_RARE
+	elif rarity == 2:
+		component = UiFrameSpec.RELIC_ICON_UNCOMMON
+	return frame_box(component, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
+
+
+static func relic_card(rarity: int = 1, selected: bool = false) -> StyleBox:
+	var border := AMBER if selected else relic_rarity_color(rarity)
+	var component := UiFrameSpec.RELIC_CARD_COMMON
+	if rarity == 3:
+		component = UiFrameSpec.RELIC_CARD_RARE
+	elif rarity == 2:
+		component = UiFrameSpec.RELIC_CARD_UNCOMMON
+	return frame_box(component, BG_CARD_HOVER if selected else BG_CARD, border, false)
+
+
+static func relic_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.RELIC_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func settings_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.SETTINGS_PANEL, BG_GLASS, ACCENT, false)
+
+
+static func settings_button() -> StyleBox:
+	return frame_box(UiFrameSpec.SETTINGS_BUTTON, BG_CARD, STROKE_SOFT, false)
+
+
+static func blessing_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.BLESSING_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func blessing_choice_card(selected: bool = false) -> StyleBox:
+	return frame_box(UiFrameSpec.BLESSING_CHOICE_CARD, BG_CARD_HOVER if selected else BG_CARD, AMBER if selected else STROKE_SOFT, false)
+
+
+static func legend_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.LEGEND_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func relic_rarity_color(rarity: int) -> Color:
+	match rarity:
+		3:
+			return AMBER
+		2:
+			return ACCENT
+		_:
+			return SUCCESS
+
+
 static func tab(selected: bool) -> StyleBox:
 	var component := UiFrameSpec.TAB_SELECTED if selected else UiFrameSpec.TAB
 	return frame_box(component, ACCENT_SOFT if selected else BG_CARD, ACCENT if selected else STROKE_SOFT)
 
 
+static func compact_button(selected: bool = false) -> StyleBox:
+	if selected:
+		return frame_box(UiFrameSpec.BUTTON_COMPACT_SELECTED, BG_CARD, AMBER)
+	return frame_box(UiFrameSpec.BUTTON_COMPACT, BG_CARD, STROKE_SOFT)
+
+
+static func detail_section() -> StyleBox:
+	return frame_box(UiFrameSpec.DETAIL_SECTION, BG_CARD, STROKE_SOFT, false)
+
+
 static func accent_button(accent: Color) -> StyleBox:
 	return button(accent, 0.26)
+
+
+static func skill_button_primary() -> StyleBox:
+	return frame_box(UiFrameSpec.SKILL_BUTTON_PRIMARY, BG_CARD, ACCENT)
+
+
+static func secondary_button() -> StyleBox:
+	return frame_box(UiFrameSpec.BUTTON_SECONDARY, BG_CARD, STROKE_SOFT)
+
+
+static func danger_button() -> StyleBox:
+	return frame_box(UiFrameSpec.BUTTON_DANGER, BG_CARD, DANGER)
 
 
 static func disabled_button() -> StyleBox:

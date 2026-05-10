@@ -34,7 +34,6 @@ res://
 │     ├─ EventPanel.tscn
 │     ├─ BlessingPanel.tscn
 │     ├─ ResultPanel.tscn
-│     ├─ DebugPanel.tscn
 │     └─ combat/               [作战 HUD 组件]
 │        ├─ CombatHud.tscn
 │        ├─ OperatorCard.tscn
@@ -189,8 +188,7 @@ UI
 ├─ CombatHudController
 ├─ EventPanel
 ├─ BlessingPanel
-├─ ResultPanel
-└─ DebugPanel
+└─ ResultPanel
 ```
 
 各节点作用如下：
@@ -200,7 +198,7 @@ UI
 - `BuildPanel`
   左侧建筑/商店复合面板。建筑模式下显示资源/增益类建筑；商店模式下显示招募槽位、价格和刷新入口。
 - `CombatHud`
-  作战 HUD，主场景夜晚和 `CombatSandbox` 共用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示、单位详情面板和调试抽屉入口。
+  作战 HUD，主场景夜晚和 `CombatSandbox` 共用；负责顶部作战状态、暂停/倍速、底部待部署干员卡槽、拖拽提示和单位详情面板。
 - `CombatHudController`
   主场景作战 UI 适配器，连接 `CombatHud`、`MapRoot`、`UnitManager` 和 `EnemyManager`，处理拖拽部署、二段朝向、单位选中、技能、撤退、暂停和倍速。
 - `EventPanel`
@@ -209,8 +207,6 @@ UI
   祝福面板，展示三选一祝福并发出选择请求。
 - `ResultPanel`
   结算信息面板，用于在游戏结束时展示胜负结果和统计信息。
-- `DebugPanel`
-  正式主场景中的调试入口，默认仅用于开发验证。
 
 ### 2.4 固定命名
 
@@ -668,7 +664,11 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/ui/build_panel.gd`
 - `scripts/ui/build_list_card.gd`
 - `scripts/ui/game_ui_style.gd`
+- `scripts/ui/ui_art_registry.gd`
 - `scripts/ui/ui_display_text.gd`
+- `scripts/ui/ui_frame_spec.gd`
+- `scripts/ui/ui_layout_rules.gd`
+- `scripts/ui/ui_tokens.gd`
 - `scripts/ui/event_panel.gd`
 - `scripts/ui/blessing_panel.gd`
 - `scripts/ui/result_panel.gd`
@@ -682,7 +682,6 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scenes/ui/EventPanel.tscn`
 - `scenes/ui/BlessingPanel.tscn`
 - `scenes/ui/ResultPanel.tscn`
-- `scenes/ui/DebugPanel.tscn`
 - `scenes/ui/combat/CombatHud.tscn`
 - `scenes/ui/combat/OperatorCard.tscn`
 - `scenes/ui/combat/UnitDetailPanel.tscn`
@@ -707,11 +706,17 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
-  共用 UI 样式辅助函数，集中生成现代深色 matte tactical 面板、按钮和进度条等 `StyleBox`。
+  共用 UI 样式辅助函数，集中生成现代深色战术 HUD 面板、按钮和进度条等 `StyleBoxFlat`。当前基线不使用 UI 图片资产。
+- `ui_art_registry.gd`
+  UI 图片资源入口。当前阶段固定返回空贴图，让所有图标、肖像和技能图标回退为文本占位；未来重新接入资源时只能改这里，组件不得自行拼资源路径。
 - `ui_display_text.gd`
-  统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
+  统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。UI 分层与重构构想见 `docs/UI_SYSTEM.md`。
+- `ui_frame_spec.gd`
+  组件级内容边距规格。当前只保存 padding，不再保存贴图路径或九宫格切片。
+- `ui_layout_rules.gd` / `ui_tokens.gd`
+  统一计算 HUD 响应式矩形、断点、间距和组件尺寸，避免场景与脚本各写一套布局常量。
 - `combat/combat_hud.gd`
-  作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示、单位详情面板和调试抽屉按钮。它只发出 UI 信号，不直接修改单位或地图真相数据。
+  作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示和单位详情面板。它只发出 UI 信号，不直接修改单位或地图真相数据。
 - `combat/combat_hud_controller.gd`
   主场景作战 UI 适配器，负责把 `CombatHud` 信号转成部署、选中、技能、撤退、暂停、倍速和预览绘制。
 - `combat/operator_card.gd`
@@ -765,14 +770,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `data/events.json`
 - `data/waves.json`
 - `assets/sprites/`
-- `assets/ui/`
 - `assets/audio/`
-- `assets/fonts/`
 
 职责：
 
 - 提供配置表
-- 提供图片、音频、字体资源
+- 提供图片、音频资源
 
 音频资源约定：
 
@@ -884,7 +887,7 @@ UI -> UnitManager -> RunState -> UnitRoot
 
 部署请求使用 `operator_key` 指向一个已拥有干员槽位。`UnitManager` 负责检查该槽位是否已在场、是否处于再部署冷却、当前部署数是否达到上限，以及目标格是否合法。撤退或死亡后只让该槽位进入再部署冷却，不影响同类单位的其他槽位。
 
-主场景和 `CombatSandbox` 统一使用场景化 `CombatHud` 验证作战交互。主场景由 `CombatHudController` 转接 UI 信号；沙盒由 `combat_sandbox.gd` 转接同一套 HUD 信号并保留调试抽屉。部署采用两段式拖拽：
+主场景和 `CombatSandbox` 统一使用场景化 `CombatHud` 验证作战交互。主场景由 `CombatHudController` 转接 UI 信号；沙盒由 `combat_sandbox.gd` 转接同一套 HUD 信号。部署采用两段式拖拽：
 
 1. 从底部待部署干员卡拖到地图格并松手，`UnitManager.validate_deploy_operator()` 只做合法性校验和预览，不创建单位。
 2. 落点锁定后，从落点向外拖拽选择上下左右朝向并松手确认，最终调用 `UnitManager.try_deploy_operator()` 完成部署。

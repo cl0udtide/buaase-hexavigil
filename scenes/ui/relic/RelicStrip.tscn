@@ -1,0 +1,50 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/relic/relic_strip.gd" id="1_c303q"]
+
+[node name="RelicStrip" type="Control" unique_id=625474051]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_c303q")
+
+[node name="StripBase" type="Panel" parent="." unique_id=1514574516]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StripMargin" type="MarginContainer" parent="." unique_id=1965080679]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Row" type="HBoxContainer" parent="StripMargin" unique_id=1619510026]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="EntryButton" type="Button" parent="StripMargin/Row" unique_id=1706299081]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 30)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+text = "遗物 0"
+
+[node name="IconRow" type="HBoxContainer" parent="StripMargin/Row" unique_id=2112069031]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="OverflowLabel" type="Label" parent="StripMargin/Row" unique_id=2127205520]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+text = "+0"
+vertical_alignment = 1

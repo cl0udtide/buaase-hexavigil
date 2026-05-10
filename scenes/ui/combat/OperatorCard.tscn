@@ -1,114 +1,236 @@
-[gd_scene format=3 uid="uid://b6gwok5xlov26"]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/combat/operator_card.gd" id="1_operator_card"]
+[ext_resource type="Script" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
 
-[node name="OperatorCard" type="PanelContainer"]
-custom_minimum_size = Vector2(154, 136)
+[node name="OperatorCard" type="Control" unique_id=1219481180]
+custom_minimum_size = Vector2(164, 160)
+layout_mode = 3
+anchors_preset = 0
 size_flags_vertical = 3
-mouse_filter = 0
-script = ExtResource("1_operator_card")
+script = ExtResource("1_hry6b")
 
-[node name="AccentBar" type="ColorRect" parent="."]
+[node name="CardBase" type="Panel" parent="." unique_id=968438893]
 unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 1.0
-offset_top = -134.0
-offset_right = 5.0
-offset_bottom = -2.0
-grow_vertical = 0
-mouse_filter = 2
-color = Color(0.12, 0.78, 0.88, 0.95)
-
-[node name="CardMargin" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 7
 
-[node name="VBox" type="VBoxContainer" parent="CardMargin"]
+[node name="CardContent" type="MarginContainer" parent="." unique_id=1076543747]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="CardContent" unique_id=1736721889]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="TitleStrip" type="Panel" parent="CardContent/VBox" unique_id=584067749]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="TitleMargin" type="MarginContainer" parent="CardContent/VBox/TitleStrip" unique_id=401894519]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleRow" type="HBoxContainer" parent="CardContent/VBox/TitleStrip/TitleMargin" unique_id=1970096828]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="TopRow" type="HBoxContainer" parent="CardMargin/VBox"]
+[node name="ClassIcon" type="Label" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=2067825838]
+custom_minimum_size = Vector2(18, 0)
 layout_mode = 2
-theme_override_constants/separation = 4
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="NameLabel" type="Label" parent="CardMargin/VBox/TopRow"]
+[node name="NameLabel" type="Label" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=1710430402]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 15
 text = "干员"
+vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="CostLabel" type="Label" parent="CardMargin/VBox/TopRow"]
+[node name="CostBadge" type="Panel" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=1960770915]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 24)
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 2
+
+[node name="CostLabel" type="Label" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow/CostBadge" unique_id=596955364]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "0"
-
-[node name="PortraitBox" type="PanelContainer" parent="CardMargin/VBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
-layout_mode = 2
-mouse_filter = 2
-
-[node name="PortraitLabel" type="Label" parent="CardMargin/VBox/PortraitBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 26
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "*"
 
-[node name="CooldownOverlay" type="ColorRect" parent="CardMargin/VBox/PortraitBox"]
+[node name="PortraitStack" type="Control" parent="CardContent/VBox" unique_id=2130632873]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="PortraitBackplate" type="Panel" parent="CardContent/VBox/PortraitStack" unique_id=548983614]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PortraitTexture" type="TextureRect" parent="CardContent/VBox/PortraitStack" unique_id=304711351]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.02, 0.027, 0.032, 0.78)
+expand_mode = 1
+stretch_mode = 5
 
-[node name="CooldownLabel" type="Label" parent="CardMargin/VBox/PortraitBox/CooldownOverlay"]
+[node name="PortraitLabel" type="Label" parent="CardContent/VBox/PortraitStack" unique_id=1064207845]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 theme_override_font_sizes/font_size = 24
+text = "*"
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "0s"
 
-[node name="ClassLabel" type="Label" parent="CardMargin/VBox"]
+[node name="PortraitFrame" type="Panel" parent="CardContent/VBox/PortraitStack" unique_id=1246630243]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MetaRow" type="HBoxContainer" parent="CardContent/VBox" unique_id=347160266]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ClassLabel" type="Label" parent="CardContent/VBox/MetaRow" unique_id=621080223]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+size_flags_horizontal = 3
 text = "职业"
 
-[node name="StatusLabel" type="Label" parent="CardMargin/VBox"]
+[node name="StateLabel" type="Label" parent="CardContent/VBox/MetaRow" unique_id=900159003]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(46, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
 text = "READY"
+horizontal_alignment = 2
+
+[node name="StatRows" type="VBoxContainer" parent="CardContent/VBox" unique_id=1580391540]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 2
+
+[node name="HpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1064524550]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+
+[node name="HpStatLabel" type="Label" parent="CardContent/VBox/StatRows/HpStatRow" unique_id=804832331]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "HP --"
+vertical_alignment = 1
 text_overrun_behavior = 3
-autowrap_mode = 2
+
+[node name="SpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1072089532]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+
+[node name="SpStatLabel" type="Label" parent="CardContent/VBox/StatRows/SpStatRow" unique_id=672416314]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "SP --"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="CdStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=43464145]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+
+[node name="CdStatLabel" type="Label" parent="CardContent/VBox/StatRows/CdStatRow" unique_id=747651217]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "CD READY"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="SelectedOverlay" type="Panel" parent="." unique_id=2065188455]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DeployedOverlay" type="Panel" parent="." unique_id=614556158]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CooldownOverlay" type="ColorRect" parent="." unique_id=1011898872]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.16, 0.035, 0.032, 0.72)
+
+[node name="CooldownLabel" type="Label" parent="CooldownOverlay" unique_id=460056569]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 24
+text = "CD"
+horizontal_alignment = 1
+vertical_alignment = 1
