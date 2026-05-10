@@ -13,19 +13,55 @@ const FRAME_DETAIL_SECTION := UiFrameSpec.DETAIL_SECTION
 const FRAME_CARD := UiFrameSpec.CARD
 const FRAME_LIST_CARD := UiFrameSpec.LIST_CARD
 const FRAME_OPERATOR_CARD := UiFrameSpec.OPERATOR_CARD
+const FRAME_OPERATOR_CARD_SELECTED := UiFrameSpec.OPERATOR_CARD_SELECTED
+const FRAME_OPERATOR_CARD_DEPLOYED := UiFrameSpec.OPERATOR_CARD_DEPLOYED
+const FRAME_OPERATOR_CARD_COOLDOWN := UiFrameSpec.OPERATOR_CARD_COOLDOWN
+const FRAME_OPERATOR_CARD_COOLDOWN_SELECTED := UiFrameSpec.OPERATOR_CARD_COOLDOWN_SELECTED
+const FRAME_OPERATOR_TITLE_STRIP := UiFrameSpec.OPERATOR_TITLE_STRIP
+const FRAME_OPERATOR_PORTRAIT_BACKPLATE := UiFrameSpec.OPERATOR_PORTRAIT_BACKPLATE
+const FRAME_OPERATOR_PORTRAIT_FRAME := UiFrameSpec.OPERATOR_PORTRAIT_FRAME
 const FRAME_OPERATOR_PORTRAIT_SLOT := UiFrameSpec.OPERATOR_PORTRAIT_SLOT
 const FRAME_OPERATOR_COST_BADGE := UiFrameSpec.OPERATOR_COST_BADGE
 const FRAME_OPERATOR_STAT_ROW := UiFrameSpec.OPERATOR_STAT_ROW
 const FRAME_BUTTON := UiFrameSpec.BUTTON
 const FRAME_TAB := UiFrameSpec.TAB
 const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
+const FRAME_ICON_FRAME := UiFrameSpec.ICON_FRAME
+const FRAME_BUILD_ICON_BACKPLATE := UiFrameSpec.BUILD_ICON_BACKPLATE
+const FRAME_BUILD_ICON_FRAME := UiFrameSpec.BUILD_ICON_FRAME
+const FRAME_COST_BADGE := UiFrameSpec.COST_BADGE
 const FRAME_RELIC_STRIP := UiFrameSpec.RELIC_STRIP
+const FRAME_RELIC_ENTRY_BUTTON := UiFrameSpec.RELIC_ENTRY_BUTTON
 const FRAME_RELIC_ICON := UiFrameSpec.RELIC_ICON
+const FRAME_RELIC_ICON_BACKPLATE := UiFrameSpec.RELIC_ICON_BACKPLATE
+const FRAME_RELIC_ICON_FRAME := UiFrameSpec.RELIC_ICON_FRAME
 const FRAME_RELIC_PANEL := UiFrameSpec.RELIC_PANEL
 const FRAME_RELIC_CARD := UiFrameSpec.RELIC_CARD
+const FRAME_RELIC_CARD_HOVER := UiFrameSpec.RELIC_CARD_HOVER
 const FRAME_SETTINGS_PANEL := UiFrameSpec.SETTINGS_PANEL
+const FRAME_SETTINGS_ROW := UiFrameSpec.SETTINGS_ROW
 const FRAME_BLESSING_PANEL := UiFrameSpec.BLESSING_PANEL
 const FRAME_LEGEND_PANEL := UiFrameSpec.LEGEND_PANEL
+const FRAME_LEGEND_ROW := UiFrameSpec.LEGEND_ROW
+const FRAME_ACTION_PANEL := UiFrameSpec.ACTION_PANEL
+const FRAME_ACTION_BUTTON := UiFrameSpec.ACTION_BUTTON
+const FRAME_EVENT_PANEL := UiFrameSpec.EVENT_PANEL
+const FRAME_EVENT_CHOICE_BUTTON := UiFrameSpec.EVENT_CHOICE_BUTTON
+const FRAME_RESULT_PANEL := UiFrameSpec.RESULT_PANEL
+const FRAME_RESULT_STAT_ROW := UiFrameSpec.RESULT_STAT_ROW
+const FRAME_DIALOG_BOX := UiFrameSpec.DIALOG_BOX
+const FRAME_DIALOG_SPEAKER_PLATE := UiFrameSpec.DIALOG_SPEAKER_PLATE
+const FRAME_MAP_POPUP := UiFrameSpec.MAP_POPUP
+const FRAME_WAVE_PREVIEW := UiFrameSpec.WAVE_PREVIEW
+const FRAME_WAVE_ROUTE_TOGGLE := UiFrameSpec.WAVE_ROUTE_TOGGLE
+const FRAME_TOOLTIP := UiFrameSpec.TOOLTIP
+const FRAME_UNIT_HEADER_STRIP := UiFrameSpec.UNIT_HEADER_STRIP
+const FRAME_UNIT_PORTRAIT_BACKPLATE := UiFrameSpec.UNIT_PORTRAIT_BACKPLATE
+const FRAME_UNIT_PORTRAIT_FRAME := UiFrameSpec.UNIT_PORTRAIT_FRAME
+const FRAME_UNIT_STAT_ROW := UiFrameSpec.UNIT_STAT_ROW
+const FRAME_SKILL_ICON_BACKPLATE := UiFrameSpec.SKILL_ICON_BACKPLATE
+const FRAME_SKILL_ICON_FRAME := UiFrameSpec.SKILL_ICON_FRAME
+const FRAME_SKILL_DESC_BOX := UiFrameSpec.SKILL_DESC_BOX
 
 
 const BG := Color(0.035, 0.045, 0.052, 1.0)
@@ -57,7 +93,11 @@ const DANGER_SOFT := Color(0.220, 0.070, 0.060, 1.0)
 const SUCCESS_SOFT := Color(0.070, 0.170, 0.105, 1.0)
 const VIOLET_SOFT := Color(0.120, 0.105, 0.190, 1.0)
 
-static func texture_box(_path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
+static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
+	var key := StringName(path.get_file().get_basename() if path.ends_with(".png") else path)
+	var textured := UiFrameSpec.style_box(key, fallback_fill, fallback_border, true)
+	if textured is StyleBoxTexture:
+		return textured
 	return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
 
 
@@ -175,7 +215,7 @@ static func deck_panel() -> StyleBox:
 
 
 static func action_bar_panel() -> StyleBox:
-	return frame_box(UiFrameSpec.DECK_PANEL, BG_GLASS, STROKE_SOFT, false)
+	return frame_box(UiFrameSpec.ACTION_PANEL, BG_GLASS, STROKE_SOFT, false)
 
 
 static func compact_panel(border: Color = STROKE_SOFT, fill: Color = BG_GLASS, include_content := false) -> StyleBox:
@@ -187,25 +227,16 @@ static func operator_card(border: Color = ACCENT) -> StyleBox:
 
 
 static func operator_card_state(state: StringName, selected: bool = false) -> StyleBox:
-	var component := UiFrameSpec.OPERATOR_CARD
-	var border := ACCENT
-	var fill := BG_CARD
-	if selected:
-		component = UiFrameSpec.OPERATOR_CARD_SELECTED
-		border = AMBER
-		fill = BG_CARD_HOVER
-	elif state == &"deployed":
-		component = UiFrameSpec.OPERATOR_CARD_DEPLOYED
-		border = SUCCESS
-	elif state == &"cooldown":
-		component = UiFrameSpec.OPERATOR_CARD_COOLDOWN
-		border = DANGER
-		fill = BG_DISABLED
-	return frame_box(component, fill, border, false)
+	var fill := BG_DISABLED if state == &"cooldown" else BG_CARD_HOVER if selected else BG_CARD
+	return frame_box(UiFrameSpec.OPERATOR_CARD, fill, ACCENT, false)
 
 
 static func operator_portrait_slot() -> StyleBox:
-	return frame_box(UiFrameSpec.OPERATOR_PORTRAIT_SLOT, ACCENT_SOFT, STROKE_SOFT)
+	return frame_box(UiFrameSpec.OPERATOR_PORTRAIT_BACKPLATE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func operator_portrait_frame() -> StyleBox:
+	return frame_box(UiFrameSpec.OPERATOR_PORTRAIT_FRAME, Color.TRANSPARENT, STROKE_SOFT, false)
 
 
 static func operator_cost_badge() -> StyleBox:
@@ -217,11 +248,23 @@ static func operator_stat_row() -> StyleBox:
 
 
 static func list_card(selected: bool = false) -> StyleBox:
-	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD, AMBER if selected else STROKE_SOFT, false)
+	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD_HOVER if selected else BG_CARD, AMBER if selected else STROKE_SOFT, false)
 
 
 static func icon_tile() -> StyleBox:
 	return frame_box(UiFrameSpec.ICON_TILE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func icon_frame(accent: Color = STROKE_SOFT) -> StyleBox:
+	return frame_box(UiFrameSpec.ICON_FRAME, Color.TRANSPARENT, accent, false)
+
+
+static func build_icon_backplate() -> StyleBox:
+	return frame_box(UiFrameSpec.BUILD_ICON_BACKPLATE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func build_icon_frame(accent: Color = STROKE_SOFT) -> StyleBox:
+	return frame_box(UiFrameSpec.BUILD_ICON_FRAME, Color.TRANSPARENT, accent, false)
 
 
 static func relic_strip() -> StyleBox:
@@ -232,12 +275,16 @@ static func relic_icon(rarity: int = 1, highlighted: bool = false) -> StyleBox:
 	var border := relic_rarity_color(rarity)
 	if highlighted:
 		border = AMBER
+	return frame_box(UiFrameSpec.RELIC_ICON_FRAME, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
+
+
+static func relic_rarity_overlay(rarity: int) -> StyleBox:
 	var component := UiFrameSpec.RELIC_ICON_COMMON
 	if rarity == 3:
 		component = UiFrameSpec.RELIC_ICON_RARE
 	elif rarity == 2:
 		component = UiFrameSpec.RELIC_ICON_UNCOMMON
-	return frame_box(component, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
+	return frame_box(component, Color.TRANSPARENT, relic_rarity_color(rarity), false)
 
 
 static func relic_card(rarity: int = 1, selected: bool = false) -> StyleBox:
@@ -272,6 +319,38 @@ static func blessing_choice_card(selected: bool = false) -> StyleBox:
 
 static func legend_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.LEGEND_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func event_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.EVENT_PANEL, BG_GLASS, STROKE_STRONG, false)
+
+
+static func result_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.RESULT_PANEL, BG_GLASS, STROKE_STRONG, false)
+
+
+static func dialog_box() -> StyleBox:
+	return frame_box(UiFrameSpec.DIALOG_BOX, BG_GLASS, STROKE_SOFT, false)
+
+
+static func dialog_speaker_plate() -> StyleBox:
+	return frame_box(UiFrameSpec.DIALOG_SPEAKER_PLATE, ACCENT_SOFT, ACCENT, false)
+
+
+static func map_popup() -> StyleBox:
+	return frame_box(UiFrameSpec.MAP_POPUP, BG_GLASS, STROKE_SOFT, false)
+
+
+static func wave_preview_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.WAVE_PREVIEW, BG_GLASS, ACCENT, false)
+
+
+static func tooltip_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.TOOLTIP, BG_GLASS, STROKE_SOFT)
+
+
+static func settings_row() -> StyleBox:
+	return frame_box(UiFrameSpec.SETTINGS_ROW, BG_CARD, STROKE_SOFT, false)
 
 
 static func relic_rarity_color(rarity: int) -> Color:

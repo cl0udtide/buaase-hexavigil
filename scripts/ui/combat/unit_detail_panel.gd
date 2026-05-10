@@ -71,7 +71,7 @@ func _ready() -> void:
 	var main_vbox := get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
 	if main_vbox != null:
 		main_vbox.add_theme_constant_override("separation", 12)
-	_header_strip.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_header_strip.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_HEADER_STRIP, GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, false))
 	_damage_pill.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
 	_facing_pill.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
 	for section_base in [_vitals_base, _stats_base, _skill_base]:
@@ -93,10 +93,10 @@ func _ready() -> void:
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
-	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
-	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
-	_skill_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
+	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
+	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
+	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
+	_skill_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_damage_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -418,8 +418,8 @@ func _style_action_button(button: Button, accent: Color) -> void:
 
 
 func _skill_icon_texture_from_cfg(cfg: Dictionary) -> Texture2D:
-	var key := StringName(cfg.get("skill_icon_key", cfg.get("icon_key", "")))
-	return UiArtRegistry.get_texture(key, &"icon")
+	var key := StringName(cfg.get("skill_icon_key", cfg.get("skill_id", cfg.get("icon_key", ""))))
+	return UiArtRegistry.get_texture(key, &"skill")
 
 
 func _apply_texture_or_text(texture_rect: TextureRect, label: Label, texture: Texture2D, fallback_text: String) -> void:

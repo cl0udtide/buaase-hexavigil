@@ -2,6 +2,7 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 signal close_requested
 
@@ -80,6 +81,13 @@ func _configure_slider(slider: HSlider) -> void:
 	slider.min_value = 0.0
 	slider.max_value = 1.0
 	slider.step = 0.01
+	slider.add_theme_stylebox_override("slider", GameUiStyle.frame_box(&"frame_slider_track", GameUiStyle.BG_DARK, GameUiStyle.STROKE_SOFT, false))
+	slider.add_theme_stylebox_override("grabber_area", GameUiStyle.frame_box(&"frame_slider_fill", GameUiStyle.ACCENT_SOFT, GameUiStyle.ACCENT, false))
+	slider.add_theme_stylebox_override("grabber_area_highlight", GameUiStyle.frame_box(&"frame_slider_fill", GameUiStyle.ACCENT_SOFT, GameUiStyle.AMBER, false))
+	var handle := UiArtRegistry.get_texture(&"frame_slider_handle", &"frame")
+	if handle != null:
+		slider.add_theme_icon_override("grabber", handle)
+		slider.add_theme_icon_override("grabber_highlight", handle)
 
 
 func _on_master_changed(value: float) -> void:
@@ -125,7 +133,10 @@ func _apply_visual_style() -> void:
 	var title_label := get_node_or_null("%TitleLabel") as Label
 	GameUiStyle.center_label_text(title_label)
 	for row_base in find_children("RowBase", "Panel", true, false):
-		(row_base as Panel).add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
+		(row_base as Panel).add_theme_stylebox_override("panel", GameUiStyle.settings_row())
+	_apply_volume_icon("MasterRow", &"icon_volume_master")
+	_apply_volume_icon("MusicRow", &"icon_volume_music")
+	_apply_volume_icon("SfxRow", &"icon_volume_sfx")
 
 
 func _style_close_button() -> void:
@@ -154,3 +165,25 @@ func _resolve_audio_manager() -> Node:
 			return candidate
 		cursor = cursor.get_parent()
 	return null
+
+
+func _apply_volume_icon(row_name: String, icon_key: StringName) -> void:
+	var label := get_node_or_null("ContentMargin/MainVBox/%s/RowMargin/RowContent/VolumeIcon" % row_name) as Label
+	if label == null:
+		return
+	var texture := UiArtRegistry.get_texture(icon_key, &"icon")
+	if texture == null:
+		return
+	label.text = ""
+	var icon := label.get_node_or_null("IconTexture") as TextureRect
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = "IconTexture"
+		icon.anchor_right = 1.0
+		icon.anchor_bottom = 1.0
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_child(icon)
+	icon.texture = texture
+	icon.visible = true

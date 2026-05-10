@@ -21,5 +21,5 @@ func _ready() -> void:
 func _apply_visual_style() -> void:
 	var card := get_node_or_null("%ResultCard") as PanelContainer
 	if card != null:
-		card.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_DARK, GameUiStyle.STROKE_STRONG, false))
-		GameUiStyle.apply_frame_margin(card.get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
+		card.add_theme_stylebox_override("panel", GameUiStyle.result_panel())
+		GameUiStyle.apply_frame_margin(card.get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RESULT_PANEL)
