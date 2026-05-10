@@ -22,13 +22,13 @@ var _press_start_position := Vector2.ZERO
 var _drag_started := false
 var _operator_info: Dictionary = {}
 var _unit_cfg: Dictionary = {}
-var _class_icon_texture: TextureRect
+var _class_icon_label: Label
 var _cooldown_icon_texture: TextureRect
 
 @onready var _card_base: Panel = %CardBase
 @onready var _card_content: MarginContainer = %CardContent
 @onready var _title_strip: Panel = %TitleStrip
-@onready var _class_icon_label: Label = %ClassIcon
+@onready var _class_icon_texture: TextureRect = %ClassIcon
 @onready var _name_label: Label = %NameLabel
 @onready var _cost_badge: Panel = %CostBadge
 @onready var _cost_label: Label = %CostLabel
@@ -39,7 +39,7 @@ var _cooldown_icon_texture: TextureRect
 @onready var _portrait_label: Label = %PortraitLabel
 @onready var _selected_overlay: Panel = %SelectedOverlay
 @onready var _deployed_overlay: Panel = %DeployedOverlay
-@onready var _cooldown_overlay: ColorRect = %CooldownOverlay
+@onready var _cooldown_overlay: TextureRect = %CooldownOverlay
 @onready var _cooldown_label: Label = %CooldownLabel
 @onready var _class_label: Label = %ClassLabel
 @onready var _state_label: Label = %StateLabel
@@ -97,7 +97,8 @@ func _ready() -> void:
 		row.add_theme_stylebox_override("panel", GameUiStyle.operator_stat_row())
 	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
 	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
-	_cooldown_overlay.color = Color(0.160, 0.035, 0.032, 0.72)
+	_cooldown_overlay.texture = UiArtRegistry.get_frame_texture(&"frame_operator_card_cooldown_overlay")
+	_cooldown_overlay.modulate = Color(1.0, 1.0, 1.0, 0.92)
 	_cooldown_overlay.visible = false
 	_apply_density()
 	_apply_card_style()
@@ -278,19 +279,29 @@ func _apply_unit_art() -> void:
 
 
 func _prepare_class_icon_texture() -> void:
-	if _class_icon_label == null or _class_icon_texture != null:
+	if _class_icon_texture == null:
 		return
-	var parent := _class_icon_label.get_parent()
-	if parent == null:
-		return
-	_class_icon_texture = TextureRect.new()
-	_class_icon_texture.name = "ClassIconTexture"
 	_class_icon_texture.custom_minimum_size = Vector2(18.0, 18.0)
 	_class_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_class_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_class_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(_class_icon_texture)
-	parent.move_child(_class_icon_texture, _class_icon_label.get_index())
+	if _class_icon_label != null:
+		return
+	var parent := _class_icon_texture.get_parent()
+	if parent == null:
+		return
+	_class_icon_label = Label.new()
+	_class_icon_label.name = "ClassIconFallback"
+	_class_icon_label.custom_minimum_size = Vector2(18.0, 18.0)
+	_class_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_class_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_class_icon_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_class_icon_label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
+	_class_icon_label.add_theme_constant_override("shadow_offset_x", 0)
+	_class_icon_label.add_theme_constant_override("shadow_offset_y", 0)
+	_class_icon_label.visible = false
+	parent.add_child(_class_icon_label)
+	parent.move_child(_class_icon_label, _class_icon_texture.get_index() + 1)
 
 
 func _prepare_cooldown_icon_texture() -> void:
