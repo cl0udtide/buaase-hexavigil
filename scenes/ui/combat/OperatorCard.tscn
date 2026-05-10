@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
 
 [node name="OperatorCard" type="Control" unique_id=1219481180]
-custom_minimum_size = Vector2(164, 148)
+custom_minimum_size = Vector2(164, 160)
 layout_mode = 3
 anchors_preset = 0
 size_flags_vertical = 3
@@ -79,7 +79,7 @@ vertical_alignment = 1
 
 [node name="PortraitStack" type="Control" parent="CardContent/VBox" unique_id=2130632873]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 54)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
 [node name="PortraitBackplate" type="Panel" parent="CardContent/VBox/PortraitStack" unique_id=548983614]
@@ -146,7 +146,7 @@ theme_override_constants/separation = 2
 
 [node name="HpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1064524550]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 16)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 
 [node name="HpStatLabel" type="Label" parent="CardContent/VBox/StatRows/HpStatRow" unique_id=804832331]
@@ -162,7 +162,7 @@ text_overrun_behavior = 3
 
 [node name="SpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1072089532]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 16)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 
 [node name="SpStatLabel" type="Label" parent="CardContent/VBox/StatRows/SpStatRow" unique_id=672416314]
@@ -178,7 +178,7 @@ text_overrun_behavior = 3
 
 [node name="CdStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=43464145]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 16)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 
 [node name="CdStatLabel" type="Label" parent="CardContent/VBox/StatRows/CdStatRow" unique_id=747651217]

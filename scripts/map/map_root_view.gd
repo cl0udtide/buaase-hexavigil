@@ -532,9 +532,13 @@ func _is_building_destroyed(building: Node) -> bool:
 func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> void:
 	match event.button_index:
 		MOUSE_BUTTON_WHEEL_UP:
+			if _is_pointer_over_gui():
+				return
 			if event.pressed:
 				_zoom_at_mouse(1.0 / ZOOM_STEP)
 		MOUSE_BUTTON_WHEEL_DOWN:
+			if _is_pointer_over_gui():
+				return
 			if event.pressed:
 				_zoom_at_mouse(ZOOM_STEP)
 		MOUSE_BUTTON_RIGHT:
@@ -549,6 +553,14 @@ func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> vo
 				var event_bus = AppRefs.event_bus()
 				if event_bus != null:
 					event_bus.map_cell_clicked.emit(cell)
+
+
+func _is_pointer_over_gui() -> bool:
+	var viewport := get_viewport()
+	if viewport == null:
+		return false
+	var hovered_control := viewport.gui_get_hovered_control()
+	return hovered_control != null and hovered_control.is_visible_in_tree()
 
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
