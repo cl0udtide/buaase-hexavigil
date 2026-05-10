@@ -4,6 +4,7 @@
 
 UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风格走轻微奇幻、清新、低饱和路线。界面应服务塔防读图，地图永远是第一视觉层级。
 
+- 顶部最左侧：小齿轮设置按钮，点击打开设置面板，面板内可调整音量。
 - 顶部：阶段、时间、核心生命、部署上限、暂停/倍速、资源状态。
 - 顶部下方：遗物入口与少量遗物缩略提示。
 - 左侧：建筑/商店竖向面板，标签固定，列表项紧凑。
@@ -50,7 +51,8 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 7. `UiDisplayText` 增加遗物稀有度、遗物分类标签和效果字段格式化方法，避免 `RelicPanel`、`BlessingPanel`、tooltip 各写一套文案。
 8. `BlessingPanel` 改成使用 `RelicCard` 的选择态版本，让“获得遗物”与“查看遗物”视觉一致。
 9. `UiLayoutRules` 增加 `relic_strip_rect`，确保 1920x1080、1600x900、1366x768、1280x720 下不遮挡地图、左侧建筑栏和右侧详情。
-10. 补齐键鼠交互：`R` 打开/关闭遗物面板，`Esc` 关闭面板，鼠标悬停显示 tooltip，点击遗物卡可展开详情。
+10. 将设置入口固定到顶部最左侧：使用小齿轮按钮打开设置面板，设置面板至少包含主音量、音乐音量和音效音量滑条。
+11. 补齐键鼠交互：`R` 打开/关闭遗物面板，`Esc` 优先关闭当前打开的遗物/设置面板，鼠标悬停显示 tooltip，点击遗物卡可展开详情。
 
 ## 4. 职责边界
 
@@ -102,6 +104,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 |---|---|---:|---|
 | `frame_top_status_bar` | `CombatHud/TopBar` | 1200x72 | 顶部主状态条，薄边、浅冷灰底、轻微布纹或磨砂石纹 |
 | `frame_top_status_chip` | 阶段、核心、部署、时间、资源状态卡 | 240x64 | 小型信息块，适合九宫格拉伸 |
+| `frame_settings_button` | 顶部最左侧齿轮设置按钮 | 64x64 | 小型方形或圆角按钮底，轻边框 |
 | `frame_relic_strip` | `RelicStrip` | 720x48 | 顶部下方遗物摘要条，必须比主状态条更轻 |
 | `frame_relic_icon_slot_common` | `RelicIcon` 常见遗物槽 | 80x80 | 低饱和灰绿边 |
 | `frame_relic_icon_slot_uncommon` | `RelicIcon` 精良遗物槽 | 80x80 | 低饱和蓝青边 |
@@ -134,7 +137,10 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 | `frame_dialog_speaker_plate` | `DialogPanel/SpeakerPlate` | 240x56 | 说话人名牌 |
 | `frame_result_panel` | `ResultPanel` | 720x520 | 结算面板 |
 | `frame_map_popup` | `MapInteractionPopup` | 360x260 | 地图对象交互弹窗 |
-| `frame_audio_settings_panel` | 音量设置面板 | 420x280 | 设置弹窗 |
+| `frame_settings_panel` | 设置面板 / 音量设置面板 | 420x300 | 齿轮按钮打开的设置弹窗，容纳音量滑条 |
+| `frame_slider_track` | 设置面板音量滑条轨道 | 280x24 | 主音量、音乐、音效滑条底轨 |
+| `frame_slider_fill` | 设置面板音量滑条填充 | 280x24 | 柔和青蓝或浅绿填充 |
+| `frame_slider_handle` | 设置面板音量滑条拖柄 | 40x40 | 小圆或小菱形拖柄 |
 | `frame_icon_tile` | 通用图标底板 | 96x96 | 建筑、技能、遗物、属性图标底板 |
 | `bar_progress_track` | HP/SP/核心进度条底 | 320x24 | 细长轨道 |
 | `bar_progress_fill_hp` | HP 填充 | 320x24 | 柔和红色 |
@@ -148,6 +154,11 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 | `icon_phase_day` | 顶部阶段卡 | 白天阶段 |
 | `icon_phase_night` | 顶部阶段卡 | 夜晚阶段 |
 | `icon_phase_blessing` | 顶部阶段卡 / 祝福面板 | 祝福/遗物选择阶段 |
+| `icon_settings_gear` | 顶部最左侧设置按钮 | 设置入口，小齿轮 |
+| `icon_volume_master` | 设置面板主音量滑条 | 主音量 |
+| `icon_volume_music` | 设置面板音乐音量滑条 | 音乐音量 |
+| `icon_volume_sfx` | 设置面板音效音量滑条 | 音效音量 |
+| `icon_volume_mute` | 设置面板静音状态 | 静音 |
 | `icon_core_hp` | 核心生命卡 | 核心生命 |
 | `icon_deploy_limit` | 部署上限卡 | 部署数量 |
 | `icon_enemy_queue` | 波次/刷怪信息 | 待刷怪或敌人队列 |
@@ -296,14 +307,15 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 
 ## 7. 重构顺序
 
-1. 先实现 `RelicStrip`、`RelicPanel`、`RelicIcon`、`RelicCard` 的无资产版本。
-2. 把 `CombatHudController` 里的遗物 tooltip 文本迁到 `UiDisplayText` 和遗物组件。
-3. 将 `BlessingPanel` 的三选一按钮改为遗物卡组件。
-4. 按参考图重排 `CombatHud.tscn`，把 `RelicStrip` 放进顶部区域。
-5. 调整 `UiLayoutRules`，保证遗物条、底部卡组、右侧详情在小屏不互相遮挡。
-6. 生成并接入第一批资产：通用面板、遗物图标、资源图标、职业图标。
-7. 再补齐建筑图标、技能图标、地图图例图标。
-8. 用 1920x1080、1600x900、1366x768、1280x720 检查文本、按钮、卡片、tooltip 是否溢出。
+1. 先确认顶部最左侧设置按钮和设置面板的节点归属，复用或迁移现有音量设置脚本，保证主音量、音乐、音效滑条可用。
+2. 实现 `RelicStrip`、`RelicPanel`、`RelicIcon`、`RelicCard` 的无资产版本。
+3. 把 `CombatHudController` 里的遗物 tooltip 文本迁到 `UiDisplayText` 和遗物组件。
+4. 将 `BlessingPanel` 的三选一按钮改为遗物卡组件。
+5. 按参考图重排 `CombatHud.tscn`，把设置按钮放到顶部最左，把 `RelicStrip` 放进顶部区域下方。
+6. 调整 `UiLayoutRules`，保证设置按钮、遗物条、底部卡组、右侧详情在小屏不互相遮挡。
+7. 生成并接入第一批资产：通用面板、设置按钮/音量图标、遗物图标、资源图标、职业图标。
+8. 再补齐建筑图标、技能图标、地图图例图标。
+9. 用 1920x1080、1600x900、1366x768、1280x720 检查文本、按钮、卡片、tooltip、设置面板是否溢出。
 
 ## 8. 验收标准
 
@@ -311,4 +323,5 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - 任意遗物都能通过 hover 快速查看名称、稀有度和效果。
 - 完整遗物面板能查看全部遗物，并支持按类别筛选。
 - `BlessingPanel`、`RelicStrip`、`RelicPanel` 使用同一套遗物显示组件和同一套文案格式化规则。
+- 顶部最左侧始终有小齿轮设置入口，点击后能打开音量设置面板并调整主音量、音乐和音效。
 - 新资产接入后，删除资产仍能回退到文本占位，不影响项目运行。
