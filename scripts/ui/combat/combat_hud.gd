@@ -8,7 +8,6 @@ signal operator_card_pressed(operator_key: StringName)
 signal pause_pressed
 signal speed_1_pressed
 signal speed_2_pressed
-signal debug_drawer_toggle_pressed
 signal cast_skill_requested
 signal retreat_requested
 signal wave_route_preview_toggled(enabled: bool)
@@ -34,7 +33,6 @@ var _layout_profile: Dictionary = {}
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
-@onready var _debug_button: Button = %DebugButton
 @onready var _wave_preview_panel: PanelContainer = %WavePreviewPanel
 @onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
 @onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
@@ -73,16 +71,14 @@ func _ready() -> void:
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
 	_speed_2_button.pressed.connect(func() -> void: speed_2_pressed.emit())
-	_debug_button.pressed.connect(func() -> void: debug_drawer_toggle_pressed.emit())
 	_wave_route_toggle.toggled.connect(func(enabled: bool) -> void: wave_route_preview_toggled.emit(enabled))
 	if _detail_panel.has_signal("cast_skill_requested"):
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
 		_detail_panel.retreat_requested.connect(func() -> void: retreat_requested.emit())
-	_style_button(_pause_button, GameUiStyle.STROKE)
-	_style_button(_speed_1_button, GameUiStyle.STROKE)
-	_style_button(_speed_2_button, GameUiStyle.STROKE)
-	_style_button(_debug_button, GameUiStyle.STROKE)
+	_style_top_button(_pause_button, false)
+	_style_top_button(_speed_1_button, false)
+	_style_top_button(_speed_2_button, false)
 	_drag_ghost.visible = false
 	_apply_responsive_layout()
 
@@ -122,20 +118,16 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	_speed_1_button.disabled = not enabled
 	_speed_2_button.disabled = not enabled
 	var effective_paused := paused and enabled
-	var pause_accent := GameUiStyle.AMBER if effective_paused else GameUiStyle.STROKE_SOFT
-	var speed_1_accent := GameUiStyle.STROKE_SOFT
-	var speed_2_accent := GameUiStyle.STROKE_SOFT
+	var pause_selected := effective_paused
+	var speed_1_selected := false
+	var speed_2_selected := false
 	if enabled and not effective_paused:
-		speed_1_accent = GameUiStyle.ACCENT if is_equal_approx(speed, 1.0) else GameUiStyle.STROKE_SOFT
-		speed_2_accent = GameUiStyle.ACCENT if is_equal_approx(speed, 2.0) else GameUiStyle.STROKE_SOFT
+		speed_1_selected = is_equal_approx(speed, 1.0)
+		speed_2_selected = is_equal_approx(speed, 2.0)
 	_pause_button.text = "暂停"
-	_style_button(_pause_button, pause_accent)
-	_style_button(_speed_1_button, speed_1_accent)
-	_style_button(_speed_2_button, speed_2_accent)
-
-
-func set_debug_drawer_open(open: bool) -> void:
-	_debug_button.text = "关闭" if open else "调试"
+	_style_top_button(_pause_button, pause_selected)
+	_style_top_button(_speed_1_button, speed_1_selected)
+	_style_top_button(_speed_2_button, speed_2_selected)
 
 
 func set_operators(operators: Array[Dictionary]) -> void:
@@ -214,8 +206,20 @@ func _style_button(button: Button, accent: Color) -> void:
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED)
 
 
+func _style_top_button(button: Button, selected: bool) -> void:
+	GameUiStyle.center_button_text(button)
+	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
+	button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
+	button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(false))
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+
+
 func _apply_frame_margins() -> void:
-	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD)
+	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(4.0, 0.0, 4.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
@@ -243,7 +247,7 @@ func _style_top_cards() -> void:
 	for label in [_queue_label, _core_label, _deploy_label, _resource_label]:
 		GameUiStyle.center_label_text(label)
 	for label in [_message_label]:
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		GameUiStyle.center_label_text(label)
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 
 
@@ -287,7 +291,8 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	var compact := bool(_layout_profile.get("compact", false))
 	var row := get_node_or_null("TopBar/TopMargin/Row") as HBoxContainer
 	if row != null:
-		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)) + 2)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)))
 	var card_height := maxf(36.0, top_height - 8.0)
 	_set_top_card_min("TopBar/TopMargin/Row/StageCard", widths.get("stage", 190.0), card_height)
 	_set_top_card_min("TopBar/TopMargin/Row/CoreCard", widths.get("core", 190.0), card_height)
@@ -295,15 +300,14 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	_set_top_card_min("TopBar/TopMargin/Row/MessageCard", widths.get("message", 260.0), card_height)
 	_set_top_card_min("TopBar/TopMargin/Row/TimeCard", widths.get("time", 200.0), card_height)
 	_set_top_card_min("TopBar/TopMargin/Row/ResourceCard", widths.get("resource", 245.0), card_height)
-	_debug_button.custom_minimum_size = Vector2(float(widths.get("debug", 76.0)), card_height)
 	var label_size := 12 if compact else 13
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_font_size_override("font_size", label_size)
 	_resource_label.add_theme_font_size_override("font_size", 12)
-	var button_height := 30.0 if compact else 32.0
-	_pause_button.custom_minimum_size = Vector2(68.0 if compact else 74.0, button_height)
-	_speed_1_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)
-	_speed_2_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)
+	var button_height := 34.0 if compact else 36.0
+	_pause_button.custom_minimum_size = Vector2(74.0 if compact else 82.0, button_height)
+	_speed_1_button.custom_minimum_size = Vector2(58.0 if compact else 64.0, button_height)
+	_speed_2_button.custom_minimum_size = Vector2(58.0 if compact else 64.0, button_height)
 
 
 func _set_top_card_min(path: NodePath, width: float, height: float) -> void:
