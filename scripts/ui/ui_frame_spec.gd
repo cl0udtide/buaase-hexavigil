@@ -68,7 +68,7 @@ const SPECS := {
 		"path": FS_PANEL_STRIP,
 		"native": Vector2(494.0, 74.0),
 		"slice": Vector4(30.0, 24.0, 30.0, 24.0),
-		"content": Vector4(18.0, 12.0, 18.0, 12.0),
+		"content": Vector4(32.0, 12.0, 32.0, 12.0),
 	},
 	CARD: {
 		"path": FS_PANEL_BADGE,

@@ -215,7 +215,7 @@ func _style_button(button: Button, accent: Color) -> void:
 
 
 func _apply_frame_margins() -> void:
-	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD)
+	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(20.0, 0.0, 20.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
