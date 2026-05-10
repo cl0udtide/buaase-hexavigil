@@ -16,7 +16,7 @@ signal wave_route_preview_toggled(enabled: bool)
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 108.0
 const WAVE_PREVIEW_LINE_HEIGHT := 19.0
-const WAVE_PREVIEW_PANEL_TOP := 68.0
+const WAVE_PREVIEW_PANEL_TOP := 84.0
 const WAVE_PREVIEW_PANEL_BOTTOM_PADDING := 34.0
 const UNIT_DETAIL_GAP := 12.0
 const UNIT_DETAIL_MIN_TOP := 250.0
@@ -51,19 +51,22 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	_top_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_top_bar.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
+	_apply_frame_margins()
 	_style_top_cards()
-	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.AMBER, GameUiStyle.BG_CARD, 1.5))
-	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.50))
-	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 1)
-	_wave_preview_title_label.add_theme_constant_override("shadow_offset_y", 1)
-	_wave_preview_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_wave_preview_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.50))
-	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 1)
-	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 1)
-	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
-	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.AMBER, GameUiStyle.BG_CARD, 2.0))
+	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SIDE_PANEL, GameUiStyle.BG_GLASS, GameUiStyle.ACCENT, false))
+	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
+	_wave_preview_title_label.add_theme_constant_override("shadow_offset_y", 0)
+	GameUiStyle.center_label_text(_wave_preview_title_label)
+	_wave_preview_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	_wave_preview_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 0)
+	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 0)
+	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
+	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
@@ -199,12 +202,21 @@ func _resize_wave_preview_panel(text_value: String) -> void:
 
 
 func _style_button(button: Button, accent: Color) -> void:
+	GameUiStyle.center_button_text(button)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.08))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED)
+
+
+func _apply_frame_margins() -> void:
+	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD)
+	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(12.0, 4.0, 4.0, 0.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
+	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
 func _style_top_cards() -> void:
@@ -222,9 +234,14 @@ func _style_top_cards() -> void:
 	for label in [_core_label, _deploy_label, _queue_label, _message_label, _resource_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
-		label.add_theme_constant_override("shadow_offset_x", 1)
-		label.add_theme_constant_override("shadow_offset_y", 1)
+		label.add_theme_constant_override("shadow_offset_x", 0)
+		label.add_theme_constant_override("shadow_offset_y", 0)
+		label.add_theme_constant_override("line_spacing", 0)
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	for label in [_queue_label, _core_label, _deploy_label, _resource_label]:
+		GameUiStyle.center_label_text(label)
+	for label in [_message_label]:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 
 
@@ -263,7 +280,7 @@ func _place_control(control: Control, rect: Rect2) -> void:
 
 func _apply_top_bar_density(viewport_width: float) -> void:
 	var widths := UiLayoutRules.top_card_widths(viewport_width)
-	var top_height := float(_layout_profile.get("top_card_height", 52.0))
+	var top_height := float(_layout_profile.get("top_card_height", 68.0))
 	var compact := bool(_layout_profile.get("compact", false))
 	var row := get_node_or_null("TopBar/TopMargin/Row") as HBoxContainer
 	if row != null:
@@ -275,14 +292,14 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	_set_top_card_min("TopBar/TopMargin/Row/TimeCard", widths.get("time", 200.0), top_height)
 	_set_top_card_min("TopBar/TopMargin/Row/ResourceCard", widths.get("resource", 245.0), top_height)
 	_debug_button.custom_minimum_size = Vector2(float(widths.get("debug", 76.0)), top_height)
-	var label_size := 13 if compact else 15
+	var label_size := 12 if compact else 13
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_font_size_override("font_size", label_size)
-	_resource_label.add_theme_font_size_override("font_size", 12 if compact else 13)
+	_resource_label.add_theme_font_size_override("font_size", 12)
 	var button_height := 34.0 if compact else 36.0
-	_pause_button.custom_minimum_size = Vector2(64.0 if compact else 68.0, button_height)
-	_speed_1_button.custom_minimum_size = Vector2(54.0 if compact else 58.0, button_height)
-	_speed_2_button.custom_minimum_size = Vector2(54.0 if compact else 58.0, button_height)
+	_pause_button.custom_minimum_size = Vector2(68.0 if compact else 74.0, button_height)
+	_speed_1_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)
+	_speed_2_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)
 
 
 func _set_top_card_min(path: NodePath, width: float, height: float) -> void:

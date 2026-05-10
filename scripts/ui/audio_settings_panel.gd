@@ -90,7 +90,10 @@ func _format_percent(value: float) -> String:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, 1.0))
+	add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SIDE_PANEL, GameUiStyle.BG_GLASS, GameUiStyle.ACCENT, false))
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
 	custom_minimum_size = Vector2(280.0, 0.0)
 	for label in find_children("*", "Label", true, false):
-		(label as Label).add_theme_color_override("font_color", GameUiStyle.TEXT)
+		(label as Label).add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	var title_label := get_node_or_null("%TitleLabel") as Label
+	GameUiStyle.center_label_text(title_label)

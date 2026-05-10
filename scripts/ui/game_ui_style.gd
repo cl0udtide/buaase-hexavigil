@@ -1,26 +1,46 @@
 class_name GameUiStyle
 extends RefCounted
 
+const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
+const FRAME_TOP_HUD := UiFrameSpec.TOP_HUD
+const FRAME_TOP_CARD := UiFrameSpec.TOP_CARD
+const FRAME_SIDE_PANEL := UiFrameSpec.SIDE_PANEL
+const FRAME_DECK_PANEL := UiFrameSpec.DECK_PANEL
+const FRAME_CARD := UiFrameSpec.CARD
+const FRAME_LIST_CARD := UiFrameSpec.LIST_CARD
+const FRAME_OPERATOR_CARD := UiFrameSpec.OPERATOR_CARD
+const FRAME_BUTTON := UiFrameSpec.BUTTON
+const FRAME_TAB := UiFrameSpec.TAB
+const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
 
-const BG := Color(0.058, 0.071, 0.084, 0.98)
-const BG_DARK := Color(0.034, 0.043, 0.052, 0.99)
-const BG_GLASS := Color(0.070, 0.087, 0.100, 0.97)
-const BG_CARD := Color(0.092, 0.110, 0.124, 0.98)
-const BG_CARD_HOVER := Color(0.118, 0.148, 0.160, 1.0)
-const BG_DISABLED := Color(0.048, 0.056, 0.064, 0.97)
-const STROKE := Color(0.220, 0.355, 0.400, 0.78)
-const STROKE_SOFT := Color(0.145, 0.205, 0.232, 0.76)
-const STROKE_STRONG := Color(0.055, 0.690, 0.760, 0.88)
-const ACCENT := Color(0.000, 0.760, 0.840, 0.96)
-const AMBER := Color(1.000, 0.585, 0.145, 0.96)
-const DANGER := Color(0.940, 0.225, 0.170, 0.96)
-const SUCCESS := Color(0.265, 0.780, 0.465, 0.96)
-const VIOLET := Color(0.620, 0.475, 0.960, 0.96)
-const STEEL := Color(0.455, 0.590, 0.650, 0.92)
-const TEXT := Color(0.900, 0.945, 0.955, 1.0)
-const TEXT_DIM := Color(0.680, 0.755, 0.780, 1.0)
-const TEXT_MUTED := Color(0.455, 0.530, 0.560, 1.0)
-const TEXT_SHADOW := Color(0.0, 0.0, 0.0, 0.78)
+
+const BG := Color(0.965, 0.980, 0.988, 1.0)
+const BG_DARK := Color(0.982, 0.989, 0.995, 1.0)
+const BG_GLASS := Color(1.000, 1.000, 1.000, 0.96)
+const BG_CARD := Color(1.000, 1.000, 1.000, 0.98)
+const BG_CARD_HOVER := Color(0.938, 0.970, 0.992, 1.0)
+const BG_DISABLED := Color(0.922, 0.941, 0.955, 0.96)
+const STROKE := Color(0.715, 0.776, 0.835, 1.0)
+const STROKE_SOFT := Color(0.820, 0.867, 0.910, 1.0)
+const STROKE_STRONG := Color(0.160, 0.405, 0.870, 1.0)
+const ACCENT := Color(0.145, 0.388, 0.920, 1.0)
+const AMBER := Color(0.915, 0.520, 0.075, 1.0)
+const DANGER := Color(0.850, 0.145, 0.145, 1.0)
+const SUCCESS := Color(0.090, 0.610, 0.360, 1.0)
+const VIOLET := Color(0.450, 0.255, 0.820, 1.0)
+const STEEL := Color(0.395, 0.465, 0.565, 1.0)
+const TEXT := Color(0.075, 0.110, 0.175, 1.0)
+const TEXT_DIM := Color(0.285, 0.365, 0.460, 1.0)
+const TEXT_MUTED := Color(0.555, 0.630, 0.705, 1.0)
+const TEXT_INVERTED := Color(0.925, 0.965, 1.000, 1.0)
+const TEXT_INVERTED_DIM := Color(0.660, 0.760, 0.865, 1.0)
+const TEXT_SHADOW := Color(1.0, 1.0, 1.0, 0.0)
+
+const ACCENT_SOFT := Color(0.895, 0.935, 1.000, 1.0)
+const AMBER_SOFT := Color(1.000, 0.948, 0.835, 1.0)
+const DANGER_SOFT := Color(1.000, 0.905, 0.905, 1.0)
+const SUCCESS_SOFT := Color(0.885, 0.965, 0.925, 1.0)
+const VIOLET_SOFT := Color(0.940, 0.920, 1.000, 1.0)
 
 const HOLOGRAM_ROOT := "res://assets/UI/1. Free Hologram Interface Wenrexa"
 const HOLOGRAM_BUTTON_NORMAL := HOLOGRAM_ROOT + "/Button 1/Button Normal.png"
@@ -45,11 +65,30 @@ const MIKO_PROGRESS_BLUE_FILL := MIKO_ROOT + "/ProgressBar Blue/V4/Foreground.pn
 const MIKO_PROGRESS_GREEN_FILL := MIKO_ROOT + "/ProgressBar Green/V4/Foreground.png"
 const MIKO_PROGRESS_RED_FILL := MIKO_ROOT + "/ProgressBar Red/V4/Foreground.png"
 
+const COMMAND_GLASS_ROOT := "res://assets/UI/CommandGlass"
+const CG_PANEL_TOP_HUD := COMMAND_GLASS_ROOT + "/panel_top_hud.png"
+const CG_PANEL_DETAIL := COMMAND_GLASS_ROOT + "/panel_detail.png"
+const CG_PANEL_WIDE_LIGHT := COMMAND_GLASS_ROOT + "/panel_wide_light.png"
+const CG_PANEL_OPERATOR := COMMAND_GLASS_ROOT + "/panel_operator.png"
+const CG_CARD_LIGHT := COMMAND_GLASS_ROOT + "/card_light.png"
+const CG_CARD_SMALL_LIGHT := COMMAND_GLASS_ROOT + "/card_small_light.png"
+const CG_BUTTON_NORMAL := COMMAND_GLASS_ROOT + "/button_normal.png"
+const CG_BUTTON_HOVER := COMMAND_GLASS_ROOT + "/button_hover.png"
+const CG_BUTTON_PRESSED := COMMAND_GLASS_ROOT + "/button_pressed.png"
+const CG_BUTTON_DISABLED := COMMAND_GLASS_ROOT + "/button_disabled.png"
+const CG_TAB_SELECTED := COMMAND_GLASS_ROOT + "/tab_selected.png"
+const CG_TAB_IDLE := COMMAND_GLASS_ROOT + "/tab_idle.png"
+const CG_PROGRESS_TRACK := COMMAND_GLASS_ROOT + "/progress_track.png"
+const CG_PROGRESS_BLUE := COMMAND_GLASS_ROOT + "/progress_fill_blue.png"
+const CG_PROGRESS_AMBER := COMMAND_GLASS_ROOT + "/progress_fill_amber.png"
+const CG_PROGRESS_RED := COMMAND_GLASS_ROOT + "/progress_fill_red.png"
+const CG_ICON_TILE := COMMAND_GLASS_ROOT + "/icon_tile.png"
+
 
 static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	var texture := load(path) as Texture2D
 	if texture == null:
-		return flat_panel(fallback_fill, fallback_border, 1.0, 6.0)
+		return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
 
 	var style := StyleBoxTexture.new()
 	style.texture = texture
@@ -57,11 +96,35 @@ static func texture_box(path: String, fallback_fill: Color, fallback_border: Col
 	style.set_texture_margin(SIDE_TOP, margin)
 	style.set_texture_margin(SIDE_RIGHT, margin)
 	style.set_texture_margin(SIDE_BOTTOM, margin)
-	style.content_margin_left = 10.0
-	style.content_margin_top = 8.0
-	style.content_margin_right = 10.0
-	style.content_margin_bottom = 8.0
+	style.content_margin_left = 12.0
+	style.content_margin_top = 9.0
+	style.content_margin_right = 12.0
+	style.content_margin_bottom = 9.0
 	return style
+
+
+static func frame_box(component: StringName, fallback_fill: Color, fallback_border: Color, include_content := true) -> StyleBox:
+	return UiFrameSpec.style_box(component, fallback_fill, fallback_border, include_content)
+
+
+static func apply_frame_margin(container: MarginContainer, component: StringName, extra := Vector4.ZERO) -> void:
+	UiFrameSpec.apply_margin(container, component, extra)
+
+
+static func frame_insets(component: StringName) -> Vector4:
+	return UiFrameSpec.content_insets(component)
+
+
+static func center_button_text(button: Button) -> void:
+	if button == null:
+		return
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+static func center_label_text(label: Label) -> void:
+	if label == null:
+		return
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 static func hologram_texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 22.0) -> StyleBox:
@@ -85,33 +148,23 @@ static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, ra
 	style.corner_radius_top_right = int(radius)
 	style.corner_radius_bottom_left = int(radius)
 	style.corner_radius_bottom_right = int(radius)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
-	style.shadow_size = 12
-	style.shadow_offset = Vector2(0.0, 5.0)
+	style.content_margin_left = 10.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 10.0
+	style.content_margin_bottom = 8.0
+	style.shadow_color = Color(0.120, 0.180, 0.260, 0.10)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0.0, 3.0)
 	return style
 
 
 static func panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBox:
-	var path := HOLOGRAM_PANEL_EMPTY
-	var margin := 20.0
-	if border == SUCCESS:
-		path = HOLOGRAM_PANEL_GREEN
+	var component := UiFrameSpec.TOP_CARD
+	if border == AMBER:
+		component = UiFrameSpec.CARD
 	elif border == DANGER:
-		path = HOLOGRAM_PANEL_RED
-	elif border == AMBER or border == ACCENT or border == STROKE_STRONG:
-		path = HOLOGRAM_CARD
-		margin = 24.0
-	elif radius <= 4.0:
-		margin = 14.0
-	elif radius <= 5.0:
-		margin = 18.0
-
-	var style := hologram_texture_box(path, fill, border, margin)
-	style.content_margin_left = 8.0
-	style.content_margin_top = 8.0
-	style.content_margin_right = 8.0
-	style.content_margin_bottom = 8.0
-	return style
+		component = UiFrameSpec.OPERATOR_CARD
+	return frame_box(component, fill, border)
 
 
 static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
@@ -123,39 +176,66 @@ static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radi
 
 
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
-	if border == AMBER:
-		return hologram_texture_box(HOLOGRAM_BUTTON_PRESSED, Color(border.r * 0.16, border.g * 0.16, border.b * 0.16, fill_alpha), border, 18.0)
-	if border == STROKE_SOFT:
-		return hologram_texture_box(HOLOGRAM_BUTTON_NORMAL, Color(border.r * 0.16, border.g * 0.16, border.b * 0.16, fill_alpha), border, 18.0)
-	return hologram_texture_box(HOLOGRAM_BUTTON_HOVER, Color(border.r * 0.16, border.g * 0.16, border.b * 0.16, fill_alpha), border, 18.0)
+	var component := UiFrameSpec.BUTTON
+	if border == ACCENT or border == STROKE_STRONG or border == SUCCESS:
+		component = UiFrameSpec.TAB_SELECTED
+	elif border == AMBER:
+		component = UiFrameSpec.BUTTON_PRESSED
+	elif fill_alpha <= 0.10 or border == STROKE_SOFT:
+		component = UiFrameSpec.BUTTON_DISABLED if fill_alpha <= 0.10 else UiFrameSpec.BUTTON
+	return frame_box(component, BG_CARD, border)
 
 
 static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBox:
-	var style := hologram_texture_box(HOLOGRAM_CARD, fill, AMBER, 24.0)
-	style.content_margin_left = 8.0
-	style.content_margin_top = 8.0
-	style.content_margin_right = 8.0
-	style.content_margin_bottom = 8.0
-	return style
+	var component := UiFrameSpec.CARD
+	if fill == BG_GLASS or fill == BG_DARK:
+		component = UiFrameSpec.SIDE_PANEL
+	elif border == AMBER:
+		component = UiFrameSpec.CARD
+	elif border == DANGER:
+		component = UiFrameSpec.OPERATOR_CARD
+	return frame_box(component, fill, border)
 
 
 static func top_card() -> StyleBox:
-	var style := card(STROKE_SOFT, BG_GLASS, 1.0)
-	style.content_margin_left = 12.0
-	style.content_margin_top = 8.0
-	style.content_margin_right = 12.0
-	style.content_margin_bottom = 8.0
-	return style
+	return frame_box(UiFrameSpec.TOP_CARD, BG_GLASS, STROKE_SOFT)
+
+
+static func top_hud_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.TOP_HUD, BG_GLASS, STROKE_SOFT)
+
+
+static func side_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.SIDE_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func deck_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.DECK_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func operator_card(border: Color = ACCENT) -> StyleBox:
+	return frame_box(UiFrameSpec.OPERATOR_CARD, BG_CARD, border, false)
+
+
+static func list_card(selected: bool = false) -> StyleBox:
+	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD, AMBER if selected else STROKE_SOFT, false)
+
+
+static func icon_tile() -> StyleBox:
+	return frame_box(UiFrameSpec.ICON_TILE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func tab(selected: bool) -> StyleBox:
+	var component := UiFrameSpec.TAB_SELECTED if selected else UiFrameSpec.TAB
+	return frame_box(component, ACCENT_SOFT if selected else BG_CARD, ACCENT if selected else STROKE_SOFT)
 
 
 static func accent_button(accent: Color) -> StyleBox:
-	if accent == AMBER:
-		return hologram_texture_box(HOLOGRAM_BUTTON_PRESSED, Color(accent.r * 0.16, accent.g * 0.16, accent.b * 0.16, 0.34), accent, 18.0)
-	return hologram_texture_box(HOLOGRAM_BUTTON_HOVER, Color(accent.r * 0.16, accent.g * 0.16, accent.b * 0.16, 0.34), accent, 18.0)
+	return button(accent, 0.26)
 
 
 static func disabled_button() -> StyleBox:
-	return hologram_texture_box(HOLOGRAM_BUTTON_DISABLED, BG_DISABLED, STROKE_SOFT, 18.0)
+	return button(STROKE_SOFT, 0.08)
 
 
 static func miko_button(state: StringName = &"normal") -> StyleBox:
@@ -175,13 +255,13 @@ static func miko_panel(highlighted: bool = false) -> StyleBox:
 
 
 static func progress_background() -> StyleBox:
-	return texture_box(MIKO_PROGRESS_BLUE_BG, Color(0.0, 0.0, 0.0, 0.42), Color(0.18, 0.23, 0.26, 0.9), 8.0)
+	return frame_box(UiFrameSpec.PROGRESS_TRACK, Color(0.900, 0.925, 0.945, 1.0), Color(0.900, 0.925, 0.945, 1.0))
 
 
 static func progress_fill(color: Color) -> StyleBox:
-	var path := MIKO_PROGRESS_BLUE_FILL
+	var component := UiFrameSpec.PROGRESS_BLUE
 	if color.r > color.b and color.r > color.g:
-		path = MIKO_PROGRESS_RED_FILL
-	elif color.g > color.b:
-		path = MIKO_PROGRESS_GREEN_FILL
-	return texture_box(path, color, color, 8.0)
+		component = UiFrameSpec.PROGRESS_RED
+	elif color.g > color.b or color == AMBER:
+		component = UiFrameSpec.PROGRESS_AMBER
+	return frame_box(component, color, color)
