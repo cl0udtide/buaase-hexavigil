@@ -5,6 +5,10 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
+const SKILL_SECTION_MIN_HEIGHT := 230.0
+const SKILL_TEXT_MIN_HEIGHT := 120.0
+const SKILL_SECTION_EXTRA_HEIGHT := 62.0
+
 signal cast_skill_requested
 signal retreat_requested
 signal purchase_requested(slot_index: int)
@@ -36,7 +40,9 @@ signal purchase_requested(slot_index: int)
 @onready var _res_stat_label: Label = %ResStatLabel
 @onready var _block_stat_label: Label = %BlockStatLabel
 @onready var _aspd_stat_label: Label = %AspdStatLabel
+@onready var _skill_section: Control = %SkillSection
 @onready var _skill_base: Panel = %SkillSectionBase
+@onready var _skill_header_row: Control = get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow") as Control
 @onready var _skill_icon_backplate: Panel = %SkillIconBackplate
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
 @onready var _skill_icon_frame: Panel = %SkillIconFrame
@@ -73,16 +79,14 @@ func _ready() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/VitalsSection/VitalsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/StatsSection/StatsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(4.0, 4.0, 4.0, 4.0))
-	var skill_section := get_node_or_null("ContentMargin/MainVBox/SkillSection") as Control
-	if skill_section != null:
-		skill_section.custom_minimum_size = Vector2(0.0, 230.0)
-		skill_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if _skill_section != null:
+		_skill_section.custom_minimum_size = Vector2(0.0, SKILL_SECTION_MIN_HEIGHT)
+		_skill_section.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
-	_skill_scroll.gui_input.connect(_on_skill_scroll_gui_input)
-	_skill_scroll.resized.connect(_refresh_skill_label_width)
+	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_skill_scroll.resized.connect(_refresh_skill_layout)
 	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_skill_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -174,7 +178,8 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	if not status_lines.is_empty():
 		_skill_status_label.text = " / ".join(status_lines)
 	_skill_label.text = unit.get_skill_description()
-	_refresh_skill_label_width()
+	_refresh_skill_layout()
+	call_deferred("_refresh_skill_layout")
 	var skill_scroll_key := "%d:%s:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state, ammo_text]
 	if skill_scroll_key != _last_skill_scroll_key:
 		_skill_scroll.scroll_vertical = 0
@@ -269,7 +274,8 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
 	_skill_status_label.text = skill_status_text
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
-	_refresh_skill_label_width()
+	_refresh_skill_layout()
+	call_deferred("_refresh_skill_layout")
 	_skill_scroll.scroll_vertical = 0
 
 
@@ -311,11 +317,6 @@ func _ensure_scroll_wrapper() -> void:
 	_detail_scroll = scroll
 
 
-func _on_skill_scroll_gui_input(event: InputEvent) -> void:
-	if _handle_scroll_event(event, _skill_scroll):
-		accept_event()
-
-
 func _on_detail_scroll_gui_input(event: InputEvent) -> void:
 	if _handle_scroll_event(event, _detail_scroll):
 		accept_event()
@@ -343,10 +344,22 @@ func _handle_scroll_event(event: InputEvent, scroll: ScrollContainer) -> bool:
 	return true
 
 
-func _refresh_skill_label_width() -> void:
+func _refresh_skill_layout() -> void:
 	if _skill_scroll == null or _skill_label == null:
 		return
-	_skill_label.custom_minimum_size.x = maxf(1.0, _skill_scroll.size.x - 18.0)
+	var text_width := maxf(1.0, _skill_scroll.size.x - 18.0)
+	if text_width <= 1.0 and _skill_section != null:
+		text_width = maxf(1.0, _skill_section.size.x - 40.0)
+	_skill_label.custom_minimum_size = Vector2(text_width, 0.0)
+	var label_height := maxf(SKILL_TEXT_MIN_HEIGHT, _skill_label.get_combined_minimum_size().y)
+	_skill_label.custom_minimum_size = Vector2(text_width, label_height)
+	_skill_scroll.custom_minimum_size.y = label_height
+	if _skill_section == null:
+		return
+	var header_height := 52.0
+	if _skill_header_row != null:
+		header_height = maxf(header_height, _skill_header_row.get_combined_minimum_size().y)
+	_skill_section.custom_minimum_size.y = maxf(SKILL_SECTION_MIN_HEIGHT, header_height + label_height + SKILL_SECTION_EXTRA_HEIGHT)
 
 
 func _on_purchase_pressed() -> void:

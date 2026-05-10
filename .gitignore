@@ -25,3 +25,5 @@ tmp/
 assets/222/
 assets/source_ai/
 assets/*.zip
+__pycache__/
+*.pyc
