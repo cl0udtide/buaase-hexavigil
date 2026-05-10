@@ -9,6 +9,7 @@ const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
 const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
+const ROUTE_LABEL_ALPHABET := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var _operator_defs: Array[Dictionary] = []
 var _selected_unit_runtime_id := -1
@@ -723,6 +724,7 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 		if routes_by_key.has(route_key):
 			var existing: Dictionary = routes_by_key[route_key]
 			existing["count"] = int(existing.get("count", 0)) + int(entry.get("count", 0))
+			_add_enemy_to_route(existing, entry)
 			continue
 		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(spawn_key)
 		var core_cell: Vector2i = _map_manager.get_core_cell()
@@ -736,8 +738,10 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			"ok": bool(path_result.get("ok", false)),
 			"status": StringName(path_result.get("status", &"no_path")),
 			"message": String(path_result.get("message", "")),
-			"count": int(entry.get("count", 0))
+			"count": int(entry.get("count", 0)),
+			"enemies": []
 		}
+		_add_enemy_to_route(route, entry)
 		routes_by_key[route_key] = route
 	var routes: Array[Dictionary] = []
 	for route in routes_by_key.values():
@@ -749,7 +753,59 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			return String(a.get("path_mode", "")) < String(b.get("path_mode", ""))
 		return spawn_a < spawn_b
 	)
+	for index in range(routes.size()):
+		var route: Dictionary = routes[index]
+		route["route_label"] = _route_label_for_index(index)
+		route["route_summary"] = _format_route_enemy_summary(route)
+		routes[index] = route
 	return routes
+
+
+func _add_enemy_to_route(route: Dictionary, entry: Dictionary) -> void:
+	var enemy_id := StringName(entry.get("enemy_id", ""))
+	var enemy_name := String(entry.get("enemy_name", entry.get("enemy_id", "")))
+	var count := int(entry.get("count", 0))
+	if enemy_id == StringName() or count <= 0:
+		return
+	var enemies: Array = route.get("enemies", [])
+	for index in range(enemies.size()):
+		var enemy_variant: Variant = enemies[index]
+		if typeof(enemy_variant) != TYPE_DICTIONARY:
+			continue
+		var enemy: Dictionary = enemy_variant
+		if StringName(enemy.get("enemy_id", "")) != enemy_id:
+			continue
+		enemy["count"] = int(enemy.get("count", 0)) + count
+		enemies[index] = enemy
+		route["enemies"] = enemies
+		return
+	enemies.append({
+		"enemy_id": enemy_id,
+		"enemy_name": enemy_name,
+		"count": count
+	})
+	route["enemies"] = enemies
+
+
+func _route_label_for_index(index: int) -> String:
+	if index >= 0 and index < ROUTE_LABEL_ALPHABET.length():
+		return ROUTE_LABEL_ALPHABET.substr(index, 1)
+	return str(index + 1)
+
+
+func _format_route_enemy_summary(route: Dictionary) -> String:
+	var enemies: Array = route.get("enemies", [])
+	var parts := PackedStringArray()
+	for enemy_variant: Variant in enemies:
+		if typeof(enemy_variant) != TYPE_DICTIONARY:
+			continue
+		var enemy: Dictionary = enemy_variant
+		var enemy_name := String(enemy.get("enemy_name", enemy.get("enemy_id", "")))
+		var count := int(enemy.get("count", 0))
+		if enemy_name.is_empty() or count <= 0:
+			continue
+		parts.append("%sx%d" % [enemy_name, count])
+	return "、".join(parts)
 
 
 func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], hover_cell: Vector2i) -> String:
@@ -773,9 +829,24 @@ func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], h
 	if hover_cell != INVALID_CELL:
 		lines.append("预览阻挡: %s" % str(hover_cell))
 	lines.append("路线预览: %s" % ("已开启" if _show_wave_routes else "关闭"))
+	var route_lines := _collect_route_legend_lines(routes)
+	if not route_lines.is_empty():
+		lines.append("路线: %s" % "；".join(route_lines))
 	if not warnings.is_empty():
 		lines.append("警告: %s" % "；".join(warnings))
 	return "\n".join(lines)
+
+
+func _collect_route_legend_lines(routes: Array[Dictionary]) -> PackedStringArray:
+	var lines := PackedStringArray()
+	for route in routes:
+		var route_label := String(route.get("route_label", "?"))
+		var spawn_key := String(route.get("spawn_key", ""))
+		var route_summary := String(route.get("route_summary", ""))
+		if route_summary.is_empty():
+			route_summary = "无敌人"
+		lines.append("%s线 %s: %s" % [route_label, spawn_key, route_summary])
+	return lines
 
 
 func _collect_route_warning_lines(routes: Array[Dictionary]) -> PackedStringArray:
