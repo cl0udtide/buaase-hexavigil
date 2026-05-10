@@ -112,7 +112,7 @@ func _apply_icon_texture(config: Dictionary) -> void:
 
 func _apply_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
-	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, _accent, false))
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame(_accent))
 	_selected_overlay.visible = _selected or _hovered
 	_disabled_overlay.visible = _disabled
 	modulate.a = 0.86 if _disabled else 1.0
