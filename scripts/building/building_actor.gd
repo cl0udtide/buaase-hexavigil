@@ -2,6 +2,15 @@ extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
+const VISUAL_TEXTURE_ROOT := "res://assets/sprites/buildings"
+const VISUAL_IDLE_ANIM := "idle"
+const VISUAL_TEXTURE_SIZE := 128.0
+const VISUAL_DISPLAY_SIZE := 72.0
+const VISUAL_OFFSET := Vector2(0.0, -8.0)
+const VISUAL_Z_INDEX := 2
+const OVERLAY_Z_INDEX := 20
+const DESTROYED_VISUAL_KEY := "generic_destroyed_building"
+
 var building_id: StringName
 var runtime_id := -1
 var current_cell := Vector2i.ZERO
@@ -11,12 +20,17 @@ var effect_radius := 0
 var cfg: Dictionary = {}
 var _enabled := true
 var _is_destroyed := false
+var _wall_connection_mask := 0
+var _has_visual_sprite := false
+var _using_destroyed_visual_fallback := false
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
+@onready var _visual_root: Node2D = get_node_or_null("%VisualRoot") as Node2D
 
 
 func _ready() -> void:
 	add_to_group("buildings")
+	_setup_overlay_z_index()
 
 
 func setup_from_cfg(new_building_id: StringName, new_cfg: Dictionary, cell: Vector2i) -> void:
@@ -29,6 +43,7 @@ func setup_from_cfg(new_building_id: StringName, new_cfg: Dictionary, cell: Vect
 	_enabled = bool(cfg.get("initial_enabled", true))
 	_is_destroyed = false
 	global_position = get_map_manager().cell_to_world(cell) if get_map_manager() != null else Vector2.ZERO
+	_refresh_visual_sprite()
 	_refresh_title_label()
 	_update_status_view()
 
@@ -77,18 +92,30 @@ func can_toggle_enabled() -> bool:
 	return building_id == &"war_shrine"
 
 
+func set_wall_connection_mask(mask: int) -> void:
+	var normalized_mask: int = max(0, min(mask, 15))
+	if _wall_connection_mask == normalized_mask:
+		return
+	_wall_connection_mask = normalized_mask
+	_refresh_visual_sprite()
+
+
+func get_wall_connection_mask() -> int:
+	return _wall_connection_mask
+
+
 func set_enabled(value: bool) -> void:
 	if not can_toggle_enabled():
 		return
 	_enabled = value
-	_refresh_title_label()
+	_refresh_visual_sprite()
 
 
 func toggle_enabled() -> bool:
 	if not can_toggle_enabled():
 		return _enabled
 	_enabled = not _enabled
-	_refresh_title_label()
+	_refresh_visual_sprite()
 	return _enabled
 
 
@@ -101,12 +128,174 @@ func _refresh_title_label() -> void:
 	if label == null:
 		return
 	label.theme = AppTheme.get_theme()
+	label.visible = not _has_visual_sprite
 	var title := String(cfg.get("name", building_id))
 	if _is_destroyed:
 		title += " [已毁]"
 	if can_toggle_enabled():
 		title += " [ON]" if _enabled else " [OFF]"
 	label.text = title
+
+
+func _setup_overlay_z_index() -> void:
+	var label := get_node_or_null("%TitleLabel")
+	if label is CanvasItem:
+		(label as CanvasItem).z_index = OVERLAY_Z_INDEX
+	if _status_view is CanvasItem:
+		(_status_view as CanvasItem).z_index = OVERLAY_Z_INDEX
+
+
+func _refresh_visual_sprite() -> void:
+	_has_visual_sprite = false
+	_using_destroyed_visual_fallback = false
+	var desired_key := _resolve_visual_key()
+	var texture := _load_visual_texture(desired_key)
+	if texture == null and building_id == &"wood_wall" and not _is_destroyed:
+		var base_key := String(cfg.get("visual_key", "")).strip_edges()
+		if not base_key.is_empty() and base_key != desired_key:
+			texture = _load_visual_texture(base_key)
+		var prefix_key := String(cfg.get("wall_visual_prefix", "")).strip_edges()
+		if texture == null and not prefix_key.is_empty() and prefix_key != desired_key and prefix_key != base_key:
+			texture = _load_visual_texture(prefix_key)
+	if texture == null and _is_destroyed:
+		var fallback_key := _resolve_operational_visual_key()
+		if not fallback_key.is_empty() and fallback_key != desired_key:
+			texture = _load_visual_texture(fallback_key)
+			_using_destroyed_visual_fallback = texture != null
+	var sprite := _get_visual_sprite(texture != null)
+	if texture == null:
+		if sprite != null:
+			sprite.visible = false
+		modulate = Color(0.55, 0.55, 0.55, 0.78) if _is_destroyed else Color.WHITE
+		_refresh_title_label()
+		return
+	sprite.texture = texture
+	sprite.centered = true
+	sprite.position = VISUAL_OFFSET
+	sprite.scale = Vector2.ONE * (_get_visual_display_size() / VISUAL_TEXTURE_SIZE)
+	sprite.z_index = VISUAL_Z_INDEX
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.visible = true
+	_has_visual_sprite = true
+	modulate = Color(0.55, 0.55, 0.55, 0.78) if _is_destroyed and _using_destroyed_visual_fallback else Color.WHITE
+	_refresh_title_label()
+
+
+func _get_visual_sprite(create_if_missing: bool) -> Sprite2D:
+	if _visual_root == null and create_if_missing:
+		_visual_root = Node2D.new()
+		_visual_root.name = "VisualRoot"
+		_visual_root.unique_name_in_owner = true
+		add_child(_visual_root)
+	if _visual_root == null:
+		return null
+	var sprite := _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	if sprite == null and create_if_missing:
+		sprite = Sprite2D.new()
+		sprite.name = "IdleSprite"
+		_visual_root.add_child(sprite)
+	return sprite
+
+
+func _resolve_visual_key() -> String:
+	if _is_destroyed:
+		var destroyed_key := String(cfg.get("destroyed_visual_key", DESTROYED_VISUAL_KEY)).strip_edges()
+		return destroyed_key if not destroyed_key.is_empty() else DESTROYED_VISUAL_KEY
+	return _resolve_operational_visual_key()
+
+
+func _resolve_operational_visual_key() -> String:
+	if building_id == &"wood_wall":
+		return _resolve_wall_visual_key()
+	if can_toggle_enabled():
+		var state_key_name := "active_visual_key" if _enabled else "inactive_visual_key"
+		var state_key := String(cfg.get(state_key_name, "")).strip_edges()
+		if not state_key.is_empty():
+			return state_key
+	var visual_key := String(cfg.get("visual_key", building_id)).strip_edges()
+	return visual_key if not visual_key.is_empty() else String(building_id)
+
+
+func _resolve_wall_visual_key() -> String:
+	var prefix := String(cfg.get("wall_visual_prefix", "wood_wall")).strip_edges()
+	if prefix.is_empty():
+		prefix = String(cfg.get("visual_key", "wood_wall")).strip_edges()
+	if prefix.is_empty():
+		prefix = "wood_wall"
+	return "%s_%s" % [prefix, _wall_connection_suffix(_wall_connection_mask)]
+
+
+func _wall_connection_suffix(mask: int) -> String:
+	match mask:
+		0:
+			return "0000_isolated"
+		1:
+			return "0001_n"
+		2:
+			return "0010_e"
+		3:
+			return "0011_ne"
+		4:
+			return "0100_s"
+		5:
+			return "0101_ns"
+		6:
+			return "0110_es"
+		7:
+			return "0111_nes"
+		8:
+			return "1000_w"
+		9:
+			return "1001_nw"
+		10:
+			return "1010_ew"
+		11:
+			return "1011_new"
+		12:
+			return "1100_sw"
+		13:
+			return "1101_nsw"
+		14:
+			return "1110_esw"
+		15:
+			return "1111_nesw"
+	return "0000_isolated"
+
+
+func _load_visual_texture(visual_key: String) -> Texture2D:
+	var normalized_key := visual_key.strip_edges()
+	if normalized_key.is_empty():
+		return null
+	for path in _candidate_texture_paths(normalized_key):
+		if ResourceLoader.exists(path):
+			return load(path) as Texture2D
+	return null
+
+
+func _candidate_texture_paths(visual_key: String) -> PackedStringArray:
+	var paths := PackedStringArray()
+	paths.append("%s/%s.png" % [VISUAL_TEXTURE_ROOT, visual_key])
+	paths.append("%s/%s/%s.png" % [VISUAL_TEXTURE_ROOT, visual_key, visual_key])
+	paths.append("%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, visual_key, visual_key, VISUAL_IDLE_ANIM])
+	paths.append("%s/%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, visual_key, VISUAL_IDLE_ANIM, visual_key, VISUAL_IDLE_ANIM])
+	var family_key := _visual_family_key(visual_key)
+	if not family_key.is_empty() and family_key != visual_key:
+		paths.append("%s/%s/%s.png" % [VISUAL_TEXTURE_ROOT, family_key, visual_key])
+		paths.append("%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, family_key, visual_key, VISUAL_IDLE_ANIM])
+		paths.append("%s/%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, family_key, VISUAL_IDLE_ANIM, visual_key, VISUAL_IDLE_ANIM])
+	return paths
+
+
+func _visual_family_key(visual_key: String) -> String:
+	if visual_key.begins_with("wood_wall_"):
+		return "wood_wall"
+	if visual_key.begins_with("war_shrine_"):
+		return "war_shrine"
+	return ""
+
+
+func _get_visual_display_size() -> float:
+	return max(float(cfg.get("visual_display_size", VISUAL_DISPLAY_SIZE)), 1.0)
 
 
 func _update_status_view() -> void:
@@ -121,5 +310,4 @@ func _play_hit_effect() -> void:
 
 func _set_destroyed(value: bool) -> void:
 	_is_destroyed = value
-	modulate = Color(0.55, 0.55, 0.55, 0.78) if _is_destroyed else Color.WHITE
-	_refresh_title_label()
+	_refresh_visual_sprite()

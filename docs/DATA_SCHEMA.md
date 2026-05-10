@@ -313,6 +313,8 @@ Boss 多阶段规则：
     "sort_order": 110,
     "icon_key": "medical_station_icon",
     "icon_text": "疗",
+    "visual_key": "medical_station",
+    "destroyed_visual_key": "generic_destroyed_building",
     "max_hp": 380,
     "cost_wood": 2,
     "cost_stone": 1,
@@ -355,6 +357,12 @@ Boss 多阶段规则：
 | `sort_order` | `int` | UI 排序值；`BuildPanel` 按该值从小到大显示，同值按 `id` 排序 |
 | `icon_key` | `String` | 建筑图标逻辑名，后续可映射到真实图标资源 |
 | `icon_text` | `String` | 当前占位 UI 使用的单字图标文本；有真实图标资源后可逐步替换 |
+| `visual_key` | `String` | 建筑正常状态贴图逻辑名，默认按 `assets/sprites/buildings/` 下的同名资源查找 |
+| `active_visual_key` | `String` | 可开关建筑开启状态贴图逻辑名，例如战火圣坛开启态 |
+| `inactive_visual_key` | `String` | 可开关建筑关闭状态贴图逻辑名，例如战火圣坛关闭态 |
+| `destroyed_visual_key` | `String` | 建筑完全损毁状态贴图逻辑名，缺省时使用 `generic_destroyed_building` |
+| `wall_visual_prefix` | `String` | 木墙连接变体前缀；运行时组合为 `<prefix>_0001_n` 等 16 种四邻接贴图名 |
+| `visual_display_size` | `float` | 建筑贴图在地图上的显示尺寸，默认 `72`，用于让 128px 贴图覆盖 64px 逻辑格并减少连接缝 |
 | `hidden_in_build_panel` | `bool` | 是否从建筑面板隐藏，适合未开放或调试建筑 |
 
 `BuildPanel` 不维护独立建筑清单。建筑是否出现在某个标签页，由 `building_type` 决定：
