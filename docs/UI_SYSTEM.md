@@ -98,80 +98,400 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - 构图：图标主体居中，四周保留 12% 透明安全边距，64x64 缩略图下仍可辨认。
 - 输出：源文件建议 512x512 或 1024x1024，入库导出为透明 PNG。可缩放框类资产需额外提供九宫格切片建议。
 
-### 6.2 边栏与面板资产
+### 6.2 分层拆分原则
 
-| 资产 key | 对应 UI 部件 | 建议规格 | 说明 |
+UI 资产默认按“底板、内容、覆盖框、状态层”拆分。凡是后续会被代码替换、裁剪、滚动、变长、变色或响应状态的内容，都不能烘在同一张大图里。
+
+- 底板资产只负责整体材质和极薄边缘，不画具体数据区控件。
+- 头像、建筑图标、技能图标、遗物图标这类内容图片必须夹在 `backplate` 和 `frame` 之间；`frame` 中心后续抠透明。
+- 进度条必须拆为 `track`、`fill`、必要时的 `glow/overlay`，不得把填充比例画死。
+- 列表容器只画承托背景，不画固定数量的卡槽；条目卡由代码动态生成。
+- 选中、禁用、冷却、稀有度等状态优先做 overlay 或 state frame，不复制一张带内容的大图。
+- 所有文字、数字、图标、头像、进度值、冷却值都由 Godot 节点绘制。
+- 同父 `Control` 节点默认按树顺序后绘制覆盖前者；复杂部件可显式设置 `z_index`。
+
+### 6.2.1 分层框架与控件资产
+
+| 资产 key | 对应 UI 部件 | 建议规格 | 分层职责 |
 |---|---|---:|---|
-| `frame_top_status_bar` | `CombatHud/TopBar` | 1200x72 | 顶部主状态条，薄边、浅冷灰底、轻微布纹或磨砂石纹 |
-| `frame_top_status_chip` | 阶段、核心、部署、时间、资源状态卡 | 240x64 | 小型信息块，适合九宫格拉伸 |
-| `frame_settings_button` | 顶部最左侧齿轮设置按钮 | 64x64 | 小型方形或圆角按钮底，轻边框 |
-| `frame_relic_strip` | `RelicStrip` | 720x48 | 顶部下方遗物摘要条，必须比主状态条更轻 |
-| `frame_relic_icon_slot_common` | `RelicIcon` 常见遗物槽 | 80x80 | 低饱和灰绿边 |
-| `frame_relic_icon_slot_uncommon` | `RelicIcon` 精良遗物槽 | 80x80 | 低饱和蓝青边 |
-| `frame_relic_icon_slot_rare` | `RelicIcon` 稀有遗物槽 | 80x80 | 柔和浅金边，不要强金光 |
-| `frame_relic_panel` | `RelicPanel` | 900x640 | 完整遗物面板，清爽浅暗底，细边，不内置固定网格数量 |
-| `frame_relic_card_common` | `RelicCard` 常见卡 | 360x112 | 列表/网格遗物卡常见态 |
-| `frame_relic_card_uncommon` | `RelicCard` 精良卡 | 360x112 | 精良态，边框只轻微变色 |
-| `frame_relic_card_rare` | `RelicCard` 稀有卡 | 360x112 | 稀有态，避免厚金框 |
-| `frame_left_build_sidebar` | `BuildPanel` | 320x760 | 左侧建筑/商店栏 |
-| `frame_build_tab_idle` | 建筑/商店页签 idle | 160x48 | 页签普通态 |
-| `frame_build_tab_selected` | 建筑/商店页签 selected | 160x48 | 页签选中态 |
-| `frame_build_list_card` | `BuildListCard` | 280x104 | 建筑/商店列表项 |
-| `frame_bottom_deploy_rail` | `CombatHud/DeployDeck` 背景 | 980x176 | 底部待部署区的轻量承托背景，不画固定卡槽，不限制干员数量 |
-| `frame_operator_card_idle` | `OperatorCard` ready | 164x148 | 干员角色卡普通态，卡面本体，有头像区、费用角标区、属性行分区 |
-| `frame_operator_card_selected` | `OperatorCard` hover/drag | 164x148 | 干员角色卡选中/拖拽态，轮廓更亮但不改变结构 |
-| `frame_operator_card_deployed` | `OperatorCard` 已部署 | 164x148 | 干员角色卡已部署态，琥珀/绿轻边 |
-| `frame_operator_card_cooldown` | `OperatorCard` 冷却 | 164x148 | 干员角色卡冷却态，低饱和红灰遮罩 |
-| `frame_operator_portrait_slot` | `OperatorCard` 头像占位 | 128x72 | 干员卡内头像/剪影区域底框 |
-| `frame_operator_cost_badge` | `OperatorCard` 费用角标 | 48x36 | 干员卡右上或左上费用徽标底 |
-| `frame_operator_stat_row` | `OperatorCard` HP/SP/CD 行 | 140x20 | 干员卡底部短状态行底纹 |
-| `frame_right_detail_sidebar` | `UnitDetailPanel` | 380x760 | 右侧单位详情栏 |
-| `frame_detail_section` | 属性、生命、技能区块 | 340x120 | 右侧详情中的分组面板 |
-| `frame_skill_button_primary` | 激活技能按钮 | 320x52 | 主按钮，青色轻边 |
-| `frame_button_secondary` | 撤退、关闭、刷新等按钮 | 320x52 | 次按钮，灰蓝轻边 |
-| `frame_button_danger` | 危险操作按钮 | 320x52 | 红灰轻边 |
-| `frame_wave_preview` | 波次/路径预览 | 360x220 | 右侧或顶部附近的小信息窗 |
-| `frame_legend_panel` | 右下战场图例 | 260x220 | 图例与标记说明 |
-| `frame_tooltip` | hover tooltip | 360x160 | 小型说明气泡，不要尖角太夸张 |
-| `frame_blessing_panel` | `BlessingPanel` | 640x440 | 遗物选择面板，候选数量由代码布局决定，不把卡槽画死在面板里 |
-| `frame_blessing_choice_card` | 祝福候选遗物卡 | 560x112 | 可复用 `RelicCard` 选择态 |
-| `frame_event_panel` | `EventPanel` | 640x420 | 随机事件面板 |
-| `frame_dialog_box` | `DialogPanel/TextBox` | 1100x220 | 对话框底栏 |
-| `frame_dialog_speaker_plate` | `DialogPanel/SpeakerPlate` | 240x56 | 说话人名牌 |
-| `frame_result_panel` | `ResultPanel` | 720x520 | 结算面板 |
-| `frame_map_popup` | `MapInteractionPopup` | 360x260 | 地图对象交互弹窗 |
-| `frame_settings_panel` | 设置面板 / 音量设置面板 | 420x300 | 齿轮按钮打开的设置弹窗，内容区保持通用，不把滑条数量画死在面板里 |
-| `frame_slider_track` | 设置面板音量滑条轨道 | 280x24 | 主音量、音乐、音效滑条底轨 |
-| `frame_slider_fill` | 设置面板音量滑条填充 | 280x24 | 柔和青蓝或浅绿填充 |
-| `frame_slider_handle` | 设置面板音量滑条拖柄 | 40x40 | 小圆或小菱形拖柄 |
-| `frame_icon_tile` | 通用图标底板 | 96x96 | 建筑、技能、遗物、属性图标底板 |
-| `bar_progress_track` | HP/SP/核心进度条底 | 320x24 | 细长轨道 |
-| `bar_progress_fill_hp` | HP 填充 | 320x24 | 柔和红色 |
-| `bar_progress_fill_sp` | SP 填充 | 320x24 | 柔和青蓝 |
-| `bar_progress_fill_core` | 核心生命填充 | 320x24 | 柔和琥珀 |
+| `frame_top_status_bar_base` | `CombatHud/TopBar/Base` | 1200x72 | 顶部状态栏底板，只做承托背景，不内置状态卡、按钮或资源槽 |
+| `frame_top_status_chip_base` | 阶段、时间、核心、部署、资源信息块 | 240x64 | 单个状态信息块底板，内容与图标由节点叠放 |
+| `frame_top_status_chip_active_overlay` | 重要/警告状态叠层 | 240x64 | 轻微高亮状态层，不改变底板结构 |
+| `frame_speed_toggle_base` | 暂停/倍速容器 | 220x56 | 倍速切换底板，不写 `1X/2X`，不画固定文字 |
+| `frame_speed_toggle_active_overlay` | 当前倍速选中态 | 110x52 | 选中叠层，可移动到 1x 或 2x 按钮下 |
+| `frame_settings_button_base` | 顶部最左侧设置按钮底 | 64x64 | 齿轮按钮底板，不画齿轮图标 |
+| `frame_relic_strip_base` | `RelicStrip/Base` | 720x48 | 遗物摘要条底板，不画固定遗物槽 |
+| `frame_relic_entry_button_base` | `RelicStrip/OpenButton` | 128x44 | “遗物 N”入口按钮底，不写文字数字 |
+| `frame_left_sidebar_base` | `BuildPanel/Base` | 320x760 | 左侧建筑/商店栏底板，不内置页签和列表项 |
+| `frame_sidebar_tab_base` | 建筑/商店页签普通态 | 160x48 | 页签底板，不写文字 |
+| `frame_sidebar_tab_selected_overlay` | 建筑/商店页签选中态 | 160x48 | 页签选中叠层，不改变底板 |
+| `frame_build_list_card_base` | `BuildListCard/Base` | 280x104 | 建筑/商店列表项底板，不内置图标框、价格徽标或按钮 |
+| `frame_build_icon_backplate` | `BuildListCard/IconBackplate` | 72x72 | 建筑图标下方暗底 |
+| `frame_build_icon_frame` | `BuildListCard/IconFrame` | 72x72 | 建筑图标上方覆盖框，中心可抠空 |
+| `frame_cost_badge_base` | 建造/部署/商店成本徽标 | 56x32 | 成本数字底，不写数字和资源图标 |
+| `frame_undo_button_base` | 撤销按钮底 | 160x44 | 左侧撤销按钮底，不画图标或文字 |
+| `frame_bottom_deploy_rail_base` | `DeployDeck/Base` | 980x176 | 底部待部署区承托背景，不画固定卡槽 |
+| `frame_operator_card_base` | `OperatorCard/Base` | 164x148 | 单张干员卡底板，不内置头像框、状态行或费用角标 |
+| `frame_operator_card_selected_overlay` | `OperatorCard` 选中/拖拽态 | 164x148 | 选中叠层，轻描边/内光 |
+| `frame_operator_card_deployed_overlay` | `OperatorCard` 已部署态 | 164x148 | 已部署状态叠层 |
+| `frame_operator_card_cooldown_overlay` | `OperatorCard` 冷却态 | 164x148 | 冷却遮罩，不写冷却数字 |
+| `frame_operator_title_strip` | `OperatorCard/TitleStrip` | 140x28 | 干员名/职业图标所在顶部条底 |
+| `frame_operator_portrait_backplate` | `OperatorCard/PortraitBackplate` | 128x72 | 干员头像下方暗底 |
+| `frame_operator_portrait_frame` | `OperatorCard/PortraitFrame` | 128x72 | 干员头像覆盖框，中心可抠空 |
+| `frame_operator_cost_badge` | `OperatorCard/CostBadge` | 48x36 | 费用数字底，不写数字 |
+| `frame_operator_stat_row` | `OperatorCard/StatRow` | 140x20 | HP/SP/CD 单行底纹，不写文字数字 |
+| `frame_right_detail_sidebar_base` | `UnitDetailPanel/Base` | 380x760 | 右侧单位详情栏底板，不内置任何子控件 |
+| `frame_unit_header_strip` | `UnitDetailPanel/Header` | 340x56 | 单位名称、编号、伤害类型、朝向所在信息条底 |
+| `frame_unit_portrait_backplate` | `UnitDetailPanel/PortraitBackplate` | 128x128 | 单位头像下方暗底 |
+| `frame_unit_portrait_frame` | `UnitDetailPanel/PortraitFrame` | 128x128 | 单位头像覆盖框，中心可抠空 |
+| `frame_unit_stat_row` | `UnitDetailPanel/StatRow` | 320x28 | 攻击、防御、法抗、阻挡、攻速等属性行底 |
+| `frame_skill_icon_backplate` | `UnitDetailPanel/SkillIconBackplate` | 72x72 | 技能图标下方暗底 |
+| `frame_skill_icon_frame` | `UnitDetailPanel/SkillIconFrame` | 72x72 | 技能图标覆盖框，中心可抠空 |
+| `frame_skill_desc_box` | `UnitDetailPanel/SkillDescription` | 320x150 | 技能描述滚动区域底板 |
+| `frame_detail_section_base` | 属性、生命、技能区块 | 340x120 | 通用分组底板，不绑定具体内容 |
+| `frame_relic_panel_base` | `RelicPanel/Base` | 900x640 | 遗物面板底板，不画固定网格、列表项或详情内容 |
+| `frame_relic_filter_tab_base` | `RelicPanel/FilterTab` | 120x40 | 遗物筛选页签底板，不写文字图标 |
+| `frame_relic_filter_selected_overlay` | `RelicPanel/FilterTab` selected | 120x40 | 筛选选中叠层 |
+| `frame_relic_card_base` | `RelicCard/Base` | 360x112 | 遗物卡底板，不内置稀有度边、图标框或文本 |
+| `frame_relic_card_hover_overlay` | `RelicCard` hover/selected | 360x112 | 遗物卡 hover/选中叠层 |
+| `frame_relic_rarity_common_overlay` | 常见遗物稀有度 | 360x112 / 80x80 | 灰绿稀有度轻叠层，可用于卡或图标槽 |
+| `frame_relic_rarity_uncommon_overlay` | 精良遗物稀有度 | 360x112 / 80x80 | 蓝青稀有度轻叠层 |
+| `frame_relic_rarity_rare_overlay` | 稀有遗物稀有度 | 360x112 / 80x80 | 柔和浅金叠层，不做厚金框 |
+| `frame_relic_icon_backplate` | `RelicIcon/Backplate` | 80x80 | 遗物图标下方暗底 |
+| `frame_relic_icon_frame` | `RelicIcon/Frame` | 80x80 | 遗物图标覆盖框，中心可抠空 |
+| `frame_settings_panel_base` | 设置面板底板 | 420x300 | 齿轮按钮打开的设置弹窗底板，不画滑条 |
+| `frame_settings_row_base` | 设置项行底 | 360x48 | 主音量、音乐、音效等设置行底，不写文字 |
+| `frame_slider_track` | 音量/数值滑条轨道 | 280x24 | 滑条底轨 |
+| `frame_slider_fill` | 音量/数值滑条填充 | 280x24 | 滑条填充，不画固定比例 |
+| `frame_slider_handle` | 滑条拖柄 | 40x40 | 小型拖柄，不做宝石或厚按钮 |
+| `frame_button_base` | 通用按钮底 | 320x52 | 默认按钮底，不写文字图标 |
+| `frame_button_primary_overlay` | 主按钮状态 | 320x52 | 主按钮高亮叠层 |
+| `frame_button_danger_overlay` | 危险按钮状态 | 320x52 | 危险按钮叠层 |
+| `frame_button_disabled_overlay` | 禁用按钮状态 | 320x52 | 禁用/不可用遮罩 |
+| `frame_icon_backplate` | 通用图标暗底 | 96x96 | 建筑、技能、遗物、属性图标底 |
+| `frame_icon_frame` | 通用图标覆盖框 | 96x96 | 图标覆盖框，中心可抠空 |
+| `frame_tooltip_base` | hover tooltip | 360x160 | tooltip 底板，不画箭头绑定方向 |
+| `frame_scroll_track` | 滚动条轨道 | 16x200 | 滚动条底轨 |
+| `frame_scroll_thumb` | 滚动条拖块 | 16x60 | 滚动条拖块 |
+| `bar_progress_track` | HP/SP/核心进度条底 | 320x24 | 进度条底轨 |
+| `bar_progress_fill_hp` | HP 填充 | 320x24 | HP 填充条 |
+| `bar_progress_fill_sp` | SP 填充 | 320x24 | SP 填充条 |
+| `bar_progress_fill_core` | 核心生命填充 | 320x24 | 核心生命填充条 |
+| `frame_blessing_panel_base` | `BlessingPanel/Base` | 640x440 | 祝福/遗物选择面板底板，不画候选卡槽 |
+| `frame_blessing_choice_card_base` | 祝福候选卡底 | 560x112 | 候选遗物卡底板，复用遗物卡结构 |
+| `frame_event_panel_base` | `EventPanel/Base` | 640x420 | 事件面板底板，不画选项按钮 |
+| `frame_event_choice_button_base` | 事件选项按钮 | 560x64 | 事件选项按钮底，不写文字 |
+| `frame_dialog_box_base` | `DialogPanel/TextBox` | 1100x220 | 对话文本框底板，不画头像或名字 |
+| `frame_dialog_speaker_plate_base` | `DialogPanel/SpeakerPlate` | 240x56 | 说话人名牌底，不写名字 |
+| `frame_result_panel_base` | `ResultPanel/Base` | 720x520 | 结算面板底板，不画固定统计项 |
+| `frame_result_stat_row_base` | `ResultPanel/StatRow` | 600x44 | 结算统计行底，不写文字数字 |
+| `frame_map_popup_base` | `MapInteractionPopup/Base` | 360x260 | 地图交互弹窗底板，不画固定按钮 |
+| `frame_wave_preview_base` | 波次/路径预览 | 360x220 | 波次信息窗底板，不画敌人条目 |
+| `frame_legend_panel_base` | 右下战场图例 | 260x220 | 图例面板底板，不画固定图例行 |
+| `frame_legend_row_base` | 图例行底 | 220x28 | 单条图例行底，不画图标文字 |
 
-#### 6.2.1 关键面板结构约束
+### 6.2.2 关键部件推荐层级
 
-- `frame_bottom_deploy_rail`
-  只画底部干员列表背后的承托背景：一条低矮暗色轨道、轻微上沿阴影、左右收边。不得画固定数量的卡槽、分隔槽、编号、卡牌轮廓或人物。干员数量与滚动由 `DeployDeckContainer` 和 `OperatorCard` 决定。
-- `frame_operator_card_idle`
-  必须是单张干员角色卡框，而不是托盘。卡面纵向比例约 `164x148`，结构从上到下为：顶部窄标题条、右上费用角标位置、中部头像/剪影窗口、底部三条短状态行位置。状态行对应 HP、SP、CD，由代码写文字和数值，资产只提供无文字底纹。
-- `frame_operator_card_selected`
-  与普通卡保持同一结构，只改变外框亮度和选中描边；不得改变卡面布局。
-- `frame_operator_card_deployed`
-  与普通卡保持同一结构，外框使用低饱和琥珀或灰绿描边，用于表示已部署。
-- `frame_operator_card_cooldown`
-  与普通卡保持同一结构，增加可叠加的暗红灰蒙层感；不得把冷却数字画进资产。
-- `frame_right_detail_sidebar`
-  右侧单位详情栏必须按实际信息分区：顶部为单位名称/编号/伤害类型/朝向区域；其下为头像窗口与 HP、SP 两条进度条；中部为属性区，容纳攻击、防御、法抗、阻挡、攻速；下部为技能区，包含技能图标槽、技能名、技能状态、技能描述滚动区域；底部为激活技能与撤退两个按钮位置。资产不生成文字、数字、头像或图标，只生成这些区域的清晰框架。
-- `frame_detail_section`
-  用于右侧详情内的独立分区，必须能容纳上述生命/SP、属性或技能内容；不要画与具体文字绑定的装饰。
-- `frame_relic_panel`
-  只提供标题区、筛选按钮行、滚动内容区和详情区的框架，不画固定数量的遗物格子。
-- `frame_blessing_panel`
-  只提供整体背景和标题/内容区，候选遗物卡由 `frame_blessing_choice_card` 或 `RelicCard` 单独排列；不得在面板背景里画死三张卡槽。
-- `frame_settings_panel`
-  只提供标题区和内容区背景，主音量、音乐、音效三条滑条由独立 slider 资产与代码布局生成；不得在背景中画死三条滑条。
+- `TopBar`
+  `TopBarBase(frame_top_status_bar_base)`、多个 `StatusChip(frame_top_status_chip_base)`、`ChipIcon`、`Label`、`ProgressTrack/Fill`、`SpeedToggleBase`、`SpeedActiveOverlay`、`SettingsButtonBase`、`icon_settings_gear`。
+- `BuildPanel`
+  `SidebarBase(frame_left_sidebar_base)`、`TabBase`、`TabSelectedOverlay`、动态 `BuildListCardBase`、`BuildIconBackplate`、`BuildingIcon`、`BuildIconFrame`、`CostBadgeBase`、成本图标与数字、`UndoButtonBase`。
+- `DeployDeck` 与 `OperatorCard`
+  `DeployRailBase(frame_bottom_deploy_rail_base)`、动态 `OperatorCardBase`、`PortraitBackplate`、角色小头像、`PortraitFrame`、`TitleStrip`、职业图标、名字、`CostBadge`、费用数字、三条 `StatRow`、HP/SP/CD 文本、必要状态 overlay。
+- `UnitDetailPanel`
+  `PanelBase(frame_right_detail_sidebar_base)`、`HeaderStrip`、单位名/类型/朝向、`PortraitBackplate`、角色头像、`PortraitFrame`、HP/SP `Track/Fill`、`DetailSectionBase`、多个 `StatRow`、属性图标与文字、`SkillIconBackplate`、技能图标、`SkillIconFrame`、`SkillDescription`、主/次按钮。
+- `RelicStrip`、`RelicPanel`、`RelicCard`
+  容器底板不画固定数量；每个遗物项由 `RelicCardBase`、`RelicIconBackplate`、遗物图标、`RelicIconFrame`、稀有度 overlay、名称/描述/标签节点组成。
+- `SettingsPanel`
+  `SettingsPanelBase`、动态 `SettingsRowBase`、音量图标、文字、`SliderTrack`、`SliderFill`、`SliderHandle`；面板底板不得内置具体三条滑杆。
+- `EventPanel`、`BlessingPanel`、`ResultPanel`
+  大面板只做底板；选项、候选卡、统计行、按钮都使用独立条目资产动态排列。
+
+### 6.2.3 场景层级与绘制顺序
+
+重构目标不是把图片直接盖在现有控件上，而是把场景树整理成稳定的 UI 骨架。场景负责节点层级和可替换资产槽位，脚本负责状态、文本、列表数据和信号。
+
+#### `Game/UI` 顶层
+
+`Game.tscn` 当前已有 `UI` 作为 `CanvasLayer`。推荐保持这个入口，并让可视节点按下列顺序组织；若短期不移动现有节点，也必须用 `z_index` 保证相同绘制顺序。
+
+```text
+UI (CanvasLayer)
+├─ BuildPanel                  # 左侧建筑/商店栏，z_index 20
+├─ CombatHud                   # 作战 HUD 主体，z_index 30
+├─ MapInteractionPopup         # 地图对象弹窗，z_index 60
+├─ EventPanel                  # 随机事件弹窗，z_index 80
+├─ BlessingPanel               # 祝福/遗物选择弹窗，z_index 90
+├─ ResultPanel                 # 结算弹窗，z_index 100
+└─ CombatHudController         # 非可视控制节点，不参与绘制
+```
+
+弹窗同屏冲突时只允许最高优先级面板可交互：`ResultPanel > BlessingPanel > EventPanel > MapInteractionPopup > CombatHud`。`Esc` 应优先关闭当前最高层面板。
+
+#### `CombatHud` 主骨架
+
+`CombatHud` 根节点铺满屏幕。地图读图优先，因此 `CombatHud` 内所有非弹窗面板都靠边放置，中心地图区域不放常驻大面板。
+
+```text
+CombatHud (Control, full rect)
+├─ HudChromeLayer (Control, z_index 10)
+│  ├─ SettingsButton
+│  ├─ TopBar
+│  ├─ RelicStrip
+│  ├─ WavePreviewPanel
+│  ├─ DeployDeck
+│  ├─ UnitDetailPanel
+│  └─ LegendPanel
+├─ InteractionLayer (Control, z_index 30)
+│  └─ DragGhost
+├─ PopupLayer (Control, z_index 70)
+│  ├─ RelicPanel
+│  └─ AudioSettingsPanel
+└─ TooltipLayer (Control, z_index 100)
+```
+
+当前场景可以先保留这些节点为 `CombatHud` 直接子节点，但目标是逐步收拢进上述 layer。脚本中已有 `%SettingsButton`、`%TopBar`、`%RelicStrip`、`%DeployDeckContainer`、`%UnitDetailPanel`、`%RelicPanel`、`%AudioSettingsPanel`、`%DragGhost` 等引用；重构时若移动节点，必须保留 `unique_name_in_owner` 或同步更新脚本引用。
+
+#### `TopBar`
+
+```text
+TopBar
+├─ TopBarBase                  # frame_top_status_bar_base
+└─ TopContent
+   ├─ StageChip
+   │  ├─ ChipBase              # frame_top_status_chip_base
+   │  ├─ PhaseIcon
+   │  └─ QueueLabel
+   ├─ CoreChip
+   │  ├─ ChipBase
+   │  ├─ CoreIcon
+   │  ├─ CoreLabel
+   │  ├─ CoreTrack             # bar_progress_track
+   │  └─ CoreFill              # bar_progress_fill_core
+   ├─ DeployChip
+   │  ├─ ChipBase
+   │  ├─ DeployIcon
+   │  └─ DeployLabel
+   ├─ MessageChip
+   │  ├─ ChipBase
+   │  └─ MessageLabel
+   ├─ TimeControls
+   │  ├─ SpeedToggleBase       # frame_speed_toggle_base
+   │  ├─ SpeedActiveOverlay
+   │  ├─ PauseButton
+   │  ├─ Speed1Button
+   │  └─ Speed2Button
+   └─ ResourceChip
+      ├─ ChipBase
+      ├─ ResourceIcons
+      └─ ResourceLabel
+```
+
+`SettingsButton` 固定在顶部最左侧，不放入 `TopBar` 内部挤占状态信息。按钮结构为 `ButtonBase -> icon_settings_gear`，点击打开 `AudioSettingsPanel`。
+
+#### `BuildPanel`
+
+```text
+BuildPanel
+├─ SidebarBase                 # frame_left_sidebar_base
+└─ ContentMargin
+   └─ MainVBox
+      ├─ ModeTabs
+      │  ├─ BuildModeButton
+      │  └─ ShopModeButton
+      ├─ BuildSelectionLabel
+      ├─ BuildCardScroll
+      │  └─ BuildCardList      # 动态 BuildListCard
+      └─ BottomControls
+         ├─ CategoryTabs
+         ├─ RefreshShopButton
+         └─ PanelMessageLabel
+```
+
+`BuildListCard` 推荐结构：
+
+```text
+BuildListCard
+├─ CardBase                    # frame_build_list_card_base
+└─ Content
+   ├─ IconBackplate
+   ├─ BuildingIcon
+   ├─ IconFrame
+   ├─ TextColumn
+   │  ├─ NameLabel
+   │  └─ DescLabel
+   └─ CostBadge
+      ├─ CostIcon
+      └─ CostLabel
+```
+
+#### `DeployDeck` 与 `OperatorCard`
+
+```text
+DeployDeck
+├─ DeployRailBase              # frame_bottom_deploy_rail_base
+└─ DeckMargin
+   └─ ScrollContainer
+      └─ DeployDeckContainer   # 动态 OperatorCard
+```
+
+`DeployDeck` 不画固定卡槽，不限制显示多少干员；滚动和数量完全由 `DeployDeckContainer` 决定。
+
+```text
+OperatorCard
+├─ CardBase                    # frame_operator_card_base
+├─ CardContent
+│  ├─ TitleStrip
+│  │  ├─ ClassIcon
+│  │  ├─ NameLabel
+│  │  └─ CostBadge
+│  │     └─ CostLabel
+│  ├─ PortraitBackplate
+│  ├─ PortraitTexture
+│  ├─ PortraitFrame
+│  ├─ MetaRow
+│  │  ├─ ClassLabel
+│  │  └─ StateLabel
+│  └─ StatRows
+│     ├─ HpStatRow -> HpStatLabel
+│     ├─ SpStatRow -> SpStatLabel
+│     └─ CdStatRow -> CdStatLabel
+├─ SelectedOverlay
+├─ DeployedOverlay
+└─ CooldownOverlay
+   └─ CooldownLabel
+```
+
+`PortraitTexture` 位于 `PortraitBackplate` 和 `PortraitFrame` 之间。没有头像资源时可隐藏 `PortraitTexture`，显示 `PortraitLabel` 或默认占位。
+
+#### `UnitDetailPanel`
+
+```text
+UnitDetailPanel
+├─ PanelBase                   # frame_right_detail_sidebar_base
+└─ ContentMargin
+   └─ MainVBox
+      ├─ Header
+      │  ├─ HeaderStrip
+      │  ├─ TitleLabel
+      │  ├─ LevelLabel
+      │  ├─ DamagePill -> DamageLabel
+      │  └─ FacingPill -> FacingLabel
+      ├─ VitalsSection
+      │  ├─ SectionBase
+      │  ├─ PortraitBackplate
+      │  ├─ PortraitTexture
+      │  ├─ PortraitFrame
+      │  ├─ HpValueLabel
+      │  ├─ HpTrack
+      │  ├─ HpFill
+      │  ├─ SpValueLabel
+      │  ├─ SpTrack
+      │  └─ SpFill
+      ├─ StatsSection
+      │  ├─ SectionBase
+      │  └─ StatRows
+      │     ├─ AtkStatLabel
+      │     ├─ DefStatLabel
+      │     ├─ ResStatLabel
+      │     ├─ BlockStatLabel
+      │     └─ AspdStatLabel
+      ├─ SkillSection
+      │  ├─ SectionBase
+      │  ├─ SkillHeaderRow
+      │  │  ├─ SkillIconBackplate
+      │  │  ├─ SkillIconTexture
+      │  │  ├─ SkillIconFrame
+      │  │  ├─ SkillTitleLabel
+      │  │  └─ SkillStatusLabel
+      │  └─ SkillScroll
+      │     └─ SkillLabel
+      └─ Actions
+         ├─ CastSkillButton
+         └─ RetreatButton
+```
+
+头像、技能图标、HP/SP 填充都必须是可替换节点，不得烘进 `PanelBase` 或 `SectionBase`。当前脚本依赖 `%TitleLabel`、`%PortraitTexture`、`%HpBar`、`%SpBar`、`%SkillIconTexture`、`%CastSkillButton`、`%RetreatButton` 等节点名；若把 `ProgressBar` 拆成 `Track/Fill`，要同步更新 `unit_detail_panel.gd`。
+
+#### `RelicStrip`、`RelicPanel`、`RelicCard`
+
+```text
+RelicStrip
+├─ StripBase
+├─ EntryButton
+├─ IconRow                     # 动态 RelicIcon
+└─ OverflowLabel
+
+RelicIcon
+├─ IconBackplate
+├─ IconTexture
+├─ IconFrame
+├─ RarityOverlay
+└─ NewHighlightOverlay
+
+RelicPanel
+├─ PanelBase
+└─ Content
+   ├─ Header
+   │  ├─ TitleLabel
+   │  ├─ CountLabel
+   │  └─ CloseButton
+   ├─ FilterBar                # 动态 filter tabs
+   ├─ CardScroll
+   │  └─ CardGrid              # 动态 RelicCard
+   ├─ EmptyLabel
+   └─ DetailPanel
+      ├─ DetailTitleLabel
+      ├─ DetailMetaLabel
+      └─ DetailEffectLabel
+
+RelicCard
+├─ CardBase
+├─ IconBackplate
+├─ IconTexture
+├─ IconFrame
+├─ RarityOverlay
+├─ NameLabel
+├─ RarityLabel
+├─ DescLabel
+├─ TagLabel
+└─ HoverOverlay
+```
+
+`RelicPanel` 不固定遗物数量；`RelicCard` 与 `BlessingPanel` 的候选卡共用同一套结构和样式。
+
+#### `AudioSettingsPanel`
+
+```text
+AudioSettingsPanel
+├─ PanelBase
+└─ ContentMargin
+   └─ MainVBox
+      ├─ Header
+      │  ├─ TitleLabel
+      │  └─ CloseButton
+      ├─ MasterRow
+      │  ├─ RowBase
+      │  ├─ VolumeIcon
+      │  ├─ MasterLabel
+      │  ├─ MasterSlider
+      │  └─ MasterValueLabel
+      ├─ MusicRow
+      └─ SfxRow
+```
+
+设置面板底板不画具体三条滑杆。当前可继续使用 Godot `HSlider`，后续接资产时通过统一主题替换 track/fill/handle。
+
+#### 弹窗类面板
+
+`MapInteractionPopup`、`EventPanel`、`BlessingPanel`、`ResultPanel`、`DialogPanel` 都遵循同样结构：`PanelBase` 只做底，标题、文本、选项、统计行、按钮都是独立节点。候选项或统计项必须动态生成，不在背景图里画固定数量。
+
+#### 脚本兼容要求
+
+- 保留当前脚本使用的 `%NodeName`，或在同一提交中同步修改对应脚本。
+- 保留现有信号：`operator_card_pressed`、`pause_pressed`、`speed_1_pressed`、`speed_2_pressed`、`cast_skill_requested`、`retreat_requested`、`wave_route_preview_toggled`、`RelicStrip.panel_requested`、`RelicPanel.close_requested`。
+- `CombatHud` 负责显示和转发 UI 信号，`CombatHudController` 负责把 Manager/RunState 数据同步到 HUD；不要把业务状态塞进 UI 节点。
+- 无资产状态必须可运行。新增的 `TextureRect`、overlay、backplate、frame 在没有图片时用 `StyleBoxFlat` 或隐藏兜底。
 
 ### 6.3 通用功能图标
 
@@ -339,8 +659,8 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 4. 将 `BlessingPanel` 的三选一按钮改为遗物卡组件。
 5. 按参考图重排 `CombatHud.tscn`，把设置按钮放到顶部最左，把 `RelicStrip` 放进顶部区域下方。
 6. 调整 `UiLayoutRules`，保证设置按钮、遗物条、底部卡组、右侧详情在小屏不互相遮挡。
-7. 生成并接入第一批资产：通用面板、设置按钮/音量图标、遗物图标、资源图标、职业图标。
-8. 再补齐建筑图标、技能图标、地图图例图标。
+7. 生成并接入第一批分层资产：通用按钮、进度条、面板底板、backplate、frame、overlay、设置按钮/音量图标、资源图标、职业图标。
+8. 再补齐建筑图标、技能图标、遗物图标、地图图例图标。
 9. 用 1920x1080、1600x900、1366x768、1280x720 检查文本、按钮、卡片、tooltip、设置面板是否溢出。
 
 ## 8. 验收标准
@@ -350,4 +670,5 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - 完整遗物面板能查看全部遗物，并支持按类别筛选。
 - `BlessingPanel`、`RelicStrip`、`RelicPanel` 使用同一套遗物显示组件和同一套文案格式化规则。
 - 顶部最左侧始终有小齿轮设置入口，点击后能打开音量设置面板并调整主音量、音乐和音效。
+- 大面板资产只作为底板，头像框、图标框、进度条、按钮、列表项、状态高亮都由独立资产和节点分层叠放。
 - 新资产接入后，删除资产仍能回退到文本占位，不影响项目运行。

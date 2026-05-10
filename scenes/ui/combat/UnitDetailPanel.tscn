@@ -60,12 +60,37 @@ vertical_alignment = 1
 text = "#--"
 text_overrun_behavior = 3
 
-[node name="TypeLabel" type="Label" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox"]
+[node name="HeaderMetaRow" type="HBoxContainer" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="DamagePill" type="PanelContainer" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox/HeaderMetaRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 24)
+layout_mode = 2
+
+[node name="DamageLabel" type="Label" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox/HeaderMetaRow/DamagePill"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "伤害 / 朝向"
+text = "伤害 --"
 horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="FacingPill" type="PanelContainer" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox/HeaderMetaRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 24)
+layout_mode = 2
+
+[node name="FacingLabel" type="Label" parent="MarginContainer/MainVBox/HeaderPlate/HeaderMargin/HeaderVBox/HeaderMetaRow/FacingPill"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "朝向 --"
+horizontal_alignment = 1
+vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="VitalsCard" type="PanelContainer" parent="MarginContainer/MainVBox"]
@@ -141,7 +166,7 @@ show_percentage = false
 
 [node name="StatsCard" type="PanelContainer" parent="MarginContainer/MainVBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(0, 92)
 layout_mode = 2
 
 [node name="StatsMargin" type="MarginContainer" parent="MarginContainer/MainVBox/StatsCard"]
@@ -151,12 +176,49 @@ theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="StatsLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin"]
-unique_name_in_owner = true
+[node name="StatsGrid" type="GridContainer" parent="MarginContainer/MainVBox/StatsCard/StatsMargin"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "攻击 --   防御 --   法抗 --"
-autowrap_mode = 2
+columns = 2
+
+[node name="AtkStatLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin/StatsGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "攻击 --"
+text_overrun_behavior = 3
+
+[node name="DefStatLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin/StatsGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "防御 --"
+text_overrun_behavior = 3
+
+[node name="ResStatLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin/StatsGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "法抗 --"
+text_overrun_behavior = 3
+
+[node name="BlockStatLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin/StatsGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "阻挡 --"
+text_overrun_behavior = 3
+
+[node name="AspdStatLabel" type="Label" parent="MarginContainer/MainVBox/StatsCard/StatsMargin/StatsGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "攻速 --"
+text_overrun_behavior = 3
 
 [node name="SkillCard" type="PanelContainer" parent="MarginContainer/MainVBox"]
 unique_name_in_owner = true
@@ -210,6 +272,16 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
 text = "技能"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="SkillStatusLabel" type="Label" parent="MarginContainer/MainVBox/SkillCard/SkillMargin/SkillVBox/SkillHeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "未就绪"
+horizontal_alignment = 2
 vertical_alignment = 1
 text_overrun_behavior = 3
 

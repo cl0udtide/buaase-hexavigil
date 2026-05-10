@@ -541,15 +541,20 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
 	var class_text := _class_label(str(cfg.get("class", "")))
 	var cost_text := str(cfg.get("cost_prestige", "--"))
+	var hp_text := "HP %d" % int(cfg.get("max_hp", 0))
+	var sp_text := "SP 0/%d" % int(cfg.get("sp_max", 0))
+	var cd_text := "CD READY"
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
-			return "%s\n%s  费用 %s\n生命 %d/%d  技力 %.0f" % [name, class_text, cost_text, int(unit.current_hp), int(unit.max_hp), float(unit.sp)]
-		return "%s\n%s  费用 %s\n已部署" % [name, class_text, cost_text]
+			hp_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
+			sp_text = "SP %.0f/%.0f" % [float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
+		cd_text = "CD 在场"
+		return "%s\n%s COST %s\n%s\n%s\n%s" % [name, class_text, cost_text, hp_text, sp_text, cd_text]
 	if state == &"cooldown":
 		var remain: float = _unit_manager.get_operator_redeploy_remaining(operator_key) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
-		return "%s\n%s  费用 %s\n冷却 %.1f秒" % [name, class_text, cost_text, remain]
-	return "%s\n%s  费用 %s\n拖拽部署" % [name, class_text, cost_text]
+		return "%s\n%s COST %s\nHP --\nSP --\nCD %.1f秒" % [name, class_text, cost_text, remain]
+	return "%s\n%s COST %s\n%s\n%s\n%s" % [name, class_text, cost_text, hp_text, sp_text, cd_text]
 
 
 func _format_operator_drag_text(operator_key: StringName) -> String:

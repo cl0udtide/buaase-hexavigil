@@ -45,6 +45,7 @@ var _open_panel_stack: Array[StringName] = []
 @onready var _deck_panel: PanelContainer = %DeployDeck
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
 @onready var _detail_panel: PanelContainer = %UnitDetailPanel
+@onready var _legend_panel: PanelContainer = %LegendPanel
 @onready var _drag_ghost: PanelContainer = %DragGhost
 @onready var _drag_ghost_label: Label = %DragGhostLabel
 
@@ -72,6 +73,8 @@ func _ready() -> void:
 	_wave_route_toggle.custom_minimum_size = Vector2(68.0, 30.0)
 	_style_button(_wave_route_toggle, GameUiStyle.STROKE_SOFT)
 	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
+	_legend_panel.add_theme_stylebox_override("panel", GameUiStyle.legend_panel())
+	_style_legend_panel()
 	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
@@ -168,6 +171,7 @@ func set_wave_preview_text(text_value: String, show_panel: bool = true) -> void:
 	_wave_preview_label.text = text_value
 	_wave_preview_panel.visible = show_panel and not text_value.strip_edges().is_empty()
 	_resize_wave_preview_panel(text_value)
+	_apply_responsive_layout()
 
 
 func set_wave_route_preview_enabled(enabled: bool) -> void:
@@ -251,9 +255,6 @@ func _resize_wave_preview_panel(text_value: String) -> void:
 	var line_count: int = max(text_value.count("\n") + 1, 1)
 	var text_height: float = max(WAVE_PREVIEW_MIN_TEXT_HEIGHT, float(line_count) * WAVE_PREVIEW_LINE_HEIGHT)
 	_wave_preview_label.custom_minimum_size.y = text_height
-	var panel_height: float = text_height + WAVE_PREVIEW_PANEL_BOTTOM_PADDING
-	_wave_preview_panel.offset_bottom = WAVE_PREVIEW_PANEL_TOP + panel_height
-	_detail_panel.offset_top = max(UNIT_DETAIL_MIN_TOP, _wave_preview_panel.offset_bottom + UNIT_DETAIL_GAP)
 
 
 func _style_button(button: Button, accent: Color) -> void:
@@ -283,6 +284,7 @@ func _apply_frame_margins() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(4.0, 0.0, 4.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
+	GameUiStyle.apply_frame_margin(get_node_or_null("LegendPanel/LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
@@ -312,6 +314,21 @@ func _style_top_cards() -> void:
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 
 
+func _style_legend_panel() -> void:
+	var title := get_node_or_null("LegendPanel/LegendMargin/LegendVBox/LegendTitleLabel") as Label
+	for label_node in _legend_panel.find_children("*", "Label", true, false):
+		var label := label_node as Label
+		label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
+		label.add_theme_constant_override("shadow_offset_x", 0)
+		label.add_theme_constant_override("shadow_offset_y", 0)
+		label.add_theme_font_size_override("font_size", 12)
+	if title != null:
+		title.add_theme_font_size_override("font_size", 14)
+		title.add_theme_color_override("font_color", GameUiStyle.TEXT)
+		GameUiStyle.center_label_text(title)
+
+
 func _on_viewport_size_changed() -> void:
 	_apply_responsive_layout()
 
@@ -324,12 +341,13 @@ func _apply_responsive_layout() -> void:
 	_layout_profile = UiLayoutRules.hud_profile(viewport_size, detail_visible, _left_reserved_width)
 	_place_control(_settings_button, _layout_profile.get("settings_button_rect", Rect2()))
 	_place_control(_settings_panel, _layout_profile.get("settings_panel_rect", Rect2()))
-	var top_rect: Rect2 = _layout_profile.get("top_rect", Rect2())
+	var top_rect: Rect2 = _layout_profile.get("top_bar_rect", _layout_profile.get("top_rect", Rect2()))
 	_place_control(_top_bar, top_rect)
 	_place_control(_relic_strip, _layout_profile.get("relic_strip_rect", Rect2()))
 	_place_control(_relic_panel, _layout_profile.get("relic_panel_rect", Rect2()))
-	_place_control(_deck_panel, _layout_profile.get("deck_rect", Rect2()))
-	_place_control(_detail_panel, _layout_profile.get("detail_rect", Rect2()))
+	_place_control(_deck_panel, _layout_profile.get("deploy_deck_rect", _layout_profile.get("deck_rect", Rect2())))
+	_place_wave_preview_and_detail()
+	_place_control(_legend_panel, _layout_profile.get("legend_panel_rect", Rect2()))
 	_apply_top_bar_density(viewport_size.x)
 	var compact := bool(_layout_profile.get("compact", false))
 	for child in _deck_container.get_children():
@@ -348,6 +366,21 @@ func _place_control(control: Control, rect: Rect2) -> void:
 	control.offset_top = rect.position.y
 	control.offset_right = rect.position.x + rect.size.x
 	control.offset_bottom = rect.position.y + rect.size.y
+
+
+func _place_wave_preview_and_detail() -> void:
+	var detail_rect: Rect2 = _layout_profile.get("detail_panel_rect", _layout_profile.get("detail_rect", Rect2()))
+	if _wave_preview_panel != null and _wave_preview_panel.visible:
+		var desired_height := _wave_preview_label.custom_minimum_size.y + WAVE_PREVIEW_PANEL_BOTTOM_PADDING
+		var max_height := maxf(116.0, minf(188.0, detail_rect.size.y * 0.34))
+		var wave_height := clampf(desired_height, 118.0, max_height)
+		_place_control(_wave_preview_panel, Rect2(detail_rect.position, Vector2(detail_rect.size.x, wave_height)))
+		var detail_bottom := detail_rect.end.y
+		detail_rect.position.y += wave_height + UNIT_DETAIL_GAP
+		detail_rect.size.y = maxf(180.0, detail_bottom - detail_rect.position.y)
+	else:
+		_place_control(_wave_preview_panel, Rect2(detail_rect.position, Vector2(detail_rect.size.x, 0.0)))
+	_place_control(_detail_panel, detail_rect)
 
 
 func _apply_top_bar_density(viewport_width: float) -> void:

@@ -41,8 +41,8 @@ func hide_panel() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
+	add_theme_stylebox_override("panel", GameUiStyle.blessing_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_BLESSING_PANEL)
 	var title := get_node_or_null("ContentMargin/VBoxContainer/TitleLabel") as Label
 	if title != null:
 		title.add_theme_color_override("font_color", GameUiStyle.TEXT)
