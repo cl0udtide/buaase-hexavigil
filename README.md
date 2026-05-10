@@ -8,8 +8,8 @@
   公开方法接口、`EventBus` 信号接口、UI 请求出口、模块监听关系。
 - [DATA_SCHEMA.md](e:\资料\课程资料\大三下\软工\BUAASE-HexaVigil\docs\DATA_SCHEMA.md)
   `data/` 目录下各 JSON 配置表的结构、字段定义和引用关系。
-- [ART_PIPELINE.md](docs/ART_PIPELINE.md)
-  美术生产规格、统一风格语言、AI 生成 prompt 母版和 alpha 资源验收标准。
+- [UI_SYSTEM.md](docs/UI_SYSTEM.md)
+  作战 HUD 目标风格、UI 分层规范、场景与脚本职责边界、后续重构清单。
 
 ## Git 协作规范
 

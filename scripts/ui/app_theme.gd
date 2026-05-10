@@ -3,8 +3,6 @@ extends RefCounted
 
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
-const FONT_PATH := "res://assets/fonts/SourceHanSansSC-Normal.otf"
-
 const SIZE_BODY := 16
 const SIZE_BUTTON := 16
 const SIZE_LABEL := 16
@@ -17,22 +15,12 @@ static func get_theme() -> Theme:
 	if _theme != null:
 		return _theme
 
-	var font := load(FONT_PATH) as FontFile
-	if font == null:
-		push_warning("Missing UI font: %s" % FONT_PATH)
-		_theme = Theme.new()
-		return _theme
-
 	var theme := Theme.new()
-	theme.default_font = font
 	theme.default_font_size = SIZE_BODY
 	for type_name in ["LineEdit", "TextEdit", "RichTextLabel", "OptionButton"]:
-		theme.set_font("font", type_name, font)
 		theme.set_font_size("font_size", type_name, SIZE_BODY)
 	for type_name in ["Label", "CheckBox"]:
-		theme.set_font("font", type_name, font)
 		theme.set_font_size("font_size", type_name, SIZE_LABEL)
-	theme.set_font("font", "Button", font)
 	theme.set_font_size("font_size", "Button", SIZE_BUTTON)
 	theme.set_color("font_color", "Label", GameUiStyle.TEXT)
 	theme.set_color("font_shadow_color", "Label", GameUiStyle.TEXT_SHADOW)

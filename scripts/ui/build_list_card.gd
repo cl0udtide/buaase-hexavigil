@@ -3,7 +3,6 @@ extends PanelContainer
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 signal pressed
 
@@ -86,16 +85,10 @@ func _apply_config(config: Dictionary) -> void:
 	_apply_style()
 
 
-func _apply_icon_texture(config: Dictionary) -> void:
-	var texture: Texture2D = null
-	var raw_texture: Variant = config.get("icon_texture", null)
-	if raw_texture is Texture2D:
-		texture = raw_texture
-	elif config.has("source_cfg"):
-		texture = UiArtRegistry.get_icon_texture(config.get("source_cfg", {}) as Dictionary)
-	_icon_texture.texture = texture
-	_icon_texture.visible = texture != null
-	_icon_label.visible = texture == null
+func _apply_icon_texture(_config: Dictionary) -> void:
+	_icon_texture.texture = null
+	_icon_texture.visible = false
+	_icon_label.visible = true
 
 
 func _apply_style() -> void:

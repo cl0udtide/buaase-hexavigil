@@ -664,7 +664,11 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/ui/build_panel.gd`
 - `scripts/ui/build_list_card.gd`
 - `scripts/ui/game_ui_style.gd`
+- `scripts/ui/ui_art_registry.gd`
 - `scripts/ui/ui_display_text.gd`
+- `scripts/ui/ui_frame_spec.gd`
+- `scripts/ui/ui_layout_rules.gd`
+- `scripts/ui/ui_tokens.gd`
 - `scripts/ui/event_panel.gd`
 - `scripts/ui/blessing_panel.gd`
 - `scripts/ui/result_panel.gd`
@@ -702,9 +706,15 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
-  共用 UI 样式辅助函数，集中生成现代深色 matte tactical 面板、按钮和进度条等 `StyleBox`。
+  共用 UI 样式辅助函数，集中生成现代深色战术 HUD 面板、按钮和进度条等 `StyleBoxFlat`。当前基线不使用 UI 图片资产。
+- `ui_art_registry.gd`
+  UI 图片资源入口。当前阶段固定返回空贴图，让所有图标、肖像和技能图标回退为文本占位；未来重新接入资源时只能改这里，组件不得自行拼资源路径。
 - `ui_display_text.gd`
-  统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。详细设计见 `docs/UI_DISPLAY_TEXT.md`。
+  统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。UI 分层与重构构想见 `docs/UI_SYSTEM.md`。
+- `ui_frame_spec.gd`
+  组件级内容边距规格。当前只保存 padding，不再保存贴图路径或九宫格切片。
+- `ui_layout_rules.gd` / `ui_tokens.gd`
+  统一计算 HUD 响应式矩形、断点、间距和组件尺寸，避免场景与脚本各写一套布局常量。
 - `combat/combat_hud.gd`
   作战 HUD 容器逻辑，负责顶部状态、暂停/倍速、底部干员卡槽、拖拽提示和单位详情面板。它只发出 UI 信号，不直接修改单位或地图真相数据。
 - `combat/combat_hud_controller.gd`
@@ -760,14 +770,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `data/events.json`
 - `data/waves.json`
 - `assets/sprites/`
-- `assets/ui/`
 - `assets/audio/`
-- `assets/fonts/`
 
 职责：
 
 - 提供配置表
-- 提供图片、音频、字体资源
+- 提供图片、音频资源
 
 音频资源约定：
 
