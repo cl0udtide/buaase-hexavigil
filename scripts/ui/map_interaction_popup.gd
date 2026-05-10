@@ -7,7 +7,7 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
 const RESOURCE_COLLECT_AMOUNT := 1
-const POPUP_MIN_WIDTH := 228.0
+const POPUP_MIN_WIDTH := 300.0
 const POPUP_OFFSET := Vector2(14.0, 14.0)
 const INVALID_CELL := Vector2i(-1, -1)
 
@@ -450,10 +450,12 @@ func _get_square_range_cells(center: Vector2i, radius: int) -> Array[Vector2i]:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
+	add_theme_stylebox_override("panel", GameUiStyle.list_card(false))
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
 	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+		GameUiStyle.center_label_text(_title_label)
 	if _event_info_label != null:
 		_event_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	if _resource_info_label != null:
@@ -462,14 +464,18 @@ func _apply_visual_style() -> void:
 		_building_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	if _message_label != null:
 		_message_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+		GameUiStyle.center_label_text(_message_label)
 
 
 func _style_button(button: Button, accent: Color) -> void:
 	if button == null:
 		return
+	GameUiStyle.center_button_text(button)
+	button.custom_minimum_size = Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0))
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(accent, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)

@@ -345,11 +345,14 @@ func _set_descendant_mouse_filter(root: Node, filter: int) -> void:
 
 
 func _apply_style() -> void:
-	_text_box.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.5))
-	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.ACCENT, Color(0.055, 0.120, 0.135, 0.98), 1.0))
-	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	_text_box.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
+	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.tab(true))
+	GameUiStyle.apply_frame_margin(get_node_or_null("TextBox/TextMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
+	GameUiStyle.apply_frame_margin(get_node_or_null("TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin") as MarginContainer, GameUiStyle.FRAME_TAB)
+	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_speaker_label.add_theme_font_size_override("font_size", 22)
-	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT)
-	_text_label.add_theme_font_size_override("normal_font_size", 25)
-	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+	GameUiStyle.center_label_text(_speaker_label)
+	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT_INVERTED)
+	_text_label.add_theme_font_size_override("normal_font_size", 23)
+	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_prompt_label.add_theme_font_size_override("font_size", 15)

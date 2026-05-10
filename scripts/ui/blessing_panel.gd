@@ -4,7 +4,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
-const PANEL_SIZE := Vector2(580.0, 330.0)
+const PANEL_SIZE := Vector2(600.0, 380.0)
 
 
 func _ready() -> void:
@@ -54,19 +54,29 @@ func _connect_choice_button(button: BaseButton) -> void:
 func _style_choice_button(button: Button) -> void:
 	if button == null:
 		return
-	button.custom_minimum_size = Vector2(420.0, 96.0)
+	button.custom_minimum_size = Vector2(0.0, 96.0)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	button.add_theme_stylebox_override("normal", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, 1.0))
-	button.add_theme_stylebox_override("hover", GameUiStyle.card(GameUiStyle.ACCENT, GameUiStyle.BG_CARD_HOVER, 1.5))
+	button.add_theme_stylebox_override("normal", GameUiStyle.list_card(false))
+	button.add_theme_stylebox_override("hover", GameUiStyle.list_card(true))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.card(GameUiStyle.AMBER, GameUiStyle.BG_CARD_HOVER, 2.0))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DISABLED, 1.0))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.ACCENT)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_font_size_override("font_size", 15)
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_DARK, 1.0))
+	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
+	var title := get_node_or_null("ContentMargin/VBoxContainer/TitleLabel") as Label
+	if title != null:
+		title.add_theme_color_override("font_color", GameUiStyle.TEXT)
+		title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+		title.add_theme_font_size_override("font_size", 22)
+		GameUiStyle.center_label_text(title)
 
 
 func _place_centered() -> void:
@@ -107,7 +117,7 @@ func _format_relic_button_text(buff_id: StringName, cfg: Dictionary) -> String:
 	var rarity_text := _rarity_text(int(cfg.get("rarity", 1)))
 	var name := String(cfg.get("name", buff_id))
 	var desc := String(cfg.get("desc", "暂无效果说明"))
-	return "[%s] %s\n%s" % [rarity_text, name, desc]
+	return "%s  %s\n%s" % [rarity_text, name, desc]
 
 
 func _rarity_text(rarity: int) -> String:

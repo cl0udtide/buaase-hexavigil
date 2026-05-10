@@ -3,7 +3,18 @@ extends Node2D
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 const CELL_SIZE := 64.0
-const GRID_COLOR := Color(0.12, 0.18, 0.22, 0.85)
+const TILE_PLAIN: Texture2D = preload("res://assets/map/CommandMap/tile_plain.png")
+const TILE_PLAIN_ALT: Texture2D = preload("res://assets/map/CommandMap/tile_plain_alt.png")
+const TILE_HIDDEN: Texture2D = preload("res://assets/map/CommandMap/tile_hidden.png")
+const TILE_MOUNTAIN: Texture2D = preload("res://assets/map/CommandMap/tile_mountain.png")
+const TILE_WATER: Texture2D = preload("res://assets/map/CommandMap/tile_water.png")
+const TILE_CORE: Texture2D = preload("res://assets/map/CommandMap/tile_core.png")
+const TILE_SPAWN: Texture2D = preload("res://assets/map/CommandMap/tile_spawn.png")
+const TILE_RESOURCE_WOOD: Texture2D = preload("res://assets/map/CommandMap/tile_resource_wood.png")
+const TILE_RESOURCE_STONE: Texture2D = preload("res://assets/map/CommandMap/tile_resource_stone.png")
+const TILE_RESOURCE_MANA: Texture2D = preload("res://assets/map/CommandMap/tile_resource_mana.png")
+const TILE_EVENT: Texture2D = preload("res://assets/map/CommandMap/tile_event.png")
+const GRID_COLOR := Color(0.02, 0.045, 0.065, 0.36)
 const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
 const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
@@ -31,14 +42,13 @@ const ROUTE_FLYING_COLOR := Color(0.36, 0.90, 1.0, 0.92)
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_BLOCKED := Color(0.33, 0.34, 0.38, 1.0)
+const COLOR_WATER := Color(0.08, 0.35, 0.42, 1.0)
 const COLOR_CORE := Color(0.25, 0.60, 0.95, 1.0)
 const COLOR_SPAWN := Color(0.82, 0.30, 0.26, 1.0)
-const COLOR_OBSTACLE := Color(0.28, 0.30, 0.34, 1.0)
 const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
 const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
 const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
 const COLOR_EVENT := Color(0.72, 0.48, 0.88, 1.0)
-const COLOR_OCCUPIED := Color(0.60, 0.45, 0.22, 1.0)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
@@ -123,7 +133,7 @@ func _draw() -> void:
 			if data == null:
 				continue
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
-			draw_rect(rect, _get_cell_color(data))
+			_draw_cell_tile(rect, data)
 			draw_rect(rect, GRID_COLOR, false, 1.0)
 			if _deploy_range_preview_cells.has(cell):
 				_draw_deploy_range_cell(rect)
@@ -380,12 +390,10 @@ func _get_cell_color(data) -> Color:
 		return COLOR_CORE
 	if data.spawn_key != StringName():
 		return COLOR_SPAWN
-	if data.terrain == &"obstacle":
-		return COLOR_OBSTACLE
-	if data.terrain == &"blocked" or not data.walkable:
+	if data.terrain == CellData.TERRAIN_WATER:
+		return COLOR_WATER
+	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
 		return COLOR_BLOCKED
-	if data.occupied or data.unit_runtime_id >= 0:
-		return COLOR_OCCUPIED
 	if data.resource_type == &"wood":
 		return COLOR_RESOURCE_WOOD
 	if data.resource_type == &"stone":
@@ -395,6 +403,42 @@ func _get_cell_color(data) -> Color:
 	if _has_event_at_cell(data.cell):
 		return COLOR_EVENT
 	return COLOR_PLAIN
+
+
+func _draw_cell_tile(rect: Rect2, data) -> void:
+	var texture := _get_cell_texture(data)
+	if texture != null:
+		draw_texture_rect(texture, rect, false)
+	else:
+		draw_rect(rect, _get_cell_color(data))
+
+
+func _get_cell_texture(data) -> Texture2D:
+	if not data.discovered:
+		return TILE_HIDDEN
+	if data.is_core:
+		return TILE_CORE
+	if data.spawn_key != StringName():
+		return TILE_SPAWN
+	if data.terrain == CellData.TERRAIN_WATER:
+		return TILE_WATER
+	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
+		return TILE_MOUNTAIN
+	if data.resource_type == &"wood":
+		return TILE_RESOURCE_WOOD
+	if data.resource_type == &"stone":
+		return TILE_RESOURCE_STONE
+	if data.resource_type == &"mana":
+		return TILE_RESOURCE_MANA
+	if _has_event_at_cell(data.cell):
+		return TILE_EVENT
+	if _uses_alternate_plain(data.cell):
+		return TILE_PLAIN_ALT
+	return TILE_PLAIN
+
+
+func _uses_alternate_plain(cell: Vector2i) -> bool:
+	return int(abs(cell.x * 37 + cell.y * 19)) % 5 == 0
 
 
 func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> void:

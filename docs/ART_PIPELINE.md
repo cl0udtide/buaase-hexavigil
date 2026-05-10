@@ -756,4 +756,3 @@ python tools/frames_to_video.py assets/sprites/units/guard_t1/attack -o preview_
 | `{enemy_type}` | `corrupted slime`, `wasteland wolf` |
 | `{building_type}` | `medical station`, `wooden barricade`, `resource collector` |
 | `{scene_description}` | `a night outpost supply decision`, `a glowing tactical command table` |
-

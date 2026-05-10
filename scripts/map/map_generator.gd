@@ -18,6 +18,7 @@ const NEAR_RESOURCES_PER_TYPE := 2
 const EVENT_POINT_COUNT := 8
 const MIN_SPAWN_CORE_DISTANCE := 12
 const MIN_SPAWN_DISTANCE := 10
+const WATER_OBSTACLE_CHANCE := 0.28
 
 
 static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = {}, event_ids: Array[StringName] = []) -> Dictionary:
@@ -49,9 +50,7 @@ static func _create_plain_cells(width: int, height: int) -> Dictionary:
 		for x in range(width):
 			var data: CellData = CellData.new()
 			data.cell = Vector2i(x, y)
-			data.terrain = &"plain"
-			data.buildable = true
-			data.walkable = true
+			data.set_base_terrain(CellData.TERRAIN_PLAIN)
 			data.discovered = false
 			cells[data.cell] = data
 	return cells
@@ -60,7 +59,7 @@ static func _create_plain_cells(width: int, height: int) -> Dictionary:
 static func _setup_core_and_initial_fog(cells: Dictionary, core_cell: Vector2i) -> void:
 	var core_data: CellData = cells[core_cell]
 	core_data.is_core = true
-	core_data.terrain = &"core"
+	core_data.set_base_terrain(CellData.TERRAIN_PLAIN)
 	core_data.buildable = false
 
 	for y in range(core_cell.y - 2, core_cell.y + 3):
@@ -92,7 +91,7 @@ static func _place_spawns(cells: Dictionary, width: int, height: int, core_cell:
 			continue
 		var spawn_data: CellData = cells[candidate]
 		spawn_data.spawn_key = StringName("S%d" % (spawn_cells.size() + 1))
-		spawn_data.terrain = &"spawn"
+		spawn_data.set_base_terrain(CellData.TERRAIN_PLAIN)
 		spawn_data.discovered = false
 		spawn_data.buildable = false
 		spawn_cells.append(candidate)
@@ -168,10 +167,8 @@ static func _place_resource_type(
 
 
 static func _set_resource_node(data: CellData, resource_type: StringName) -> void:
-	data.terrain = &"resource"
+	data.set_base_terrain(CellData.TERRAIN_PLAIN)
 	data.resource_type = resource_type
-	data.buildable = true
-	data.walkable = true
 
 
 static func _is_near_exploration_ring(cell: Vector2i, core_cell: Vector2i) -> bool:
@@ -216,9 +213,8 @@ static func _place_random_obstacles(
 		if data == null:
 			continue
 
-		data.terrain = &"blocked"
-		data.walkable = false
-		data.buildable = false
+		var obstacle_terrain: StringName = CellData.TERRAIN_WATER if rng.randf() < float(cfg.get("water_obstacle_chance", WATER_OBSTACLE_CHANCE)) else CellData.TERRAIN_MOUNTAIN
+		data.set_base_terrain(obstacle_terrain)
 
 		var all_spawns_connected: bool = true
 		for spawn_cell in spawn_cells:
@@ -229,9 +225,7 @@ static func _place_random_obstacles(
 		if all_spawns_connected:
 			placed_count += 1
 		else:
-			data.terrain = &"plain"
-			data.walkable = true
-			data.buildable = true
+			data.set_base_terrain(CellData.TERRAIN_PLAIN)
 
 
 static func _place_event_points(

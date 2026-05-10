@@ -400,9 +400,12 @@ func _on_data_loaded() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
-	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
+	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	GameUiStyle.center_label_text(_selection_label)
+	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	GameUiStyle.center_label_text(_message_label)
 	_style_tab_button(_build_mode_button, true)
 	_style_tab_button(_shop_mode_button, false)
 	_style_command_button(_refresh_shop_button, GameUiStyle.STROKE_SOFT)
@@ -411,21 +414,24 @@ func _apply_visual_style() -> void:
 func _style_tab_button(button: Button, selected: bool) -> void:
 	if button == null:
 		return
-	var accent := GameUiStyle.ACCENT if selected else GameUiStyle.STROKE_SOFT
-	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
+	GameUiStyle.center_button_text(button)
+	button.add_theme_stylebox_override("normal", GameUiStyle.tab(selected))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.30))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.accent_button(GameUiStyle.ACCENT))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT)
+	button.add_theme_stylebox_override("disabled", GameUiStyle.tab(true))
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_ON_PARCHMENT)
 
 
 func _style_command_button(button: Button, accent: Color) -> void:
 	if button == null:
 		return
+	GameUiStyle.center_button_text(button)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.34))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)

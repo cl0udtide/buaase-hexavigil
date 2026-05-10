@@ -10,6 +10,8 @@ signal retreat_requested
 @onready var _title_label: Label = %TitleLabel
 @onready var _level_label: Label = %LevelLabel
 @onready var _type_label: Label = %TypeLabel
+@onready var _header_plate: PanelContainer = %HeaderPlate
+@onready var _vitals_card: PanelContainer = %VitalsCard
 @onready var _portrait_panel: PanelContainer = %PortraitPanel
 @onready var _portrait_texture: TextureRect = %PortraitTexture
 @onready var _portrait_label: Label = %PortraitLabel
@@ -17,11 +19,13 @@ signal retreat_requested
 @onready var _hp_bar: ProgressBar = %HpBar
 @onready var _sp_value_label: Label = %SpValueLabel
 @onready var _sp_bar: ProgressBar = %SpBar
+@onready var _stats_card: PanelContainer = %StatsCard
 @onready var _stats_label: Label = %StatsLabel
 @onready var _skill_card: PanelContainer = %SkillCard
 @onready var _skill_icon_panel: PanelContainer = %SkillIconPanel
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
 @onready var _skill_icon_label: Label = %SkillIconLabel
+@onready var _skill_title_label: Label = %SkillTitleLabel
 @onready var _skill_scroll: ScrollContainer = %SkillScroll
 @onready var _skill_label: Label = %SkillLabel
 @onready var _cast_button: Button = %CastSkillButton
@@ -32,28 +36,38 @@ var _last_skill_scroll_key := ""
 
 func _ready() -> void:
 	AppTheme.apply(self)
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
-	_skill_card.custom_minimum_size = Vector2(0.0, 128.0)
+	add_theme_stylebox_override("panel", GameUiStyle.side_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("MarginContainer") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL, Vector4(0.0, -8.0, 0.0, 0.0))
+	_header_plate.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_vitals_card.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
+	_stats_card.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
+	_skill_card.custom_minimum_size = Vector2(0.0, 210.0)
 	_skill_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_skill_icon_panel.custom_minimum_size = Vector2(64.0, 64.0)
+	_skill_icon_panel.custom_minimum_size = Vector2(48.0, 48.0)
 	_skill_icon_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_portrait_panel.custom_minimum_size = Vector2(88.0, 88.0)
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_portrait_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.035, 0.046, 0.055, 0.98), GameUiStyle.STROKE_SOFT, 1.0, 5.0))
-	_skill_card.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, 1.0))
-	_skill_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.170, 0.076, 0.030, 0.96), GameUiStyle.AMBER, 1.0, 4.0))
-	_title_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
-	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_type_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_hp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_sp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_stats_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	_portrait_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_skill_card.add_theme_stylebox_override("panel", GameUiStyle.list_card(false))
+	_skill_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
+	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
+	_type_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	_hp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_sp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	GameUiStyle.center_label_text(_title_label)
+	GameUiStyle.center_label_text(_type_label)
+	_stats_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_stats_label.add_theme_constant_override("line_spacing", 2)
+	_skill_title_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_skill_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_portrait_label.add_theme_color_override("font_color", Color(0.40, 0.48, 0.52, 0.95))
+	_skill_label.add_theme_constant_override("line_spacing", 3)
+	_portrait_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_hp_bar.add_theme_stylebox_override("background", GameUiStyle.progress_background())
 	_hp_bar.add_theme_stylebox_override("fill", GameUiStyle.progress_fill(GameUiStyle.DANGER))
@@ -80,18 +94,17 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	_hp_bar.max_value = max(float(unit.max_hp), 1.0)
 	_hp_bar.value = clamp(float(unit.current_hp), 0.0, _hp_bar.max_value)
 	_hp_bar.tooltip_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
-	_hp_value_label.text = "生命        %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
+	_hp_value_label.text = "生命 %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
 	_sp_bar.max_value = max(sp_max, 1.0)
 	_sp_bar.value = clamp(float(unit.sp), 0.0, _sp_bar.max_value)
 	_sp_bar.tooltip_text = "SP %.0f/%.0f" % [float(unit.sp), sp_max]
-	_sp_value_label.text = "SP          %.0f/%.0f" % [float(unit.sp), sp_max]
-	_stats_label.text = "攻击 %d     防御 %d     法抗 %d\n阻挡 %d     攻速 %.2f秒     伤害 %s" % [
+	_sp_value_label.text = "SP %.0f/%.0f" % [float(unit.sp), sp_max]
+	_stats_label.text = "攻击 %d    防御 %d    法抗 %d\n阻挡 %d    攻速 %.2f秒" % [
 		int(unit.get_effective_atk()) if unit.has_method("get_effective_atk") else int(unit.atk),
 		int(unit.defense),
 		int(unit.resistance),
 		int(unit.block_count),
-		float(unit.attack_interval),
-		damage_label
+		float(unit.attack_interval)
 	]
 	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
 	var status_lines := PackedStringArray()
@@ -105,10 +118,11 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	var ammo_text := _format_unit_ammo_status(unit)
 	if not ammo_text.is_empty():
 		status_lines.append(ammo_text)
+	_skill_title_label.text = unit.get_skill_name()
 	if status_lines.is_empty():
-		_skill_label.text = "%s\n%s" % [unit.get_skill_name(), unit.get_skill_description()]
+		_skill_label.text = unit.get_skill_description()
 	else:
-		_skill_label.text = "%s\n%s\n%s" % [unit.get_skill_name(), "\n".join(status_lines), unit.get_skill_description()]
+		_skill_label.text = "%s\n%s" % ["\n".join(status_lines), unit.get_skill_description()]
 	var skill_scroll_key := "%d:%s:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state, ammo_text]
 	if skill_scroll_key != _last_skill_scroll_key:
 		_skill_scroll.scroll_vertical = 0
@@ -132,12 +146,14 @@ func clear_unit() -> void:
 
 
 func _style_action_button(button: Button, accent: Color) -> void:
+	GameUiStyle.center_button_text(button)
 	button.add_theme_stylebox_override("normal", GameUiStyle.accent_button(accent))
 	button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.AMBER))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.42))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
 
 
 func _skill_icon_texture_from_cfg(cfg: Dictionary) -> Texture2D:

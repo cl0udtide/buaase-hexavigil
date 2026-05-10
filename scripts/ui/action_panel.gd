@@ -137,17 +137,18 @@ func _refresh_state() -> void:
 	_refresh_mode_label()
 	_refresh_building_controls()
 	var day_phase := _current_phase == GameEnums.PHASE_DAY
-	_idle_button.disabled = not day_phase or _current_mode == &"idle"
-	_explore_button.disabled = not day_phase or _current_mode == &"explore"
+	_idle_button.disabled = not day_phase
+	_explore_button.disabled = not day_phase
 	_start_night_button.disabled = not day_phase
 	_style_action_button(_idle_button, _current_mode == &"idle")
 	_style_action_button(_explore_button, _current_mode == &"explore")
-	_style_action_button(_start_night_button, false)
+	_style_action_button(_start_night_button, not day_phase)
 
 
 func _refresh_mode_label() -> void:
 	if _mode_label == null:
 		return
+	_mode_label.visible = false
 	if _current_phase != GameEnums.PHASE_DAY:
 		_mode_label.text = "待机"
 		return
@@ -161,38 +162,42 @@ func _refresh_mode_label() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, 1.0))
+	add_theme_stylebox_override("panel", GameUiStyle.action_bar_panel())
 	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
-	if content_margin != null:
-		content_margin.add_theme_constant_override("margin_left", 8)
-		content_margin.add_theme_constant_override("margin_top", 6)
-		content_margin.add_theme_constant_override("margin_right", 8)
-		content_margin.add_theme_constant_override("margin_bottom", 6)
+	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_DECK_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
 	if _mode_label != null:
-		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+		_mode_label.visible = false
+		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	for button in [_idle_button, _explore_button, _start_night_button, _repair_building_button, _demolish_building_button, _toggle_building_button]:
 		if button != null:
-			button.custom_minimum_size = Vector2(58.0, 28.0)
+			button.custom_minimum_size = Vector2(66.0, 32.0)
+			GameUiStyle.center_button_text(button)
+	var action_button_flow := get_node_or_null("%ActionButtonFlow") as BoxContainer
+	if action_button_flow != null:
+		action_button_flow.alignment = BoxContainer.ALIGNMENT_CENTER
 	var building_action_flow := get_node_or_null("%BuildingActionFlow") as Control
 	if building_action_flow == null:
 		building_action_flow = get_node_or_null("ContentMargin/VBoxContainer/BuildingActionFlow") as Control
 	if building_action_flow != null:
 		building_action_flow.visible = false
 	if _building_info_label != null:
-		_building_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+		_building_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 		_building_info_label.visible = false
 
 
 func _style_action_button(button: Button, selected: bool) -> void:
 	if button == null:
 		return
-	var accent := GameUiStyle.ACCENT if selected else GameUiStyle.STROKE_SOFT
-	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
+	GameUiStyle.center_button_text(button)
+	var accent := GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT
+	var normal_style := GameUiStyle.button(accent, 0.32 if selected else 0.18)
+	button.add_theme_stylebox_override("normal", normal_style)
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.26))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	button.add_theme_stylebox_override("disabled", normal_style if selected else GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED if selected else GameUiStyle.TEXT_INVERTED_DIM)
 
 
 func _get_building_manager() -> Node:

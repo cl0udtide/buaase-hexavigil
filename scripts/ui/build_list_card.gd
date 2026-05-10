@@ -41,13 +41,17 @@ func _ready() -> void:
 	_subtitle_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_detail_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_state_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_icon_label.add_theme_color_override("font_color", Color(0.50, 0.60, 0.64, 0.96))
+	_icon_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
+	GameUiStyle.center_label_text(_state_label)
+	for label in [_title_label, _subtitle_label, _state_label]:
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_add_label_shadow(_title_label)
 	_add_label_shadow(_subtitle_label)
 	_add_label_shadow(_detail_label)
 	_add_label_shadow(_state_label)
 	_add_label_shadow(_icon_label)
-	_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.035, 0.046, 0.055, 0.98), GameUiStyle.STROKE_SOFT, 1.0, 4.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("CardMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
+	_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	if not _pending_config.is_empty():
@@ -78,7 +82,7 @@ func _apply_config(config: Dictionary) -> void:
 	_state_label.visible = not _state_label.text.is_empty()
 	_state_label.add_theme_color_override("font_color", config.get("state_color", GameUiStyle.AMBER) as Color)
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT if _disabled else config.get("title_color", GameUiStyle.TEXT) as Color)
-	_icon_label.add_theme_color_override("font_color", config.get("icon_color", Color(0.50, 0.60, 0.64, 0.96)) as Color)
+	_icon_label.add_theme_color_override("font_color", config.get("icon_color", GameUiStyle.ACCENT) as Color)
 	_apply_style()
 
 
@@ -95,21 +99,7 @@ func _apply_icon_texture(config: Dictionary) -> void:
 
 
 func _apply_style() -> void:
-	var border := _accent
-	var fill := GameUiStyle.BG_CARD
-	var width := 1.0
-	if _disabled:
-		border = GameUiStyle.STROKE_SOFT
-		fill = GameUiStyle.BG_DISABLED
-	elif _selected:
-		border = GameUiStyle.AMBER
-		fill = Color(0.175, 0.128, 0.050, 0.98)
-		width = 1.5
-	elif _hovered:
-		border = GameUiStyle.ACCENT
-		fill = GameUiStyle.BG_CARD_HOVER
-		width = 1.5
-	add_theme_stylebox_override("panel", GameUiStyle.card(border, fill, width))
+	add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
 	if _accent_bar != null:
 		_accent_bar.visible = false
 	modulate.a = 0.86 if _disabled else 1.0
@@ -120,7 +110,7 @@ func _add_label_shadow(label: Label) -> void:
 		return
 	label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 	label.add_theme_constant_override("shadow_offset_x", 0)
-	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_constant_override("shadow_offset_y", 0)
 
 
 func _on_gui_input(event: InputEvent) -> void:
