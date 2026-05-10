@@ -5,8 +5,6 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
-const ICON_TEXTURE_SCALE := 0.72
-
 signal pressed(buff_id: StringName)
 
 var buff_id := StringName()
@@ -18,11 +16,10 @@ var _choice_mode := false
 var _hovered := false
 
 @onready var _card_base: Panel = %CardBase
-@onready var _icon_stack: Control = %IconStack
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _rarity_overlay: Panel = %RarityOverlay
+@onready var _rarity_overlay: ColorRect = %RarityOverlay
 @onready var _hover_overlay: Panel = %HoverOverlay
 @onready var _icon_label: Label = %IconLabel
 @onready var _name_label: Label = %NameLabel
@@ -43,7 +40,7 @@ func _ready() -> void:
 		_hovered = false
 		_apply_style()
 	)
-	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
 	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_rarity_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_desc_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
@@ -59,7 +56,6 @@ func _ready() -> void:
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_CARD)
-	_apply_layering()
 	_apply_config()
 
 
@@ -89,7 +85,7 @@ func _apply_config() -> void:
 	custom_minimum_size = Vector2(0.0, 104.0 if _compact else 116.0)
 	if _choice_mode:
 		custom_minimum_size.y = 96.0
-	var texture := UiArtRegistry.get_texture(buff_id, &"icon")
+	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
 	_icon_label.visible = texture == null
@@ -112,39 +108,23 @@ func _apply_density() -> void:
 	_desc_label.add_theme_font_size_override("font_size", 12 if compact_font else 13)
 	_tag_label.add_theme_font_size_override("font_size", 12)
 	var icon_size := 46.0 if compact_font else 54.0
-	var frame_size := Vector2(icon_size, icon_size)
-	if _icon_stack != null:
-		_icon_stack.custom_minimum_size = frame_size
-		_icon_stack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_icon_backplate.custom_minimum_size = frame_size
-	_icon_frame.custom_minimum_size = frame_size
-	GameUiStyle.fit_centered_icon(_icon_texture, frame_size * ICON_TEXTURE_SCALE)
+	_icon_backplate.custom_minimum_size = Vector2(icon_size, 0.0)
+	_icon_frame.custom_minimum_size = Vector2(icon_size, 0.0)
+	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(icon_size * 0.70, icon_size * 0.70))
 
 
 func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
+	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
 	if _choice_mode:
 		_card_base.add_theme_stylebox_override("panel", GameUiStyle.blessing_choice_card(_selected or _hovered))
 	else:
 		_card_base.add_theme_stylebox_override("panel", GameUiStyle.relic_card(rarity, _selected or _hovered))
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, false))
-	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_rarity_overlay(rarity))
-	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD_HOVER, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
+	_rarity_overlay.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.08)
+	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
 	_hover_overlay.visible = _selected or _hovered
 	modulate.a = 1.0 if _selectable else 0.72
-
-
-func _apply_layering() -> void:
-	_card_base.z_index = 0
-	_rarity_overlay.z_index = 1
-	_hover_overlay.z_index = 2
-	_icon_backplate.z_index = 0
-	_icon_frame.z_index = 3
-	_icon_texture.z_index = 5
-	_icon_label.z_index = 5
-	var content := get_node_or_null("ContentMargin") as Control
-	if content != null:
-		content.z_index = 5
 
 
 func _on_gui_input(event: InputEvent) -> void:

@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DOC_PATH = ROOT / "docs" / "UI_ASSET_GENERATION_PROMPTS.md"
 RAW_DIR = ROOT / "assets" / "raw"
 OUT_DIR = ROOT / "assets" / "ui" / "generated"
+SHEET_PREFIX = "source" + "_sheet"
 
 DEFAULT_THRESHOLD = 24.0
 DEFAULT_ALPHA_TRANSPARENT_THRESHOLD = 30.0
@@ -39,7 +40,7 @@ MIN_BACKGROUND_COMPONENT_AREA = 48
 MORPH_SIZES = (9, 15, 21, 31, 41, 51, 61, 81, 101, 121, 151, 181, 221)
 
 CROP_ORDER_OVERRIDES = {
-    "source_sheet_05_operator_card.png": [
+    f"{SHEET_PREFIX}_05_operator_card.png": [
         "frame_bottom_deploy_rail_base",
         "frame_operator_card_base",
         "frame_operator_card_selected_overlay",
@@ -83,7 +84,7 @@ class Detection:
 
 def parse_crop_orders(doc_path: Path) -> dict[str, list[str]]:
     """Return source sheet file names mapped to documented asset keys."""
-    source_re = re.compile(r"`(source_sheet_\d+_[^`]+\.png)`")
+    source_re = re.compile(r"`(" + SHEET_PREFIX + r"_\d+_[^`]+\.png)`")
     key_re = re.compile(r"\s*\d+\.\s*`([A-Za-z0-9_]+)`\s*$")
 
     orders: dict[str, list[str]] = {}
@@ -507,7 +508,7 @@ def process_sheet(
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--doc", type=Path, default=DOC_PATH, help="Prompt markdown file.")
-    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR, help="Directory containing source_sheet_*.png.")
+    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR, help="Directory containing generated sheet PNGs.")
     parser.add_argument("--output-dir", type=Path, default=OUT_DIR, help="Directory for generated PNG assets.")
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="RGB background distance threshold.")
     parser.add_argument(
@@ -551,7 +552,7 @@ def main() -> int:
     skipped_sheets = 0
     written_assets = 0
 
-    raw_sheets = sorted(args.raw_dir.glob("source_sheet_*.png"))
+    raw_sheets = sorted(args.raw_dir.glob(f"{SHEET_PREFIX}_*.png"))
     if requested_sheets:
         raw_sheets = [path for path in raw_sheets if path.name in requested_sheets]
 

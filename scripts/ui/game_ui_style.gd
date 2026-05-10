@@ -2,6 +2,7 @@ class_name GameUiStyle
 extends RefCounted
 
 const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const FRAME_TOP_HUD := UiFrameSpec.TOP_HUD
 const FRAME_TOP_CARD := UiFrameSpec.TOP_CARD
 const FRAME_HUD_CELL := UiFrameSpec.HUD_CELL
@@ -13,55 +14,55 @@ const FRAME_DETAIL_SECTION := UiFrameSpec.DETAIL_SECTION
 const FRAME_CARD := UiFrameSpec.CARD
 const FRAME_LIST_CARD := UiFrameSpec.LIST_CARD
 const FRAME_OPERATOR_CARD := UiFrameSpec.OPERATOR_CARD
-const FRAME_OPERATOR_CARD_SELECTED := UiFrameSpec.OPERATOR_CARD_SELECTED
-const FRAME_OPERATOR_CARD_DEPLOYED := UiFrameSpec.OPERATOR_CARD_DEPLOYED
-const FRAME_OPERATOR_CARD_COOLDOWN := UiFrameSpec.OPERATOR_CARD_COOLDOWN
-const FRAME_OPERATOR_CARD_COOLDOWN_SELECTED := UiFrameSpec.OPERATOR_CARD_COOLDOWN_SELECTED
-const FRAME_OPERATOR_TITLE_STRIP := UiFrameSpec.OPERATOR_TITLE_STRIP
+const FRAME_OPERATOR_PORTRAIT_SLOT := UiFrameSpec.OPERATOR_PORTRAIT_SLOT
 const FRAME_OPERATOR_PORTRAIT_BACKPLATE := UiFrameSpec.OPERATOR_PORTRAIT_BACKPLATE
 const FRAME_OPERATOR_PORTRAIT_FRAME := UiFrameSpec.OPERATOR_PORTRAIT_FRAME
-const FRAME_OPERATOR_PORTRAIT_SLOT := UiFrameSpec.OPERATOR_PORTRAIT_SLOT
+const FRAME_OPERATOR_TITLE_STRIP := UiFrameSpec.OPERATOR_TITLE_STRIP
 const FRAME_OPERATOR_COST_BADGE := UiFrameSpec.OPERATOR_COST_BADGE
 const FRAME_OPERATOR_STAT_ROW := UiFrameSpec.OPERATOR_STAT_ROW
 const FRAME_BUTTON := UiFrameSpec.BUTTON
 const FRAME_TAB := UiFrameSpec.TAB
 const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
+const FRAME_ICON_BACKPLATE := UiFrameSpec.ICON_BACKPLATE
 const FRAME_ICON_FRAME := UiFrameSpec.ICON_FRAME
 const FRAME_BUILD_ICON_BACKPLATE := UiFrameSpec.BUILD_ICON_BACKPLATE
 const FRAME_BUILD_ICON_FRAME := UiFrameSpec.BUILD_ICON_FRAME
 const FRAME_COST_BADGE := UiFrameSpec.COST_BADGE
 const FRAME_RELIC_STRIP := UiFrameSpec.RELIC_STRIP
-const FRAME_RELIC_ENTRY_BUTTON := UiFrameSpec.RELIC_ENTRY_BUTTON
 const FRAME_RELIC_ICON := UiFrameSpec.RELIC_ICON
-const FRAME_RELIC_ICON_BACKPLATE := UiFrameSpec.RELIC_ICON_BACKPLATE
-const FRAME_RELIC_ICON_FRAME := UiFrameSpec.RELIC_ICON_FRAME
 const FRAME_RELIC_PANEL := UiFrameSpec.RELIC_PANEL
 const FRAME_RELIC_CARD := UiFrameSpec.RELIC_CARD
-const FRAME_RELIC_CARD_HOVER := UiFrameSpec.RELIC_CARD_HOVER
 const FRAME_SETTINGS_PANEL := UiFrameSpec.SETTINGS_PANEL
-const FRAME_SETTINGS_ROW := UiFrameSpec.SETTINGS_ROW
 const FRAME_BLESSING_PANEL := UiFrameSpec.BLESSING_PANEL
 const FRAME_LEGEND_PANEL := UiFrameSpec.LEGEND_PANEL
-const FRAME_LEGEND_ROW := UiFrameSpec.LEGEND_ROW
 const FRAME_ACTION_PANEL := UiFrameSpec.ACTION_PANEL
 const FRAME_ACTION_BUTTON := UiFrameSpec.ACTION_BUTTON
+const FRAME_MAP_POPUP := UiFrameSpec.MAP_POPUP
 const FRAME_EVENT_PANEL := UiFrameSpec.EVENT_PANEL
 const FRAME_EVENT_CHOICE_BUTTON := UiFrameSpec.EVENT_CHOICE_BUTTON
+const FRAME_DIALOG_BOX := UiFrameSpec.DIALOG_BOX
+const FRAME_DIALOG_SPEAKER := UiFrameSpec.DIALOG_SPEAKER
 const FRAME_RESULT_PANEL := UiFrameSpec.RESULT_PANEL
 const FRAME_RESULT_STAT_ROW := UiFrameSpec.RESULT_STAT_ROW
-const FRAME_DIALOG_BOX := UiFrameSpec.DIALOG_BOX
-const FRAME_DIALOG_SPEAKER_PLATE := UiFrameSpec.DIALOG_SPEAKER_PLATE
-const FRAME_MAP_POPUP := UiFrameSpec.MAP_POPUP
 const FRAME_WAVE_PREVIEW := UiFrameSpec.WAVE_PREVIEW
 const FRAME_WAVE_ROUTE_TOGGLE := UiFrameSpec.WAVE_ROUTE_TOGGLE
-const FRAME_TOOLTIP := UiFrameSpec.TOOLTIP
+const FRAME_SKILL_ICON_BACKPLATE := UiFrameSpec.SKILL_ICON_BACKPLATE
+const FRAME_SKILL_ICON_FRAME := UiFrameSpec.SKILL_ICON_FRAME
+const FRAME_SKILL_DESC_BOX := UiFrameSpec.SKILL_DESC_BOX
 const FRAME_UNIT_HEADER_STRIP := UiFrameSpec.UNIT_HEADER_STRIP
 const FRAME_UNIT_PORTRAIT_BACKPLATE := UiFrameSpec.UNIT_PORTRAIT_BACKPLATE
 const FRAME_UNIT_PORTRAIT_FRAME := UiFrameSpec.UNIT_PORTRAIT_FRAME
 const FRAME_UNIT_STAT_ROW := UiFrameSpec.UNIT_STAT_ROW
-const FRAME_SKILL_ICON_BACKPLATE := UiFrameSpec.SKILL_ICON_BACKPLATE
-const FRAME_SKILL_ICON_FRAME := UiFrameSpec.SKILL_ICON_FRAME
-const FRAME_SKILL_DESC_BOX := UiFrameSpec.SKILL_DESC_BOX
+const FRAME_RESOURCE_ITEM := UiFrameSpec.RESOURCE_ITEM
+const FRAME_RESOURCE_DELTA_BADGE := UiFrameSpec.RESOURCE_DELTA_BADGE
+const FRAME_TOOLTIP := UiFrameSpec.TOOLTIP
+const FRAME_SPEED_TOGGLE := UiFrameSpec.SPEED_TOGGLE
+const FRAME_SPEED_TOGGLE_ACTIVE := UiFrameSpec.SPEED_TOGGLE_ACTIVE
+const FRAME_SCROLL_TRACK := UiFrameSpec.SCROLL_TRACK
+const FRAME_SCROLL_THUMB := UiFrameSpec.SCROLL_THUMB
+const FRAME_SLIDER_TRACK := UiFrameSpec.SLIDER_TRACK
+const FRAME_SLIDER_FILL := UiFrameSpec.SLIDER_FILL
+const FRAME_SLIDER_HANDLE := UiFrameSpec.SLIDER_HANDLE
 
 
 const BG := Color(0.035, 0.045, 0.052, 1.0)
@@ -93,11 +94,7 @@ const DANGER_SOFT := Color(0.220, 0.070, 0.060, 1.0)
 const SUCCESS_SOFT := Color(0.070, 0.170, 0.105, 1.0)
 const VIOLET_SOFT := Color(0.120, 0.105, 0.190, 1.0)
 
-static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
-	var key := StringName(path.get_file().get_basename() if path.ends_with(".png") else path)
-	var textured := UiFrameSpec.style_box(key, fallback_fill, fallback_border, true)
-	if textured is StyleBoxTexture:
-		return textured
+static func texture_box(_path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
 
 
@@ -128,23 +125,28 @@ static func center_label_text(label: Label) -> void:
 static func set_button_texture_icon(button: Button, texture: Texture2D, icon_size: Vector2, placement: StringName = &"left", padding: float = 8.0) -> TextureRect:
 	if button == null:
 		return null
-	button.icon = null
-	var icon := button.get_node_or_null("FittedIcon") as TextureRect
-	if icon == null:
-		icon = TextureRect.new()
-		icon.name = "FittedIcon"
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		button.add_child(icon)
-	icon.texture = texture
-	icon.visible = texture != null
-	icon.custom_minimum_size = Vector2.ZERO
-	if placement == &"center":
-		_place_centered(icon, icon_size)
-	else:
-		_place_left_centered(icon, icon_size, padding)
-	return icon
+	var fitted_icon := button.get_node_or_null("FittedIcon") as TextureRect
+	if placement == &"overlay_center":
+		button.icon = null
+		if fitted_icon == null:
+			fitted_icon = TextureRect.new()
+			fitted_icon.name = "FittedIcon"
+			fitted_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			fitted_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			fitted_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			button.add_child(fitted_icon)
+		fitted_icon.texture = texture
+		fitted_icon.visible = texture != null
+		fit_centered_icon(fitted_icon, icon_size)
+		return fitted_icon
+	if fitted_icon != null:
+		fitted_icon.visible = false
+	button.icon = texture
+	button.add_theme_constant_override("icon_max_width", int(maxf(icon_size.x, icon_size.y)))
+	button.add_theme_constant_override("h_separation", int(maxf(4.0, padding * 0.5)))
+	button.set("expand_icon", false)
+	button.set("icon_alignment", HORIZONTAL_ALIGNMENT_CENTER if placement == &"center" else HORIZONTAL_ALIGNMENT_LEFT)
+	return null
 
 
 static func fit_centered_icon(control: Control, icon_size: Vector2) -> void:
@@ -152,10 +154,6 @@ static func fit_centered_icon(control: Control, icon_size: Vector2) -> void:
 		return
 	control.custom_minimum_size = Vector2.ZERO
 	control.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_place_centered(control, icon_size)
-
-
-static func _place_centered(control: Control, icon_size: Vector2) -> void:
 	control.anchor_left = 0.5
 	control.anchor_top = 0.5
 	control.anchor_right = 0.5
@@ -163,17 +161,6 @@ static func _place_centered(control: Control, icon_size: Vector2) -> void:
 	control.offset_left = -icon_size.x * 0.5
 	control.offset_top = -icon_size.y * 0.5
 	control.offset_right = icon_size.x * 0.5
-	control.offset_bottom = icon_size.y * 0.5
-
-
-static func _place_left_centered(control: Control, icon_size: Vector2, padding: float) -> void:
-	control.anchor_left = 0.0
-	control.anchor_top = 0.5
-	control.anchor_right = 0.0
-	control.anchor_bottom = 0.5
-	control.offset_left = padding
-	control.offset_top = -icon_size.y * 0.5
-	control.offset_right = padding + icon_size.x
 	control.offset_bottom = icon_size.y * 0.5
 
 
@@ -279,8 +266,21 @@ static func operator_card(border: Color = ACCENT) -> StyleBox:
 
 
 static func operator_card_state(state: StringName, selected: bool = false) -> StyleBox:
-	var fill := BG_DISABLED if state == &"cooldown" else BG_CARD_HOVER if selected else BG_CARD
-	return frame_box(UiFrameSpec.OPERATOR_CARD, fill, ACCENT, false)
+	var component := UiFrameSpec.OPERATOR_CARD
+	var border := ACCENT
+	var fill := BG_CARD
+	if selected:
+		component = UiFrameSpec.OPERATOR_CARD_SELECTED
+		border = AMBER
+		fill = BG_CARD_HOVER
+	elif state == &"deployed":
+		component = UiFrameSpec.OPERATOR_CARD_DEPLOYED
+		border = SUCCESS
+	elif state == &"cooldown":
+		component = UiFrameSpec.OPERATOR_CARD_COOLDOWN
+		border = DANGER
+		fill = BG_DISABLED
+	return frame_box(component, fill, border, false)
 
 
 static func operator_portrait_slot() -> StyleBox:
@@ -289,6 +289,10 @@ static func operator_portrait_slot() -> StyleBox:
 
 static func operator_portrait_frame() -> StyleBox:
 	return frame_box(UiFrameSpec.OPERATOR_PORTRAIT_FRAME, Color.TRANSPARENT, STROKE_SOFT, false)
+
+
+static func operator_title_strip() -> StyleBox:
+	return frame_box(UiFrameSpec.OPERATOR_TITLE_STRIP, BG_DARK, STROKE_SOFT, false)
 
 
 static func operator_cost_badge() -> StyleBox:
@@ -300,11 +304,11 @@ static func operator_stat_row() -> StyleBox:
 
 
 static func list_card(selected: bool = false) -> StyleBox:
-	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD_HOVER if selected else BG_CARD, AMBER if selected else STROKE_SOFT, false)
+	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD, AMBER if selected else STROKE_SOFT, false)
 
 
 static func icon_tile() -> StyleBox:
-	return frame_box(UiFrameSpec.ICON_TILE, ACCENT_SOFT, STROKE_SOFT)
+	return frame_box(UiFrameSpec.ICON_BACKPLATE, ACCENT_SOFT, STROKE_SOFT)
 
 
 static func icon_frame(accent: Color = STROKE_SOFT) -> StyleBox:
@@ -319,6 +323,10 @@ static func build_icon_frame(accent: Color = STROKE_SOFT) -> StyleBox:
 	return frame_box(UiFrameSpec.BUILD_ICON_FRAME, Color.TRANSPARENT, accent, false)
 
 
+static func cost_badge() -> StyleBox:
+	return frame_box(UiFrameSpec.COST_BADGE, AMBER_SOFT, AMBER)
+
+
 static func relic_strip() -> StyleBox:
 	return frame_box(UiFrameSpec.RELIC_STRIP, BG_GLASS, STROKE_SOFT, false)
 
@@ -327,16 +335,12 @@ static func relic_icon(rarity: int = 1, highlighted: bool = false) -> StyleBox:
 	var border := relic_rarity_color(rarity)
 	if highlighted:
 		border = AMBER
-	return frame_box(UiFrameSpec.RELIC_ICON_FRAME, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
-
-
-static func relic_rarity_overlay(rarity: int) -> StyleBox:
 	var component := UiFrameSpec.RELIC_ICON_COMMON
 	if rarity == 3:
 		component = UiFrameSpec.RELIC_ICON_RARE
 	elif rarity == 2:
 		component = UiFrameSpec.RELIC_ICON_UNCOMMON
-	return frame_box(component, Color.TRANSPARENT, relic_rarity_color(rarity), false)
+	return frame_box(component, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
 
 
 static func relic_card(rarity: int = 1, selected: bool = false) -> StyleBox:
@@ -357,6 +361,10 @@ static func settings_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.SETTINGS_PANEL, BG_GLASS, ACCENT, false)
 
 
+static func settings_row() -> StyleBox:
+	return frame_box(UiFrameSpec.SETTINGS_ROW, BG_CARD, STROKE_SOFT, false)
+
+
 static func settings_button() -> StyleBox:
 	return frame_box(UiFrameSpec.SETTINGS_BUTTON, BG_CARD, STROKE_SOFT, false)
 
@@ -373,12 +381,16 @@ static func legend_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.LEGEND_PANEL, BG_GLASS, STROKE_SOFT, false)
 
 
+static func map_popup() -> StyleBox:
+	return frame_box(UiFrameSpec.MAP_POPUP, BG_GLASS, STROKE_SOFT, false)
+
+
 static func event_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.EVENT_PANEL, BG_GLASS, STROKE_STRONG, false)
 
 
-static func result_panel() -> StyleBox:
-	return frame_box(UiFrameSpec.RESULT_PANEL, BG_GLASS, STROKE_STRONG, false)
+static func event_choice_button() -> StyleBox:
+	return frame_box(UiFrameSpec.EVENT_CHOICE_BUTTON, BG_CARD, ACCENT)
 
 
 static func dialog_box() -> StyleBox:
@@ -386,23 +398,23 @@ static func dialog_box() -> StyleBox:
 
 
 static func dialog_speaker_plate() -> StyleBox:
-	return frame_box(UiFrameSpec.DIALOG_SPEAKER_PLATE, ACCENT_SOFT, ACCENT, false)
+	return frame_box(UiFrameSpec.DIALOG_SPEAKER, ACCENT_SOFT, ACCENT)
 
 
-static func map_popup() -> StyleBox:
-	return frame_box(UiFrameSpec.MAP_POPUP, BG_GLASS, STROKE_SOFT, false)
+static func result_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.RESULT_PANEL, BG_DARK, STROKE_STRONG, false)
+
+
+static func result_stat_row() -> StyleBox:
+	return frame_box(UiFrameSpec.RESULT_STAT_ROW, BG_CARD, STROKE_SOFT)
 
 
 static func wave_preview_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.WAVE_PREVIEW, BG_GLASS, ACCENT, false)
 
 
-static func tooltip_panel() -> StyleBox:
-	return frame_box(UiFrameSpec.TOOLTIP, BG_GLASS, STROKE_SOFT)
-
-
-static func settings_row() -> StyleBox:
-	return frame_box(UiFrameSpec.SETTINGS_ROW, BG_CARD, STROKE_SOFT, false)
+static func wave_route_toggle() -> StyleBox:
+	return frame_box(UiFrameSpec.WAVE_ROUTE_TOGGLE, BG_CARD, STROKE_SOFT)
 
 
 static func relic_rarity_color(rarity: int) -> Color:
@@ -428,6 +440,34 @@ static func compact_button(selected: bool = false) -> StyleBox:
 
 static func detail_section() -> StyleBox:
 	return frame_box(UiFrameSpec.DETAIL_SECTION, BG_CARD, STROKE_SOFT, false)
+
+
+static func unit_header_strip() -> StyleBox:
+	return frame_box(UiFrameSpec.UNIT_HEADER_STRIP, BG_CARD, STROKE_SOFT, false)
+
+
+static func unit_portrait_backplate() -> StyleBox:
+	return frame_box(UiFrameSpec.UNIT_PORTRAIT_BACKPLATE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func unit_portrait_frame() -> StyleBox:
+	return frame_box(UiFrameSpec.UNIT_PORTRAIT_FRAME, Color.TRANSPARENT, STROKE_SOFT, false)
+
+
+static func unit_stat_row() -> StyleBox:
+	return frame_box(UiFrameSpec.UNIT_STAT_ROW, BG_DARK, STROKE_SOFT)
+
+
+static func skill_icon_backplate() -> StyleBox:
+	return frame_box(UiFrameSpec.SKILL_ICON_BACKPLATE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func skill_icon_frame() -> StyleBox:
+	return frame_box(UiFrameSpec.SKILL_ICON_FRAME, Color.TRANSPARENT, STROKE_SOFT, false)
+
+
+static func skill_desc_box() -> StyleBox:
+	return frame_box(UiFrameSpec.SKILL_DESC_BOX, BG_CARD, STROKE_SOFT, false)
 
 
 static func accent_button(accent: Color) -> StyleBox:
@@ -461,3 +501,74 @@ static func progress_fill(color: Color) -> StyleBox:
 	elif color.g > color.b or color == AMBER:
 		component = UiFrameSpec.PROGRESS_AMBER
 	return frame_box(component, color, color)
+
+
+static func resource_item() -> StyleBox:
+	return frame_box(UiFrameSpec.RESOURCE_ITEM, BG_CARD, STROKE_SOFT, false)
+
+
+static func resource_delta_badge() -> StyleBox:
+	return frame_box(UiFrameSpec.RESOURCE_DELTA_BADGE, SUCCESS_SOFT, SUCCESS, false)
+
+
+static func speed_toggle_base() -> StyleBox:
+	return frame_box(UiFrameSpec.SPEED_TOGGLE, BG_CARD, STROKE_SOFT, false)
+
+
+static func speed_toggle_active() -> StyleBox:
+	return frame_box(UiFrameSpec.SPEED_TOGGLE_ACTIVE, AMBER_SOFT, AMBER, false)
+
+
+static func scroll_track() -> StyleBox:
+	return frame_box(UiFrameSpec.SCROLL_TRACK, BG_DARK, STROKE_SOFT, false)
+
+
+static func tooltip() -> StyleBox:
+	return frame_box(UiFrameSpec.TOOLTIP, BG_GLASS, STROKE_SOFT)
+
+
+static func scroll_thumb() -> StyleBox:
+	return frame_box(UiFrameSpec.SCROLL_THUMB, BG_CARD_HOVER, ACCENT, false)
+
+
+static func slider_track() -> StyleBox:
+	return frame_box(UiFrameSpec.SLIDER_TRACK, BG_DARK, STROKE_SOFT, false)
+
+
+static func slider_fill() -> StyleBox:
+	return frame_box(UiFrameSpec.SLIDER_FILL, ACCENT_SOFT, ACCENT, false)
+
+
+static func slider_handle() -> Texture2D:
+	return UiArtRegistry.get_frame_texture(UiFrameSpec.SLIDER_HANDLE)
+
+
+static func apply_scroll_style(scroll: ScrollContainer) -> void:
+	if scroll == null:
+		return
+	var vbar := scroll.get_v_scroll_bar()
+	if vbar != null:
+		_apply_scroll_bar_style(vbar)
+	var hbar := scroll.get_h_scroll_bar()
+	if hbar != null:
+		_apply_scroll_bar_style(hbar)
+
+
+static func _apply_scroll_bar_style(scroll_bar: ScrollBar) -> void:
+	scroll_bar.add_theme_stylebox_override("scroll", scroll_track())
+	scroll_bar.add_theme_stylebox_override("grabber", scroll_thumb())
+	scroll_bar.add_theme_stylebox_override("grabber_highlight", scroll_thumb())
+	scroll_bar.add_theme_stylebox_override("grabber_pressed", scroll_thumb())
+
+
+static func apply_slider_style(slider: Slider) -> void:
+	if slider == null:
+		return
+	slider.add_theme_stylebox_override("slider", slider_track())
+	slider.add_theme_stylebox_override("grabber_area", slider_fill())
+	slider.add_theme_stylebox_override("grabber_area_highlight", slider_fill())
+	var handle := slider_handle()
+	if handle != null:
+		slider.add_theme_icon_override("grabber", handle)
+		slider.add_theme_icon_override("grabber_highlight", handle)
+		slider.add_theme_icon_override("grabber_pressed", handle)

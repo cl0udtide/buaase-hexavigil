@@ -3,6 +3,7 @@ extends Control
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 const PANEL_SIZE := Vector2(540.0, 260.0)
 
@@ -69,7 +70,8 @@ func _apply_visual_style() -> void:
 
 func _style_button(button: Button, accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
-	button.add_theme_stylebox_override("normal", GameUiStyle.accent_button(accent))
+	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(15.0, 15.0), &"left", 8.0)
+	button.add_theme_stylebox_override("normal", GameUiStyle.event_choice_button())
 	button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.AMBER))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.42))
 	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
