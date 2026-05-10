@@ -7,7 +7,7 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
 const RESOURCE_COLLECT_AMOUNT := 1
-const POPUP_MIN_WIDTH := 228.0
+const POPUP_MIN_WIDTH := 300.0
 const POPUP_OFFSET := Vector2(14.0, 14.0)
 const INVALID_CELL := Vector2i(-1, -1)
 
