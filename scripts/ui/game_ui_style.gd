@@ -147,7 +147,18 @@ static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0
 
 
 static func top_card() -> StyleBox:
-	return frame_box(UiFrameSpec.TOP_CARD, BG_GLASS, STROKE_SOFT)
+	return hud_cell(false)
+
+
+static func hud_cell(selected: bool = false) -> StyleBox:
+	var fill := Color(0.075, 0.120, 0.125, 0.54) if selected else Color(0.055, 0.080, 0.085, 0.42)
+	var border := Color(0.710, 0.655, 0.500, 0.34) if selected else Color(0.520, 0.550, 0.490, 0.26)
+	var style := flat_box(fill, border, 1.0, 4.0)
+	style.content_margin_left = 10.0
+	style.content_margin_top = 5.0
+	style.content_margin_right = 10.0
+	style.content_margin_bottom = 5.0
+	return style
 
 
 static func top_hud_panel() -> StyleBox:
@@ -185,6 +196,12 @@ static func icon_tile() -> StyleBox:
 static func tab(selected: bool) -> StyleBox:
 	var component := UiFrameSpec.TAB_SELECTED if selected else UiFrameSpec.TAB
 	return frame_box(component, ACCENT_SOFT if selected else BG_CARD, ACCENT if selected else STROKE_SOFT)
+
+
+static func compact_button(selected: bool = false) -> StyleBox:
+	if selected:
+		return frame_box(UiFrameSpec.BUTTON_PRESSED, BG_CARD, AMBER)
+	return frame_box(UiFrameSpec.BUTTON, BG_CARD, STROKE_SOFT)
 
 
 static func accent_button(accent: Color) -> StyleBox:
