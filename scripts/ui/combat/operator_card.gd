@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
@@ -12,19 +12,26 @@ var _accent := GameUiStyle.ACCENT
 var _hovered := false
 var _compact := false
 
-@onready var _title_plate: PanelContainer = %TitlePlate
+@onready var _card_base: Panel = %CardBase
+@onready var _card_content: MarginContainer = %CardContent
+@onready var _title_strip: Panel = %TitleStrip
 @onready var _name_label: Label = %NameLabel
-@onready var _cost_badge: PanelContainer = %CostBadge
+@onready var _cost_badge: Panel = %CostBadge
 @onready var _cost_label: Label = %CostLabel
-@onready var _portrait_box: PanelContainer = %PortraitBox
+@onready var _portrait_stack: Control = %PortraitStack
+@onready var _portrait_backplate: Panel = %PortraitBackplate
+@onready var _portrait_texture: TextureRect = %PortraitTexture
+@onready var _portrait_frame: Panel = %PortraitFrame
 @onready var _portrait_label: Label = %PortraitLabel
+@onready var _selected_overlay: Panel = %SelectedOverlay
+@onready var _deployed_overlay: Panel = %DeployedOverlay
 @onready var _cooldown_overlay: ColorRect = %CooldownOverlay
 @onready var _cooldown_label: Label = %CooldownLabel
 @onready var _class_label: Label = %ClassLabel
 @onready var _state_label: Label = %StateLabel
-@onready var _hp_stat_row: PanelContainer = %HpStatRow
-@onready var _sp_stat_row: PanelContainer = %SpStatRow
-@onready var _cd_stat_row: PanelContainer = %CdStatRow
+@onready var _hp_stat_row: Panel = %HpStatRow
+@onready var _sp_stat_row: Panel = %SpStatRow
+@onready var _cd_stat_row: Panel = %CdStatRow
 @onready var _hp_stat_label: Label = %HpStatLabel
 @onready var _sp_stat_label: Label = %SpStatLabel
 @onready var _cd_stat_label: Label = %CdStatLabel
@@ -62,12 +69,17 @@ func _ready() -> void:
 	_add_label_shadow(_hp_stat_label)
 	_add_label_shadow(_sp_stat_label)
 	_add_label_shadow(_cd_stat_label)
-	GameUiStyle.apply_frame_margin(get_node_or_null("CardMargin") as MarginContainer, GameUiStyle.FRAME_OPERATOR_CARD)
-	_title_plate.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, false))
+	GameUiStyle.apply_frame_margin(_card_content, GameUiStyle.FRAME_OPERATOR_CARD)
+	_title_strip.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_DARK, false))
 	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.operator_cost_badge())
-	_portrait_box.add_theme_stylebox_override("panel", GameUiStyle.operator_portrait_slot())
+	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.operator_portrait_slot())
+	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_PORTRAIT_SLOT, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
+	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	for row in [_hp_stat_row, _sp_stat_row, _cd_stat_row]:
 		row.add_theme_stylebox_override("panel", GameUiStyle.operator_stat_row())
+	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
+	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
 	_cooldown_overlay.color = Color(0.160, 0.035, 0.032, 0.72)
 	_cooldown_overlay.visible = false
 	_apply_density()
@@ -165,12 +177,16 @@ func _on_gui_input(event: InputEvent) -> void:
 
 
 func _apply_card_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.operator_card_state(_state, _hovered))
+	_card_base.add_theme_stylebox_override("panel", GameUiStyle.operator_card_state(_state, _hovered))
+	_selected_overlay.visible = _hovered and _state != &"cooldown"
+	_deployed_overlay.visible = _state == &"deployed"
+	if _state != &"cooldown":
+		_cooldown_overlay.visible = false
 
 
 func _apply_density() -> void:
 	custom_minimum_size = UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE
-	_portrait_box.custom_minimum_size = Vector2(0.0, 48.0 if _compact else 54.0)
+	_portrait_stack.custom_minimum_size = Vector2(0.0, 48.0 if _compact else 54.0)
 	_name_label.add_theme_font_size_override("font_size", 14 if _compact else 15)
 	_cost_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
 	_class_label.add_theme_font_size_override("font_size", 12 if _compact else 13)

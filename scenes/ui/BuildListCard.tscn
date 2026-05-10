@@ -1,91 +1,148 @@
-[gd_scene format=3 uid="uid://cqm3msy5vffro"]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/build_list_card.gd" id="1_card"]
+[ext_resource type="Script" path="res://scripts/ui/build_list_card.gd" id="1_1uyh3"]
 
-[node name="BuildListCard" type="PanelContainer" unique_id=796598111]
+[node name="BuildListCard" type="Control" unique_id=420263796]
 custom_minimum_size = Vector2(0, 96)
+layout_mode = 3
+anchors_preset = 0
 size_flags_horizontal = 3
-script = ExtResource("1_card")
+script = ExtResource("1_1uyh3")
 
-[node name="AccentBar" type="ColorRect" parent="." unique_id=699401447]
+[node name="CardBase" type="Panel" parent="." unique_id=857439415]
 unique_name_in_owner = true
-visible = false
-layout_mode = 2
-mouse_filter = 2
-color = Color(0.12, 0.78, 0.88, 0.95)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="CardMargin" type="MarginContainer" parent="." unique_id=911265289]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+[node name="ContentMargin" type="MarginContainer" parent="." unique_id=145550266]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Row" type="HBoxContainer" parent="CardMargin" unique_id=1089214031]
+[node name="Row" type="HBoxContainer" parent="ContentMargin" unique_id=2103387909]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="IconPanel" type="PanelContainer" parent="CardMargin/Row" unique_id=1882995840]
+[node name="IconStack" type="Control" parent="ContentMargin/Row" unique_id=2012463023]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(52, 70)
+custom_minimum_size = Vector2(60, 72)
 layout_mode = 2
 size_flags_vertical = 3
-mouse_filter = 2
 
-[node name="IconTexture" type="TextureRect" parent="CardMargin/Row/IconPanel"]
+[node name="IconBackplate" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1677647990]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="IconTexture" type="TextureRect" parent="ContentMargin/Row/IconStack" unique_id=779279736]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 15
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="ContentMargin/Row/IconStack" unique_id=1838239366]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 22
+text = "*"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IconFrame" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=717827537]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextColumn" type="VBoxContainer" parent="ContentMargin/Row" unique_id=1058986093]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="TitleLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=994304328]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "卡片"
+text_overrun_behavior = 3
+
+[node name="SubtitleLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=463474161]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "副标题"
+text_overrun_behavior = 3
+
+[node name="DetailLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=45281399]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "说明"
+autowrap_mode = 3
+text_overrun_behavior = 3
+max_lines_visible = 4
+
+[node name="StateLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=1551428723]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text_overrun_behavior = 3
+
+[node name="CostBadge" type="Panel" parent="ContentMargin/Row" unique_id=1892939879]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(52, 28)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="CostLabel" type="Label" parent="ContentMargin/Row/CostBadge" unique_id=234878401]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SelectedOverlay" type="Panel" parent="." unique_id=1915811268]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="IconLabel" type="Label" parent="CardMargin/Row/IconPanel" unique_id=53229890]
+[node name="DisabledOverlay" type="ColorRect" parent="." unique_id=1226576112]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "*"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="TextColumn" type="VBoxContainer" parent="CardMargin/Row" unique_id=1041160886]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 2
-
-[node name="TitleLabel" type="Label" parent="CardMargin/Row/TextColumn" unique_id=1278592477]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 16
-text = "卡片"
-text_overrun_behavior = 3
-
-[node name="SubtitleLabel" type="Label" parent="CardMargin/Row/TextColumn" unique_id=414130291]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
-text = "副标题"
-text_overrun_behavior = 3
-
-[node name="DetailLabel" type="Label" parent="CardMargin/Row/TextColumn" unique_id=1332952138]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
-text = "说明"
-autowrap_mode = 2
-text_overrun_behavior = 3
-max_lines_visible = 4
-
-[node name="StateLabel" type="Label" parent="CardMargin/Row/TextColumn" unique_id=835559893]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 13
-text_overrun_behavior = 3
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.03, 0.035, 0.38)

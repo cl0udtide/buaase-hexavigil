@@ -24,11 +24,15 @@ var _cards_by_operator_key: Dictionary = {}
 var _left_reserved_width := 0.0
 var _layout_profile: Dictionary = {}
 var _open_panel_stack: Array[StringName] = []
+var _core_hp_ratio := 0.0
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
-@onready var _top_bar: PanelContainer = %TopBar
+@onready var _top_bar: Control = %TopBar
+@onready var _top_bar_base: Panel = %TopBarBase
 @onready var _core_label: Label = %CoreLabel
+@onready var _core_track: Panel = %CoreTrack
+@onready var _core_fill: Panel = %CoreFill
 @onready var _deploy_label: Label = %DeployLabel
 @onready var _queue_label: Label = %QueueLabel
 @onready var _message_label: Label = %MessageLabel
@@ -38,15 +42,19 @@ var _open_panel_stack: Array[StringName] = []
 @onready var _speed_2_button: Button = %Speed2Button
 @onready var _relic_strip: Control = %RelicStrip
 @onready var _relic_panel: Control = %RelicPanel
-@onready var _wave_preview_panel: PanelContainer = %WavePreviewPanel
+@onready var _wave_preview_panel: Control = %WavePreviewPanel
+@onready var _wave_preview_base: Panel = %WavePreviewBase
 @onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
 @onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
 @onready var _wave_preview_label: Label = %WavePreviewLabel
-@onready var _deck_panel: PanelContainer = %DeployDeck
+@onready var _deck_panel: Control = %DeployDeck
+@onready var _deploy_rail_base: Panel = %DeployRailBase
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
-@onready var _detail_panel: PanelContainer = %UnitDetailPanel
-@onready var _legend_panel: PanelContainer = %LegendPanel
-@onready var _drag_ghost: PanelContainer = %DragGhost
+@onready var _detail_panel: Control = %UnitDetailPanel
+@onready var _legend_panel: Control = %LegendPanel
+@onready var _legend_base: Panel = %LegendBase
+@onready var _drag_ghost: Control = %DragGhost
+@onready var _drag_ghost_base: Panel = %DragGhostBase
 @onready var _drag_ghost_label: Label = %DragGhostLabel
 
 
@@ -56,10 +64,13 @@ func _ready() -> void:
 	set_process_unhandled_input(true)
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	_top_bar.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
+	_top_bar_base.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
+	_core_track.add_theme_stylebox_override("panel", GameUiStyle.progress_background())
+	_core_fill.add_theme_stylebox_override("panel", GameUiStyle.progress_fill(GameUiStyle.AMBER))
+	_core_track.resized.connect(_refresh_core_fill)
 	_apply_frame_margins()
 	_style_top_cards()
-	_wave_preview_panel.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, false))
+	_wave_preview_base.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.ACCENT, GameUiStyle.BG_GLASS, false))
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
@@ -72,10 +83,10 @@ func _ready() -> void:
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.custom_minimum_size = Vector2(68.0, 30.0)
 	_style_button(_wave_route_toggle, GameUiStyle.STROKE_SOFT)
-	_deck_panel.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
-	_legend_panel.add_theme_stylebox_override("panel", GameUiStyle.legend_panel())
+	_deploy_rail_base.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
+	_legend_base.add_theme_stylebox_override("panel", GameUiStyle.legend_panel())
 	_style_legend_panel()
-	_drag_ghost.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
+	_drag_ghost_base.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
@@ -115,6 +126,7 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 	_core_label.text = core_text
 	_deploy_label.text = deploy_text
 	_queue_label.text = queue_text
+	_set_core_progress_from_text(core_text)
 
 
 func show_message(text_value: String) -> void:
@@ -281,23 +293,23 @@ func _style_top_button(button: Button, selected: bool) -> void:
 
 
 func _apply_frame_margins() -> void:
-	GameUiStyle.apply_frame_margin(get_node_or_null("TopBar/TopMargin") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(4.0, 0.0, 4.0, 0.0))
-	GameUiStyle.apply_frame_margin(get_node_or_null("WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
-	GameUiStyle.apply_frame_margin(get_node_or_null("DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
-	GameUiStyle.apply_frame_margin(get_node_or_null("LegendPanel/LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
-	GameUiStyle.apply_frame_margin(get_node_or_null("DragGhost/MarginContainer") as MarginContainer, GameUiStyle.FRAME_CARD)
+	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/TopBar/TopContent") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(4.0, 0.0, 4.0, 0.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
+	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/LegendPanel/LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
+	GameUiStyle.apply_frame_margin(get_node_or_null("InteractionLayer/DragGhost/GhostMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
 func _style_top_cards() -> void:
 	for card_path in [
-		"TopBar/TopMargin/Row/StageCard",
-		"TopBar/TopMargin/Row/CoreCard",
-		"TopBar/TopMargin/Row/DeployCard",
-		"TopBar/TopMargin/Row/MessageCard",
-		"TopBar/TopMargin/Row/TimeCard",
-		"TopBar/TopMargin/Row/ResourceCard"
+		"HudChromeLayer/TopBar/TopContent/TopContentRow/StageChip/ChipBase",
+		"HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip/ChipBase",
+		"HudChromeLayer/TopBar/TopContent/TopContentRow/DeployChip/ChipBase",
+		"HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip/ChipBase",
+		"HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/SpeedToggleBase",
+		"HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip/ChipBase"
 	]:
-		var card := get_node_or_null(card_path) as PanelContainer
+		var card := get_node_or_null(card_path) as Panel
 		if card != null:
 			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
 	for label in [_core_label, _deploy_label, _queue_label, _message_label, _resource_label]:
@@ -315,7 +327,7 @@ func _style_top_cards() -> void:
 
 
 func _style_legend_panel() -> void:
-	var title := get_node_or_null("LegendPanel/LegendMargin/LegendVBox/LegendTitleLabel") as Label
+	var title := get_node_or_null("HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendTitleLabel") as Label
 	for label_node in _legend_panel.find_children("*", "Label", true, false):
 		var label := label_node as Label
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -331,6 +343,7 @@ func _style_legend_panel() -> void:
 
 func _on_viewport_size_changed() -> void:
 	_apply_responsive_layout()
+	_refresh_core_fill()
 
 
 func _apply_responsive_layout() -> void:
@@ -387,21 +400,21 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	var widths := UiLayoutRules.top_card_widths(viewport_width)
 	var top_height := float(_layout_profile.get("top_card_height", 50.0))
 	var compact := bool(_layout_profile.get("compact", false))
-	var row := get_node_or_null("TopBar/TopMargin/Row") as HBoxContainer
+	var row := get_node_or_null("HudChromeLayer/TopBar/TopContent/TopContentRow") as HBoxContainer
 	if row != null:
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
 		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)))
 	var card_height := maxf(36.0, top_height - 8.0)
 	var show_message_card := viewport_width > 720.0
-	var message_card := get_node_or_null("TopBar/TopMargin/Row/MessageCard") as Control
+	var message_card := get_node_or_null("HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip") as Control
 	if message_card != null:
 		message_card.visible = show_message_card
-	_set_top_card_min("TopBar/TopMargin/Row/StageCard", widths.get("stage", 190.0), card_height)
-	_set_top_card_min("TopBar/TopMargin/Row/CoreCard", widths.get("core", 190.0), card_height)
-	_set_top_card_min("TopBar/TopMargin/Row/DeployCard", widths.get("deploy", 160.0), card_height)
-	_set_top_card_min("TopBar/TopMargin/Row/MessageCard", widths.get("message", 260.0), card_height)
-	_set_top_card_min("TopBar/TopMargin/Row/TimeCard", widths.get("time", 200.0), card_height)
-	_set_top_card_min("TopBar/TopMargin/Row/ResourceCard", widths.get("resource", 245.0), card_height)
+	_set_top_card_min("HudChromeLayer/TopBar/TopContent/TopContentRow/StageChip", widths.get("stage", 190.0), card_height)
+	_set_top_card_min("HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip", widths.get("core", 190.0), card_height)
+	_set_top_card_min("HudChromeLayer/TopBar/TopContent/TopContentRow/DeployChip", widths.get("deploy", 160.0), card_height)
+	_set_top_card_min("HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip", widths.get("message", 260.0), card_height)
+	_set_top_card_min("HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls", widths.get("time", 200.0), card_height)
+	_set_top_card_min("HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip", widths.get("resource", 245.0), card_height)
 	var label_size := 12 if compact else 13
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_font_size_override("font_size", label_size)
@@ -416,6 +429,35 @@ func _set_top_card_min(path: NodePath, width: float, height: float) -> void:
 	var card := get_node_or_null(path) as Control
 	if card != null:
 		card.custom_minimum_size = Vector2(width, height)
+
+
+func _set_core_progress_from_text(core_text: String) -> void:
+	var ratio := 0.0
+	for token in core_text.split("\n", false):
+		var slash_index := token.find("/")
+		if slash_index <= 0:
+			continue
+		var current_text := token.substr(0, slash_index).strip_edges()
+		var max_text := token.substr(slash_index + 1).strip_edges()
+		if current_text.is_valid_int() and max_text.is_valid_int():
+			var max_value := maxf(float(max_text.to_int()), 1.0)
+			ratio = clampf(float(current_text.to_int()) / max_value, 0.0, 1.0)
+			break
+	_core_hp_ratio = ratio
+	_refresh_core_fill()
+
+
+func _refresh_core_fill() -> void:
+	if _core_track == null or _core_fill == null:
+		return
+	_core_fill.anchor_left = _core_track.anchor_left
+	_core_fill.anchor_top = _core_track.anchor_top
+	_core_fill.anchor_right = _core_track.anchor_left
+	_core_fill.anchor_bottom = _core_track.anchor_bottom
+	_core_fill.offset_left = _core_track.offset_left
+	_core_fill.offset_top = _core_track.offset_top
+	_core_fill.offset_right = _core_track.offset_left + maxf(0.0, _core_track.size.x * _core_hp_ratio)
+	_core_fill.offset_bottom = _core_track.offset_bottom
 
 
 func _bind_overlay_panels() -> void:
@@ -500,6 +542,7 @@ func _remove_panel_from_stack(panel_name: StringName) -> void:
 
 
 func _move_control_to_front(control: Control) -> void:
-	if control == null or control.get_parent() != self:
+	if control == null or control.get_parent() == null:
 		return
-	move_child(control, get_child_count() - 1)
+	var parent := control.get_parent()
+	parent.move_child(control, parent.get_child_count() - 1)

@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
@@ -14,6 +14,7 @@ var _relic_ids: Array[StringName] = []
 var _last_relic_ids: Array[StringName] = []
 var _has_received_relics := false
 
+@onready var _strip_base: Panel = %StripBase
 @onready var _entry_button: Button = %EntryButton
 @onready var _icon_row: HBoxContainer = %IconRow
 @onready var _overflow_label: Label = %OverflowLabel
@@ -22,7 +23,7 @@ var _has_received_relics := false
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
-	add_theme_stylebox_override("panel", GameUiStyle.relic_strip())
+	_strip_base.add_theme_stylebox_override("panel", GameUiStyle.relic_strip())
 	GameUiStyle.apply_frame_margin(get_node_or_null("StripMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_STRIP)
 	_entry_button.pressed.connect(func() -> void: panel_requested.emit())
 	_style_entry_button()

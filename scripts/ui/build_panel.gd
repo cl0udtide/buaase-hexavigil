@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
@@ -23,6 +23,7 @@ var _current_phase := GameEnums.PHASE_MENU
 
 @onready var _build_mode_button: Button = %BuildModeButton
 @onready var _shop_mode_button: Button = %ShopModeButton
+@onready var _sidebar_base: Panel = %SidebarBase
 @onready var _selection_label: Label = %BuildSelectionLabel
 @onready var _card_list: VBoxContainer = %BuildCardList
 @onready var _category_tabs: HBoxContainer = %CategoryTabs
@@ -184,6 +185,7 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"title_color": GameUiStyle.TEXT,
 		"state": "已选择" if selected else "",
 		"state_color": GameUiStyle.AMBER,
+		"cost_badge_text": str(int(cfg.get("ap_cost", 0))),
 		"selected": selected,
 		"disabled": cfg.is_empty(),
 		"min_height": 108.0
@@ -225,6 +227,7 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"accent": accent,
 		"title_color": title_color,
 		"state_color": GameUiStyle.TEXT_MUTED if sold else GameUiStyle.AMBER,
+		"cost_badge_text": str(cost) if unit_id != StringName() else "",
 		"disabled": sold or unit_id == StringName() or _current_phase != GameEnums.PHASE_DAY,
 		"min_height": 102.0
 	})
@@ -408,7 +411,7 @@ func _on_data_loaded() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.build_side_panel())
+	_sidebar_base.add_theme_stylebox_override("panel", GameUiStyle.build_side_panel())
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_BUILD_SIDE_PANEL, Vector4(2.0, 0.0, 2.0, 8.0))
 	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	GameUiStyle.center_label_text(_selection_label)

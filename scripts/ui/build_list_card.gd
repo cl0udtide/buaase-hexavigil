@@ -1,5 +1,5 @@
 class_name BuildListCard
-extends PanelContainer
+extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
@@ -12,21 +12,24 @@ var _disabled := false
 var _selected := false
 var _hovered := false
 
-@onready var _accent_bar: ColorRect = %AccentBar
-@onready var _icon_panel: PanelContainer = %IconPanel
+@onready var _card_base: Panel = %CardBase
+@onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
+@onready var _icon_frame: Panel = %IconFrame
 @onready var _icon_label: Label = %IconLabel
 @onready var _title_label: Label = %TitleLabel
 @onready var _subtitle_label: Label = %SubtitleLabel
 @onready var _detail_label: Label = %DetailLabel
 @onready var _state_label: Label = %StateLabel
+@onready var _cost_badge: Panel = %CostBadge
+@onready var _cost_label: Label = %CostLabel
+@onready var _selected_overlay: Panel = %SelectedOverlay
+@onready var _disabled_overlay: ColorRect = %DisabledOverlay
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
-	if _accent_bar != null:
-		_accent_bar.visible = false
 	gui_input.connect(_on_gui_input)
 	mouse_entered.connect(func() -> void:
 		_hovered = true
@@ -41,16 +44,23 @@ func _ready() -> void:
 	_detail_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_state_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_icon_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
+	_cost_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	GameUiStyle.center_label_text(_state_label)
-	for label in [_title_label, _subtitle_label, _state_label]:
+	GameUiStyle.center_label_text(_cost_label)
+	for label in [_title_label, _subtitle_label, _state_label, _cost_label]:
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_add_label_shadow(_title_label)
 	_add_label_shadow(_subtitle_label)
 	_add_label_shadow(_detail_label)
 	_add_label_shadow(_state_label)
 	_add_label_shadow(_icon_label)
-	GameUiStyle.apply_frame_margin(get_node_or_null("CardMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
-	_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_add_label_shadow(_cost_label)
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
+	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.operator_cost_badge())
+	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_LIST_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
+	_disabled_overlay.color = Color(0.02, 0.03, 0.035, 0.38)
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	if not _pending_config.is_empty():
@@ -75,10 +85,12 @@ func _apply_config(config: Dictionary) -> void:
 	_detail_label.text = String(config.get("detail", ""))
 	_state_label.text = String(config.get("state", ""))
 	_icon_label.text = String(config.get("icon_text", "*"))
+	_cost_label.text = String(config.get("cost_badge_text", ""))
 	_apply_icon_texture(config)
 	_subtitle_label.visible = not _subtitle_label.text.is_empty()
 	_detail_label.visible = not _detail_label.text.is_empty()
 	_state_label.visible = not _state_label.text.is_empty()
+	_cost_badge.visible = not _cost_label.text.strip_edges().is_empty()
 	_state_label.add_theme_color_override("font_color", config.get("state_color", GameUiStyle.AMBER) as Color)
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT if _disabled else config.get("title_color", GameUiStyle.TEXT) as Color)
 	_icon_label.add_theme_color_override("font_color", config.get("icon_color", GameUiStyle.ACCENT) as Color)
@@ -92,9 +104,10 @@ func _apply_icon_texture(_config: Dictionary) -> void:
 
 
 func _apply_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
-	if _accent_bar != null:
-		_accent_bar.visible = false
+	_card_base.add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_ICON_TILE, Color.TRANSPARENT, _accent, false))
+	_selected_overlay.visible = _selected or _hovered
+	_disabled_overlay.visible = _disabled
 	modulate.a = 0.86 if _disabled else 1.0
 
 
