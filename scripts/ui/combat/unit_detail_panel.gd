@@ -98,6 +98,7 @@ func _ready() -> void:
 	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_UNIT_PORTRAIT_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
 	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
 	_skill_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SKILL_ICON_FRAME, Color.TRANSPARENT, GameUiStyle.STROKE_SOFT, false))
+	_apply_icon_layering()
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_damage_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -404,6 +405,17 @@ func _update_fill(bar: Control, fill: Control, ratio: float) -> void:
 	fill.offset_top = 0.0
 	fill.offset_right = maxf(0.0, bar.size.x * ratio)
 	fill.offset_bottom = 0.0
+
+
+func _apply_icon_layering() -> void:
+	_portrait_backplate.z_index = 0
+	_portrait_frame.z_index = 3
+	_portrait_texture.z_index = 5
+	_portrait_label.z_index = 5
+	_skill_icon_backplate.z_index = 0
+	_skill_icon_frame.z_index = 3
+	_skill_icon_texture.z_index = 5
+	_skill_icon_label.z_index = 5
 
 
 func _style_action_button(button: Button, accent: Color) -> void:
