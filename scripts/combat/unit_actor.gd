@@ -499,7 +499,7 @@ func _setup_static_idle_sprite(texture: Texture2D) -> void:
 	sprite.centered = true
 	sprite.position = VISUAL_OFFSET
 	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
-	sprite.flip_h = false
+	sprite.flip_h = _should_visual_face_left(facing)
 	sprite.z_index = VISUAL_Z_INDEX
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
@@ -523,7 +523,7 @@ func _setup_animated_visual_sprite(idle_textures: Array[Texture2D], attack_textu
 	sprite.sprite_frames = frames
 	sprite.animation = VISUAL_IDLE_ANIM
 	sprite.centered = true
-	sprite.flip_h = false
+	sprite.flip_h = _should_visual_face_left(facing)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var finished_callable := Callable(self, "_on_visual_animation_finished")
 	if not sprite.animation_finished.is_connected(finished_callable):

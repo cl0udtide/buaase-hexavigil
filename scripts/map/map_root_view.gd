@@ -258,15 +258,17 @@ func _draw_deploy_visual_preview(map_manager: Node) -> void:
 		return
 	if cell == _deploy_preview_cell and not _deploy_preview_valid:
 		return
-	_draw_unit_preview_texture(map_manager.cell_to_world(cell))
+	var facing := _deploy_preview_facing if _deploy_locked_cell.x >= 0 else Vector2i.RIGHT
+	_draw_unit_preview_texture(map_manager.cell_to_world(cell), facing)
 
 
-func _draw_unit_preview_texture(center: Vector2) -> void:
+func _draw_unit_preview_texture(center: Vector2, facing: Vector2i) -> void:
 	var texture_size := _deploy_preview_texture.get_size()
 	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
 		return
 	var visual_scale := UNIT_VISUAL_DISPLAY_SIZE / UNIT_VISUAL_TEXTURE_SIZE
-	draw_set_transform(center + UNIT_VISUAL_OFFSET, 0.0, Vector2.ONE * visual_scale)
+	var scale_x := -visual_scale if _should_visual_face_left(facing) else visual_scale
+	draw_set_transform(center + UNIT_VISUAL_OFFSET, 0.0, Vector2(scale_x, visual_scale))
 	draw_texture_rect(_deploy_preview_texture, Rect2(-texture_size * 0.5, texture_size), false, UNIT_PREVIEW_MODULATE)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
