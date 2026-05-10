@@ -55,6 +55,7 @@ var _last_skill_scroll_key := ""
 var _hp_ratio := 0.0
 var _sp_ratio := 0.0
 var _shop_slot_index := -1
+var _detail_scroll: ScrollContainer
 
 
 func _ready() -> void:
@@ -74,10 +75,16 @@ func _ready() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(4.0, 4.0, 4.0, 4.0))
 	var skill_section := get_node_or_null("ContentMargin/MainVBox/SkillSection") as Control
 	if skill_section != null:
-		skill_section.custom_minimum_size = Vector2(0.0, 210.0)
+		skill_section.custom_minimum_size = Vector2(0.0, 230.0)
 		skill_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	_skill_scroll.gui_input.connect(_on_skill_scroll_gui_input)
+	_skill_scroll.resized.connect(_refresh_skill_label_width)
+	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_skill_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -121,6 +128,7 @@ func _ready() -> void:
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
 	_purchase_button.pressed.connect(_on_purchase_pressed)
 	_ensure_scroll_wrapper()
+	gui_input.connect(_on_detail_gui_input)
 	clear_unit()
 
 
@@ -166,6 +174,7 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	if not status_lines.is_empty():
 		_skill_status_label.text = " / ".join(status_lines)
 	_skill_label.text = unit.get_skill_description()
+	_refresh_skill_label_width()
 	var skill_scroll_key := "%d:%s:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state, ammo_text]
 	if skill_scroll_key != _last_skill_scroll_key:
 		_skill_scroll.scroll_vertical = 0
@@ -188,14 +197,14 @@ func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, stat
 		source_text = "再部署冷却"
 	if not status_text.strip_edges().is_empty():
 		source_text = "%s  %s" % [source_text, status_text]
-	_show_cfg_preview(display_name, unit_cfg, "#--", source_text)
+	_show_cfg_preview(display_name, unit_cfg, "#--", source_text, "Preview")
 	_set_action_mode(&"preview", source_text, false, "")
 
 
 func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
 	var display_name := UiDisplayText.config_name(unit_cfg, unit_id)
 	var source_text := "招募商店  槽位 %d  价格 %d 声望" % [slot_index + 1, price]
-	_show_cfg_preview(display_name, unit_cfg, "#%d" % (slot_index + 1), source_text)
+	_show_cfg_preview(display_name, unit_cfg, "#%d" % (slot_index + 1), source_text, "Available" if can_purchase else "Locked")
 	_shop_slot_index = slot_index
 	var reason := disabled_reason
 	if can_purchase:
@@ -235,7 +244,7 @@ func clear_unit() -> void:
 	_set_action_mode(&"empty", "选择单位、干员或商店商品", false, "")
 
 
-func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, source_text: String) -> void:
+func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, source_text: String, skill_status_text: String = "Preview") -> void:
 	visible = true
 	_last_skill_scroll_key = ""
 	_title_label.text = display_name
@@ -258,8 +267,9 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_block_stat_label.text = "阻挡 %d" % int(cfg.get("block", 0))
 	_aspd_stat_label.text = "攻速 %.2fs" % float(cfg.get("attack_interval", 0.0))
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
-	_skill_status_label.text = source_text
+	_skill_status_label.text = skill_status_text
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
+	_refresh_skill_label_width()
 	_skill_scroll.scroll_vertical = 0
 
 
@@ -291,11 +301,52 @@ func _ensure_scroll_wrapper() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	scroll.gui_input.connect(_on_detail_scroll_gui_input)
 	content_margin.remove_child(main_vbox)
 	content_margin.add_child(scroll)
 	scroll.add_child(main_vbox)
 	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_detail_scroll = scroll
+
+
+func _on_skill_scroll_gui_input(event: InputEvent) -> void:
+	if _handle_scroll_event(event, _skill_scroll):
+		accept_event()
+
+
+func _on_detail_scroll_gui_input(event: InputEvent) -> void:
+	if _handle_scroll_event(event, _detail_scroll):
+		accept_event()
+
+
+func _on_detail_gui_input(event: InputEvent) -> void:
+	if _handle_scroll_event(event, _detail_scroll):
+		accept_event()
+
+
+func _handle_scroll_event(event: InputEvent, scroll: ScrollContainer) -> bool:
+	if scroll == null or not (event is InputEventMouseButton):
+		return false
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed:
+		return false
+	var direction := 0
+	if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+		direction = -1
+	elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		direction = 1
+	else:
+		return false
+	scroll.scroll_vertical = maxi(0, scroll.scroll_vertical + direction * 48)
+	return true
+
+
+func _refresh_skill_label_width() -> void:
+	if _skill_scroll == null or _skill_label == null:
+		return
+	_skill_label.custom_minimum_size.x = maxf(1.0, _skill_scroll.size.x - 18.0)
 
 
 func _on_purchase_pressed() -> void:

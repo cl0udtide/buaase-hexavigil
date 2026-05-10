@@ -20,7 +20,7 @@ const RESOURCE_ORDER: Array[StringName] = [&"ap", &"wood", &"stone", &"mana", &"
 const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 62.0
 const WAVE_PREVIEW_LINE_HEIGHT := 19.0
 const WAVE_PREVIEW_PANEL_BOTTOM_PADDING := 34.0
-const WAVE_PREVIEW_HEADER_TEXT_PADDING := 42.0
+const WAVE_PREVIEW_HEADER_TEXT_PADDING := 54.0
 const UNIT_DETAIL_GAP := 12.0
 
 var _cards_by_operator_key: Dictionary = {}
@@ -29,6 +29,7 @@ var _left_reserved_width := 0.0
 var _layout_profile: Dictionary = {}
 var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
+var _wave_preview_text_min_height := WAVE_PREVIEW_MIN_TEXT_HEIGHT
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
@@ -96,11 +97,11 @@ func _ready() -> void:
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.custom_minimum_size = Vector2(64.0, 26.0)
 	_wave_route_toggle.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_wave_route_toggle.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_wave_route_toggle.size_flags_vertical = Control.SIZE_SHRINK_END
 	_style_button(_wave_route_toggle, GameUiStyle.STROKE_SOFT)
 	var wave_header := get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader") as HBoxContainer
 	if wave_header != null:
-		wave_header.custom_minimum_size.y = 28.0
+		wave_header.custom_minimum_size.y = 34.0
 		wave_header.clip_contents = true
 	var wave_content := get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent") as Control
 	if wave_content != null:
@@ -335,8 +336,8 @@ func set_left_reserved_width(width: float) -> void:
 
 func _resize_wave_preview_panel(text_value: String) -> void:
 	var line_count: int = max(text_value.count("\n") + 1, 1)
-	var text_height: float = max(WAVE_PREVIEW_MIN_TEXT_HEIGHT, float(line_count) * WAVE_PREVIEW_LINE_HEIGHT)
-	_wave_preview_label.custom_minimum_size.y = text_height
+	_wave_preview_text_min_height = maxf(WAVE_PREVIEW_MIN_TEXT_HEIGHT, float(line_count) * WAVE_PREVIEW_LINE_HEIGHT)
+	_wave_preview_label.custom_minimum_size.y = _wave_preview_text_min_height
 
 
 func _style_button(button: Button, accent: Color) -> void:
@@ -635,14 +636,14 @@ func _place_wave_preview_and_detail() -> void:
 	var right_rect: Rect2 = _layout_profile.get("right_column_rect", _layout_profile.get("detail_panel_rect", _layout_profile.get("detail_rect", Rect2())))
 	var detail_rect := right_rect
 	if _wave_preview_panel != null and _wave_preview_panel.visible:
-		var desired_height := _wave_preview_label.custom_minimum_size.y + WAVE_PREVIEW_PANEL_BOTTOM_PADDING
 		var profile_height := float(_layout_profile.get("wave_preview_height", 124.0))
-		var max_height := maxf(UiTokens.WAVE_PREVIEW_MIN_HEIGHT, minf(profile_height, right_rect.size.y * 0.36))
+		var desired_height := maxf(profile_height, _wave_preview_text_min_height + WAVE_PREVIEW_PANEL_BOTTOM_PADDING)
+		var max_height := maxf(UiTokens.WAVE_PREVIEW_MIN_HEIGHT, right_rect.size.y * UiTokens.WAVE_PREVIEW_MAX_COLUMN_RATIO)
 		var wave_height := clampf(desired_height, UiTokens.WAVE_PREVIEW_MIN_HEIGHT, max_height)
-		var min_detail_height := 250.0 if bool(_layout_profile.get("narrow", false)) else 280.0
+		var min_detail_height := float(_layout_profile.get("detail_min_height", UiTokens.DETAIL_MIN_HEIGHT))
 		if right_rect.size.y - wave_height - UNIT_DETAIL_GAP < min_detail_height:
 			wave_height = maxf(UiTokens.WAVE_PREVIEW_MIN_HEIGHT, right_rect.size.y - min_detail_height - UNIT_DETAIL_GAP)
-		_wave_preview_label.custom_minimum_size.y = maxf(42.0, wave_height - WAVE_PREVIEW_HEADER_TEXT_PADDING)
+		_wave_preview_label.custom_minimum_size.y = maxf(_wave_preview_text_min_height, wave_height - WAVE_PREVIEW_HEADER_TEXT_PADDING)
 		_place_control(_wave_preview_panel, Rect2(right_rect.position, Vector2(right_rect.size.x, wave_height)))
 		var detail_bottom := right_rect.end.y
 		detail_rect.position.y += wave_height + UNIT_DETAIL_GAP

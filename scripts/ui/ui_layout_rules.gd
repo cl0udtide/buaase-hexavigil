@@ -17,7 +17,8 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var settings_size: float = UiTokens.SETTINGS_BUTTON_SIZE_COMPACT if compact else UiTokens.SETTINGS_BUTTON_SIZE
 	var relic_height := UiTokens.RELIC_STRIP_HEIGHT_COMPACT if compact else UiTokens.RELIC_STRIP_HEIGHT
 	var content_top := UiTokens.TOP_BAR_Y + top_height + UiTokens.SPACE_XS + relic_height + UiTokens.SPACE_LG
-	var right_column_top := maxf(UiTokens.TOP_BAR_Y + top_height + UiTokens.SPACE_XS + relic_height + UiTokens.SPACE_2XS, content_top - _right_column_top_shift_for_width(width))
+	var right_column_min_top := UiTokens.TOP_BAR_Y + top_height + UiTokens.RIGHT_COLUMN_TOP_BAR_GAP
+	var right_column_top := maxf(right_column_min_top, content_top - _right_column_top_shift_for_width(width))
 	var deck_height: float = UiTokens.DEPLOY_DECK_HEIGHT_COMPACT if compact else UiTokens.DEPLOY_DECK_HEIGHT
 	var detail_left: float = width - edge - detail_width
 	var deck_y := height - edge - deck_height
@@ -26,7 +27,8 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var right_bottom_limit := deck_y - UiTokens.RIGHT_COLUMN_BOTTOM_GAP
 	var legend_visible := true
 	var legend_y := right_bottom_limit - legend_size.y
-	var min_right_height_with_legend := wave_height + UiTokens.SPACE_LG + (detail_min_height if detail_visible else 0.0) + UiTokens.SPACE_SM + legend_size.y
+	var detail_reserved_height := _detail_preferred_height_for_width(width) if detail_visible else 0.0
+	var min_right_height_with_legend := wave_height + UiTokens.SPACE_LG + detail_reserved_height + UiTokens.SPACE_SM + legend_size.y
 	if right_bottom_limit - right_column_top < min_right_height_with_legend:
 		legend_visible = false
 	var legend_rect := Rect2(width - edge - legend_size.x, legend_y, legend_size.x, legend_size.y)
@@ -41,21 +43,12 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var left_panel_rect := Rect2(edge, content_top, left_panel_width, maxf(UiTokens.LEFT_PANEL_MIN_HEIGHT, left_panel_bottom - content_top))
 	var deck_left: float = maxf(edge, left_reserved_width + UiTokens.SPACE_LG)
 	var deck_right_x: float = width - edge
-	if detail_visible:
-		deck_right_x = detail_left - UiTokens.SPACE_LG
 	if deck_right_x - deck_left < UiTokens.DEPLOY_DECK_MIN_WIDTH:
 		deck_left = edge
-		if detail_visible and width < UiTokens.BREAKPOINT_COMPACT:
-			detail_left = width - edge - detail_width
-			deck_right_x = detail_left - UiTokens.SPACE_SM
-		if deck_right_x - deck_left < UiTokens.DEPLOY_DECK_MIN_WIDTH:
-			detail_width = minf(detail_width, maxf(280.0, width * 0.28))
-			detail_left = width - edge - detail_width
-			deck_right_x = detail_left - UiTokens.SPACE_SM if detail_visible else width - edge
 	var top_left := edge + settings_size + UiTokens.SPACE_SM
 	var top_rect := Rect2(top_left, UiTokens.TOP_BAR_Y, maxf(0.0, width - top_left - edge), top_height)
-	var relic_left: float = maxf(top_left, left_reserved_width + UiTokens.SPACE_LG)
-	var relic_right_limit: float = detail_left - UiTokens.SPACE_SM if detail_visible else width - edge
+	var relic_left: float = top_left
+	var relic_right_limit: float = detail_left - UiTokens.SPACE_SM
 	if relic_right_limit - relic_left < UiTokens.RELIC_STRIP_MIN_WIDTH:
 		relic_left = top_left
 		relic_right_limit = width - edge
@@ -80,6 +73,8 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 		"top_separation": UiTokens.SPACE_SM if compact else UiTokens.SPACE_LG,
 		"right_column_rect": right_column_rect,
 		"wave_preview_height": wave_height,
+		"detail_min_height": detail_min_height,
+		"detail_preferred_height": detail_reserved_height,
 		"detail_panel_rect": detail_rect,
 		"detail_rect": detail_rect,
 		"legend_panel_rect": legend_rect,
@@ -144,6 +139,14 @@ static func _detail_min_height_for_width(width: float) -> float:
 	if width <= UiTokens.BREAKPOINT_COMPACT:
 		return UiTokens.DETAIL_MIN_HEIGHT_COMPACT
 	return UiTokens.DETAIL_MIN_HEIGHT
+
+
+static func _detail_preferred_height_for_width(width: float) -> float:
+	if width <= UiTokens.BREAKPOINT_NARROW:
+		return UiTokens.DETAIL_PREFERRED_HEIGHT_NARROW
+	if width <= UiTokens.BREAKPOINT_COMPACT:
+		return UiTokens.DETAIL_PREFERRED_HEIGHT_COMPACT
+	return UiTokens.DETAIL_PREFERRED_HEIGHT
 
 
 static func _left_panel_width_for_width(width: float) -> float:
