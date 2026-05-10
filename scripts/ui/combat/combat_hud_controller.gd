@@ -62,8 +62,16 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		_cancel_deploy_flow("Canceled")
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			if _combat_hud != null and _combat_hud.has_method("close_top_panel") and _combat_hud.close_top_panel():
+				return
+			_cancel_deploy_flow("Canceled")
+			return
+		if event.keycode == KEY_R:
+			if _combat_hud != null and _combat_hud.has_method("toggle_relic_panel"):
+				_combat_hud.toggle_relic_panel()
+				return
 		return
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -129,6 +137,7 @@ func _connect_events() -> void:
 		event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
 		event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
 		event_bus.core_hp_changed.connect(_on_core_hp_changed)
+		event_bus.buffs_changed.connect(_on_buffs_changed)
 		event_bus.phase_changed.connect(_on_phase_changed)
 		event_bus.day_started.connect(_on_day_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
@@ -147,6 +156,8 @@ func _bootstrap_hud() -> void:
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_owned_operators"):
 		_on_owned_operators_changed(run_state.get_owned_operators())
+	if run_state != null and run_state.has_method("get_all_buffs"):
+		_on_buffs_changed(run_state.get_all_buffs())
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_show_message("拖拽底部干员卡开始部署")
@@ -168,6 +179,12 @@ func _on_deploy_limit_changed(_current: int, _max_value: int) -> void:
 
 
 func _on_core_hp_changed(_current: int, _max_value: int) -> void:
+	_refresh_top_hud()
+
+
+func _on_buffs_changed(buff_ids: Array[StringName]) -> void:
+	if _combat_hud != null and _combat_hud.has_method("set_relics"):
+		_combat_hud.set_relics(buff_ids)
 	_refresh_top_hud()
 
 
@@ -733,8 +750,8 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 	for buff_id in buff_ids:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
 		buff_lines.append("%s：%s" % [
-			String(cfg.get("name", buff_id)),
-			String(cfg.get("desc", "暂无效果说明"))
+			UiDisplayText.config_name(cfg, buff_id),
+			UiDisplayText.relic_effect_text(cfg)
 		])
 	lines.append("当前遗物：")
 	lines.append("\n".join(buff_lines))

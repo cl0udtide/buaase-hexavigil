@@ -1,0 +1,148 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/relic/relic_panel.gd" id="1_relic_panel"]
+
+[node name="RelicPanel" type="PanelContainer"]
+visible = false
+custom_minimum_size = Vector2(620, 420)
+mouse_filter = 0
+script = ExtResource("1_relic_panel")
+
+[node name="ContentMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="ContentMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="ContentMargin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "遗物"
+vertical_alignment = 1
+
+[node name="CountLabel" type="Label" parent="ContentMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+text = "0 件"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="ContentMargin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 30)
+layout_mode = 2
+focus_mode = 0
+text = "×"
+
+[node name="FilterBar" type="HFlowContainer" parent="ContentMargin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="AllFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+layout_mode = 2
+focus_mode = 0
+text = "全部"
+metadata/category = "all"
+
+[node name="UnitFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+layout_mode = 2
+focus_mode = 0
+text = "单位"
+metadata/category = "unit"
+
+[node name="BuildingFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+layout_mode = 2
+focus_mode = 0
+text = "建筑"
+metadata/category = "building"
+
+[node name="EconomyFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+layout_mode = 2
+focus_mode = 0
+text = "经济"
+metadata/category = "economy"
+
+[node name="CoreFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+layout_mode = 2
+focus_mode = 0
+text = "核心"
+metadata/category = "core"
+
+[node name="RiskFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+layout_mode = 2
+focus_mode = 0
+text = "风险"
+metadata/category = "risk"
+
+[node name="Body" type="VBoxContainer" parent="ContentMargin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ContentMargin/Content/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CardGrid" type="VBoxContainer" parent="ContentMargin/Content/Body/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="DetailPanel" type="PanelContainer" parent="ContentMargin/Content/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DetailMargin" type="MarginContainer" parent="ContentMargin/Content/Body/DetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="DetailColumn" type="VBoxContainer" parent="ContentMargin/Content/Body/DetailPanel/DetailMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailTitleLabel" type="Label" parent="ContentMargin/Content/Body/DetailPanel/DetailMargin/DetailColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "暂无遗物"
+text_overrun_behavior = 3
+
+[node name="DetailMetaLabel" type="Label" parent="ContentMargin/Content/Body/DetailPanel/DetailMargin/DetailColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "当前还没有获得遗物"
+text_overrun_behavior = 3
+
+[node name="DetailEffectLabel" type="Label" parent="ContentMargin/Content/Body/DetailPanel/DetailMargin/DetailColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = "通过祝福选择获得遗物后，这里会显示完整效果。"
+autowrap_mode = 2
+
+[node name="EmptyLabel" type="Label" parent="ContentMargin/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "没有符合筛选的遗物"
+horizontal_alignment = 1

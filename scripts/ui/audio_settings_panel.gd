@@ -3,12 +3,17 @@ extends PanelContainer
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
+signal close_requested
+
+@export var audio_manager_path: NodePath
+
 @onready var _master_slider: HSlider = %MasterSlider
 @onready var _music_slider: HSlider = %MusicSlider
 @onready var _sfx_slider: HSlider = %SfxSlider
 @onready var _master_value_label: Label = %MasterValueLabel
 @onready var _music_value_label: Label = %MusicValueLabel
 @onready var _sfx_value_label: Label = %SfxValueLabel
+@onready var _close_button: Button = get_node_or_null("%CloseButton") as Button
 
 var _audio_manager: Node
 var _updating := false
@@ -18,7 +23,10 @@ func _ready() -> void:
 	AppTheme.apply(self)
 	_apply_visual_style()
 	visible = false
-	_audio_manager = get_node_or_null("../../Managers/AudioManager")
+	_audio_manager = _resolve_audio_manager()
+	if _close_button != null:
+		_close_button.pressed.connect(func() -> void: close_requested.emit())
+		_style_close_button()
 	_bind_sliders()
 	refresh_from_audio_manager()
 
@@ -29,6 +37,8 @@ func set_audio_manager(audio_manager: Node) -> void:
 
 
 func refresh_from_audio_manager() -> void:
+	if _audio_manager == null:
+		_audio_manager = _resolve_audio_manager()
 	if _audio_manager == null or not _audio_manager.has_method("get_volume_state"):
 		return
 	var state: Dictionary = _audio_manager.get_volume_state()
@@ -38,6 +48,22 @@ func refresh_from_audio_manager() -> void:
 	_sfx_slider.value = float(state.get("sfx", 0.85))
 	_updating = false
 	_refresh_value_labels()
+
+
+func show_panel() -> void:
+	visible = true
+	refresh_from_audio_manager()
+
+
+func hide_panel() -> void:
+	visible = false
+
+
+func toggle_panel() -> void:
+	if visible:
+		hide_panel()
+	else:
+		show_panel()
 
 
 func _bind_sliders() -> void:
@@ -90,10 +116,38 @@ func _format_percent(value: float) -> String:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_SIDE_PANEL, GameUiStyle.BG_GLASS, GameUiStyle.ACCENT, false))
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SIDE_PANEL)
-	custom_minimum_size = Vector2(280.0, 0.0)
+	add_theme_stylebox_override("panel", GameUiStyle.settings_panel())
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SETTINGS_PANEL)
+	custom_minimum_size = Vector2(280.0, 180.0)
 	for label in find_children("*", "Label", true, false):
 		(label as Label).add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	var title_label := get_node_or_null("%TitleLabel") as Label
 	GameUiStyle.center_label_text(title_label)
+
+
+func _style_close_button() -> void:
+	_close_button.custom_minimum_size = Vector2(30.0, 28.0)
+	GameUiStyle.center_button_text(_close_button)
+	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
+	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
+	_close_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
+	_close_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+
+
+func _resolve_audio_manager() -> Node:
+	if String(audio_manager_path) != "":
+		var explicit := get_node_or_null(audio_manager_path)
+		if explicit != null:
+			return explicit
+	var current_scene := get_tree().current_scene if get_tree() != null else null
+	if current_scene != null:
+		var scene_audio := current_scene.get_node_or_null("Managers/AudioManager")
+		if scene_audio != null:
+			return scene_audio
+	var cursor: Node = self
+	while cursor != null:
+		var candidate := cursor.get_node_or_null("Managers/AudioManager")
+		if candidate != null:
+			return candidate
+		cursor = cursor.get_parent()
+	return null

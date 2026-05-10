@@ -15,6 +15,11 @@ const FRAME_OPERATOR_CARD := UiFrameSpec.OPERATOR_CARD
 const FRAME_BUTTON := UiFrameSpec.BUTTON
 const FRAME_TAB := UiFrameSpec.TAB
 const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
+const FRAME_RELIC_STRIP := UiFrameSpec.RELIC_STRIP
+const FRAME_RELIC_ICON := UiFrameSpec.RELIC_ICON
+const FRAME_RELIC_PANEL := UiFrameSpec.RELIC_PANEL
+const FRAME_RELIC_CARD := UiFrameSpec.RELIC_CARD
+const FRAME_SETTINGS_PANEL := UiFrameSpec.SETTINGS_PANEL
 
 
 const BG := Color(0.035, 0.045, 0.052, 1.0)
@@ -177,6 +182,40 @@ static func list_card(selected: bool = false) -> StyleBox:
 
 static func icon_tile() -> StyleBox:
 	return frame_box(UiFrameSpec.ICON_TILE, ACCENT_SOFT, STROKE_SOFT)
+
+
+static func relic_strip() -> StyleBox:
+	return frame_box(UiFrameSpec.RELIC_STRIP, BG_GLASS, STROKE_SOFT, false)
+
+
+static func relic_icon(rarity: int = 1, highlighted: bool = false) -> StyleBox:
+	var border := relic_rarity_color(rarity)
+	if highlighted:
+		border = AMBER
+	return frame_box(UiFrameSpec.RELIC_ICON, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
+
+
+static func relic_card(rarity: int = 1, selected: bool = false) -> StyleBox:
+	var border := AMBER if selected else relic_rarity_color(rarity)
+	return frame_box(UiFrameSpec.RELIC_CARD, BG_CARD_HOVER if selected else BG_CARD, border, false)
+
+
+static func relic_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.RELIC_PANEL, BG_GLASS, STROKE_SOFT, false)
+
+
+static func settings_panel() -> StyleBox:
+	return frame_box(UiFrameSpec.SETTINGS_PANEL, BG_GLASS, ACCENT, false)
+
+
+static func relic_rarity_color(rarity: int) -> Color:
+	match rarity:
+		3:
+			return AMBER
+		2:
+			return ACCENT
+		_:
+			return SUCCESS
 
 
 static func tab(selected: bool) -> StyleBox:

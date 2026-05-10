@@ -8,7 +8,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - 顶部：阶段、时间、核心生命、部署上限、暂停/倍速、资源状态。
 - 顶部下方：遗物入口与少量遗物缩略提示。
 - 左侧：建筑/商店竖向面板，标签固定，列表项紧凑。
-- 底部：待部署干员卡组横向栏，卡片显示职业、费用、HP/SP/CD。
+- 底部：待部署干员角色卡横向列表，卡片显示职业、费用、HP/SP/CD；底栏只做轻量承托背景，不固定卡槽数量。
 - 右侧：选中单位详情，含头像占位、属性、SP、技能说明、技能/撤退按钮。
 - 中心：地图、部署拖拽、落点锁定、朝向选择、攻击范围和路径提示。
 - 右下：战场图例、标记或辅助信息。
@@ -109,7 +109,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 | `frame_relic_icon_slot_common` | `RelicIcon` 常见遗物槽 | 80x80 | 低饱和灰绿边 |
 | `frame_relic_icon_slot_uncommon` | `RelicIcon` 精良遗物槽 | 80x80 | 低饱和蓝青边 |
 | `frame_relic_icon_slot_rare` | `RelicIcon` 稀有遗物槽 | 80x80 | 柔和浅金边，不要强金光 |
-| `frame_relic_panel` | `RelicPanel` | 900x640 | 完整遗物面板，清爽浅暗底，细边 |
+| `frame_relic_panel` | `RelicPanel` | 900x640 | 完整遗物面板，清爽浅暗底，细边，不内置固定网格数量 |
 | `frame_relic_card_common` | `RelicCard` 常见卡 | 360x112 | 列表/网格遗物卡常见态 |
 | `frame_relic_card_uncommon` | `RelicCard` 精良卡 | 360x112 | 精良态，边框只轻微变色 |
 | `frame_relic_card_rare` | `RelicCard` 稀有卡 | 360x112 | 稀有态，避免厚金框 |
@@ -117,11 +117,14 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 | `frame_build_tab_idle` | 建筑/商店页签 idle | 160x48 | 页签普通态 |
 | `frame_build_tab_selected` | 建筑/商店页签 selected | 160x48 | 页签选中态 |
 | `frame_build_list_card` | `BuildListCard` | 280x104 | 建筑/商店列表项 |
-| `frame_bottom_deploy_deck` | `CombatHud/DeployDeck` | 980x176 | 底部待部署卡组底栏 |
-| `frame_operator_card_idle` | `OperatorCard` ready | 164x148 | 干员卡普通态 |
-| `frame_operator_card_selected` | `OperatorCard` hover/drag | 164x148 | 干员卡选中态 |
-| `frame_operator_card_deployed` | `OperatorCard` 已部署 | 164x148 | 已部署态，琥珀/绿轻边 |
-| `frame_operator_card_cooldown` | `OperatorCard` 冷却 | 164x148 | 冷却态，低饱和红灰遮罩 |
+| `frame_bottom_deploy_rail` | `CombatHud/DeployDeck` 背景 | 980x176 | 底部待部署区的轻量承托背景，不画固定卡槽，不限制干员数量 |
+| `frame_operator_card_idle` | `OperatorCard` ready | 164x148 | 干员角色卡普通态，卡面本体，有头像区、费用角标区、属性行分区 |
+| `frame_operator_card_selected` | `OperatorCard` hover/drag | 164x148 | 干员角色卡选中/拖拽态，轮廓更亮但不改变结构 |
+| `frame_operator_card_deployed` | `OperatorCard` 已部署 | 164x148 | 干员角色卡已部署态，琥珀/绿轻边 |
+| `frame_operator_card_cooldown` | `OperatorCard` 冷却 | 164x148 | 干员角色卡冷却态，低饱和红灰遮罩 |
+| `frame_operator_portrait_slot` | `OperatorCard` 头像占位 | 128x72 | 干员卡内头像/剪影区域底框 |
+| `frame_operator_cost_badge` | `OperatorCard` 费用角标 | 48x36 | 干员卡右上或左上费用徽标底 |
+| `frame_operator_stat_row` | `OperatorCard` HP/SP/CD 行 | 140x20 | 干员卡底部短状态行底纹 |
 | `frame_right_detail_sidebar` | `UnitDetailPanel` | 380x760 | 右侧单位详情栏 |
 | `frame_detail_section` | 属性、生命、技能区块 | 340x120 | 右侧详情中的分组面板 |
 | `frame_skill_button_primary` | 激活技能按钮 | 320x52 | 主按钮，青色轻边 |
@@ -130,14 +133,14 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 | `frame_wave_preview` | 波次/路径预览 | 360x220 | 右侧或顶部附近的小信息窗 |
 | `frame_legend_panel` | 右下战场图例 | 260x220 | 图例与标记说明 |
 | `frame_tooltip` | hover tooltip | 360x160 | 小型说明气泡，不要尖角太夸张 |
-| `frame_blessing_panel` | `BlessingPanel` | 640x440 | 遗物三选一面板 |
+| `frame_blessing_panel` | `BlessingPanel` | 640x440 | 遗物选择面板，候选数量由代码布局决定，不把卡槽画死在面板里 |
 | `frame_blessing_choice_card` | 祝福候选遗物卡 | 560x112 | 可复用 `RelicCard` 选择态 |
 | `frame_event_panel` | `EventPanel` | 640x420 | 随机事件面板 |
 | `frame_dialog_box` | `DialogPanel/TextBox` | 1100x220 | 对话框底栏 |
 | `frame_dialog_speaker_plate` | `DialogPanel/SpeakerPlate` | 240x56 | 说话人名牌 |
 | `frame_result_panel` | `ResultPanel` | 720x520 | 结算面板 |
 | `frame_map_popup` | `MapInteractionPopup` | 360x260 | 地图对象交互弹窗 |
-| `frame_settings_panel` | 设置面板 / 音量设置面板 | 420x300 | 齿轮按钮打开的设置弹窗，容纳音量滑条 |
+| `frame_settings_panel` | 设置面板 / 音量设置面板 | 420x300 | 齿轮按钮打开的设置弹窗，内容区保持通用，不把滑条数量画死在面板里 |
 | `frame_slider_track` | 设置面板音量滑条轨道 | 280x24 | 主音量、音乐、音效滑条底轨 |
 | `frame_slider_fill` | 设置面板音量滑条填充 | 280x24 | 柔和青蓝或浅绿填充 |
 | `frame_slider_handle` | 设置面板音量滑条拖柄 | 40x40 | 小圆或小菱形拖柄 |
@@ -146,6 +149,29 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 | `bar_progress_fill_hp` | HP 填充 | 320x24 | 柔和红色 |
 | `bar_progress_fill_sp` | SP 填充 | 320x24 | 柔和青蓝 |
 | `bar_progress_fill_core` | 核心生命填充 | 320x24 | 柔和琥珀 |
+
+#### 6.2.1 关键面板结构约束
+
+- `frame_bottom_deploy_rail`
+  只画底部干员列表背后的承托背景：一条低矮暗色轨道、轻微上沿阴影、左右收边。不得画固定数量的卡槽、分隔槽、编号、卡牌轮廓或人物。干员数量与滚动由 `DeployDeckContainer` 和 `OperatorCard` 决定。
+- `frame_operator_card_idle`
+  必须是单张干员角色卡框，而不是托盘。卡面纵向比例约 `164x148`，结构从上到下为：顶部窄标题条、右上费用角标位置、中部头像/剪影窗口、底部三条短状态行位置。状态行对应 HP、SP、CD，由代码写文字和数值，资产只提供无文字底纹。
+- `frame_operator_card_selected`
+  与普通卡保持同一结构，只改变外框亮度和选中描边；不得改变卡面布局。
+- `frame_operator_card_deployed`
+  与普通卡保持同一结构，外框使用低饱和琥珀或灰绿描边，用于表示已部署。
+- `frame_operator_card_cooldown`
+  与普通卡保持同一结构，增加可叠加的暗红灰蒙层感；不得把冷却数字画进资产。
+- `frame_right_detail_sidebar`
+  右侧单位详情栏必须按实际信息分区：顶部为单位名称/编号/伤害类型/朝向区域；其下为头像窗口与 HP、SP 两条进度条；中部为属性区，容纳攻击、防御、法抗、阻挡、攻速；下部为技能区，包含技能图标槽、技能名、技能状态、技能描述滚动区域；底部为激活技能与撤退两个按钮位置。资产不生成文字、数字、头像或图标，只生成这些区域的清晰框架。
+- `frame_detail_section`
+  用于右侧详情内的独立分区，必须能容纳上述生命/SP、属性或技能内容；不要画与具体文字绑定的装饰。
+- `frame_relic_panel`
+  只提供标题区、筛选按钮行、滚动内容区和详情区的框架，不画固定数量的遗物格子。
+- `frame_blessing_panel`
+  只提供整体背景和标题/内容区，候选遗物卡由 `frame_blessing_choice_card` 或 `RelicCard` 单独排列；不得在面板背景里画死三张卡槽。
+- `frame_settings_panel`
+  只提供标题区和内容区背景，主音量、音乐、音效三条滑条由独立 slider 资产与代码布局生成；不得在背景中画死三条滑条。
 
 ### 6.3 通用功能图标
 

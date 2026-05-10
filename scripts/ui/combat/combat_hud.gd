@@ -23,7 +23,10 @@ const UNIT_DETAIL_MIN_TOP := 250.0
 var _cards_by_operator_key: Dictionary = {}
 var _left_reserved_width := 0.0
 var _layout_profile: Dictionary = {}
+var _open_panel_stack: Array[StringName] = []
 
+@onready var _settings_button: Button = %SettingsButton
+@onready var _settings_panel: Control = %AudioSettingsPanel
 @onready var _top_bar: PanelContainer = %TopBar
 @onready var _core_label: Label = %CoreLabel
 @onready var _deploy_label: Label = %DeployLabel
@@ -33,6 +36,8 @@ var _layout_profile: Dictionary = {}
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
+@onready var _relic_strip: Control = %RelicStrip
+@onready var _relic_panel: Control = %RelicPanel
 @onready var _wave_preview_panel: PanelContainer = %WavePreviewPanel
 @onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
 @onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
@@ -47,6 +52,7 @@ var _layout_profile: Dictionary = {}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_process_unhandled_input(true)
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_top_bar.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
@@ -72,6 +78,7 @@ func _ready() -> void:
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
 	_speed_2_button.pressed.connect(func() -> void: speed_2_pressed.emit())
 	_wave_route_toggle.toggled.connect(func(enabled: bool) -> void: wave_route_preview_toggled.emit(enabled))
+	_bind_overlay_panels()
 	if _detail_panel.has_signal("cast_skill_requested"):
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
@@ -88,6 +95,19 @@ func _notification(what: int) -> void:
 		_apply_responsive_layout()
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	if key_event.keycode == KEY_R:
+		toggle_relic_panel()
+		get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_ESCAPE and close_top_panel():
+		get_viewport().set_input_as_handled()
+
+
 func set_top_values(core_text: String, deploy_text: String, queue_text: String) -> void:
 	_core_label.text = core_text
 	_deploy_label.text = deploy_text
@@ -101,6 +121,47 @@ func show_message(text_value: String) -> void:
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
 	_resource_label.text = resource_text
 	_resource_label.tooltip_text = tooltip_text_value
+
+
+func set_relics(relic_ids: Array[StringName]) -> void:
+	if _relic_strip != null and _relic_strip.has_method("set_relics"):
+		_relic_strip.set_relics(relic_ids)
+	if _relic_panel != null and _relic_panel.has_method("set_relics"):
+		_relic_panel.set_relics(relic_ids)
+
+
+func toggle_relic_panel() -> void:
+	if _relic_panel == null:
+		return
+	if _relic_panel.visible:
+		_hide_overlay_panel(&"relic")
+	else:
+		_show_overlay_panel(&"relic")
+
+
+func toggle_settings_panel() -> void:
+	if _settings_panel == null:
+		return
+	if _settings_panel.visible:
+		_hide_overlay_panel(&"settings")
+	else:
+		_show_overlay_panel(&"settings")
+
+
+func close_top_panel() -> bool:
+	while not _open_panel_stack.is_empty():
+		var panel_name: StringName = _open_panel_stack.pop_back()
+		var panel := _panel_for_name(panel_name)
+		if panel != null and panel.visible:
+			_hide_overlay_panel(panel_name)
+			return true
+	if _settings_panel != null and _settings_panel.visible:
+		_hide_overlay_panel(&"settings")
+		return true
+	if _relic_panel != null and _relic_panel.visible:
+		_hide_overlay_panel(&"relic")
+		return true
+	return false
 
 
 func set_wave_preview_text(text_value: String, show_panel: bool = true) -> void:
@@ -261,8 +322,12 @@ func _apply_responsive_layout() -> void:
 	var viewport_size := get_viewport_rect().size
 	var detail_visible := _detail_panel != null and _detail_panel.visible
 	_layout_profile = UiLayoutRules.hud_profile(viewport_size, detail_visible, _left_reserved_width)
+	_place_control(_settings_button, _layout_profile.get("settings_button_rect", Rect2()))
+	_place_control(_settings_panel, _layout_profile.get("settings_panel_rect", Rect2()))
 	var top_rect: Rect2 = _layout_profile.get("top_rect", Rect2())
 	_place_control(_top_bar, top_rect)
+	_place_control(_relic_strip, _layout_profile.get("relic_strip_rect", Rect2()))
+	_place_control(_relic_panel, _layout_profile.get("relic_panel_rect", Rect2()))
 	_place_control(_deck_panel, _layout_profile.get("deck_rect", Rect2()))
 	_place_control(_detail_panel, _layout_profile.get("detail_rect", Rect2()))
 	_apply_top_bar_density(viewport_size.x)
@@ -294,6 +359,10 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
 		row.add_theme_constant_override("separation", int(_layout_profile.get("top_separation", 12.0)))
 	var card_height := maxf(36.0, top_height - 8.0)
+	var show_message_card := viewport_width > 720.0
+	var message_card := get_node_or_null("TopBar/TopMargin/Row/MessageCard") as Control
+	if message_card != null:
+		message_card.visible = show_message_card
 	_set_top_card_min("TopBar/TopMargin/Row/StageCard", widths.get("stage", 190.0), card_height)
 	_set_top_card_min("TopBar/TopMargin/Row/CoreCard", widths.get("core", 190.0), card_height)
 	_set_top_card_min("TopBar/TopMargin/Row/DeployCard", widths.get("deploy", 160.0), card_height)
@@ -314,3 +383,90 @@ func _set_top_card_min(path: NodePath, width: float, height: float) -> void:
 	var card := get_node_or_null(path) as Control
 	if card != null:
 		card.custom_minimum_size = Vector2(width, height)
+
+
+func _bind_overlay_panels() -> void:
+	if _settings_button != null:
+		if _settings_button.has_signal("settings_button_pressed"):
+			_settings_button.connect(&"settings_button_pressed", Callable(self, "_on_settings_button_pressed"))
+		else:
+			_settings_button.pressed.connect(_on_settings_button_pressed)
+	if _settings_panel != null and _settings_panel.has_signal("close_requested"):
+		_settings_panel.connect(&"close_requested", Callable(self, "_on_settings_panel_close_requested"))
+	if _relic_strip != null:
+		if _relic_strip.has_signal("panel_requested"):
+			_relic_strip.connect(&"panel_requested", Callable(self, "_on_relic_panel_requested"))
+		if _relic_strip.has_signal("relic_pressed"):
+			_relic_strip.connect(&"relic_pressed", Callable(self, "_on_relic_strip_relic_pressed"))
+	if _relic_panel != null and _relic_panel.has_signal("close_requested"):
+		_relic_panel.connect(&"close_requested", Callable(self, "_on_relic_panel_close_requested"))
+
+
+func _on_settings_button_pressed() -> void:
+	toggle_settings_panel()
+
+
+func _on_settings_panel_close_requested() -> void:
+	_hide_overlay_panel(&"settings")
+
+
+func _on_relic_panel_requested() -> void:
+	_show_overlay_panel(&"relic")
+
+
+func _on_relic_strip_relic_pressed(buff_id: StringName) -> void:
+	if _relic_panel != null and _relic_panel.has_method("select_relic"):
+		_relic_panel.select_relic(buff_id)
+
+
+func _on_relic_panel_close_requested() -> void:
+	_hide_overlay_panel(&"relic")
+
+
+func _show_overlay_panel(panel_name: StringName) -> void:
+	var panel := _panel_for_name(panel_name)
+	if panel == null:
+		return
+	if panel.has_method("show_panel"):
+		panel.show_panel()
+	else:
+		panel.visible = true
+	_move_control_to_front(panel)
+	_mark_panel_top(panel_name)
+
+
+func _hide_overlay_panel(panel_name: StringName) -> void:
+	var panel := _panel_for_name(panel_name)
+	if panel == null:
+		return
+	if panel.has_method("hide_panel"):
+		panel.hide_panel()
+	else:
+		panel.visible = false
+	_remove_panel_from_stack(panel_name)
+
+
+func _panel_for_name(panel_name: StringName) -> Control:
+	match panel_name:
+		&"settings":
+			return _settings_panel
+		&"relic":
+			return _relic_panel
+		_:
+			return null
+
+
+func _mark_panel_top(panel_name: StringName) -> void:
+	_remove_panel_from_stack(panel_name)
+	_open_panel_stack.append(panel_name)
+
+
+func _remove_panel_from_stack(panel_name: StringName) -> void:
+	while _open_panel_stack.has(panel_name):
+		_open_panel_stack.erase(panel_name)
+
+
+func _move_control_to_front(control: Control) -> void:
+	if control == null or control.get_parent() != self:
+		return
+	move_child(control, get_child_count() - 1)
