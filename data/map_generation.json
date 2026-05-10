@@ -6,6 +6,7 @@
   "near_resources_per_type": 2,
   "event_point_count": 8,
   "obstacle_ratio": 0.11,
+  "water_obstacle_chance": 0.28,
   "min_obstacle_count": 45,
   "max_obstacle_count": 95,
   "core_safe_radius": 3,

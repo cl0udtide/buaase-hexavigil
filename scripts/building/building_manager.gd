@@ -302,8 +302,8 @@ func _can_place_building_debug(cell: Vector2i) -> Dictionary:
 		return ActionResult.err(&"CELL_IS_CORE", "Cannot place a building on the core")
 	if data.spawn_key != StringName():
 		return ActionResult.err(&"CELL_IS_SPAWN", "Cannot place a building on a spawn point")
-	if data.terrain == &"blocked" or not data.walkable:
-		return ActionResult.err(&"CELL_BLOCKED", "Cannot place a building on blocked terrain")
+	if data.is_terrain_blocking() or not data.walkable:
+		return ActionResult.err(&"CELL_BLOCKED", "Cannot place a building on non-buildable terrain")
 	if data.unit_runtime_id >= 0:
 		return ActionResult.err(&"CELL_HAS_UNIT", "Cannot place a building on a deployed unit")
 	if data.building_runtime_id >= 0 or data.occupied:

@@ -14,33 +14,34 @@ const FRAME_TAB := UiFrameSpec.TAB
 const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
 
 
-const BG := Color(0.965, 0.980, 0.988, 1.0)
-const BG_DARK := Color(0.982, 0.989, 0.995, 1.0)
-const BG_GLASS := Color(1.000, 1.000, 1.000, 0.96)
-const BG_CARD := Color(1.000, 1.000, 1.000, 0.98)
-const BG_CARD_HOVER := Color(0.938, 0.970, 0.992, 1.0)
-const BG_DISABLED := Color(0.922, 0.941, 0.955, 0.96)
-const STROKE := Color(0.715, 0.776, 0.835, 1.0)
-const STROKE_SOFT := Color(0.820, 0.867, 0.910, 1.0)
-const STROKE_STRONG := Color(0.160, 0.405, 0.870, 1.0)
-const ACCENT := Color(0.145, 0.388, 0.920, 1.0)
-const AMBER := Color(0.915, 0.520, 0.075, 1.0)
-const DANGER := Color(0.850, 0.145, 0.145, 1.0)
-const SUCCESS := Color(0.090, 0.610, 0.360, 1.0)
-const VIOLET := Color(0.450, 0.255, 0.820, 1.0)
-const STEEL := Color(0.395, 0.465, 0.565, 1.0)
-const TEXT := Color(0.075, 0.110, 0.175, 1.0)
-const TEXT_DIM := Color(0.285, 0.365, 0.460, 1.0)
-const TEXT_MUTED := Color(0.555, 0.630, 0.705, 1.0)
-const TEXT_INVERTED := Color(0.925, 0.965, 1.000, 1.0)
-const TEXT_INVERTED_DIM := Color(0.660, 0.760, 0.865, 1.0)
-const TEXT_SHADOW := Color(1.0, 1.0, 1.0, 0.0)
+const BG := Color(0.070, 0.090, 0.095, 1.0)
+const BG_DARK := Color(0.040, 0.050, 0.055, 1.0)
+const BG_GLASS := Color(0.105, 0.135, 0.145, 0.96)
+const BG_CARD := Color(0.120, 0.165, 0.170, 0.98)
+const BG_CARD_HOVER := Color(0.205, 0.345, 0.325, 1.0)
+const BG_DISABLED := Color(0.215, 0.215, 0.205, 0.96)
+const STROKE := Color(0.555, 0.555, 0.480, 1.0)
+const STROKE_SOFT := Color(0.415, 0.440, 0.405, 1.0)
+const STROKE_STRONG := Color(0.780, 0.675, 0.420, 1.0)
+const ACCENT := Color(0.250, 0.615, 0.555, 1.0)
+const AMBER := Color(0.875, 0.570, 0.155, 1.0)
+const DANGER := Color(0.760, 0.145, 0.130, 1.0)
+const SUCCESS := Color(0.250, 0.610, 0.385, 1.0)
+const VIOLET := Color(0.445, 0.300, 0.645, 1.0)
+const STEEL := Color(0.480, 0.500, 0.470, 1.0)
+const TEXT := Color(0.910, 0.875, 0.760, 1.0)
+const TEXT_DIM := Color(0.705, 0.700, 0.620, 1.0)
+const TEXT_MUTED := Color(0.500, 0.520, 0.485, 1.0)
+const TEXT_INVERTED := Color(0.965, 0.920, 0.775, 1.0)
+const TEXT_INVERTED_DIM := Color(0.760, 0.760, 0.670, 1.0)
+const TEXT_ON_PARCHMENT := Color(0.190, 0.145, 0.090, 1.0)
+const TEXT_SHADOW := Color(0.025, 0.020, 0.015, 0.65)
 
-const ACCENT_SOFT := Color(0.895, 0.935, 1.000, 1.0)
-const AMBER_SOFT := Color(1.000, 0.948, 0.835, 1.0)
-const DANGER_SOFT := Color(1.000, 0.905, 0.905, 1.0)
-const SUCCESS_SOFT := Color(0.885, 0.965, 0.925, 1.0)
-const VIOLET_SOFT := Color(0.940, 0.920, 1.000, 1.0)
+const ACCENT_SOFT := Color(0.175, 0.330, 0.310, 1.0)
+const AMBER_SOFT := Color(0.365, 0.260, 0.120, 1.0)
+const DANGER_SOFT := Color(0.355, 0.120, 0.110, 1.0)
+const SUCCESS_SOFT := Color(0.145, 0.285, 0.190, 1.0)
+const VIOLET_SOFT := Color(0.225, 0.170, 0.315, 1.0)
 
 const HOLOGRAM_ROOT := "res://assets/UI/1. Free Hologram Interface Wenrexa"
 const HOLOGRAM_BUTTON_NORMAL := HOLOGRAM_ROOT + "/Button 1/Button Normal.png"
@@ -64,26 +65,6 @@ const MIKO_PROGRESS_BLUE_BG := MIKO_ROOT + "/ProgressBar Blue/V4/Background Stat
 const MIKO_PROGRESS_BLUE_FILL := MIKO_ROOT + "/ProgressBar Blue/V4/Foreground.png"
 const MIKO_PROGRESS_GREEN_FILL := MIKO_ROOT + "/ProgressBar Green/V4/Foreground.png"
 const MIKO_PROGRESS_RED_FILL := MIKO_ROOT + "/ProgressBar Red/V4/Foreground.png"
-
-const COMMAND_GLASS_ROOT := "res://assets/UI/CommandGlass"
-const CG_PANEL_TOP_HUD := COMMAND_GLASS_ROOT + "/panel_top_hud.png"
-const CG_PANEL_DETAIL := COMMAND_GLASS_ROOT + "/panel_detail.png"
-const CG_PANEL_WIDE_LIGHT := COMMAND_GLASS_ROOT + "/panel_wide_light.png"
-const CG_PANEL_OPERATOR := COMMAND_GLASS_ROOT + "/panel_operator.png"
-const CG_CARD_LIGHT := COMMAND_GLASS_ROOT + "/card_light.png"
-const CG_CARD_SMALL_LIGHT := COMMAND_GLASS_ROOT + "/card_small_light.png"
-const CG_BUTTON_NORMAL := COMMAND_GLASS_ROOT + "/button_normal.png"
-const CG_BUTTON_HOVER := COMMAND_GLASS_ROOT + "/button_hover.png"
-const CG_BUTTON_PRESSED := COMMAND_GLASS_ROOT + "/button_pressed.png"
-const CG_BUTTON_DISABLED := COMMAND_GLASS_ROOT + "/button_disabled.png"
-const CG_TAB_SELECTED := COMMAND_GLASS_ROOT + "/tab_selected.png"
-const CG_TAB_IDLE := COMMAND_GLASS_ROOT + "/tab_idle.png"
-const CG_PROGRESS_TRACK := COMMAND_GLASS_ROOT + "/progress_track.png"
-const CG_PROGRESS_BLUE := COMMAND_GLASS_ROOT + "/progress_fill_blue.png"
-const CG_PROGRESS_AMBER := COMMAND_GLASS_ROOT + "/progress_fill_amber.png"
-const CG_PROGRESS_RED := COMMAND_GLASS_ROOT + "/progress_fill_red.png"
-const CG_ICON_TILE := COMMAND_GLASS_ROOT + "/icon_tile.png"
-
 
 static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	var texture := load(path) as Texture2D
@@ -178,7 +159,7 @@ static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radi
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
 	var component := UiFrameSpec.BUTTON
 	if border == ACCENT or border == STROKE_STRONG or border == SUCCESS:
-		component = UiFrameSpec.TAB_SELECTED
+		component = UiFrameSpec.BUTTON_HOVER
 	elif border == AMBER:
 		component = UiFrameSpec.BUTTON_PRESSED
 	elif fill_alpha <= 0.10 or border == STROKE_SOFT:
@@ -255,7 +236,7 @@ static func miko_panel(highlighted: bool = false) -> StyleBox:
 
 
 static func progress_background() -> StyleBox:
-	return frame_box(UiFrameSpec.PROGRESS_TRACK, Color(0.900, 0.925, 0.945, 1.0), Color(0.900, 0.925, 0.945, 1.0))
+	return frame_box(UiFrameSpec.PROGRESS_TRACK, Color(0.075, 0.095, 0.095, 1.0), Color(0.260, 0.280, 0.245, 1.0))
 
 
 static func progress_fill(color: Color) -> StyleBox:
