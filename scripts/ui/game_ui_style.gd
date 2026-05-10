@@ -37,24 +37,6 @@ const MIKO_PROGRESS_GREEN_FILL := MIKO_ROOT + "/ProgressBar Green/V4/Foreground.
 const MIKO_PROGRESS_RED_FILL := MIKO_ROOT + "/ProgressBar Red/V4/Foreground.png"
 
 
-static func texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
-	var texture := load(path) as Texture2D
-	if texture == null:
-		return panel(fallback_fill, fallback_border, 1.0, 6.0)
-
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.set_texture_margin(SIDE_LEFT, margin)
-	style.set_texture_margin(SIDE_TOP, margin)
-	style.set_texture_margin(SIDE_RIGHT, margin)
-	style.set_texture_margin(SIDE_BOTTOM, margin)
-	style.content_margin_left = 10.0
-	style.content_margin_top = 8.0
-	style.content_margin_right = 10.0
-	style.content_margin_bottom = 8.0
-	return style
-
-
 static func hologram_texture_box(path: String, fallback_fill: Color, fallback_border: Color, margin: float = 22.0) -> StyleBox:
 	var style := texture_box(path, fallback_fill, fallback_border, margin)
 	style.content_margin_left = 12.0

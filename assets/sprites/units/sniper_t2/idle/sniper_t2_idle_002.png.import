@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bsuoq5win68lk"
-valid=false
+uid="uid://b7e84nwjfght6"
+path="res://.godot/imported/sniper_t2_idle_002.png-e20eac7d719683e11f4f56ff11029fd5.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/__MACOSX/sprites/units/guard_t1/idle/._guard_t1_idle_000.png"
+source_file="res://assets/sprites/units/sniper_t2/idle/sniper_t2_idle_002.png"
+dest_files=["res://.godot/imported/sniper_t2_idle_002.png-e20eac7d719683e11f4f56ff11029fd5.ctex"]
 
 [params]
 

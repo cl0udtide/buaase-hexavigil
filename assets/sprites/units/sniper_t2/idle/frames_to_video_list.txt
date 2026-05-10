@@ -1,0 +1,17 @@
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_001.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_002.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_003.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_004.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_005.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_006.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_007.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_008.png'
+duration 0.2500000000
+file 'D:/课程学习/软件工程/code_alpha/BUAASE-HexaVigil/assets/sprites/units/sniper_t2/idle/sniper_t2_idle_008.png'

@@ -17,6 +17,7 @@ const VISUAL_TEXTURE_ROOT := "res://assets/sprites/units"
 const VISUAL_IDLE_ANIM := "idle"
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 72.0
+const VISUAL_IDLE_FPS := 8.0
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -462,34 +463,82 @@ func _configure_skill_behavior() -> void:
 
 
 func _setup_visual_sprite() -> void:
-	var texture := _load_visual_texture()
-	if texture == null:
+	var textures := _load_visual_textures()
+	if textures.is_empty():
 		return
 	if _visual_root == null:
 		_visual_root = Node2D.new()
 		_visual_root.name = "VisualRoot"
 		_visual_root.unique_name_in_owner = true
 		add_child(_visual_root)
-	var sprite := _visual_root.get_node_or_null("IdleSprite") as Sprite2D
-	if sprite == null:
-		sprite = Sprite2D.new()
-		sprite.name = "IdleSprite"
-		_visual_root.add_child(sprite)
+	_clear_visual_nodes()
+	if textures.size() > 1:
+		_setup_animated_idle_sprite(textures)
+	else:
+		_setup_static_idle_sprite(textures[0])
+
+
+func _setup_static_idle_sprite(texture: Texture2D) -> void:
+	var sprite := Sprite2D.new()
+	sprite.name = "IdleSprite"
+	_visual_root.add_child(sprite)
 	sprite.texture = texture
 	sprite.centered = true
-	sprite.position = Vector2(0.0, -20.0)
-	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
-	sprite.z_index = -10
+	_apply_visual_node_layout(sprite)
 
 
-func _load_visual_texture() -> Texture2D:
+func _setup_animated_idle_sprite(textures: Array[Texture2D]) -> void:
+	var sprite := AnimatedSprite2D.new()
+	sprite.name = "IdleSprite"
+	_visual_root.add_child(sprite)
+	var frames := SpriteFrames.new()
+	frames.add_animation(VISUAL_IDLE_ANIM)
+	frames.set_animation_speed(VISUAL_IDLE_ANIM, VISUAL_IDLE_FPS)
+	frames.set_animation_loop(VISUAL_IDLE_ANIM, true)
+	for texture in textures:
+		frames.add_frame(VISUAL_IDLE_ANIM, texture)
+	sprite.sprite_frames = frames
+	sprite.animation = VISUAL_IDLE_ANIM
+	sprite.centered = true
+	_apply_visual_node_layout(sprite)
+	sprite.play(VISUAL_IDLE_ANIM)
+
+
+func _apply_visual_node_layout(node: Node2D) -> void:
+	node.position = Vector2(0.0, -20.0)
+	node.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
+	node.z_index = -10
+
+
+func _clear_visual_nodes() -> void:
+	if _visual_root == null:
+		return
+	for child in _visual_root.get_children():
+		child.queue_free()
+
+
+func _load_visual_textures() -> Array[Texture2D]:
 	var visual_key := String(cfg.get("visual_key", unit_id)).strip_edges()
 	if visual_key.is_empty():
 		visual_key = String(unit_id)
-	var path := "%s/%s/%s/%s_%s_000.png" % [VISUAL_TEXTURE_ROOT, visual_key, VISUAL_IDLE_ANIM, visual_key, VISUAL_IDLE_ANIM]
-	if not ResourceLoader.exists(path):
-		return null
-	return load(path) as Texture2D
+	var textures: Array[Texture2D] = []
+	for index in range(256):
+		var path := "%s/%s/%s/%s_%s_%03d.png" % [
+			VISUAL_TEXTURE_ROOT,
+			visual_key,
+			VISUAL_IDLE_ANIM,
+			visual_key,
+			VISUAL_IDLE_ANIM,
+			index
+		]
+		if not ResourceLoader.exists(path):
+			if index == 0:
+				return textures
+			break
+		var texture := load(path) as Texture2D
+		if texture != null:
+			textures.append(texture)
+	return textures
 
 
 func _recover_sp(delta: float) -> void:

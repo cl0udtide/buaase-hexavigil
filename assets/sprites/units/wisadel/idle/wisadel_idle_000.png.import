@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bsuoq5win68lk"
-valid=false
+uid="uid://bopysgja8edo0"
+path="res://.godot/imported/wisadel_idle_000.png-f765dfe5697e2f9d33b3c0b9f007a5e1.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/__MACOSX/sprites/units/guard_t1/idle/._guard_t1_idle_000.png"
+source_file="res://assets/sprites/units/wisadel/idle/wisadel_idle_000.png"
+dest_files=["res://.godot/imported/wisadel_idle_000.png-f765dfe5697e2f9d33b3c0b9f007a5e1.ctex"]
 
 [params]
 

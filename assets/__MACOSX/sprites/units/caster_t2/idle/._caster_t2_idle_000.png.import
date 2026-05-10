@@ -2,12 +2,12 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bsuoq5win68lk"
+uid="uid://cl67jtl1o6oe8"
 valid=false
 
 [deps]
 
-source_file="res://assets/__MACOSX/sprites/units/guard_t1/idle/._guard_t1_idle_000.png"
+source_file="res://assets/__MACOSX/sprites/units/caster_t2/idle/._caster_t2_idle_000.png"
 
 [params]
 
