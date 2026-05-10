@@ -824,3 +824,33 @@
 - 设置面板不要画死三条滑条，滑条由单独资产生成。
 - 所有文字、数字、图标内容由代码添加，资产只提供无文字背景和结构。
 ```
+
+## 30. 增量补充批次：资源项、今晚敌情、ActionPanel
+
+此批次用于补齐已经生成过的资产中可能缺少的当前游戏 UI 元素。它是追加批次，不需要重做前面已有资产。
+
+保存源图为：`source_sheet_25_incremental_hud_elements.png`
+
+裁剪顺序：
+
+1. `frame_resource_item_base`
+2. `frame_resource_delta_badge`
+3. `frame_wave_enemy_row_base`
+4. `frame_wave_route_toggle_base`
+5. `frame_wave_warning_row_base`
+6. `frame_action_panel_base`
+7. `frame_action_button_base`
+
+```text
+请生成一张 UI 资产源图，纯色背景 #79C7B6，包含 7 个独立资产，按从左到右、从上到下排列，不要文字、数字、图标。
+
+这些是追加资产，用于塔防 HUD 中还缺少的资源项、今晚敌情模块和白天操作面板。保持轻微奇幻、低饱和、暗色、轻薄 HUD 风格。不要厚边框，不要家具风，不要强发光。
+
+1. frame_resource_item_base：单个资源项底板，约 88x44。用于行动点、木材、石材、魔力、声望等资源。只画小型轻薄底，不写数字，不画资源图标。
+2. frame_resource_delta_badge：资源增长/消耗速率徽标底，约 76x24。用于每分钟产出或消耗提示，不写数字。
+3. frame_wave_enemy_row_base：今晚敌情单条敌人/波次条目底，约 320x32。不写敌人名、数量或路线。
+4. frame_wave_route_toggle_base：路线预览开关底，约 120x32。用于放在今晚敌情标题行内部，不写“路线”或开关文字。
+5. frame_wave_warning_row_base：路线异常/堵路警告行底，约 320x32。低饱和琥珀或红灰状态，不能鲜艳。
+6. frame_action_panel_base：白天上下文操作面板底板，约 520x150。用于探索、入夜、建筑维修/拆除/启停等操作，不画固定按钮。
+7. frame_action_button_base：ActionPanel 按钮底，约 150x44。不写文字，不画图标。
+```

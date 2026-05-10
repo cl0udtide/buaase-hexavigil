@@ -14,9 +14,12 @@ const CATEGORY_AURA: StringName = &"aura"
 const CATEGORY_BLOCK: StringName = &"block"
 const REFRESH_COST := 2
 
+signal shop_unit_preview_requested(slot_index: int, unit_id: StringName, price: int, can_purchase: bool, disabled_reason: String)
+
 var _current_mode: StringName = MODE_BUILD
 var _current_category: StringName = CATEGORY_RESOURCE
 var _selected_building_id: StringName = &""
+var _selected_shop_slot_index := -1
 var _stock_slots: Array[Dictionary] = []
 var _current_prestige := 0
 var _current_phase := GameEnums.PHASE_MENU
@@ -75,6 +78,7 @@ func _bind_buttons() -> void:
 func _select_mode(mode: StringName) -> void:
 	_current_mode = mode
 	_selected_building_id = &""
+	_selected_shop_slot_index = -1
 	if _current_mode == MODE_SHOP:
 		_sync_shop_stock_from_manager()
 	refresh_from_state()
@@ -83,6 +87,7 @@ func _select_mode(mode: StringName) -> void:
 func _select_category(category: StringName) -> void:
 	_current_category = category
 	_selected_building_id = &""
+	_selected_shop_slot_index = -1
 	refresh_from_state()
 
 
@@ -216,6 +221,8 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		detail = _format_shop_cost(base_cost, cost)
 		if sold:
 			state = "已购买"
+		elif _current_prestige < cost:
+			state = "声望不足"
 	var card := BuildListCardScene.instantiate() as Control
 	card.call("configure", {
 		"title": title,
@@ -228,7 +235,9 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"title_color": title_color,
 		"state_color": GameUiStyle.TEXT_MUTED if sold else GameUiStyle.AMBER,
 		"cost_badge_text": str(cost) if unit_id != StringName() else "",
-		"disabled": sold or unit_id == StringName() or _current_phase != GameEnums.PHASE_DAY,
+		"selected": slot_index == _selected_shop_slot_index,
+		"disabled": sold or unit_id == StringName() or _current_phase != GameEnums.PHASE_DAY or _current_prestige < cost,
+		"pressable_when_disabled": unit_id != StringName(),
 		"min_height": 102.0
 	})
 	card.connect(&"pressed", _on_shop_card_pressed.bind(slot_index))
@@ -301,9 +310,69 @@ func _on_building_card_pressed(building_id: StringName) -> void:
 
 
 func _on_shop_card_pressed(slot_index: int) -> void:
-	var event_bus = AppRefs.event_bus()
-	if event_bus != null:
-		event_bus.request_buy_shop_slot.emit(slot_index)
+	var preview := _make_shop_preview_payload(slot_index)
+	if preview.is_empty():
+		return
+	_selected_shop_slot_index = slot_index
+	refresh_from_state()
+	shop_unit_preview_requested.emit(
+		slot_index,
+		StringName(preview.get("unit_id", "")),
+		int(preview.get("price", 0)),
+		bool(preview.get("can_purchase", false)),
+		String(preview.get("disabled_reason", ""))
+	)
+
+
+func _emit_selected_shop_preview() -> void:
+	if _selected_shop_slot_index < 0:
+		return
+	var preview := _make_shop_preview_payload(_selected_shop_slot_index)
+	if preview.is_empty():
+		return
+	shop_unit_preview_requested.emit(
+		_selected_shop_slot_index,
+		StringName(preview.get("unit_id", "")),
+		int(preview.get("price", 0)),
+		bool(preview.get("can_purchase", false)),
+		String(preview.get("disabled_reason", ""))
+	)
+
+
+func _make_shop_preview_payload(slot_index: int) -> Dictionary:
+	var slot := _get_shop_slot(slot_index)
+	if slot.is_empty():
+		return {}
+	var unit_id := StringName(slot.get("unit_id", ""))
+	if unit_id == StringName():
+		return {}
+	var cfg := _get_unit_cfg(unit_id)
+	var price := _get_shop_unit_purchase_cost(cfg)
+	var sold := bool(slot.get("sold", false))
+	var reason := ""
+	var can_purchase := true
+	if sold:
+		can_purchase = false
+		reason = "已售出"
+	elif _current_phase != GameEnums.PHASE_DAY:
+		can_purchase = false
+		reason = "仅白天可购买"
+	elif _current_prestige < price:
+		can_purchase = false
+		reason = "声望不足"
+	return {
+		"unit_id": unit_id,
+		"price": price,
+		"can_purchase": can_purchase,
+		"disabled_reason": reason
+	}
+
+
+func _get_shop_slot(slot_index: int) -> Dictionary:
+	for slot in _stock_slots:
+		if int((slot as Dictionary).get("slot_index", -1)) == slot_index:
+			return (slot as Dictionary)
+	return {}
 
 
 func _on_refresh_shop_pressed() -> void:
@@ -328,6 +397,7 @@ func _on_shop_stock_changed(stock_slots: Array[Dictionary]) -> void:
 	for slot in stock_slots:
 		_stock_slots.append((slot as Dictionary).duplicate(true))
 	refresh_from_state()
+	_emit_selected_shop_preview()
 
 
 func _sync_shop_stock_from_manager() -> void:
@@ -341,6 +411,9 @@ func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 	_message_label.text = "购买成功" if action == &"buy" and result.get("ok", false) else String(result.get("message", "操作失败"))
 	if action == &"refresh" and result.get("ok", false):
 		_message_label.text = "商店已刷新"
+		_selected_shop_slot_index = -1
+	if action == &"buy":
+		_emit_selected_shop_preview()
 
 
 func _on_building_placed(_building_runtime_id: int, building_id: StringName, _cell: Vector2i) -> void:
