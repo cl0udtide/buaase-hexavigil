@@ -12,6 +12,9 @@ const VISUAL_TEXTURE_ROOT := "res://assets/sprites/enemies"
 const VISUAL_IDLE_ANIM := "idle"
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 70.0
+const VISUAL_OFFSET := Vector2(0.0, -8.0)
+const VISUAL_Z_INDEX := 2
+const OVERLAY_Z_INDEX := 20
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -116,6 +119,9 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 		label.theme = AppTheme.get_theme()
 		label.text = String(cfg.get("name", enemy_id))
 		label.position = Vector2(-30.0, -58.0)
+		label.z_index = OVERLAY_Z_INDEX
+	if _status_view is CanvasItem:
+		(_status_view as CanvasItem).z_index = OVERLAY_Z_INDEX
 	_setup_visual_sprite()
 	_update_status_view()
 	queue_redraw()
@@ -378,9 +384,9 @@ func _setup_visual_sprite() -> void:
 		_visual_root.add_child(sprite)
 	sprite.texture = texture
 	sprite.centered = true
-	sprite.position = Vector2(0.0, -19.0)
+	sprite.position = VISUAL_OFFSET
 	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
-	sprite.z_index = -10
+	sprite.z_index = VISUAL_Z_INDEX
 	_has_visual_sprite = true
 	queue_redraw()
 
