@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
@@ -7,6 +7,7 @@ signal close_requested
 
 @export var audio_manager_path: NodePath
 
+@onready var _panel_base: Panel = %PanelBase
 @onready var _master_slider: HSlider = %MasterSlider
 @onready var _music_slider: HSlider = %MusicSlider
 @onready var _sfx_slider: HSlider = %SfxSlider
@@ -116,13 +117,15 @@ func _format_percent(value: float) -> String:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.settings_panel())
+	_panel_base.add_theme_stylebox_override("panel", GameUiStyle.settings_panel())
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SETTINGS_PANEL)
 	custom_minimum_size = Vector2(280.0, 180.0)
 	for label in find_children("*", "Label", true, false):
 		(label as Label).add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	var title_label := get_node_or_null("%TitleLabel") as Label
 	GameUiStyle.center_label_text(title_label)
+	for row_base in find_children("RowBase", "Panel", true, false):
+		(row_base as Panel).add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
 
 
 func _style_close_button() -> void:

@@ -1,4 +1,4 @@
-extends PanelContainer
+extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
@@ -12,8 +12,14 @@ var _selectable := true
 var _selected := false
 var _compact := false
 var _choice_mode := false
+var _hovered := false
 
-@onready var _icon_panel: PanelContainer = %IconPanel
+@onready var _card_base: Panel = %CardBase
+@onready var _icon_backplate: Panel = %IconBackplate
+@onready var _icon_texture: TextureRect = %IconTexture
+@onready var _icon_frame: Panel = %IconFrame
+@onready var _rarity_overlay: ColorRect = %RarityOverlay
+@onready var _hover_overlay: Panel = %HoverOverlay
 @onready var _icon_label: Label = %IconLabel
 @onready var _name_label: Label = %NameLabel
 @onready var _rarity_label: Label = %RarityLabel
@@ -25,7 +31,15 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	gui_input.connect(_on_gui_input)
-	_icon_panel.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	mouse_entered.connect(func() -> void:
+		_hovered = true
+		_apply_style()
+	)
+	mouse_exited.connect(func() -> void:
+		_hovered = false
+		_apply_style()
+	)
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
 	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_rarity_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_desc_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
@@ -38,7 +52,9 @@ func _ready() -> void:
 	_name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_rarity_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	GameUiStyle.apply_frame_margin(get_node_or_null("CardMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_CARD)
+	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_CARD)
 	_apply_config()
 
 
@@ -68,6 +84,9 @@ func _apply_config() -> void:
 	custom_minimum_size = Vector2(0.0, 104.0 if _compact else 116.0)
 	if _choice_mode:
 		custom_minimum_size.y = 96.0
+	_icon_texture.texture = null
+	_icon_texture.visible = false
+	_icon_label.visible = true
 	_icon_label.text = UiDisplayText.icon_text(_cfg, "遗")
 	_icon_label.add_theme_color_override("font_color", UiDisplayText.relic_rarity_color(rarity))
 	_name_label.text = UiDisplayText.config_name(_cfg, buff_id)
@@ -86,14 +105,22 @@ func _apply_density() -> void:
 	_rarity_label.add_theme_font_size_override("font_size", 12)
 	_desc_label.add_theme_font_size_override("font_size", 12 if compact_font else 13)
 	_tag_label.add_theme_font_size_override("font_size", 12)
-	_icon_panel.custom_minimum_size = Vector2(46.0 if compact_font else 54.0, 0.0)
+	var icon_size := 46.0 if compact_font else 54.0
+	_icon_backplate.custom_minimum_size = Vector2(icon_size, 0.0)
+	_icon_frame.custom_minimum_size = Vector2(icon_size, 0.0)
 
 
 func _apply_style() -> void:
+	var rarity := int(_cfg.get("rarity", 1))
+	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
 	if _choice_mode:
-		add_theme_stylebox_override("panel", GameUiStyle.blessing_choice_card(_selected))
+		_card_base.add_theme_stylebox_override("panel", GameUiStyle.blessing_choice_card(_selected or _hovered))
 	else:
-		add_theme_stylebox_override("panel", GameUiStyle.relic_card(int(_cfg.get("rarity", 1)), _selected))
+		_card_base.add_theme_stylebox_override("panel", GameUiStyle.relic_card(rarity, _selected or _hovered))
+	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, false))
+	_rarity_overlay.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.08)
+	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
+	_hover_overlay.visible = _selected or _hovered
 	modulate.a = 1.0 if _selectable else 0.72
 
 
