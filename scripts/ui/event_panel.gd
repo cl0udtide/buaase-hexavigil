@@ -43,6 +43,10 @@ func _on_random_event_triggered(event_id: StringName, _cell: Vector2i) -> void:
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_STRONG, GameUiStyle.BG_GLASS, false))
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(8.0, 6.0, 8.0, 8.0))
+	var body_card := get_node_or_null("ContentMargin/VBoxContainer/BodyCard") as PanelContainer
+	if body_card != null:
+		body_card.add_theme_stylebox_override("panel", GameUiStyle.list_card(false))
+		GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/VBoxContainer/BodyCard/BodyMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
 	var vbox := get_node_or_null("ContentMargin/VBoxContainer") as VBoxContainer
 	if vbox != null:
 		vbox.add_theme_constant_override("separation", 12)
