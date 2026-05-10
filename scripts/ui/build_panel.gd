@@ -4,6 +4,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
+const UiLayoutRules = preload("res://scripts/ui/ui_layout_rules.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 
 const MODE_BUILD: StringName = &"build"
@@ -35,10 +36,16 @@ var _current_phase := GameEnums.PHASE_MENU
 func _ready() -> void:
 	AppTheme.apply(self)
 	_apply_visual_style()
+	get_viewport().size_changed.connect(_apply_responsive_layout)
 	_bind_events()
 	_bind_buttons()
 	_sync_shop_stock_from_manager()
 	refresh_from_state()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED and is_node_ready():
+		_apply_responsive_layout()
 
 
 func _bind_events() -> void:
@@ -81,6 +88,7 @@ func _select_category(category: StringName) -> void:
 func refresh_from_state() -> void:
 	_sync_runtime_state()
 	visible = _current_phase == GameEnums.PHASE_DAY
+	_apply_responsive_layout()
 	_refresh_mode_buttons()
 	_refresh_category_buttons()
 	_refresh_bottom_controls()
@@ -409,6 +417,21 @@ func _apply_visual_style() -> void:
 	_style_tab_button(_build_mode_button, true)
 	_style_tab_button(_shop_mode_button, false)
 	_style_command_button(_refresh_shop_button, GameUiStyle.STROKE_SOFT)
+
+
+func _apply_responsive_layout() -> void:
+	if not is_inside_tree():
+		return
+	var profile := UiLayoutRules.hud_profile(get_viewport_rect().size, true, 0.0)
+	var rect: Rect2 = profile.get("left_panel_rect", Rect2())
+	anchor_left = 0.0
+	anchor_top = 0.0
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	offset_left = rect.position.x
+	offset_top = rect.position.y
+	offset_right = rect.position.x + rect.size.x
+	offset_bottom = rect.position.y + rect.size.y
 
 
 func _style_tab_button(button: Button, selected: bool) -> void:

@@ -90,7 +90,10 @@ func _apply_density() -> void:
 
 
 func _apply_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.relic_card(int(_cfg.get("rarity", 1)), _selected))
+	if _choice_mode:
+		add_theme_stylebox_override("panel", GameUiStyle.blessing_choice_card(_selected))
+	else:
+		add_theme_stylebox_override("panel", GameUiStyle.relic_card(int(_cfg.get("rarity", 1)), _selected))
 	modulate.a = 1.0 if _selectable else 0.72
 
 
