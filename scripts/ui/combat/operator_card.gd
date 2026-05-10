@@ -96,6 +96,7 @@ func _ready() -> void:
 	_deployed_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD_DEPLOYED, Color(0.290, 0.700, 0.430, 0.08), GameUiStyle.SUCCESS, false))
 	_cooldown_overlay.texture = UiArtRegistry.get_texture(GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN, &"frame")
 	_cooldown_overlay.visible = false
+	_apply_layering()
 	_apply_density()
 	_apply_visual_textures()
 	_apply_card_style()
@@ -220,6 +221,19 @@ func _apply_card_style() -> void:
 	if _cooldown_overlay.visible:
 		var overlay_key := GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN_SELECTED if _hovered else GameUiStyle.FRAME_OPERATOR_CARD_COOLDOWN
 		_cooldown_overlay.texture = UiArtRegistry.get_texture(overlay_key, &"frame")
+
+
+func _apply_layering() -> void:
+	_card_base.z_index = 0
+	_selected_overlay.z_index = 1
+	_deployed_overlay.z_index = 1
+	_cooldown_overlay.z_index = 1
+	_card_content.z_index = 5
+	_cooldown_label.z_index = 10
+	_portrait_backplate.z_index = 0
+	_portrait_frame.z_index = 3
+	_portrait_texture.z_index = 5
+	_portrait_label.z_index = 5
 
 
 func _apply_density() -> void:

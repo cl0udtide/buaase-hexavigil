@@ -59,6 +59,7 @@ func _ready() -> void:
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_CARD)
+	_apply_layering()
 	_apply_config()
 
 
@@ -131,6 +132,19 @@ func _apply_style() -> void:
 	_hover_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_CARD_HOVER, Color(0.950, 0.650, 0.220, 0.05), GameUiStyle.AMBER, false))
 	_hover_overlay.visible = _selected or _hovered
 	modulate.a = 1.0 if _selectable else 0.72
+
+
+func _apply_layering() -> void:
+	_card_base.z_index = 0
+	_rarity_overlay.z_index = 1
+	_hover_overlay.z_index = 2
+	_icon_backplate.z_index = 0
+	_icon_frame.z_index = 3
+	_icon_texture.z_index = 5
+	_icon_label.z_index = 5
+	var content := get_node_or_null("ContentMargin") as Control
+	if content != null:
+		content.z_index = 5
 
 
 func _on_gui_input(event: InputEvent) -> void:

@@ -154,6 +154,7 @@ grow_vertical = 2
 [node name="PortraitTexture" type="TextureRect" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=215726508]
 unique_name_in_owner = true
 visible = false
+z_index = 5
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -165,6 +166,7 @@ stretch_mode = 5
 
 [node name="PortraitLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=428561234]
 unique_name_in_owner = true
+z_index = 5
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -177,6 +179,7 @@ vertical_alignment = 1
 
 [node name="PortraitFrame" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=3333384]
 unique_name_in_owner = true
+z_index = 3
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -344,6 +347,7 @@ grow_vertical = 2
 [node name="SkillIconTexture" type="TextureRect" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=1597858128]
 unique_name_in_owner = true
 visible = false
+z_index = 5
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
@@ -359,6 +363,7 @@ stretch_mode = 5
 
 [node name="SkillIconLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=2042709900]
 unique_name_in_owner = true
+z_index = 5
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -371,6 +376,7 @@ vertical_alignment = 1
 
 [node name="SkillIconFrame" type="Panel" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=1975527192]
 unique_name_in_owner = true
+z_index = 3
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
