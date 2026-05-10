@@ -231,3 +231,242 @@
 ```text
 请不要只生成平铺材质纹理。改为低饱和半卡通地块：山地要有可识别的岩块/小山丘主体，木材要有木堆或树桩主体，石材要有石簇主体，魔力要有晶簇或法力泉主体，事件要有遗迹碎片或符印石主体。保持俯视正交，不要斜视，不要 UI 图标徽章。
 ```
+
+## 10. 第二阶段：地图建筑资产提示词
+
+本节用于生成地图上实际摆放的建筑 sprite，不是建筑列表里的 UI 图标。新 UI 美术里已经有 `assets/ui/generated/icon_building_*.png`，这些图标可以作为造型参考，但不要直接替换地图建筑贴图：
+
+- UI 图标是非方形大图，尺寸通常在 200-330px 之间。
+- 当前建筑渲染入口为 `scripts/building/building_actor.gd`，默认按 `assets/sprites/buildings/` 下的 `128x128` 透明 PNG 加载。
+- 建筑在地图上显示尺寸约为 72 世界单位，必须能压进一个地图格附近，不应遮挡邻格单位、路线或范围高亮。
+- 地图建筑需要有“落在地块上”的小型实体感，不能像 UI 图标、徽章、贴纸或按钮。
+
+建议流程：
+
+1. 先用 UI 建筑图标作为 reference image 或视觉参考，保留图标的主体概念。
+2. 重新生成为地图建筑 sprite：透明背景、128x128 最终输出、主体居中偏下、底部中心为锚点。
+3. 普通建筑可以直接覆盖 `assets/sprites/buildings/<visual_key>.png`。
+4. `war_shrine` 需要保留 `war_shrine_inactive.png` 与 `war_shrine_active.png` 两个状态。
+5. `wood_wall` 需要保留 16 个连接变体，不能只用一张 UI 木墙图标替换。
+
+### 10.1 建筑全局提示词
+
+每一轮建筑生成都先复制本段，再追加对应批次提示词。
+
+```text
+我们要为一个 Godot 俯视塔防游戏生成地图建筑 sprite。建筑会被放在 64x64 地图格上方，最终导出为 128x128 透明 PNG，并在游戏中缩放到约 72px 显示。
+
+整体风格：
+- 低饱和半卡通手绘，轻微奇幻塔防，和现有 UI 图标、角色、怪物、地图地块属于同一游戏。
+- 比 UI 图标更像地图实体：有简化体积、轻微顶面和侧面、底部接触阴影，但不要变成复杂写实 3D 模型。
+- 允许轻微三分之二俯视伪 3D 体积，用来表达高度；不要等距菱形底座，不要大透视建筑插画。
+- 主体轮廓必须在 72px 显示尺寸下清楚，优先读出建筑类型，而不是展示复杂内部细节。
+- 色彩以暗青灰、雾蓝灰、灰绿、木褐、石灰为主，少量柔和青蓝、琥珀、暗红作为功能点缀。
+
+硬约束：
+- 最终单张资产为 128x128 透明 PNG，主体完整，不被裁切。
+- 主体居中偏下，底部中心作为地图锚点；底部不能贴边，顶部不能顶到画布边缘。
+- 不要背景地块、网格线、UI 边框、卡片底板、徽章底座、文字、数字、图标标签、水印或签名。
+- 不要厚黑描边、霓虹强发光、金属 UI 边框、按钮高光、照片/PBR 材质或高频噪点。
+- 允许非常轻的接触阴影，但阴影不能大到覆盖整格。
+- 需要适配暗色低饱和地图地块，不能太亮、太纯、太像独立 UI 图标。
+
+如果使用 UI 建筑图标作为参考图：请只继承主体设计语言和识别元素，把它重绘成地图上可放置的小型建筑 sprite，不要保留 UI 图标构图、外框、底板或夸张居中海报感。
+```
+
+### 10.2 第 5 轮：普通建筑地图 Sprite
+
+保存源图为：`building_source_sheet_01_core_buildings.png`
+
+裁剪顺序：
+
+1. `lumber_station`
+2. `stone_quarry`
+3. `mana_extractor`
+4. `medical_station`
+5. `gravity_tower`
+6. `inspiring_monolith`
+
+目标输出路径：
+
+```text
+assets/sprites/buildings/lumber_station.png
+assets/sprites/buildings/stone_quarry.png
+assets/sprites/buildings/mana_extractor.png
+assets/sprites/buildings/medical_station.png
+assets/sprites/buildings/gravity_tower.png
+assets/sprites/buildings/inspiring_monolith.png
+```
+
+```text
+请生成一张地图建筑 sprite 源图，纯色背景 #79C7B6，包含 6 个独立建筑，按从左到右排列。每个建筑最终会裁剪到 128x128 透明 PNG，并在 64x64 地图格上以约 72px 显示。风格是低饱和半卡通手绘、轻微奇幻塔防地图实体。不要文字、数字、UI 边框、图标底板、徽章、卡片、地图地块背景。
+
+1. lumber_station：伐木站。小型木料棚、短木桩、捆扎原木和简化支架，木褐与暗灰绿为主。轮廓要像资源生产建筑，不要变成 UI 木材图标，也不要太大像房屋。
+2. stone_quarry：石矿场。小型采石台、几块灰色石料、简化木架或采石标记，冷灰石块清楚。不要画成巨大山体，不要和地图石材资源点混淆。
+3. mana_extractor：魔力抽取器。低矮基座围住青蓝晶体或小型抽取柱，柔和青蓝点缀，发光克制。不要强霓虹，不要变成大水晶立绘。
+4. medical_station：医疗站。小型治疗帐篷/站台、浅色医疗旗或十字识别元素，青蓝治疗灯光克制。不要画成现代医院，不要大红十字按钮。
+5. gravity_tower：重力塔。小型塔芯、向下力场部件、石金属底座，冷灰与青蓝点缀，轮廓竖向但不能过高。不要强电弧，不要大范围特效。
+6. inspiring_monolith：鼓舞石碑。低矮石碑或符文方尖碑，柔和琥珀/青蓝符纹，底座稳重。不要过高，不要做成随机事件遗迹，不要强外发光。
+
+每个建筑都要有地图实体感，像放在格子上的小建筑，主体完整、底部锚点清楚、透明背景、无地面方块。保持 readable at 72px, clean silhouette, low-saturation tactical fantasy, not UI icon, not realistic 3D render。
+```
+
+### 10.3 第 6 轮：战火圣坛状态
+
+保存源图为：`building_source_sheet_02_war_shrine_states.png`
+
+裁剪顺序：
+
+1. `war_shrine_inactive`
+2. `war_shrine_active`
+
+目标输出路径：
+
+```text
+assets/sprites/buildings/war_shrine_inactive.png
+assets/sprites/buildings/war_shrine_active.png
+```
+
+```text
+请生成一张地图建筑 sprite 源图，纯色背景 #79C7B6，包含 2 个独立建筑状态，按从左到右排列。最终每个资产裁剪为 128x128 透明 PNG。风格低饱和半卡通手绘，与普通建筑同一套地图实体风格。不要文字、数字、UI 边框、图标底板、徽章、地图地块背景。
+
+1. war_shrine_inactive：关闭状态的战火圣坛。低矮石质祭坛、暗红灰和冷灰石材，中心火焰熄灭或只剩微弱余烬。轮廓能看出是祭坛，但整体安静，不应像敌人出生点。
+2. war_shrine_active：开启状态的战火圣坛。与关闭状态结构完全一致，中心有低饱和琥珀/暗红火焰或能量核心，少量柔和光照，表现正在提供攻击增益。不要巨大火柱，不要强红光，不要遮住建筑本体。
+
+两个状态必须尺寸、视角、锚点、建筑主体结构一致，只通过火焰/能量强度区分开关。保持 readable at 72px, same silhouette, transparent background, no UI icon appearance。
+```
+
+### 10.4 第 7 轮：木墙连接变体
+
+保存源图为：`building_source_sheet_03_wood_wall_variants.png`
+
+裁剪顺序：
+
+1. `wood_wall_0000_isolated`
+2. `wood_wall_0001_n`
+3. `wood_wall_0010_e`
+4. `wood_wall_0011_ne`
+5. `wood_wall_0100_s`
+6. `wood_wall_0101_ns`
+7. `wood_wall_0110_es`
+8. `wood_wall_0111_nes`
+9. `wood_wall_1000_w`
+10. `wood_wall_1001_nw`
+11. `wood_wall_1010_ew`
+12. `wood_wall_1011_new`
+13. `wood_wall_1100_sw`
+14. `wood_wall_1101_nsw`
+15. `wood_wall_1110_esw`
+16. `wood_wall_1111_nesw`
+
+目标输出路径：
+
+```text
+assets/sprites/buildings/wood_wall/wood_wall_0000_isolated.png
+assets/sprites/buildings/wood_wall/wood_wall_0001_n.png
+assets/sprites/buildings/wood_wall/wood_wall_0010_e.png
+assets/sprites/buildings/wood_wall/wood_wall_0011_ne.png
+assets/sprites/buildings/wood_wall/wood_wall_0100_s.png
+assets/sprites/buildings/wood_wall/wood_wall_0101_ns.png
+assets/sprites/buildings/wood_wall/wood_wall_0110_es.png
+assets/sprites/buildings/wood_wall/wood_wall_0111_nes.png
+assets/sprites/buildings/wood_wall/wood_wall_1000_w.png
+assets/sprites/buildings/wood_wall/wood_wall_1001_nw.png
+assets/sprites/buildings/wood_wall/wood_wall_1010_ew.png
+assets/sprites/buildings/wood_wall/wood_wall_1011_new.png
+assets/sprites/buildings/wood_wall/wood_wall_1100_sw.png
+assets/sprites/buildings/wood_wall/wood_wall_1101_nsw.png
+assets/sprites/buildings/wood_wall/wood_wall_1110_esw.png
+assets/sprites/buildings/wood_wall/wood_wall_1111_nesw.png
+```
+
+连接方向说明：文件名后缀按 N/E/S/W 四个方向编码，例如 `0001_n` 表示只向北连接，`1010_ew` 表示东西连接，`1111_nesw` 表示四向连接。
+
+```text
+请生成一张木墙地图建筑 sprite 源图，纯色背景 #79C7B6，包含 16 个独立木墙连接变体，按 4x4 网格排列。最终每个资产裁剪为 128x128 透明 PNG，并在地图上以约 72px 显示。风格是低饱和半卡通木栅墙，和 UI 木墙图标同一设计语言，但必须是地图实体，不是图标。
+
+统一要求：
+- 木墙由短木桩、横向绑绳、尖木桩或简化木板组成，木褐、暗灰绿和少量冷灰阴影。
+- 所有变体高度、厚度、锚点、材质一致，连接端必须对齐到相邻格方向，连续摆放时能拼成墙线。
+- 每个变体都在 128x128 透明画布中居中，墙体不要触碰画布边缘，但连接方向要明显靠近对应边。
+- 不要地面方块、UI 底板、文字、数字、方向箭头、墙体标签、金属科幻墙或写实木纹。
+- 远看要先读出“阻挡墙”和连接方向，近看再看到木桩和绑绳。
+
+请按以下顺序生成：
+1. wood_wall_0000_isolated：孤立短木墙，小型独立栅栏段，四边不连接。
+2. wood_wall_0001_n：向北连接，有上方连接端。
+3. wood_wall_0010_e：向东连接，有右侧连接端。
+4. wood_wall_0011_ne：向北和向东连接，转角形。
+5. wood_wall_0100_s：向南连接，有下方连接端。
+6. wood_wall_0101_ns：南北直线墙。
+7. wood_wall_0110_es：向东和向南连接，转角形。
+8. wood_wall_0111_nes：北东南三向连接。
+9. wood_wall_1000_w：向西连接，有左侧连接端。
+10. wood_wall_1001_nw：向北和向西连接，转角形。
+11. wood_wall_1010_ew：东西直线墙。
+12. wood_wall_1011_new：北东西三向连接。
+13. wood_wall_1100_sw：向南和向西连接，转角形。
+14. wood_wall_1101_nsw：南北西三向连接。
+15. wood_wall_1110_esw：东西南三向连接。
+16. wood_wall_1111_nesw：四向连接，十字/节点墙。
+
+所有木墙变体必须能互相拼接，连接端位置统一，不能每张重新设计墙的高度、颜色或粗细。保持 map-ready transparent sprite, compact readable wall, no UI icon badge。
+```
+
+### 10.5 第 8 轮：损毁建筑通用残骸
+
+保存源图为：`building_source_sheet_04_destroyed.png`
+
+裁剪顺序：
+
+1. `generic_destroyed_building`
+
+目标输出路径：
+
+```text
+assets/sprites/buildings/generic_destroyed_building.png
+```
+
+```text
+请生成一张通用损毁建筑地图 sprite，纯色背景 #79C7B6，只包含 1 个资产，最终裁剪为 128x128 透明 PNG。风格为低饱和半卡通手绘，与普通建筑同一地图实体体系。不要文字、数字、UI 边框、地面方块、火焰特效或角色。
+
+generic_destroyed_building：小型通用建筑残骸。破碎木板、低矮石块、少量灰烬和弯折支架，暗灰、木褐、冷灰为主。应能代表任意建筑损毁后的残骸，但不要像敌人出生点、随机事件遗迹或资源点。轮廓低矮，不遮挡单位和路线，底部锚点居中。
+
+保持 readable at 72px, transparent background, restrained damage, no strong fire, no smoke cloud, no UI icon appearance。
+```
+
+### 10.6 建筑资产入库检查
+
+- 输出文件必须是透明 PNG，最终尺寸为 128x128。
+- 普通建筑文件名必须和 `data/buildings.json` 中的 `visual_key` 对齐。
+- `war_shrine` 必须保留 active / inactive 两个状态，结构一致、差异清楚。
+- `wood_wall` 必须检查 16 个连接变体在地图上连续摆放时能对齐；尤其检查 `1010_ew`、`0101_ns`、`1111_nesw`。
+- 把建筑叠在 `tile_plain`、`tile_resource_wood`、`tile_resource_stone`、`tile_resource_mana` 上预览：不能遮住资源主体到不可读，也不能被地块噪点淹没。
+- 在 1920x1080 和 1366x768 视口中检查：建筑、单位、范围覆盖层、路径线同时存在时仍能分清层级。
+- 如果使用 UI 图标作为参考，检查最终资产是否已经从“图标”转化为“地图实体”；不能保留图标式海报构图和 UI 底板感。
+
+### 10.7 建筑纠偏提示词
+
+#### 10.7.1 太像 UI 图标
+
+```text
+请把它重画成地图上摆放的小型建筑 sprite，不要图标构图，不要徽章感，不要居中海报式大物件。主体需要有底部锚点、轻微体积和接触阴影，透明背景，适合放在 64x64 地图格上。
+```
+
+#### 10.7.2 建筑太大或遮挡邻格
+
+```text
+请缩小主体体积，保留 128x128 透明画布，但建筑实际可见轮廓控制在画布中部约 72-88px 范围内，顶部和左右留白，底部锚点居中。不能遮挡相邻地图格。
+```
+
+#### 10.7.3 太写实或太 3D
+
+```text
+请改为低饱和半卡通手绘塔防建筑，形状概括，材质简化，轮廓清楚。不要写实建筑渲染、PBR 材质、复杂机械细节或强透视。
+```
+
+#### 10.7.4 木墙连接不齐
+
+```text
+请保持所有木墙变体相同高度、厚度、颜色和锚点。连接端必须统一对齐到 N/E/S/W 四个方向，连续摆放时形成一条完整墙线。不要每个变体重新设计不同墙体。
+```
