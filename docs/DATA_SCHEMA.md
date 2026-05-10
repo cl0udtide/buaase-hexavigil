@@ -573,8 +573,14 @@ Boss 多阶段规则：
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
 | `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 8 |
 | `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
+| `water_obstacle_chance` | `float` | 单个地貌簇或零散障碍生成为水域的概率；未命中时生成山地 |
 | `min_obstacle_count` | `int` | 障碍最小生成数量 |
 | `max_obstacle_count` | `int` | 障碍最大生成数量 |
+| `terrain_cluster_count` | `int` | 连续地貌簇目标数量，用于生成山脉、湖泊等成片不可通行区域 |
+| `terrain_cluster_min_size` | `int` | 单个连续地貌簇的最小目标格数 |
+| `terrain_cluster_max_size` | `int` | 单个连续地貌簇的最大目标格数 |
+| `terrain_cluster_attempts` | `int` | 每个连续地貌簇的尝试次数；失败通常是因为会堵死刷怪点到核心路径 |
+| `scattered_obstacle_ratio` | `float` | 总障碍中保留为零散障碍的比例，其余优先生成连续地貌簇 |
 | `core_safe_radius` | `int` | 核心周围不会随机生成障碍、额外资源、事件点的安全半径 |
 | `spawn_safe_radius` | `int` | 刷怪点周围不会随机生成障碍、额外资源、事件点的安全半径 |
 | `min_spawn_core_distance` | `int` | 刷怪点到核心的最小曼哈顿距离 |
@@ -590,9 +596,15 @@ Boss 多阶段规则：
   "resources_per_type": 12,
   "near_resources_per_type": 2,
   "event_point_count": 8,
-  "obstacle_ratio": 0.11,
-  "min_obstacle_count": 45,
-  "max_obstacle_count": 95,
+  "obstacle_ratio": 0.13,
+  "water_obstacle_chance": 0.35,
+  "min_obstacle_count": 65,
+  "max_obstacle_count": 115,
+  "terrain_cluster_count": 5,
+  "terrain_cluster_min_size": 12,
+  "terrain_cluster_max_size": 28,
+  "terrain_cluster_attempts": 24,
+  "scattered_obstacle_ratio": 0.22,
   "core_safe_radius": 3,
   "spawn_safe_radius": 1,
   "min_spawn_core_distance": 12,
@@ -607,7 +619,8 @@ Boss 多阶段规则：
 - `resources_per_type` 表示每种资源的目标总数；当前木材、石材、魔力各 12 个。
 - `near_resources_per_type` 表示每种资源在近探索圈内的保底数量；当前木材、石材、魔力各至少 2 个靠近开局区域。
 - 障碍数量先按 `width * height * obstacle_ratio` 估算，再被 `min_obstacle_count` 与 `max_obstacle_count` 限制。
-- 障碍放置后会校验刷怪点到核心仍存在地面路径，避免随机地图把夜晚路径彻底堵死。
+- 障碍优先生成若干连续地貌簇：水域偏块状湖泊，山地偏带状山脉；随后按 `scattered_obstacle_ratio` 补少量零散障碍，避免地图过于规则。
+- 障碍放置后会校验刷怪点到核心仍存在地面路径，失败的地貌簇或散点会回滚，避免随机地图把夜晚路径彻底堵死。
 - 刷怪点优先从地图边缘选择，受核心距离和刷怪点互相距离限制。
 
 事件点说明：

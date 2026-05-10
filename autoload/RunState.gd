@@ -6,6 +6,7 @@ const DEFAULT_ACTION_POINTS := 30
 const DEFAULT_INITIAL_PRESTIGE := 8
 const DEFAULT_CORE_HP := 10
 const DEFAULT_DEPLOY_LIMIT := 4
+const DEPLOY_LIMIT_INCREASE_DAYS := 2
 
 var phase: int = GameEnums.PHASE_MENU
 var day: int = 0
@@ -25,6 +26,7 @@ var owned_operators: Array[Dictionary] = []
 var buffs: Array[StringName] = []
 
 var _next_operator_serial := 1
+var _day_deploy_limit_bonus: int = 0
 
 
 func reset_for_new_run(seed: int) -> void:
@@ -40,6 +42,7 @@ func reset_for_new_run(seed: int) -> void:
 	core_hp_max = DEFAULT_CORE_HP
 	deploy_limit = DEFAULT_DEPLOY_LIMIT
 	deployed_count = 0
+	_day_deploy_limit_bonus = 0
 	owned_units.clear()
 	owned_operators.clear()
 	_next_operator_serial = 1
@@ -57,6 +60,7 @@ func set_phase(value: int) -> void:
 
 func set_day(value: int) -> void:
 	day = value
+	_apply_day_deploy_limit_bonus()
 
 
 func reset_action_points(value: int) -> void:
@@ -310,6 +314,20 @@ func _emit_all_state() -> void:
 	EventBus.deploy_limit_changed.emit(deployed_count, deploy_limit)
 	_emit_owned_roster()
 	EventBus.buffs_changed.emit(buffs.duplicate())
+
+
+func _apply_day_deploy_limit_bonus() -> void:
+	var next_bonus: int = _get_day_deploy_limit_bonus(day)
+	var delta: int = next_bonus - _day_deploy_limit_bonus
+	_day_deploy_limit_bonus = next_bonus
+	if delta != 0:
+		set_deploy_limit(deploy_limit + delta)
+
+
+func _get_day_deploy_limit_bonus(day_value: int) -> int:
+	if day_value <= 1:
+		return 0
+	return int(floor(float(day_value - 1) / float(DEPLOY_LIMIT_INCREASE_DAYS)))
 
 
 func _emit_owned_roster() -> void:

@@ -7,9 +7,24 @@ const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.LEFT,
 	Vector2i.UP
 ]
-const OBSTACLE_RATIO := 0.11
-const MIN_OBSTACLE_COUNT := 45
-const MAX_OBSTACLE_COUNT := 95
+const ALL_DIRECTIONS: Array[Vector2i] = [
+	Vector2i.RIGHT,
+	Vector2i.DOWN,
+	Vector2i.LEFT,
+	Vector2i.UP,
+	Vector2i(1, 1),
+	Vector2i(1, -1),
+	Vector2i(-1, 1),
+	Vector2i(-1, -1)
+]
+const OBSTACLE_RATIO := 0.13
+const MIN_OBSTACLE_COUNT := 65
+const MAX_OBSTACLE_COUNT := 115
+const TERRAIN_CLUSTER_COUNT := 5
+const TERRAIN_CLUSTER_MIN_SIZE := 12
+const TERRAIN_CLUSTER_MAX_SIZE := 28
+const TERRAIN_CLUSTER_ATTEMPTS := 24
+const SCATTERED_OBSTACLE_RATIO := 0.22
 const CORE_SAFE_RADIUS := 3
 const SPAWN_SAFE_RADIUS := 1
 const SPAWN_COUNT := 3
@@ -18,7 +33,7 @@ const NEAR_RESOURCES_PER_TYPE := 2
 const EVENT_POINT_COUNT := 8
 const MIN_SPAWN_CORE_DISTANCE := 12
 const MIN_SPAWN_DISTANCE := 10
-const WATER_OBSTACLE_CHANCE := 0.28
+const WATER_OBSTACLE_CHANCE := 0.35
 
 
 static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = {}, event_ids: Array[StringName] = []) -> Dictionary:
@@ -185,47 +200,303 @@ static func _place_random_obstacles(
 	rng: RandomNumberGenerator,
 	cfg: Dictionary
 ) -> void:
+	var candidates: Array[Vector2i] = _get_obstacle_candidates(cells, width, height, spawn_cells, core_cell, cfg)
+	var target_count: int = _get_obstacle_target_count(width, height, candidates.size(), cfg)
+	if target_count <= 0:
+		return
+	var scattered_ratio: float = clampf(float(cfg.get("scattered_obstacle_ratio", SCATTERED_OBSTACLE_RATIO)), 0.0, 1.0)
+	var scattered_target_count: int = int(round(float(target_count) * scattered_ratio))
+	var cluster_target_count: int = _max_int(target_count - scattered_target_count, 0)
+	var placed_count: int = _place_obstacle_clusters(cells, width, height, spawn_cells, core_cell, rng, cfg, cluster_target_count)
+	if placed_count < target_count:
+		_place_scattered_obstacles(cells, width, height, spawn_cells, core_cell, rng, cfg, target_count - placed_count)
+
+
+static func _get_obstacle_target_count(width: int, height: int, candidate_count: int, cfg: Dictionary) -> int:
+	var obstacle_ratio: float = float(cfg.get("obstacle_ratio", OBSTACLE_RATIO))
+	var min_obstacle_count: int = int(cfg.get("min_obstacle_count", MIN_OBSTACLE_COUNT))
+	var max_obstacle_count: int = int(cfg.get("max_obstacle_count", MAX_OBSTACLE_COUNT))
+	var estimated_count: int = int(round(float(width * height) * obstacle_ratio))
+	var target_count: int = _max_int(min_obstacle_count, estimated_count)
+	return _min_int(_min_int(target_count, max_obstacle_count), candidate_count)
+
+
+static func _place_obstacle_clusters(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	rng: RandomNumberGenerator,
+	cfg: Dictionary,
+	target_count: int
+) -> int:
+	if target_count <= 0:
+		return 0
+	var cluster_count: int = _max_int(int(cfg.get("terrain_cluster_count", TERRAIN_CLUSTER_COUNT)), 0)
+	if cluster_count <= 0:
+		return 0
+	var min_size: int = _max_int(int(cfg.get("terrain_cluster_min_size", TERRAIN_CLUSTER_MIN_SIZE)), 1)
+	var max_size: int = _max_int(int(cfg.get("terrain_cluster_max_size", TERRAIN_CLUSTER_MAX_SIZE)), min_size)
+	var attempts_per_cluster: int = _max_int(int(cfg.get("terrain_cluster_attempts", TERRAIN_CLUSTER_ATTEMPTS)), 1)
+	var max_attempts: int = cluster_count * attempts_per_cluster
+	var placed_count: int = 0
+	var placed_clusters: int = 0
+	var attempts: int = 0
+	while placed_clusters < cluster_count and placed_count < target_count and attempts < max_attempts:
+		attempts += 1
+		var candidates: Array[Vector2i] = _get_obstacle_candidates(cells, width, height, spawn_cells, core_cell, cfg)
+		if candidates.is_empty():
+			break
+		var center: Vector2i = candidates[rng.randi_range(0, candidates.size() - 1)]
+		var desired_size: int = _min_int(rng.randi_range(min_size, max_size), target_count - placed_count)
+		var terrain: StringName = _roll_obstacle_terrain(rng, cfg)
+		var cluster_cells: Array[Vector2i] = _build_obstacle_cluster(cells, width, height, spawn_cells, core_cell, cfg, rng, center, desired_size, terrain)
+		var minimum_viable_size: int = _max_int(3, int(ceil(float(min_size) * 0.5)))
+		if cluster_cells.size() < minimum_viable_size:
+			continue
+		var applied_count: int = _try_apply_obstacle_cells(cells, cluster_cells, terrain, width, height, spawn_cells, core_cell, cfg)
+		if applied_count <= 0:
+			continue
+		placed_count += applied_count
+		placed_clusters += 1
+	return placed_count
+
+
+static func _place_scattered_obstacles(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	rng: RandomNumberGenerator,
+	cfg: Dictionary,
+	target_count: int
+) -> int:
+	if target_count <= 0:
+		return 0
+	var candidates: Array[Vector2i] = _get_obstacle_candidates(cells, width, height, spawn_cells, core_cell, cfg)
+	_shuffle_cells(candidates, rng)
+	var placed_count: int = 0
+	for cell in candidates:
+		if placed_count >= target_count:
+			break
+		var terrain: StringName = _roll_obstacle_terrain(rng, cfg)
+		var single_cell: Array[Vector2i] = []
+		single_cell.append(cell)
+		placed_count += _try_apply_obstacle_cells(cells, single_cell, terrain, width, height, spawn_cells, core_cell, cfg)
+	return placed_count
+
+
+static func _build_obstacle_cluster(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary,
+	rng: RandomNumberGenerator,
+	center: Vector2i,
+	target_size: int,
+	terrain: StringName
+) -> Array[Vector2i]:
+	if terrain == CellData.TERRAIN_WATER:
+		return _build_lake_cluster(cells, width, height, spawn_cells, core_cell, cfg, rng, center, target_size)
+	return _build_mountain_cluster(cells, width, height, spawn_cells, core_cell, cfg, rng, center, target_size)
+
+
+static func _build_lake_cluster(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary,
+	rng: RandomNumberGenerator,
+	center: Vector2i,
+	target_size: int
+) -> Array[Vector2i]:
+	var cluster: Array[Vector2i] = []
+	var lookup: Dictionary = {}
+	_try_add_cluster_cell(cells, width, height, spawn_cells, core_cell, cfg, center, cluster, lookup)
+	var attempts: int = 0
+	while cluster.size() < target_size and attempts < target_size * 16 and not cluster.is_empty():
+		attempts += 1
+		var base: Vector2i = cluster[rng.randi_range(0, cluster.size() - 1)]
+		var direction: Vector2i = ALL_DIRECTIONS[rng.randi_range(0, ALL_DIRECTIONS.size() - 1)]
+		_try_add_cluster_cell(cells, width, height, spawn_cells, core_cell, cfg, base + direction, cluster, lookup)
+		if rng.randf() < 0.35:
+			for neighbor_direction in CARDINAL_DIRECTIONS:
+				if cluster.size() >= target_size:
+					break
+				if rng.randf() < 0.35:
+					_try_add_cluster_cell(cells, width, height, spawn_cells, core_cell, cfg, base + neighbor_direction, cluster, lookup)
+	return cluster
+
+
+static func _build_mountain_cluster(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary,
+	rng: RandomNumberGenerator,
+	center: Vector2i,
+	target_size: int
+) -> Array[Vector2i]:
+	var cluster: Array[Vector2i] = []
+	var lookup: Dictionary = {}
+	var current: Vector2i = center
+	var direction: Vector2i = _random_cardinal_direction(rng)
+	var attempts: int = 0
+	while cluster.size() < target_size and attempts < target_size * 16:
+		attempts += 1
+		_try_add_cluster_cell(cells, width, height, spawn_cells, core_cell, cfg, current, cluster, lookup)
+		for side_direction in _get_perpendicular_directions(direction):
+			if cluster.size() >= target_size:
+				break
+			if rng.randf() < 0.45:
+				_try_add_cluster_cell(cells, width, height, spawn_cells, core_cell, cfg, current + side_direction, cluster, lookup)
+		if rng.randf() < 0.26:
+			direction = _turn_cardinal_direction(direction, rng)
+		var next_cell: Vector2i = current + direction
+		if _is_obstacle_candidate(cells, width, height, spawn_cells, core_cell, cfg, next_cell):
+			current = next_cell
+		elif not cluster.is_empty():
+			current = cluster[rng.randi_range(0, cluster.size() - 1)]
+			direction = _random_cardinal_direction(rng)
+		else:
+			break
+	return cluster
+
+
+static func _try_add_cluster_cell(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary,
+	cell: Vector2i,
+	cluster: Array[Vector2i],
+	lookup: Dictionary
+) -> bool:
+	if lookup.has(cell):
+		return false
+	if not _is_obstacle_candidate(cells, width, height, spawn_cells, core_cell, cfg, cell):
+		return false
+	lookup[cell] = true
+	cluster.append(cell)
+	return true
+
+
+static func _try_apply_obstacle_cells(
+	cells: Dictionary,
+	obstacle_cells: Array[Vector2i],
+	terrain: StringName,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary
+) -> int:
+	var applied_cells: Array[Vector2i] = []
+	for cell in obstacle_cells:
+		if not _is_obstacle_candidate(cells, width, height, spawn_cells, core_cell, cfg, cell):
+			continue
+		var data: CellData = cells.get(cell) as CellData
+		if data == null:
+			continue
+		data.set_base_terrain(terrain)
+		applied_cells.append(cell)
+	if applied_cells.is_empty():
+		return 0
+	if _are_all_spawns_connected(cells, width, height, spawn_cells, core_cell):
+		return applied_cells.size()
+	for cell in applied_cells:
+		var data: CellData = cells.get(cell) as CellData
+		if data != null:
+			data.set_base_terrain(CellData.TERRAIN_PLAIN)
+	return 0
+
+
+static func _get_obstacle_candidates(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary
+) -> Array[Vector2i]:
 	var candidates: Array[Vector2i] = []
 	for y in range(height):
 		for x in range(width):
 			var cell: Vector2i = Vector2i(x, y)
-			if _is_protected_cell(cell, core_cell, spawn_cells, cfg):
-				continue
-			var data: CellData = cells[cell]
-			if data == null or data.resource_type != StringName() or data.spawn_key != StringName():
-				continue
-			candidates.append(cell)
+			if _is_obstacle_candidate(cells, width, height, spawn_cells, core_cell, cfg, cell):
+				candidates.append(cell)
+	return candidates
 
-	_shuffle_cells(candidates, rng)
 
-	var obstacle_ratio: float = float(cfg.get("obstacle_ratio", OBSTACLE_RATIO))
-	var min_obstacle_count: int = int(cfg.get("min_obstacle_count", MIN_OBSTACLE_COUNT))
-	var max_obstacle_count: int = int(cfg.get("max_obstacle_count", MAX_OBSTACLE_COUNT))
-	var target_count: int = max(min_obstacle_count, int(round(width * height * obstacle_ratio)))
-	target_count = min(target_count, min(max_obstacle_count, candidates.size()))
-	var placed_count: int = 0
+static func _is_obstacle_candidate(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	cfg: Dictionary,
+	cell: Vector2i
+) -> bool:
+	if cell.x < 0 or cell.x >= width or cell.y < 0 or cell.y >= height:
+		return false
+	if _is_protected_cell(cell, core_cell, spawn_cells, cfg):
+		return false
+	var data: CellData = cells.get(cell) as CellData
+	if data == null or data.resource_type != StringName() or data.spawn_key != StringName() or data.is_core:
+		return false
+	return data.walkable
 
-	for cell in candidates:
-		if placed_count >= target_count:
-			break
 
-		var data: CellData = cells.get(cell)
-		if data == null:
-			continue
+static func _roll_obstacle_terrain(rng: RandomNumberGenerator, cfg: Dictionary) -> StringName:
+	return CellData.TERRAIN_WATER if rng.randf() < float(cfg.get("water_obstacle_chance", WATER_OBSTACLE_CHANCE)) else CellData.TERRAIN_MOUNTAIN
 
-		var obstacle_terrain: StringName = CellData.TERRAIN_WATER if rng.randf() < float(cfg.get("water_obstacle_chance", WATER_OBSTACLE_CHANCE)) else CellData.TERRAIN_MOUNTAIN
-		data.set_base_terrain(obstacle_terrain)
 
-		var all_spawns_connected: bool = true
-		for spawn_cell in spawn_cells:
-			if not _has_ground_path(cells, width, height, spawn_cell, core_cell):
-				all_spawns_connected = false
-				break
+static func _are_all_spawns_connected(cells: Dictionary, width: int, height: int, spawn_cells: Array[Vector2i], core_cell: Vector2i) -> bool:
+	for spawn_cell in spawn_cells:
+		if not _has_ground_path(cells, width, height, spawn_cell, core_cell):
+			return false
+	return true
 
-		if all_spawns_connected:
-			placed_count += 1
-		else:
-			data.set_base_terrain(CellData.TERRAIN_PLAIN)
+
+static func _random_cardinal_direction(rng: RandomNumberGenerator) -> Vector2i:
+	return CARDINAL_DIRECTIONS[rng.randi_range(0, CARDINAL_DIRECTIONS.size() - 1)]
+
+
+static func _min_int(a: int, b: int) -> int:
+	return a if a <= b else b
+
+
+static func _max_int(a: int, b: int) -> int:
+	return a if a >= b else b
+
+
+static func _get_perpendicular_directions(direction: Vector2i) -> Array[Vector2i]:
+	if direction.x != 0:
+		var vertical_directions: Array[Vector2i] = []
+		vertical_directions.append(Vector2i.UP)
+		vertical_directions.append(Vector2i.DOWN)
+		return vertical_directions
+	var horizontal_directions: Array[Vector2i] = []
+	horizontal_directions.append(Vector2i.LEFT)
+	horizontal_directions.append(Vector2i.RIGHT)
+	return horizontal_directions
+
+
+static func _turn_cardinal_direction(direction: Vector2i, rng: RandomNumberGenerator) -> Vector2i:
+	var side_directions: Array[Vector2i] = _get_perpendicular_directions(direction)
+	if rng.randf() < 0.75:
+		return side_directions[rng.randi_range(0, side_directions.size() - 1)]
+	return Vector2i(-direction.x, -direction.y)
 
 
 static func _place_event_points(

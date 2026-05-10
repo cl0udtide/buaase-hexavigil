@@ -154,7 +154,7 @@ func request_start_night() -> Dictionary
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `try_collect_resource(cell)`
   输入：`cell: Vector2i`。
-  行为：校验指定格子是否为白天、已探索资源点；每点每天最多手动采集一次；成功时扣除 1 点行动力并获得 1 个对应资源。资源点已有正常建筑时仍允许手动采集，建筑每日产出独立结算。
+  行为：校验指定格子是否为白天、已探索资源点；每点每天最多手动采集一次；成功时扣除 1 点行动力，木资源点获得 2 木材，石材/魔力矿资源点获得 1 个对应资源。资源点已有正常建筑时仍允许手动采集，建筑每日产出独立结算。
   成功结果：返回 `ActionResult(ok = true)`，材料和行动力已更新。
   失败结果：返回 `ActionResult(ok = false)`，材料和行动力不变。
 - `is_resource_collected_today(cell)`
@@ -307,7 +307,7 @@ func change_deployed_count(delta: int) -> void
   返回：无。
 - `set_day(day)`
   输入：`day: int`。
-  行为：写入当前天数。
+  行为：写入当前天数，并根据完整经过天数调整部署上限；第 1-2 天无额外加成，第 3-4 天部署上限 +1，第 5-6 天部署上限 +2。该加成在现有部署上限上按差值调整，不覆盖遗物提供的部署上限加成。
   返回：无。
 - `reset_action_points(value)`
   输入：`value: int`。
@@ -374,7 +374,7 @@ func change_deployed_count(delta: int) -> void
   返回：`bool`。
 - `set_deploy_limit(value)`
   输入：`value: int`。
-  行为：设置部署上限。
+  行为：设置部署上限；天数成长和遗物都会基于当前部署上限继续调整。
   返回：无。
 - `change_deployed_count(delta)`
   输入：`delta: int`。
