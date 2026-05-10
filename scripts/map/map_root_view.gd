@@ -14,6 +14,12 @@ const TILE_RESOURCE_WOOD: Texture2D = preload("res://assets/map/CommandMap/tile_
 const TILE_RESOURCE_STONE: Texture2D = preload("res://assets/map/CommandMap/tile_resource_stone.png")
 const TILE_RESOURCE_MANA: Texture2D = preload("res://assets/map/CommandMap/tile_resource_mana.png")
 const TILE_EVENT: Texture2D = preload("res://assets/map/CommandMap/tile_event.png")
+const OVERLAY_MAP_HOVER: Texture2D = preload("res://assets/map/CommandMap/overlay_map_hover.png")
+const OVERLAY_MAP_SELECTED: Texture2D = preload("res://assets/map/CommandMap/overlay_map_selected.png")
+const OVERLAY_ATTACK_RANGE: Texture2D = preload("res://assets/map/CommandMap/overlay_attack_range.png")
+const OVERLAY_BUILDING_RANGE: Texture2D = preload("res://assets/map/CommandMap/overlay_building_range.png")
+const OVERLAY_DEPLOY_VALID: Texture2D = preload("res://assets/map/CommandMap/overlay_deploy_valid.png")
+const OVERLAY_DEPLOY_INVALID: Texture2D = preload("res://assets/map/CommandMap/overlay_deploy_invalid.png")
 const GRID_COLOR := Color(0.02, 0.045, 0.065, 0.36)
 const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
@@ -155,9 +161,9 @@ func _draw() -> void:
 			if cell == _deploy_locked_cell:
 				_draw_deploy_locked_cell(rect)
 			if cell == _hovered_cell:
-				draw_rect(rect.grow(-2.0), HOVER_COLOR)
+				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, HOVER_COLOR, Color.TRANSPARENT, 2.0, 0.0)
 			if cell == _selected_cell:
-				draw_rect(rect.grow(-6.0), SELECT_COLOR)
+				_draw_cell_overlay(OVERLAY_MAP_SELECTED, rect, SELECT_COLOR, Color.TRANSPARENT, 6.0, 0.0)
 	_draw_wave_route_previews(map_manager)
 	_draw_deploy_visual_preview(map_manager)
 	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
@@ -226,28 +232,37 @@ func clear_wave_route_previews() -> void:
 
 
 func _draw_attack_range_cell(rect: Rect2) -> void:
-	draw_rect(rect.grow(-4.0), ATTACK_RANGE_FILL)
-	draw_rect(rect.grow(-4.0), ATTACK_RANGE_BORDER, false, 2.0)
+	_draw_cell_overlay(OVERLAY_ATTACK_RANGE, rect, ATTACK_RANGE_FILL, ATTACK_RANGE_BORDER, 4.0, 2.0)
 
 
 func _draw_deploy_range_cell(rect: Rect2) -> void:
-	draw_rect(rect.grow(-6.0), DEPLOY_RANGE_FILL)
-	draw_rect(rect.grow(-6.0), DEPLOY_RANGE_BORDER, false, 1.5)
+	_draw_cell_overlay(OVERLAY_DEPLOY_VALID, rect, DEPLOY_RANGE_FILL, DEPLOY_RANGE_BORDER, 6.0, 1.5)
 
 
 func _draw_building_range_cell(rect: Rect2) -> void:
-	draw_rect(rect.grow(-7.0), BUILDING_RANGE_FILL)
-	draw_rect(rect.grow(-7.0), BUILDING_RANGE_BORDER, false, 2.0)
+	_draw_cell_overlay(OVERLAY_BUILDING_RANGE, rect, BUILDING_RANGE_FILL, BUILDING_RANGE_BORDER, 7.0, 2.0)
 
 
 func _draw_deploy_preview_cell(rect: Rect2, is_valid: bool) -> void:
-	draw_rect(rect.grow(-5.0), DEPLOY_VALID_FILL if is_valid else DEPLOY_INVALID_FILL)
-	draw_rect(rect.grow(-5.0), DEPLOY_VALID_BORDER if is_valid else DEPLOY_INVALID_BORDER, false, 3.0)
+	if is_valid:
+		_draw_cell_overlay(OVERLAY_DEPLOY_VALID, rect, DEPLOY_VALID_FILL, DEPLOY_VALID_BORDER, 5.0, 3.0)
+	else:
+		_draw_cell_overlay(OVERLAY_DEPLOY_INVALID, rect, DEPLOY_INVALID_FILL, DEPLOY_INVALID_BORDER, 5.0, 3.0)
 
 
 func _draw_deploy_locked_cell(rect: Rect2) -> void:
 	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_FILL)
 	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_BORDER, false, 3.0)
+
+
+func _draw_cell_overlay(texture: Texture2D, rect: Rect2, fill_color: Color, border_color: Color, inset: float, border_width: float) -> void:
+	if texture != null:
+		draw_texture_rect(texture, rect, false)
+		return
+	var overlay_rect := rect.grow(-inset)
+	draw_rect(overlay_rect, fill_color)
+	if border_color.a > 0.0 and border_width > 0.0:
+		draw_rect(overlay_rect, border_color, false, border_width)
 
 
 func _draw_deploy_visual_preview(map_manager: Node) -> void:
