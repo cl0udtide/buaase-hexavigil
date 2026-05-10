@@ -22,7 +22,7 @@ func _on_start_pressed() -> void:
 func _build_visual_shell() -> void:
 	var background := ColorRect.new()
 	background.name = "TacticalBackground"
-	background.color = Color(0.012, 0.018, 0.023, 1.0)
+	background.color = Color(0.025, 0.033, 0.045, 1.0)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
@@ -36,10 +36,10 @@ func _build_visual_shell() -> void:
 	if title != null:
 		title.text = "HexaVigil"
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		title.add_theme_font_size_override("font_size", 58)
-		title.add_theme_color_override("font_color", Color(0.80, 0.98, 0.88, 1.0))
-		title.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.85))
-		title.add_theme_constant_override("outline_size", 4)
+		title.add_theme_font_size_override("font_size", 54)
+		title.add_theme_color_override("font_color", Color(0.930, 0.965, 1.000, 1.0))
+		title.add_theme_color_override("font_outline_color", Color.TRANSPARENT)
+		title.add_theme_constant_override("outline_size", 0)
 
 	var center := get_node_or_null("CenterContainer") as CenterContainer
 	if center != null:
@@ -52,10 +52,10 @@ func _build_visual_shell() -> void:
 
 	var start_button := get_node_or_null("%StartButton") as Button
 	if start_button != null:
-		start_button.text = "START OPERATION"
-		start_button.custom_minimum_size = Vector2(320.0, 62.0)
-		start_button.add_theme_font_size_override("font_size", 22)
-		start_button.add_theme_stylebox_override("normal", GameUiStyle.accent_button(GameUiStyle.SUCCESS))
+		start_button.text = "开始行动"
+		start_button.custom_minimum_size = Vector2(280.0, 54.0)
+		start_button.add_theme_font_size_override("font_size", 20)
+		start_button.add_theme_stylebox_override("normal", GameUiStyle.accent_button(GameUiStyle.ACCENT))
 		start_button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.ACCENT))
 		start_button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
 		start_button.add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
@@ -63,10 +63,10 @@ func _build_visual_shell() -> void:
 	if vbox != null and vbox.get_node_or_null("SubtitleLabel") == null:
 		var subtitle := Label.new()
 		subtitle.name = "SubtitleLabel"
-		subtitle.text = "NIGHT WATCH COMMAND"
+		subtitle.text = "昼夜防线指挥"
 		subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		subtitle.add_theme_font_size_override("font_size", 18)
-		subtitle.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+		subtitle.add_theme_font_size_override("font_size", 17)
+		subtitle.add_theme_color_override("font_color", Color(0.670, 0.760, 0.860, 1.0))
 		vbox.add_child(subtitle)
 		vbox.move_child(subtitle, 1)
 
@@ -77,10 +77,10 @@ func _build_visual_shell() -> void:
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		frame.set_anchors_preset(Control.PRESET_CENTER)
 		frame.offset_left = -300.0
-		frame.offset_top = -190.0
+		frame.offset_top = -170.0
 		frame.offset_right = 300.0
-		frame.offset_bottom = 190.0
-		frame.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.SUCCESS, GameUiStyle.BG_DARK, 1.0))
+		frame.offset_bottom = 170.0
+		frame.add_theme_stylebox_override("panel", GameUiStyle.card(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_GLASS, 1.0))
 		add_child(frame)
 		move_child(frame, 2)
 
@@ -96,7 +96,7 @@ func _make_grid_overlay() -> Control:
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for index in range(8):
 		var line := ColorRect.new()
-		line.color = Color(0.13, 0.54, 0.45, 0.08)
+		line.color = Color(0.145, 0.388, 0.920, 0.055)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		line.anchor_left = float(index + 1) / 9.0
 		line.anchor_right = line.anchor_left
@@ -107,7 +107,7 @@ func _make_grid_overlay() -> Control:
 		overlay.add_child(line)
 	for index in range(5):
 		var line := ColorRect.new()
-		line.color = Color(0.13, 0.54, 0.45, 0.08)
+		line.color = Color(0.145, 0.388, 0.920, 0.045)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		line.anchor_left = 0.0
 		line.anchor_right = 1.0

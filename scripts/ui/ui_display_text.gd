@@ -58,13 +58,13 @@ static func tier_label(cost_prestige: int) -> String:
 static func tier_color(cost_prestige: int) -> Color:
 	match cost_prestige:
 		1:
-			return Color(0.86, 0.93, 0.88)
+			return Color(0.090, 0.610, 0.360)
 		3:
-			return Color(0.72, 0.88, 1.0)
+			return Color(0.145, 0.388, 0.920)
 		7:
-			return Color(1.0, 0.82, 0.38)
+			return Color(0.915, 0.520, 0.075)
 		_:
-			return Color(0.90, 0.96, 0.98, 1.0)
+			return Color(0.285, 0.365, 0.460, 1.0)
 
 
 static func damage_type_label(type_value: int) -> String:

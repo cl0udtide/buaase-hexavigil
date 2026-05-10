@@ -39,19 +39,25 @@ func _ready() -> void:
 		_hovered = false
 		_apply_card_style()
 	)
-	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_cost_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_class_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_portrait_label.add_theme_color_override("font_color", Color(0.42, 0.50, 0.54, 0.95))
+	_class_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	_portrait_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_cooldown_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	for label in [_name_label, _class_label, _status_label]:
+		GameUiStyle.center_label_text(label)
+	for label in [_name_label, _cost_label, _class_label, _status_label]:
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_add_label_shadow(_name_label)
 	_add_label_shadow(_cost_label)
 	_add_label_shadow(_class_label)
 	_add_label_shadow(_status_label)
 	_add_label_shadow(_portrait_label)
 	_add_label_shadow(_cooldown_label)
-	_portrait_box.add_theme_stylebox_override("panel", GameUiStyle.panel(Color(0.035, 0.046, 0.055, 0.98), GameUiStyle.STROKE_SOFT, 1.0, 4.0))
+	GameUiStyle.apply_frame_margin(get_node_or_null("CardMargin") as MarginContainer, GameUiStyle.FRAME_OPERATOR_CARD)
+	_portrait_box.add_theme_stylebox_override("panel", GameUiStyle.icon_tile())
+	_cooldown_overlay.color = Color(0.960, 0.970, 0.980, 0.86)
 	_cooldown_overlay.visible = false
 	_apply_density()
 	_apply_card_style()
@@ -82,7 +88,7 @@ func set_state_text(text_value: String, state: StringName) -> void:
 	if _accent_bar != null:
 		_accent_bar.visible = false
 	_update_cooldown_overlay(state)
-	_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT if state == &"deployed" else GameUiStyle.TEXT_DIM)
+	_status_label.add_theme_color_override("font_color", GameUiStyle.ACCENT if state == &"deployed" else GameUiStyle.TEXT_INVERTED_DIM)
 	_apply_card_style()
 
 
@@ -150,13 +156,7 @@ func _on_gui_input(event: InputEvent) -> void:
 
 func _apply_card_style() -> void:
 	var border := GameUiStyle.AMBER if _hovered else _accent
-	var fill := GameUiStyle.BG_CARD_HOVER if _hovered else _fill
-	var width := 1.0
-	if _hovered:
-		width = 2.0
-	elif _state == &"ready":
-		width = 1.5
-	add_theme_stylebox_override("panel", GameUiStyle.card(border, fill, width))
+	add_theme_stylebox_override("panel", GameUiStyle.operator_card(border))
 
 
 func _apply_density() -> void:
@@ -174,5 +174,5 @@ func _add_label_shadow(label: Label) -> void:
 	if label == null:
 		return
 	label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_constant_override("shadow_offset_x", 0)
+	label.add_theme_constant_override("shadow_offset_y", 0)

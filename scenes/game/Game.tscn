@@ -107,8 +107,8 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_right = 0.0
 offset_left = 8.0
-offset_top = -72.0
-offset_right = 238.0
+offset_top = -76.0
+offset_right = 318.0
 offset_bottom = -12.0
 grow_horizontal = 1
 grow_vertical = 0
@@ -118,7 +118,7 @@ anchors_preset = 9
 anchor_right = 0.0
 offset_left = 12.0
 offset_top = 88.0
-offset_right = 242.0
+offset_right = 326.0
 offset_bottom = -146.0
 grow_horizontal = 1
 
@@ -164,7 +164,7 @@ autowrap_mode = 2
 
 [node name="TriggerEventButton" type="Button" parent="UI/MapInteractionPopup/ContentMargin/VBoxContainer/EventSection"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(108, 28)
+custom_minimum_size = Vector2(108, 32)
 layout_mode = 2
 focus_mode = 0
 text = "触发事件"
@@ -182,7 +182,7 @@ autowrap_mode = 2
 
 [node name="CollectButton" type="Button" parent="UI/MapInteractionPopup/ContentMargin/VBoxContainer/ResourceSection"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(76, 28)
+custom_minimum_size = Vector2(76, 32)
 layout_mode = 2
 focus_mode = 0
 text = "采集"
@@ -205,21 +205,21 @@ theme_override_constants/v_separation = 4
 
 [node name="RepairButton" type="Button" parent="UI/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "修复"
 
 [node name="DemolishButton" type="Button" parent="UI/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "拆除"
 
 [node name="ToggleButton" type="Button" parent="UI/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 28)
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 focus_mode = 0
 text = "开关"
@@ -267,8 +267,8 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -98.0
-offset_top = -42.0
+offset_left = -106.0
+offset_top = -48.0
 offset_right = -12.0
 offset_bottom = -12.0
 grow_horizontal = 0
