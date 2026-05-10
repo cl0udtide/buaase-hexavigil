@@ -5,6 +5,8 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
+const ICON_TEXTURE_SCALE := 0.72
+
 signal pressed(buff_id: StringName)
 
 var buff_id := StringName()
@@ -16,6 +18,7 @@ var _choice_mode := false
 var _hovered := false
 
 @onready var _card_base: Panel = %CardBase
+@onready var _icon_stack: Control = %IconStack
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
@@ -108,8 +111,13 @@ func _apply_density() -> void:
 	_desc_label.add_theme_font_size_override("font_size", 12 if compact_font else 13)
 	_tag_label.add_theme_font_size_override("font_size", 12)
 	var icon_size := 46.0 if compact_font else 54.0
-	_icon_backplate.custom_minimum_size = Vector2(icon_size, 0.0)
-	_icon_frame.custom_minimum_size = Vector2(icon_size, 0.0)
+	var frame_size := Vector2(icon_size, icon_size)
+	if _icon_stack != null:
+		_icon_stack.custom_minimum_size = frame_size
+		_icon_stack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_icon_backplate.custom_minimum_size = frame_size
+	_icon_frame.custom_minimum_size = frame_size
+	GameUiStyle.fit_centered_icon(_icon_texture, frame_size * ICON_TEXTURE_SCALE)
 
 
 func _apply_style() -> void:

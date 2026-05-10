@@ -5,6 +5,9 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
+const ICON_FRAME_SIZE := Vector2(34.0, 34.0)
+const ICON_TEXTURE_SIZE := Vector2(22.0, 22.0)
+
 signal pressed(buff_id: StringName)
 
 var buff_id := StringName()
@@ -29,6 +32,7 @@ func _ready() -> void:
 	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	GameUiStyle.fit_centered_icon(_icon_texture, ICON_TEXTURE_SIZE)
 	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON_BACKPLATE, GameUiStyle.ACCENT_SOFT, GameUiStyle.STROKE_SOFT))
 	_new_highlight_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_RELIC_ICON, Color(0.950, 0.650, 0.220, 0.09), GameUiStyle.AMBER, false))
 	_apply_config()
@@ -50,7 +54,7 @@ func set_highlighted(highlighted: bool) -> void:
 
 func _apply_config() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	custom_minimum_size = Vector2(34.0, 34.0)
+	custom_minimum_size = ICON_FRAME_SIZE
 	var texture := UiArtRegistry.get_texture(buff_id, &"icon")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null

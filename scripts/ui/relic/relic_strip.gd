@@ -100,7 +100,7 @@ func _icon_capacity_for_width(width: float) -> int:
 
 func _style_entry_button() -> void:
 	_entry_button.custom_minimum_size = Vector2(86.0, 30.0)
-	_entry_button.icon = UiArtRegistry.get_texture(&"icon_relic_bag", &"icon")
+	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_texture(&"icon_relic_bag", &"icon"), Vector2(16.0, 16.0), &"left", 7.0)
 	GameUiStyle.center_button_text(_entry_button)
 	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))

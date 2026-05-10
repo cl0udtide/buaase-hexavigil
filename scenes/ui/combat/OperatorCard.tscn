@@ -49,8 +49,9 @@ theme_override_constants/separation = 4
 
 [node name="ClassIcon" type="TextureRect" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=2067825838]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(18, 0)
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5

@@ -88,6 +88,8 @@ func _ready() -> void:
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_class_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_class_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_class_icon_texture.custom_minimum_size = Vector2(18.0, 18.0)
+	_class_icon_texture.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	for row in [_hp_stat_row, _sp_stat_row, _cd_stat_row]:
 		row.add_theme_stylebox_override("panel", GameUiStyle.operator_stat_row())
 	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_OPERATOR_CARD_SELECTED, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
