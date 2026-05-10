@@ -12,6 +12,7 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 	var edge: float = UiTokens.edge_for_width(width)
 	var detail_width: float = _detail_width_for_width(width)
 	var top_height: float = UiTokens.TOP_BAR_HEIGHT_COMPACT if compact else UiTokens.TOP_BAR_HEIGHT
+	var settings_size: float = UiTokens.SETTINGS_BUTTON_SIZE_COMPACT if compact else UiTokens.SETTINGS_BUTTON_SIZE
 	var deck_height: float = UiTokens.DEPLOY_DECK_HEIGHT_COMPACT if compact else UiTokens.DEPLOY_DECK_HEIGHT
 	var deck_left: float = maxf(edge, left_reserved_width + UiTokens.SPACE_LG)
 	var detail_left: float = width - edge - detail_width
@@ -27,11 +28,29 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 			detail_width = minf(detail_width, maxf(280.0, width * 0.28))
 			detail_left = width - edge - detail_width
 			deck_right_x = detail_left - UiTokens.SPACE_SM if detail_visible else width - edge
+	var top_left := edge + settings_size + UiTokens.SPACE_SM
+	var top_rect := Rect2(top_left, UiTokens.TOP_BAR_Y, maxf(0.0, width - top_left - edge), top_height)
+	var relic_height := UiTokens.RELIC_STRIP_HEIGHT_COMPACT if compact else UiTokens.RELIC_STRIP_HEIGHT
+	var relic_left: float = maxf(top_left, left_reserved_width + UiTokens.SPACE_LG)
+	var relic_right_limit: float = detail_left - UiTokens.SPACE_SM if detail_visible else width - edge
+	if relic_right_limit - relic_left < UiTokens.RELIC_STRIP_MIN_WIDTH:
+		relic_left = top_left
+		relic_right_limit = width - edge
+	var relic_width: float = clampf(relic_right_limit - relic_left, 0.0, UiTokens.RELIC_STRIP_MAX_WIDTH)
+	var relic_rect := Rect2(relic_left, UiTokens.TOP_BAR_Y + top_height + UiTokens.SPACE_XS, relic_width, relic_height)
+	var settings_panel_width := minf(UiTokens.SETTINGS_PANEL_SIZE.x, width - edge * 2.0)
+	var settings_panel_height := minf(UiTokens.SETTINGS_PANEL_SIZE.y, height - edge * 2.0 - settings_size)
+	var relic_panel_width := minf(UiTokens.RELIC_PANEL_SIZE.x, width - edge * 2.0)
+	var relic_panel_height := minf(UiTokens.RELIC_PANEL_SIZE.y, height - edge * 2.0)
 	return {
 		"compact": compact,
 		"narrow": narrow,
 		"edge": edge,
-		"top_rect": Rect2(edge, UiTokens.TOP_BAR_Y, width - edge * 2.0, top_height),
+		"settings_button_rect": Rect2(edge, UiTokens.TOP_BAR_Y, settings_size, settings_size),
+		"settings_panel_rect": Rect2(edge, UiTokens.TOP_BAR_Y + settings_size + UiTokens.SPACE_XS, settings_panel_width, settings_panel_height),
+		"top_rect": top_rect,
+		"relic_strip_rect": relic_rect,
+		"relic_panel_rect": Rect2((width - relic_panel_width) * 0.5, (height - relic_panel_height) * 0.5, relic_panel_width, relic_panel_height),
 		"top_card_height": top_height,
 		"top_separation": UiTokens.SPACE_SM if compact else UiTokens.SPACE_LG,
 		"detail_rect": Rect2(detail_left, UiTokens.DETAIL_TOP, detail_width, maxf(240.0, height - UiTokens.DETAIL_TOP - edge)),
@@ -42,6 +61,15 @@ static func hud_profile(viewport_size: Vector2, detail_visible: bool, left_reser
 
 
 static func top_card_widths(viewport_width: float) -> Dictionary:
+	if viewport_width <= 720.0:
+		return {
+			"stage": 112.0,
+			"core": 112.0,
+			"deploy": 100.0,
+			"message": 0.0,
+			"time": 164.0,
+			"resource": 188.0,
+		}
 	if viewport_width <= UiTokens.BREAKPOINT_NARROW:
 		return {
 			"stage": 132.0,

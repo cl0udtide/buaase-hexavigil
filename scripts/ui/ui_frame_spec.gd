@@ -23,6 +23,11 @@ const BUTTON_COMPACT_SELECTED := &"button_compact_selected"
 const TAB := &"tab"
 const TAB_SELECTED := &"tab_selected"
 const ICON_TILE := &"icon_tile"
+const RELIC_STRIP := &"relic_strip"
+const RELIC_ICON := &"relic_icon"
+const RELIC_PANEL := &"relic_panel"
+const RELIC_CARD := &"relic_card"
+const SETTINGS_PANEL := &"settings_panel"
 const PROGRESS_TRACK := &"progress_track"
 const PROGRESS_BLUE := &"progress_blue"
 const PROGRESS_AMBER := &"progress_amber"
@@ -55,6 +60,11 @@ const SPECS := {
 	TAB: {"content": Vector4(12.0, 6.0, 12.0, 6.0)},
 	TAB_SELECTED: {"content": Vector4(12.0, 6.0, 12.0, 6.0)},
 	ICON_TILE: {"content": Vector4(8.0, 8.0, 8.0, 8.0)},
+	RELIC_STRIP: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
+	RELIC_ICON: {"content": Vector4(6.0, 6.0, 6.0, 6.0)},
+	RELIC_PANEL: {"content": Vector4(18.0, 16.0, 18.0, 16.0)},
+	RELIC_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
+	SETTINGS_PANEL: {"content": Vector4(14.0, 12.0, 14.0, 12.0)},
 	PROGRESS_TRACK: {"content": ZERO_INSETS},
 	PROGRESS_BLUE: {"content": ZERO_INSETS},
 	PROGRESS_AMBER: {"content": ZERO_INSETS},

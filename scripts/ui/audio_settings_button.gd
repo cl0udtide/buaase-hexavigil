@@ -3,7 +3,10 @@ extends Button
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
+signal settings_button_pressed
+
 @export var panel_path: NodePath
+@export var auto_toggle_panel := true
 
 var _panel: Control
 
@@ -16,15 +19,22 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
+	settings_button_pressed.emit()
+	if not auto_toggle_panel:
+		return
 	if _panel == null:
 		return
-	_panel.visible = not _panel.visible
-	if _panel.visible and _panel.has_method("refresh_from_audio_manager"):
-		_panel.refresh_from_audio_manager()
+	if _panel.has_method("toggle_panel"):
+		_panel.toggle_panel()
+	else:
+		_panel.visible = not _panel.visible
+		if _panel.visible and _panel.has_method("refresh_from_audio_manager"):
+			_panel.refresh_from_audio_manager()
 
 
 func _apply_visual_style() -> void:
-	custom_minimum_size = Vector2(94.0, 36.0)
+	custom_minimum_size = Vector2(42.0, 40.0) if text.strip_edges().length() <= 2 else Vector2(94.0, 36.0)
+	tooltip_text = "设置"
 	GameUiStyle.center_button_text(self)
 	add_theme_stylebox_override("normal", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.18))
 	add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
