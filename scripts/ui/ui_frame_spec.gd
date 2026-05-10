@@ -2,22 +2,24 @@ class_name UiFrameSpec
 extends RefCounted
 
 
-const COMMAND_GLASS_ROOT := "res://assets/UI/CommandGlass"
-const CG_PANEL_TOP_HUD := COMMAND_GLASS_ROOT + "/panel_top_hud.png"
-const CG_PANEL_DETAIL := COMMAND_GLASS_ROOT + "/panel_detail.png"
-const CG_PANEL_OPERATOR := COMMAND_GLASS_ROOT + "/panel_operator.png"
-const CG_CARD_LIGHT := COMMAND_GLASS_ROOT + "/card_light.png"
-const CG_CARD_SMALL_LIGHT := COMMAND_GLASS_ROOT + "/card_small_light.png"
-const CG_BUTTON_NORMAL := COMMAND_GLASS_ROOT + "/button_normal.png"
-const CG_BUTTON_PRESSED := COMMAND_GLASS_ROOT + "/button_pressed.png"
-const CG_BUTTON_DISABLED := COMMAND_GLASS_ROOT + "/button_disabled.png"
-const CG_TAB_SELECTED := COMMAND_GLASS_ROOT + "/tab_selected.png"
-const CG_TAB_IDLE := COMMAND_GLASS_ROOT + "/tab_idle.png"
-const CG_PROGRESS_TRACK := COMMAND_GLASS_ROOT + "/progress_track.png"
-const CG_PROGRESS_BLUE := COMMAND_GLASS_ROOT + "/progress_fill_blue.png"
-const CG_PROGRESS_AMBER := COMMAND_GLASS_ROOT + "/progress_fill_amber.png"
-const CG_PROGRESS_RED := COMMAND_GLASS_ROOT + "/progress_fill_red.png"
-const CG_ICON_TILE := COMMAND_GLASS_ROOT + "/icon_tile.png"
+const FANTASY_STONE_ROOT := "res://assets/UI/FantasyStone"
+const FS_PANEL_TOP_HUD := FANTASY_STONE_ROOT + "/panel_top_hud.png"
+const FS_PANEL_SIDE_SCROLL := FANTASY_STONE_ROOT + "/panel_side_scroll.png"
+const FS_PANEL_DETAIL := FANTASY_STONE_ROOT + "/panel_detail.png"
+const FS_PANEL_BADGE := FANTASY_STONE_ROOT + "/panel_badge.png"
+const FS_PANEL_STRIP := FANTASY_STONE_ROOT + "/panel_strip.png"
+const FS_PANEL_CARD_SQUARE := FANTASY_STONE_ROOT + "/panel_card_square.png"
+const FS_PANEL_CARD_SMALL := FANTASY_STONE_ROOT + "/panel_card_small.png"
+const FS_BUTTON_NORMAL := FANTASY_STONE_ROOT + "/button_normal.png"
+const FS_BUTTON_HOVER := FANTASY_STONE_ROOT + "/button_hover.png"
+const FS_BUTTON_PRESSED := FANTASY_STONE_ROOT + "/button_pressed.png"
+const FS_BUTTON_DISABLED := FANTASY_STONE_ROOT + "/button_disabled.png"
+const FS_TAB_SELECTED := FANTASY_STONE_ROOT + "/tab_selected.png"
+const FS_TAB_IDLE := FANTASY_STONE_ROOT + "/tab_idle.png"
+const FS_PROGRESS_TRACK := FANTASY_STONE_ROOT + "/progress_track.png"
+const FS_PROGRESS_BLUE := FANTASY_STONE_ROOT + "/progress_fill_blue.png"
+const FS_PROGRESS_AMBER := FANTASY_STONE_ROOT + "/progress_fill_amber.png"
+const FS_PROGRESS_RED := FANTASY_STONE_ROOT + "/progress_fill_red.png"
 
 const TOP_HUD := &"top_hud"
 const TOP_CARD := &"top_card"
@@ -27,6 +29,7 @@ const CARD := &"card"
 const LIST_CARD := &"list_card"
 const OPERATOR_CARD := &"operator_card"
 const BUTTON := &"button"
+const BUTTON_HOVER := &"button_hover"
 const BUTTON_PRESSED := &"button_pressed"
 const BUTTON_DISABLED := &"button_disabled"
 const TAB := &"tab"
@@ -41,108 +44,114 @@ const ZERO_INSETS := Vector4.ZERO
 const DEFAULT_INSETS := Vector4(12.0, 9.0, 12.0, 9.0)
 
 # Insets are left, top, right, bottom. Native sizes are recorded from the PNGs,
-# and content values are the measured text-safe pixels after bevel/glow areas.
+# and content values are the measured text-safe pixels after bevel/decor areas.
 const SPECS := {
 	TOP_HUD: {
-		"path": CG_PANEL_TOP_HUD,
-		"native": Vector2(1207.0, 246.0),
-		"slice": Vector4(34.0, 34.0, 34.0, 34.0),
+		"path": FS_PANEL_TOP_HUD,
+		"native": Vector2(1382.0, 152.0),
+		"slice": Vector4(34.0, 28.0, 34.0, 28.0),
 		"content": ZERO_INSETS,
 	},
 	TOP_CARD: {
-		"path": CG_CARD_SMALL_LIGHT,
-		"native": Vector2(193.0, 195.0),
-		"slice": Vector4(24.0, 24.0, 24.0, 24.0),
-		"content": Vector4(18.0, 16.0, 18.0, 10.0),
+		"path": FS_PANEL_BADGE,
+		"native": Vector2(232.0, 99.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
+		"content": Vector4(14.0, 10.0, 14.0, 10.0),
 	},
 	SIDE_PANEL: {
-		"path": CG_PANEL_DETAIL,
-		"native": Vector2(424.0, 464.0),
+		"path": FS_PANEL_SIDE_SCROLL,
+		"native": Vector2(453.0, 689.0),
 		"slice": Vector4(34.0, 34.0, 34.0, 34.0),
-		"content": Vector4(18.0, 16.0, 18.0, 16.0),
+		"content": Vector4(20.0, 18.0, 20.0, 18.0),
 	},
 	DECK_PANEL: {
-		"path": CG_PANEL_TOP_HUD,
-		"native": Vector2(1207.0, 246.0),
-		"slice": Vector4(34.0, 34.0, 34.0, 34.0),
-		"content": Vector4(18.0, 16.0, 18.0, 16.0),
+		"path": FS_PANEL_STRIP,
+		"native": Vector2(494.0, 74.0),
+		"slice": Vector4(30.0, 24.0, 30.0, 24.0),
+		"content": Vector4(18.0, 12.0, 18.0, 12.0),
 	},
 	CARD: {
-		"path": CG_CARD_LIGHT,
-		"native": Vector2(363.0, 191.0),
-		"slice": Vector4(26.0, 26.0, 26.0, 26.0),
+		"path": FS_PANEL_BADGE,
+		"native": Vector2(232.0, 99.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(16.0, 12.0, 16.0, 12.0),
 	},
 	LIST_CARD: {
-		"path": CG_CARD_LIGHT,
-		"native": Vector2(363.0, 191.0),
-		"slice": Vector4(26.0, 26.0, 26.0, 26.0),
+		"path": FS_PANEL_BADGE,
+		"native": Vector2(232.0, 99.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(16.0, 12.0, 16.0, 12.0),
 	},
 	OPERATOR_CARD: {
-		"path": CG_PANEL_OPERATOR,
-		"native": Vector2(213.0, 257.0),
+		"path": FS_PANEL_CARD_SQUARE,
+		"native": Vector2(232.0, 234.0),
 		"slice": Vector4(28.0, 28.0, 28.0, 28.0),
 		"content": Vector4(14.0, 12.0, 14.0, 12.0),
 	},
 	BUTTON: {
-		"path": CG_BUTTON_NORMAL,
-		"native": Vector2(272.0, 101.0),
-		"slice": Vector4(22.0, 22.0, 22.0, 22.0),
+		"path": FS_BUTTON_NORMAL,
+		"native": Vector2(224.0, 86.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
+		"content": Vector4(10.0, 6.0, 10.0, 6.0),
+	},
+	BUTTON_HOVER: {
+		"path": FS_BUTTON_HOVER,
+		"native": Vector2(216.0, 85.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(10.0, 6.0, 10.0, 6.0),
 	},
 	BUTTON_PRESSED: {
-		"path": CG_BUTTON_PRESSED,
-		"native": Vector2(274.0, 102.0),
-		"slice": Vector4(22.0, 22.0, 22.0, 22.0),
+		"path": FS_BUTTON_PRESSED,
+		"native": Vector2(202.0, 86.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(10.0, 6.0, 10.0, 6.0),
 	},
 	BUTTON_DISABLED: {
-		"path": CG_BUTTON_DISABLED,
-		"native": Vector2(258.0, 103.0),
-		"slice": Vector4(22.0, 22.0, 22.0, 22.0),
+		"path": FS_BUTTON_DISABLED,
+		"native": Vector2(198.0, 85.0),
+		"slice": Vector4(28.0, 24.0, 28.0, 24.0),
 		"content": Vector4(10.0, 6.0, 10.0, 6.0),
 	},
 	TAB: {
-		"path": CG_TAB_IDLE,
-		"native": Vector2(286.0, 101.0),
-		"slice": Vector4(24.0, 24.0, 24.0, 24.0),
-		"content": Vector4(14.0, 10.0, 14.0, 7.0),
+		"path": FS_TAB_IDLE,
+		"native": Vector2(339.0, 89.0),
+		"slice": Vector4(42.0, 28.0, 42.0, 24.0),
+		"content": Vector4(16.0, 8.0, 16.0, 6.0),
 	},
 	TAB_SELECTED: {
-		"path": CG_TAB_SELECTED,
-		"native": Vector2(300.0, 101.0),
-		"slice": Vector4(24.0, 24.0, 24.0, 24.0),
-		"content": Vector4(14.0, 10.0, 14.0, 7.0),
+		"path": FS_TAB_SELECTED,
+		"native": Vector2(366.0, 91.0),
+		"slice": Vector4(42.0, 28.0, 42.0, 24.0),
+		"content": Vector4(16.0, 8.0, 16.0, 6.0),
 	},
 	ICON_TILE: {
-		"path": CG_ICON_TILE,
-		"native": Vector2(103.0, 98.0),
-		"slice": Vector4(20.0, 20.0, 20.0, 20.0),
+		"path": FS_PANEL_CARD_SMALL,
+		"native": Vector2(131.0, 130.0),
+		"slice": Vector4(24.0, 24.0, 24.0, 24.0),
 		"content": Vector4(8.0, 8.0, 8.0, 8.0),
 	},
 	PROGRESS_TRACK: {
-		"path": CG_PROGRESS_TRACK,
-		"native": Vector2(533.0, 49.0),
-		"slice": Vector4(16.0, 16.0, 16.0, 16.0),
+		"path": FS_PROGRESS_TRACK,
+		"native": Vector2(561.0, 59.0),
+		"slice": Vector4(24.0, 18.0, 24.0, 18.0),
 		"content": ZERO_INSETS,
 	},
 	PROGRESS_BLUE: {
-		"path": CG_PROGRESS_BLUE,
-		"native": Vector2(533.0, 52.0),
-		"slice": Vector4(16.0, 16.0, 16.0, 16.0),
+		"path": FS_PROGRESS_BLUE,
+		"native": Vector2(235.0, 52.0),
+		"slice": Vector4(22.0, 18.0, 22.0, 18.0),
 		"content": ZERO_INSETS,
 	},
 	PROGRESS_AMBER: {
-		"path": CG_PROGRESS_AMBER,
-		"native": Vector2(533.0, 52.0),
-		"slice": Vector4(16.0, 16.0, 16.0, 16.0),
+		"path": FS_PROGRESS_AMBER,
+		"native": Vector2(231.0, 52.0),
+		"slice": Vector4(22.0, 18.0, 22.0, 18.0),
 		"content": ZERO_INSETS,
 	},
 	PROGRESS_RED: {
-		"path": CG_PROGRESS_RED,
-		"native": Vector2(533.0, 52.0),
-		"slice": Vector4(16.0, 16.0, 16.0, 16.0),
+		"path": FS_PROGRESS_RED,
+		"native": Vector2(249.0, 52.0),
+		"slice": Vector4(22.0, 18.0, 22.0, 18.0),
 		"content": ZERO_INSETS,
 	},
 }

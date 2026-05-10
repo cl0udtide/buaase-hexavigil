@@ -349,7 +349,7 @@ func _apply_style() -> void:
 	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.tab(true))
 	GameUiStyle.apply_frame_margin(get_node_or_null("TextBox/TextMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin") as MarginContainer, GameUiStyle.FRAME_TAB)
-	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_speaker_label.add_theme_font_size_override("font_size", 22)
 	GameUiStyle.center_label_text(_speaker_label)
 	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT_INVERTED)

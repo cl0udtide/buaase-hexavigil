@@ -1959,7 +1959,7 @@ func _create_default_preset() -> Dictionary:
 			"width": SANDBOX_WIDTH,
 			"height": SANDBOX_HEIGHT,
 			"core": [SANDBOX_CORE.x, SANDBOX_CORE.y],
-			"blocked": []
+			"mountain": []
 		},
 		"spawns": [
 			{"key": "S1", "cell": [0, 3]},
@@ -2007,7 +2007,7 @@ func _parse_map_state(raw_map: Variant) -> void:
 	_debug_map_width = max(1, int(map_dict.get("width", SANDBOX_WIDTH)))
 	_debug_map_height = max(1, int(map_dict.get("height", SANDBOX_HEIGHT)))
 	_debug_core_cell = _clamp_cell_to_map(_parse_cell(map_dict.get("core", [SANDBOX_CORE.x, SANDBOX_CORE.y]), SANDBOX_CORE))
-	_debug_blocked_cells = _parse_blocked_cells(map_dict.get("blocked", []))
+	_debug_blocked_cells = _parse_blocked_cells(map_dict.get("mountain", map_dict.get("blocked", [])))
 
 
 func _parse_spawn_defs(raw_spawns: Variant) -> Dictionary:
@@ -2104,12 +2104,12 @@ func _serialize_debug_map_state() -> Dictionary:
 		_debug_map_width = int(map_state.get("width", _debug_map_width))
 		_debug_map_height = int(map_state.get("height", _debug_map_height))
 		_debug_core_cell = _parse_cell(map_state.get("core", [_debug_core_cell.x, _debug_core_cell.y]), _debug_core_cell)
-		_debug_blocked_cells = _parse_blocked_cells(map_state.get("blocked", []))
+		_debug_blocked_cells = _parse_blocked_cells(map_state.get("mountain", map_state.get("blocked", [])))
 	return {
 		"width": _debug_map_width,
 		"height": _debug_map_height,
 		"core": [_debug_core_cell.x, _debug_core_cell.y],
-		"blocked": _serialize_blocked_cells()
+		"mountain": _serialize_blocked_cells()
 	}
 
 
@@ -2127,7 +2127,7 @@ func _sync_debug_map_state_from_manager() -> void:
 	_debug_map_width = int(map_state.get("width", _debug_map_width))
 	_debug_map_height = int(map_state.get("height", _debug_map_height))
 	_debug_core_cell = _parse_cell(map_state.get("core", [_debug_core_cell.x, _debug_core_cell.y]), _debug_core_cell)
-	_debug_blocked_cells = _parse_blocked_cells(map_state.get("blocked", []))
+	_debug_blocked_cells = _parse_blocked_cells(map_state.get("mountain", map_state.get("blocked", [])))
 	var was_refreshing := _refreshing_editor_ui
 	_refreshing_editor_ui = true
 	_refresh_debug_map_controls()

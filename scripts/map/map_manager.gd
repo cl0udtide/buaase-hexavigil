@@ -44,8 +44,7 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 			var data := CellData.new()
 			data.cell = Vector2i(x, y)
 			data.discovered = true
-			data.buildable = true
-			data.walkable = true
+			data.set_base_terrain(CellData.TERRAIN_PLAIN)
 			_cells[data.cell] = data
 	_core_cell = Vector2i(clamp(core_cell.x, 0, width - 1), clamp(core_cell.y, 0, height - 1))
 	if _cells.has(_core_cell):
@@ -74,8 +73,7 @@ func upsert_debug_spawn(spawn_key: StringName, cell: Vector2i) -> bool:
 	if target_data.spawn_key != StringName() and target_data.spawn_key != spawn_key:
 		return false
 	_clear_debug_spawn(spawn_key)
-	target_data.terrain = &"plain"
-	target_data.walkable = true
+	target_data.set_base_terrain(CellData.TERRAIN_PLAIN)
 	target_data.spawn_key = spawn_key
 	target_data.buildable = false
 	if not _spawn_cells.has(cell):
@@ -113,13 +111,9 @@ func set_debug_cell_blocked(cell: Vector2i, blocked: bool) -> bool:
 	if data.occupied or data.unit_runtime_id >= 0 or data.building_runtime_id >= 0:
 		return false
 	if blocked:
-		data.terrain = &"blocked"
-		data.walkable = false
-		data.buildable = false
+		data.set_base_terrain(CellData.TERRAIN_MOUNTAIN)
 	else:
-		data.terrain = &"plain"
-		data.walkable = true
-		data.buildable = true
+		data.set_base_terrain(CellData.TERRAIN_PLAIN)
 	refresh_all_layers()
 	_emit_path_grid_changed()
 	return true
@@ -129,10 +123,9 @@ func clear_debug_blocked_cells() -> void:
 	for raw_cell in _cells.keys():
 		var cell: Vector2i = raw_cell
 		var data := get_cell_data(cell)
-		if data == null or data.terrain != &"blocked":
+		if data == null or data.terrain != CellData.TERRAIN_MOUNTAIN:
 			continue
-		data.terrain = &"plain"
-		data.walkable = true
+		data.set_base_terrain(CellData.TERRAIN_PLAIN)
 		data.buildable = not data.is_core and data.spawn_key == StringName()
 	refresh_all_layers()
 	_emit_path_grid_changed()
@@ -151,9 +144,8 @@ func set_debug_core(cell: Vector2i) -> bool:
 	var old_core := get_cell_data(_core_cell)
 	if old_core != null:
 		old_core.is_core = false
-		old_core.buildable = old_core.spawn_key == StringName() and old_core.terrain != &"blocked"
-	target.terrain = &"plain"
-	target.walkable = true
+		old_core.buildable = old_core.spawn_key == StringName() and not old_core.is_terrain_blocking()
+	target.set_base_terrain(CellData.TERRAIN_PLAIN)
 	target.is_core = true
 	target.buildable = false
 	_core_cell = cell
@@ -163,7 +155,7 @@ func set_debug_core(cell: Vector2i) -> bool:
 
 
 func get_debug_map_state() -> Dictionary:
-	var blocked_cells: Array = []
+	var mountain_cells: Array = []
 	for raw_cell in _cells.keys():
 		var cell: Vector2i = raw_cell
 		var data := get_cell_data(cell)
@@ -171,9 +163,9 @@ func get_debug_map_state() -> Dictionary:
 			continue
 		if data.is_core or data.spawn_key != StringName():
 			continue
-		if data.terrain == &"blocked":
-			blocked_cells.append([cell.x, cell.y])
-	blocked_cells.sort_custom(func(a: Array, b: Array) -> bool:
+		if data.terrain == CellData.TERRAIN_MOUNTAIN:
+			mountain_cells.append([cell.x, cell.y])
+	mountain_cells.sort_custom(func(a: Array, b: Array) -> bool:
 		if int(a[1]) == int(b[1]):
 			return int(a[0]) < int(b[0])
 		return int(a[1]) < int(b[1])
@@ -182,7 +174,7 @@ func get_debug_map_state() -> Dictionary:
 		"width": width,
 		"height": height,
 		"core": [_core_cell.x, _core_cell.y],
-		"blocked": blocked_cells,
+		"mountain": mountain_cells,
 	}
 
 
@@ -196,7 +188,7 @@ func apply_debug_map_state(map_state: Dictionary, spawn_defs: Dictionary = {}) -
 	var raw_core: Variant = map_state.get("core", [_core_cell.x, _core_cell.y])
 	var core_cell := _parse_debug_cell(raw_core, _core_cell)
 	var blocked_cells: Array = []
-	var raw_blocked: Variant = map_state.get("blocked", [])
+	var raw_blocked: Variant = map_state.get("mountain", map_state.get("blocked", []))
 	if typeof(raw_blocked) == TYPE_ARRAY:
 		blocked_cells = raw_blocked
 	generate_debug_map(new_width, new_height, core_cell, spawn_defs, blocked_cells)
@@ -407,7 +399,7 @@ func _apply_debug_spawns(spawn_defs: Dictionary) -> void:
 		var old_data := get_cell_data(cell)
 		if old_data != null:
 			old_data.spawn_key = StringName()
-			old_data.buildable = not old_data.is_core
+			old_data.buildable = not old_data.is_core and not old_data.is_terrain_blocking()
 	_spawn_cells.clear()
 	for raw_key in spawn_defs.keys():
 		var spawn_key := StringName(raw_key)
@@ -417,8 +409,7 @@ func _apply_debug_spawns(spawn_defs: Dictionary) -> void:
 		var spawn_data: CellData = _cells[spawn_cell]
 		if spawn_data.is_core or spawn_data.occupied or spawn_data.unit_runtime_id >= 0 or spawn_data.building_runtime_id >= 0:
 			continue
-		spawn_data.terrain = &"plain"
-		spawn_data.walkable = true
+		spawn_data.set_base_terrain(CellData.TERRAIN_PLAIN)
 		spawn_data.spawn_key = spawn_key
 		spawn_data.buildable = false
 		if not _spawn_cells.has(spawn_cell):
@@ -437,9 +428,7 @@ func _apply_debug_blocked_cells(blocked_cells: Array) -> void:
 			continue
 		if data.occupied or data.unit_runtime_id >= 0 or data.building_runtime_id >= 0:
 			continue
-		data.terrain = &"blocked"
-		data.walkable = false
-		data.buildable = false
+		data.set_base_terrain(CellData.TERRAIN_MOUNTAIN)
 
 
 func _parse_debug_cell(raw_cell: Variant, fallback: Vector2i) -> Vector2i:
@@ -467,7 +456,7 @@ func _clear_debug_spawn(spawn_key: StringName) -> bool:
 		var data := get_cell_data(cell)
 		if data != null and data.spawn_key == spawn_key:
 			data.spawn_key = StringName()
-			data.buildable = not data.is_core and data.terrain != &"blocked"
+			data.buildable = not data.is_core and not data.is_terrain_blocking()
 			_spawn_cells.erase(cell)
 			return true
 	return false
