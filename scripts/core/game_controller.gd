@@ -2,6 +2,13 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+const STARTER_UNIT_IDS: Array[StringName] = [
+	&"guard_t1",
+	&"caster_t1",
+	&"sniper_t1",
+	&"defender_t1"
+]
+
 
 @onready var _day_manager: Node = get_node_or_null("../DayManager")
 @onready var _night_manager: Node = get_node_or_null("../NightManager")
@@ -33,9 +40,17 @@ func start_new_run(seed: int = -1) -> void:
 		return
 	if run_state != null:
 		run_state.reset_for_new_run(actual_seed)
+		_grant_starter_units(run_state)
 	if _map_manager != null and _map_manager.has_method("generate_new_map"):
 		_map_manager.generate_new_map(actual_seed)
 	enter_day(1)
+
+
+func _grant_starter_units(run_state: Node) -> void:
+	if run_state == null or not run_state.has_method("add_owned_operator"):
+		return
+	for unit_id in STARTER_UNIT_IDS:
+		run_state.add_owned_operator(unit_id)
 
 
 func enter_day(day: int) -> void:

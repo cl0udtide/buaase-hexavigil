@@ -15,11 +15,18 @@ const MOVE_TYPE_GROUND: StringName = &"ground"
 const MOVE_TYPE_FLYING: StringName = &"flying"
 const VISUAL_TEXTURE_ROOT := "res://assets/sprites/units"
 const VISUAL_IDLE_ANIM := "idle"
+const VISUAL_ATTACK_ANIM := "attack"
+const VISUAL_IDLE_FPS := 8.0
+const VISUAL_ATTACK_FPS := 12.0
+const VISUAL_MAX_FRAMES := 256
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 72.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
+const NAME_LABEL_POSITION := Vector2(-32.0, -88.0)
+const NAME_LABEL_SIZE := Vector2(64.0, 23.0)
+const STATUS_BAR_OFFSET := Vector2(-23.0, -58.0)
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -76,6 +83,7 @@ var _blocked_enemy_ids: Array[int] = []
 var _current_target_runtime_id := -1
 var _is_dead := false
 var _damage_reduction_effects: Dictionary = {}
+var _visual_sprite: AnimatedSprite2D
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _skill_behavior: Node = get_node_or_null("%SkillBehavior")
@@ -138,11 +146,13 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	if label != null:
 		label.theme = AppTheme.get_theme()
 		label.text = _debug_name()
-		label.position = Vector2(-32.0, -64.0)
-		label.size = Vector2(64.0, 23.0)
+		label.position = NAME_LABEL_POSITION
+		label.size = NAME_LABEL_SIZE
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.z_index = OVERLAY_Z_INDEX
+	if _status_view != null and _status_view.has_method("set"):
+		_status_view.set("hp_bar_offset", STATUS_BAR_OFFSET)
 	if _status_view is CanvasItem:
 		(_status_view as CanvasItem).z_index = OVERLAY_Z_INDEX
 	_setup_visual_sprite()
@@ -468,19 +478,17 @@ func _configure_skill_behavior() -> void:
 
 
 func _setup_visual_sprite() -> void:
-	var textures := _load_visual_textures()
-	if textures.is_empty():
+	var idle_textures := _load_visual_textures(VISUAL_IDLE_ANIM)
+	if idle_textures.is_empty():
 		return
 	if _visual_root == null:
 		_visual_root = Node2D.new()
 		_visual_root.name = "VisualRoot"
 		_visual_root.unique_name_in_owner = true
 		add_child(_visual_root)
+	_visual_root.z_index = VISUAL_Z_INDEX
 	_clear_visual_nodes()
-	if textures.size() > 1:
-		_setup_animated_idle_sprite(textures)
-	else:
-		_setup_static_idle_sprite(textures[0])
+	_setup_animated_visual_sprite(idle_textures, _load_visual_textures(VISUAL_ATTACK_ANIM))
 
 
 func _setup_static_idle_sprite(texture: Texture2D) -> void:
@@ -491,11 +499,12 @@ func _setup_static_idle_sprite(texture: Texture2D) -> void:
 	sprite.centered = true
 	sprite.position = VISUAL_OFFSET
 	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
-	sprite.flip_h = _should_visual_face_left(facing)
+	sprite.flip_h = false
 	sprite.z_index = VISUAL_Z_INDEX
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 
-func _setup_animated_idle_sprite(textures: Array[Texture2D]) -> void:
+func _setup_animated_visual_sprite(idle_textures: Array[Texture2D], attack_textures: Array[Texture2D]) -> void:
 	var sprite := AnimatedSprite2D.new()
 	sprite.name = "IdleSprite"
 	_visual_root.add_child(sprite)
@@ -503,50 +512,98 @@ func _setup_animated_idle_sprite(textures: Array[Texture2D]) -> void:
 	frames.add_animation(VISUAL_IDLE_ANIM)
 	frames.set_animation_speed(VISUAL_IDLE_ANIM, VISUAL_IDLE_FPS)
 	frames.set_animation_loop(VISUAL_IDLE_ANIM, true)
-	for texture in textures:
+	for texture in idle_textures:
 		frames.add_frame(VISUAL_IDLE_ANIM, texture)
+	if not attack_textures.is_empty():
+		frames.add_animation(VISUAL_ATTACK_ANIM)
+		frames.set_animation_speed(VISUAL_ATTACK_ANIM, VISUAL_ATTACK_FPS)
+		frames.set_animation_loop(VISUAL_ATTACK_ANIM, false)
+		for texture in attack_textures:
+			frames.add_frame(VISUAL_ATTACK_ANIM, texture)
 	sprite.sprite_frames = frames
 	sprite.animation = VISUAL_IDLE_ANIM
 	sprite.centered = true
+	sprite.flip_h = false
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var finished_callable := Callable(self, "_on_visual_animation_finished")
+	if not sprite.animation_finished.is_connected(finished_callable):
+		sprite.animation_finished.connect(finished_callable)
 	_apply_visual_node_layout(sprite)
+	_visual_sprite = sprite
 	sprite.play(VISUAL_IDLE_ANIM)
 
 
 func _apply_visual_node_layout(node: Node2D) -> void:
 	node.position = Vector2(0.0, -20.0)
 	node.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
-	node.z_index = -10
+	node.z_index = VISUAL_Z_INDEX
 
 
 func _clear_visual_nodes() -> void:
 	if _visual_root == null:
 		return
+	_visual_sprite = null
 	for child in _visual_root.get_children():
 		child.queue_free()
 
 
-func _load_visual_textures() -> Array[Texture2D]:
+func _load_visual_textures(action_name: String) -> Array[Texture2D]:
 	var visual_key := String(cfg.get("visual_key", unit_id)).strip_edges()
 	if visual_key.is_empty():
 		visual_key = String(unit_id)
 	var textures: Array[Texture2D] = []
-	for index in range(256):
-		var path := "%s/%s/%s/%s_%s_%03d.png" % [
-			VISUAL_TEXTURE_ROOT,
-			visual_key,
-			VISUAL_IDLE_ANIM,
-			visual_key,
-			VISUAL_IDLE_ANIM,
-			index
-		]
-		if not ResourceLoader.exists(path):
-			if index == 0:
-				return textures
-			break
+	for path in _find_visual_frame_paths(visual_key, action_name):
 		var texture := load(path) as Texture2D
 		if texture != null:
 			textures.append(texture)
 	return textures
+
+
+func _find_visual_frame_paths(visual_key: String, action_name: String) -> Array[String]:
+	var folder_path := "%s/%s/%s" % [VISUAL_TEXTURE_ROOT, visual_key, action_name]
+	var strict_paths: Array[String] = []
+	for index in range(VISUAL_MAX_FRAMES):
+		var path := "%s/%s_%s_%03d.png" % [folder_path, visual_key, action_name, index]
+		if not ResourceLoader.exists(path):
+			break
+		strict_paths.append(path)
+	if not strict_paths.is_empty():
+		return strict_paths
+
+	var dir := DirAccess.open(folder_path)
+	if dir == null:
+		return []
+	var loose_action_token := "_%s_" % action_name
+	var action_files: Array[String] = []
+	var all_files: Array[String] = []
+	for file_name in dir.get_files():
+		if file_name.ends_with(".import") or not file_name.ends_with(".png"):
+			continue
+		all_files.append(file_name)
+		if file_name.find(loose_action_token) >= 0:
+			action_files.append(file_name)
+	var selected_files := action_files if not action_files.is_empty() else all_files
+	selected_files.sort()
+	var paths: Array[String] = []
+	for file_name in selected_files:
+		paths.append("%s/%s" % [folder_path, file_name])
+	return paths
+
+
+func _play_attack_visual() -> void:
+	if _visual_sprite == null:
+		return
+	if _visual_sprite.sprite_frames == null or not _visual_sprite.sprite_frames.has_animation(VISUAL_ATTACK_ANIM):
+		return
+	_visual_sprite.frame = 0
+	_visual_sprite.play(VISUAL_ATTACK_ANIM)
+
+
+func _on_visual_animation_finished() -> void:
+	if _visual_sprite == null:
+		return
+	if _visual_sprite.animation == VISUAL_ATTACK_ANIM:
+		_visual_sprite.play(VISUAL_IDLE_ANIM)
 
 
 func _should_visual_face_left(direction: Vector2i) -> bool:
@@ -647,6 +704,7 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	_current_target_runtime_id = target.get_runtime_id()
+	_play_attack_visual()
 	var damage_value := get_effective_atk()
 	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)

@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/unit_sprite_preview.gd" id="1_preview"]
+
+[node name="UnitSpritePreview" type="Node2D"]
+script = ExtResource("1_preview")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2026051004]
+unique_name_in_owner = true
+enabled = true
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -512.0
+offset_top = -320.0
+offset_right = 512.0
+offset_bottom = 320.0
+color = Color(0.055, 0.06, 0.07, 1)
+
+[node name="Grid" type="Node2D" parent="."]
+
+[node name="TileBack" type="ColorRect" parent="Grid"]
+offset_left = -96.0
+offset_top = -48.0
+offset_right = 96.0
+offset_bottom = 48.0
+color = Color(0.16, 0.18, 0.19, 1)
+
+[node name="TileFront" type="ColorRect" parent="Grid"]
+offset_left = -64.0
+offset_top = -32.0
+offset_right = 64.0
+offset_bottom = 32.0
+color = Color(0.24, 0.25, 0.24, 1)
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=2026051001]
+unique_name_in_owner = true
+position = Vector2(0, -44)
+
+[node name="InfoLabel" type="Label" parent="." unique_id=2026051002]
+unique_name_in_owner = true
+offset_left = -480.0
+offset_top = -292.0
+offset_right = 480.0
+offset_bottom = -220.0
+theme_override_font_sizes/font_size = 18
+text = "loading"
+
+[node name="HintLabel" type="Label" parent="." unique_id=2026051003]
+unique_name_in_owner = true
+offset_left = -480.0
+offset_top = 250.0
+offset_right = 480.0
+offset_bottom = 292.0
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+text = "Space: reload"

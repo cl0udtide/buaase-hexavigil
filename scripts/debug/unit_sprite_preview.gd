@@ -2,7 +2,7 @@ extends Node2D
 
 @export var sprite_root := "res://assets/sprites/units"
 @export var visual_key := "skadi"
-@export var frame_prefix := "guard_t1"
+@export var frame_prefix := "skadi"
 @export var action := "idle"
 @export_range(1.0, 30.0, 0.5) var fps := 8.0
 @export_range(1.0, 8.0, 0.25) var display_scale := 4.0
@@ -10,14 +10,62 @@ extends Node2D
 const ACTIONS := ["idle", "attack", "skill", "deploy", "death"]
 const PRESETS := [
 	{
-		"name": "guard_t1",
-		"visual_key": "skadi",
-		"frame_prefix": "guard_t1",
+		"name": "eunectes",
+		"visual_key": "eunectes",
+		"frame_prefix": "eunectes",
 		"action": "idle"
+	},
+	{
+		"name": "eunectes_attack",
+		"visual_key": "eunectes",
+		"frame_prefix": "eunectes",
+		"action": "attack"
+	},
+	{
+		"name": "ceobe",
+		"visual_key": "ceobe",
+		"frame_prefix": "ceobe",
+		"action": "idle"
+	},
+	{
+		"name": "ceobe_attack",
+		"visual_key": "ceobe",
+		"frame_prefix": "ceobe",
+		"action": "attack"
+	},
+	{
+		"name": "pozyomka",
+		"visual_key": "pozyomka",
+		"frame_prefix": "pozyomka",
+		"action": "idle"
+	},
+	{
+		"name": "pozyomka_attack",
+		"visual_key": "pozyomka",
+		"frame_prefix": "pozyomka",
+		"action": "attack"
+	},
+	{
+		"name": "skadi",
+		"visual_key": "skadi",
+		"frame_prefix": "skadi",
+		"action": "idle"
+	},
+	{
+		"name": "skadi_attack",
+		"visual_key": "skadi",
+		"frame_prefix": "skadi",
+		"action": "attack"
 	},
 	{
 		"name": "sniper_t2",
 		"visual_key": "sniper_t2",
+		"frame_prefix": "sniper_t2",
+		"action": "idle"
+	},
+	{
+		"name": "sniper_t2_clean",
+		"visual_key": "sniper_t2_clean",
 		"frame_prefix": "sniper_t2",
 		"action": "idle"
 	}
@@ -77,7 +125,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _find_current_preset_index() -> int:
 	for index in range(PRESETS.size()):
 		var preset: Dictionary = PRESETS[index]
-		if String(preset.get("visual_key", "")) == visual_key and String(preset.get("frame_prefix", "")) == frame_prefix:
+		if (
+			String(preset.get("visual_key", "")) == visual_key
+			and String(preset.get("frame_prefix", "")) == frame_prefix
+			and String(preset.get("action", "")) == action
+		):
 			return index
 	return 0
 
@@ -123,18 +175,23 @@ func _load_sequence_textures() -> Array[Texture2D]:
 	var exact_prefix := "%s_%s_" % [frame_prefix, action]
 	var loose_action_token := "_%s_" % action
 	var file_names: Array[String] = []
+	var all_png_file_names: Array[String] = []
 	for file_name in dir.get_files():
 		if file_name.ends_with(".import"):
 			continue
 		if not file_name.ends_with(".png"):
 			continue
+		all_png_file_names.append(file_name)
 		if file_name.begins_with(exact_prefix):
 			file_names.append(file_name)
 
 	if file_names.is_empty():
-		for file_name in dir.get_files():
-			if file_name.ends_with(".png") and file_name.find(loose_action_token) >= 0:
+		for file_name in all_png_file_names:
+			if file_name.find(loose_action_token) >= 0:
 				file_names.append(file_name)
+
+	if file_names.is_empty():
+		file_names = all_png_file_names
 
 	file_names.sort()
 	for file_name in file_names:

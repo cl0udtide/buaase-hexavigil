@@ -258,17 +258,15 @@ func _draw_deploy_visual_preview(map_manager: Node) -> void:
 		return
 	if cell == _deploy_preview_cell and not _deploy_preview_valid:
 		return
-	var facing := _deploy_preview_facing if _deploy_locked_cell.x >= 0 else Vector2i.RIGHT
-	_draw_unit_preview_texture(map_manager.cell_to_world(cell), facing)
+	_draw_unit_preview_texture(map_manager.cell_to_world(cell))
 
 
-func _draw_unit_preview_texture(center: Vector2, facing: Vector2i) -> void:
+func _draw_unit_preview_texture(center: Vector2) -> void:
 	var texture_size := _deploy_preview_texture.get_size()
 	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
 		return
 	var visual_scale := UNIT_VISUAL_DISPLAY_SIZE / UNIT_VISUAL_TEXTURE_SIZE
-	var scale_x := -visual_scale if _should_visual_face_left(facing) else visual_scale
-	draw_set_transform(center + UNIT_VISUAL_OFFSET, 0.0, Vector2(scale_x, visual_scale))
+	draw_set_transform(center + UNIT_VISUAL_OFFSET, 0.0, Vector2.ONE * visual_scale)
 	draw_texture_rect(_deploy_preview_texture, Rect2(-texture_size * 0.5, texture_size), false, UNIT_PREVIEW_MODULATE)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -285,9 +283,21 @@ func _load_unit_visual_texture(visual_key: String) -> Texture2D:
 	if visual_key.is_empty():
 		return null
 	var path := "%s/%s/%s/%s_%s_000.png" % [UNIT_VISUAL_TEXTURE_ROOT, visual_key, UNIT_VISUAL_IDLE_ANIM, visual_key, UNIT_VISUAL_IDLE_ANIM]
-	if not ResourceLoader.exists(path):
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+	var folder_path := "%s/%s/%s" % [UNIT_VISUAL_TEXTURE_ROOT, visual_key, UNIT_VISUAL_IDLE_ANIM]
+	var dir := DirAccess.open(folder_path)
+	if dir == null:
 		return null
-	return load(path) as Texture2D
+	var file_names: Array[String] = []
+	for file_name in dir.get_files():
+		if file_name.ends_with(".import") or not file_name.ends_with(".png"):
+			continue
+		file_names.append(file_name)
+	if file_names.is_empty():
+		return null
+	file_names.sort()
+	return load("%s/%s" % [folder_path, file_names[0]]) as Texture2D
 
 
 func _should_visual_face_left(direction: Vector2i) -> bool:
