@@ -286,6 +286,7 @@ script = ExtResource("4_0tkwj")
 unique_name_in_owner = true
 visible = false
 anchors_preset = 0
+clip_contents = true
 
 [node name="WavePreviewBase" type="Panel" parent="HudChromeLayer/WavePreviewPanel" unique_id=371660081]
 unique_name_in_owner = true
@@ -305,10 +306,13 @@ grow_vertical = 2
 [node name="WavePreviewContent" type="VBoxContainer" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin" unique_id=1430930927]
 layout_mode = 2
 theme_override_constants/separation = 6
+clip_contents = true
 
 [node name="WavePreviewHeader" type="HBoxContainer" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1459039869]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_constants/separation = 8
+clip_contents = true
 
 [node name="WavePreviewTitleLabel" type="Label" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1742898346]
 unique_name_in_owner = true
@@ -319,14 +323,16 @@ vertical_alignment = 1
 
 [node name="WaveRouteToggle" type="CheckBox" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1668780302]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 28)
+custom_minimum_size = Vector2(64, 26)
 layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
 focus_mode = 0
 text = "路线"
 
 [node name="WavePreviewLabel" type="Label" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1472852463]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 108)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

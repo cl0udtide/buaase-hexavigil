@@ -17,9 +17,10 @@ signal wave_route_preview_toggled(enabled: bool)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"wood", &"stone", &"mana", &"prestige"]
-const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 108.0
+const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 62.0
 const WAVE_PREVIEW_LINE_HEIGHT := 19.0
 const WAVE_PREVIEW_PANEL_BOTTOM_PADDING := 34.0
+const WAVE_PREVIEW_HEADER_TEXT_PADDING := 42.0
 const UNIT_DETAIL_GAP := 12.0
 
 var _cards_by_operator_key: Dictionary = {}
@@ -93,8 +94,18 @@ func _ready() -> void:
 	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 0)
 	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 0)
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	_wave_route_toggle.custom_minimum_size = Vector2(68.0, 30.0)
+	_wave_route_toggle.custom_minimum_size = Vector2(64.0, 26.0)
+	_wave_route_toggle.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_wave_route_toggle.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_style_button(_wave_route_toggle, GameUiStyle.STROKE_SOFT)
+	var wave_header := get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader") as HBoxContainer
+	if wave_header != null:
+		wave_header.custom_minimum_size.y = 28.0
+		wave_header.clip_contents = true
+	var wave_content := get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent") as Control
+	if wave_content != null:
+		wave_content.clip_contents = true
+	_wave_preview_panel.clip_contents = true
 	_deploy_rail_base.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
 	_legend_base.add_theme_stylebox_override("panel", GameUiStyle.legend_panel())
 	_style_legend_panel()
@@ -631,6 +642,7 @@ func _place_wave_preview_and_detail() -> void:
 		var min_detail_height := 250.0 if bool(_layout_profile.get("narrow", false)) else 280.0
 		if right_rect.size.y - wave_height - UNIT_DETAIL_GAP < min_detail_height:
 			wave_height = maxf(UiTokens.WAVE_PREVIEW_MIN_HEIGHT, right_rect.size.y - min_detail_height - UNIT_DETAIL_GAP)
+		_wave_preview_label.custom_minimum_size.y = maxf(42.0, wave_height - WAVE_PREVIEW_HEADER_TEXT_PADDING)
 		_place_control(_wave_preview_panel, Rect2(right_rect.position, Vector2(right_rect.size.x, wave_height)))
 		var detail_bottom := right_rect.end.y
 		detail_rect.position.y += wave_height + UNIT_DETAIL_GAP
