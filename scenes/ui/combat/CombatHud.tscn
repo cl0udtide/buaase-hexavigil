@@ -70,29 +70,29 @@ mouse_filter = 2
 [node name="SettingsButtonSlot" type="Control" parent="HudChromeLayer" unique_id=275257616]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 14.0
-offset_top = 26.0
-offset_right = 58.0
-offset_bottom = 70.0
+offset_left = 0.0
+offset_top = 13.0
+offset_right = 72.0
+offset_bottom = 85.0
 mouse_filter = 2
 
 [node name="SettingsButton" type="Button" parent="HudChromeLayer/SettingsButtonSlot" unique_id=464889424]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(72, 72)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -22.0
-offset_top = -22.0
-offset_right = 22.0
-offset_bottom = 22.0
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 0
-theme_override_constants/icon_max_width = 14
+theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = ExtResource("16_settingsbutton")
 theme_override_styles/pressed = ExtResource("22_buttonactive")
 theme_override_styles/hover = ExtResource("22_buttonactive")
@@ -396,9 +396,9 @@ layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 8.0
-offset_top = 13.0
+offset_top = 0.0
 offset_right = -8.0
-offset_bottom = -13.0
+offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -424,9 +424,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 13
+theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 13
+theme_override_constants/margin_bottom = 0
 
 [node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
@@ -435,7 +435,7 @@ alignment = 1
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 46)
+custom_minimum_size = Vector2(56, 72)
 layout_mode = 2
 focus_mode = 0
 theme_override_constants/icon_max_width = 16
@@ -450,7 +450,7 @@ expand_icon = true
 
 [node name="Speed1Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 46)
+custom_minimum_size = Vector2(68, 72)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
@@ -462,7 +462,7 @@ flat = true
 
 [node name="Speed2Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 46)
+custom_minimum_size = Vector2(68, 72)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
