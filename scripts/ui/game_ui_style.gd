@@ -123,7 +123,7 @@ static func center_label_text(label: Label) -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
-static func set_button_texture_icon(button: Button, texture: Texture2D, icon_size: Vector2, placement: StringName = &"left", padding: float = 8.0) -> TextureRect:
+static func set_button_texture_icon(button: Button, texture: Texture2D, placement: StringName = &"left", padding: float = 8.0) -> TextureRect:
 	if button == null:
 		return null
 	var fitted_icon := button.get_node_or_null("FittedIcon") as TextureRect
@@ -138,12 +138,10 @@ static func set_button_texture_icon(button: Button, texture: Texture2D, icon_siz
 			button.add_child(fitted_icon)
 		fitted_icon.texture = texture
 		fitted_icon.visible = texture != null
-		fit_centered_icon(fitted_icon, icon_size)
 		return fitted_icon
 	if fitted_icon != null:
 		fitted_icon.visible = false
 	button.icon = texture
-	button.add_theme_constant_override("icon_max_width", int(maxf(icon_size.x, icon_size.y)))
 	button.add_theme_constant_override("h_separation", int(maxf(4.0, padding * 0.5)))
 	button.set("expand_icon", false)
 	button.set("icon_alignment", HORIZONTAL_ALIGNMENT_CENTER if placement == &"center" else HORIZONTAL_ALIGNMENT_LEFT)

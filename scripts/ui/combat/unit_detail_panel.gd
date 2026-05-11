@@ -395,9 +395,9 @@ func _skill_icon_texture_from_cfg(cfg: Dictionary) -> Texture2D:
 
 
 func _refresh_action_icons() -> void:
-	GameUiStyle.set_button_texture_icon(_cast_button, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"), Vector2(16.0, 16.0), &"left", 8.0)
-	GameUiStyle.set_button_texture_icon(_retreat_button, UiArtRegistry.get_catalog_icon(&"combat_retreat"), Vector2(16.0, 16.0), &"left", 8.0)
-	GameUiStyle.set_button_texture_icon(_purchase_button, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"), Vector2(16.0, 16.0), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(_cast_button, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(_retreat_button, UiArtRegistry.get_catalog_icon(&"combat_retreat"), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(_purchase_button, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"), &"left", 8.0)
 
 
 func _ensure_stat_icon_rows() -> void:

@@ -193,7 +193,7 @@ func _style_action_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
 	var accent := GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT
 	var normal_style := GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD, accent)
-	GameUiStyle.set_button_texture_icon(button, _icon_for_action_button(button), Vector2(16.0, 16.0), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(button, _icon_for_action_button(button), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", normal_style)
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.26))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))

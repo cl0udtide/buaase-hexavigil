@@ -187,7 +187,7 @@ func _style_labels() -> void:
 func _style_filter_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
 	var normal_component := UiFrameSpec.RELIC_FILTER_SELECTED if selected else UiFrameSpec.RELIC_FILTER_TAB
-	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(StringName("filter_%s" % String(button.get_meta("category", &"all")))), Vector2(14.0, 14.0), &"left", 7.0)
+	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(StringName("filter_%s" % String(button.get_meta("category", &"all")))), &"left", 7.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(normal_component, GameUiStyle.BG_CARD, GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT))
 	button.add_theme_stylebox_override("hover", GameUiStyle.frame_box(UiFrameSpec.RELIC_FILTER_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.frame_box(UiFrameSpec.RELIC_FILTER_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
@@ -197,7 +197,7 @@ func _style_filter_button(button: Button, selected: bool) -> void:
 
 func _style_close_button() -> void:
 	_close_button.set_custom_minimum_size(Vector2(34.0, 30.0))
-	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(14.0, 14.0), &"center")
+	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), &"center")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))

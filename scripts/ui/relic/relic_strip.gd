@@ -60,7 +60,7 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 
 func _refresh() -> void:
 	_entry_button.text = "遗物 %d" % _relic_ids.size()
-	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_catalog_icon(&"relic_bag"), Vector2(16.0, 16.0), &"left", 7.0)
+	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_catalog_icon(&"relic_bag"), &"left", 7.0)
 	_entry_button.tooltip_text = "点击或按 R 查看全部遗物"
 	for child in _icon_row.get_children():
 		child.queue_free()

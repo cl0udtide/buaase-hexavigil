@@ -36,7 +36,7 @@ func _on_pressed() -> void:
 func _apply_visual_style() -> void:
 	tooltip_text = "设置"
 	var gear_texture := UiArtRegistry.get_catalog_icon(&"button_settings")
-	GameUiStyle.set_button_texture_icon(self, gear_texture, Vector2(20.0, 20.0), &"center")
+	GameUiStyle.set_button_texture_icon(self, gear_texture, &"center")
 	var gear_label := get_node_or_null("GearIcon") as Label
 	if gear_label != null:
 		gear_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
