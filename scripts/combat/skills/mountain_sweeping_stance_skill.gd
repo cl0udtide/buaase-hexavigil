@@ -34,7 +34,7 @@ func _on_skill_start() -> void:
 		"local_position": Vector2(0.0, -8.0),
 		"hframes": 6,
 		"frame_count": 6,
-		"fps": 8.0,
+		"fps": 10.0,
 		"duration": 3600.0,
 		"size": Vector2(76.0, 76.0),
 		"loop": true,
