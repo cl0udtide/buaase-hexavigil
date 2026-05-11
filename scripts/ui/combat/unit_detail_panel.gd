@@ -28,13 +28,15 @@ signal purchase_requested(slot_index: int)
 @onready var _skill_icon_label: Label = %SkillIconLabel
 @onready var _skill_title_label: Label = %SkillTitleLabel
 @onready var _skill_status_label: Label = %SkillStatusLabel
+@onready var _skill_clip_area: Control = %SkillClipArea
 @onready var _skill_scroll: ScrollContainer = %SkillScroll
 @onready var _skill_label: Label = %SkillLabel
-@onready var _detail_source_label: Label = %DetailSourceLabel
 @onready var _purchase_button: Button = %PurchaseButton
-@onready var _purchase_reason_label: Label = %PurchaseReasonLabel
+@onready var _purchase_button_icon: TextureRect = %PurchaseButtonIcon
 @onready var _cast_button: Button = %CastSkillButton
+@onready var _cast_button_icon: TextureRect = %CastSkillButtonIcon
 @onready var _retreat_button: Button = %RetreatButton
+@onready var _retreat_button_icon: TextureRect = %RetreatButtonIcon
 
 var _last_skill_scroll_key := ""
 var _hp_ratio := 0.0
@@ -46,7 +48,6 @@ func _ready() -> void:
 	AppTheme.apply(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	GameUiStyle.apply_scroll_style(_skill_scroll)
-	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -70,16 +71,17 @@ func _ready() -> void:
 	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_hp_bar.resized.connect(_refresh_progress_fills)
 	_sp_bar.resized.connect(_refresh_progress_fills)
+	_skill_clip_area.resized.connect(_refresh_skill_text_scroll_size)
+	_skill_scroll.resized.connect(_refresh_skill_text_scroll_size)
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
 	_style_action_button(_retreat_button, GameUiStyle.STROKE_SOFT)
 	_style_action_button(_purchase_button, GameUiStyle.AMBER)
 	_ensure_stat_icon_rows()
-	_detail_source_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	_purchase_reason_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
 	_purchase_button.pressed.connect(_on_purchase_pressed)
 	clear_unit()
+	call_deferred("_refresh_skill_text_scroll_size")
 
 
 func show_unit(unit: Node, display_name: String, _damage_label_text: String, _direction_label_text: String) -> void:
@@ -88,7 +90,7 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 		return
 	visible = true
 	_shop_slot_index = -1
-	_set_action_mode(&"deployed", "已部署单位", false, "")
+	_set_action_mode(&"deployed", false, "")
 	var sp_max := float(unit.cfg.get("sp_max", 0.0))
 	_title_label.text = display_name
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(unit.cfg), _icon_text(unit.cfg, "◆"))
@@ -122,6 +124,8 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	if not status_lines.is_empty():
 		_skill_status_label.text = " / ".join(status_lines)
 	_skill_label.text = unit.get_skill_description()
+	_refresh_skill_text_scroll_size()
+	call_deferred("_refresh_skill_text_scroll_size")
 	var skill_scroll_key := "%d:%s:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state, ammo_text]
 	if skill_scroll_key != _last_skill_scroll_key:
 		_skill_scroll.scroll_vertical = 0
@@ -140,24 +144,21 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
 	_shop_slot_index = -1
 	var display_name := String(operator_info.get("name", unit_cfg.get("name", operator_info.get("unit_id", ""))))
-	var source_text := "待部署干员"
-	if state == &"cooldown":
-		source_text = "再部署冷却"
-	if not status_text.strip_edges().is_empty():
-		source_text = "%s  %s" % [source_text, status_text]
-	_show_cfg_preview(display_name, unit_cfg, "#--", source_text, "Preview")
-	_set_action_mode(&"preview", source_text, false, "")
+	var skill_status_text := status_text.strip_edges()
+	if skill_status_text.is_empty():
+		skill_status_text = "冷却" if state == &"cooldown" else "Preview"
+	_show_cfg_preview(display_name, unit_cfg, "#--", skill_status_text)
+	_set_action_mode(&"preview", false, "")
 
 
 func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
 	var display_name := UiDisplayText.config_name(unit_cfg, unit_id)
-	var source_text := "招募商店  槽位 %d  价格 %d 声望" % [slot_index + 1, price]
-	_show_cfg_preview(display_name, unit_cfg, "#%d" % (slot_index + 1), source_text, "Available" if can_purchase else "Locked")
+	_show_cfg_preview(display_name, unit_cfg, "#%d" % (slot_index + 1), "Available" if can_purchase else "Locked")
 	_shop_slot_index = slot_index
 	var reason := disabled_reason
 	if can_purchase:
 		reason = ""
-	_set_action_mode(&"shop", source_text, can_purchase, reason, price)
+	_set_action_mode(&"shop", can_purchase, reason, price)
 
 
 func clear_unit() -> void:
@@ -187,11 +188,13 @@ func clear_unit() -> void:
 	_cast_button.text = "激活技能"
 	_cast_button.disabled = true
 	_retreat_button.disabled = true
-	_set_action_mode(&"empty", "选择单位、干员或商店商品", false, "")
+	_refresh_skill_text_scroll_size()
+	call_deferred("_refresh_skill_text_scroll_size")
+	_set_action_mode(&"empty", false, "")
 	_refresh_action_icons()
 
 
-func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, source_text: String, skill_status_text: String = "Preview") -> void:
+func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, skill_status_text: String = "Preview") -> void:
 	visible = true
 	_last_skill_scroll_key = ""
 	_title_label.text = display_name
@@ -214,19 +217,18 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
 	_skill_status_label.text = skill_status_text
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
+	_refresh_skill_text_scroll_size()
+	call_deferred("_refresh_skill_text_scroll_size")
 	_skill_scroll.scroll_vertical = 0
 	_refresh_action_icons()
 
 
-func _set_action_mode(mode: StringName, source_text: String, can_purchase: bool, reason: String, price: int = 0) -> void:
-	_detail_source_label.text = source_text
-	_detail_source_label.visible = not source_text.strip_edges().is_empty()
+func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, price: int = 0) -> void:
 	var is_shop := mode == &"shop"
 	var is_deployed := mode == &"deployed"
 	_purchase_button.visible = is_shop
-	_purchase_reason_label.visible = is_shop and not reason.strip_edges().is_empty()
-	_purchase_reason_label.text = reason
 	_purchase_button.disabled = not can_purchase
+	_purchase_button.tooltip_text = reason if is_shop and not reason.strip_edges().is_empty() else ""
 	_purchase_button.text = "购买 %d 声望" % price if is_shop and price > 0 else "购买"
 	_cast_button.visible = is_deployed or mode == &"empty"
 	_retreat_button.visible = is_deployed or mode == &"empty"
@@ -239,6 +241,21 @@ func _set_action_mode(mode: StringName, source_text: String, can_purchase: bool,
 func _on_purchase_pressed() -> void:
 	if _shop_slot_index >= 0:
 		purchase_requested.emit(_shop_slot_index)
+
+
+func _refresh_skill_text_scroll_size() -> void:
+	if _skill_scroll == null or _skill_label == null:
+		return
+	var text_width := _skill_scroll.size.x
+	if text_width <= 1.0 and _skill_clip_area != null:
+		text_width = _skill_clip_area.size.x
+	if text_width <= 1.0 and _skill_scroll.get_parent() is Control:
+		text_width = (_skill_scroll.get_parent() as Control).size.x
+	if text_width <= 1.0:
+		text_width = 1.0
+	_skill_label.custom_minimum_size = Vector2(text_width, 0.0)
+	var label_height := maxf(1.0, _skill_label.get_combined_minimum_size().y)
+	_skill_label.custom_minimum_size = Vector2(text_width, label_height)
 
 
 func _set_progress(bar: Control, fill: Control, value: float, max_value: float) -> void:
@@ -271,6 +288,7 @@ func _update_fill(bar: Control, fill: Control, ratio: float) -> void:
 
 func _style_action_button(button: Button, _accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
+	button.icon = null
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -281,9 +299,25 @@ func _skill_icon_texture_from_cfg(cfg: Dictionary) -> Texture2D:
 
 
 func _refresh_action_icons() -> void:
-	GameUiStyle.set_button_texture_icon(_cast_button, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"), &"left", 8.0)
-	GameUiStyle.set_button_texture_icon(_retreat_button, UiArtRegistry.get_catalog_icon(&"combat_retreat"), &"left", 8.0)
-	GameUiStyle.set_button_texture_icon(_purchase_button, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"), &"left", 8.0)
+	_set_button_icon(_cast_button, _cast_button_icon, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"))
+	_set_button_icon(_retreat_button, _retreat_button_icon, UiArtRegistry.get_catalog_icon(&"combat_retreat"))
+	_set_button_icon(_purchase_button, _purchase_button_icon, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"))
+
+
+func _set_button_icon(button: Button, icon_rect: TextureRect, texture: Texture2D) -> void:
+	var icon_size := GameUiStyle.BUTTON_ICON_MAX_WIDTH
+	if button != null:
+		GameUiStyle.set_button_texture_icon(button, texture, &"left", 8.0)
+		icon_size = button.get_theme_constant("icon_max_width")
+		button.icon = null
+	if icon_rect == null:
+		return
+	var left := icon_rect.offset_left
+	icon_rect.offset_right = left + float(icon_size)
+	icon_rect.offset_top = -float(icon_size) * 0.5
+	icon_rect.offset_bottom = float(icon_size) * 0.5
+	icon_rect.texture = texture
+	icon_rect.visible = texture != null
 
 
 func _ensure_stat_icon_rows() -> void:
