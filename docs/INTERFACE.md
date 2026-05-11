@@ -1396,9 +1396,12 @@ waves.json -> WaveManager -> EnemyManager.spawn_enemy()
 
 作用：
 
-- 白天行动接口
+- 白天行动入口，目前仅承载 `进入黑夜` 按钮与建筑维护按钮（修复 / 拆除 / 开关）。
+- 监听 `map_cell_clicked` 实现「点击未探索且相邻已探索的迷雾格 → 自动 `request_explore`」；监听 `map_cell_hovered` 配合 `MapRoot.set_fog_hover_active()` 给可探索迷雾格做悬停高亮。
+- 旧的「待机 / 探索 / 建造」三态模式已废弃，模式相关 API 保留为兼容空壳，不应在新代码中调用。
 
 ```gdscript
+# 兼容保留，新代码不要使用
 func set_mode_idle() -> void
 func set_mode_explore() -> void
 func set_mode_build(building_id: StringName) -> void
@@ -1409,30 +1412,7 @@ func get_current_building_id() -> StringName
 
 方法规格：
 
-- `set_mode_idle()`
-  输入：无。
-  行为：切换到待机模式。
-  返回：无。
-- `set_mode_explore()`
-  输入：无。
-  行为：切换到探索模式。
-  返回：无。
-- `set_mode_build(building_id)`
-  输入：建筑 ID。
-  行为：切换到建造模式并记录当前建筑。
-  返回：无。
-- `clear_mode()`
-  输入：无。
-  行为：清空当前模式。
-  返回：无。
-- `get_current_mode()`
-  输入：无。
-  行为：读取当前操作模式。
-  返回：`StringName`。
-- `get_current_building_id()`
-  输入：无。
-  行为：读取当前建造模式选择的建筑 ID。
-  返回：`StringName`。
+- 上述 `set_mode_*` / `clear_mode` / `get_current_mode` / `get_current_building_id` 仍保留以避免破坏旧调用方，但内部不再驱动任何 UI 状态——`_current_mode` 恒为 `&"idle"`，建造请求改走拖拽流程（见 `CombatHudController` 与 `BuildPanel`）。
 
 #### `BuildPanel`
 
@@ -1456,7 +1436,9 @@ func refresh_from_state() -> void
   行为：从 `RunState`、`ShopManager` 缓存和 `DataRepo` 统一刷新按钮状态、选择提示和卡片列表。建筑页通过 `DataRepo.get_building_ids_by_type()` 动态读取配置；商店页展示 `shop_stock_changed` 推送的库存。
   返回：无。
 - 建筑卡点击
-  行为：调用兄弟 `ActionPanel.set_mode_build(building_id)` 进入建造模式。
+  行为：仅更新本面板的 `_selected_building_id` 用于卡片高亮；不再进入任何建造模式。
+- 建筑卡拖拽
+  行为：当鼠标按下后位移超过 `BuildListCard.DRAG_START_THRESHOLD` 时，卡片发出 `drag_started`，`BuildPanel` 转发为 `building_card_drag_started(building_id)`；由 `CombatHudController` 接管放置预览与落点提交。
 - 商店卡点击
   行为：发出 `EventBus.request_buy_shop_slot(slot_index)`。
 - 刷新按钮
@@ -1470,6 +1452,7 @@ func refresh_from_state() -> void
 
 ```gdscript
 signal pressed
+signal drag_started
 
 func configure(config: Dictionary) -> void
 ```
@@ -1477,8 +1460,8 @@ func configure(config: Dictionary) -> void
 方法规格：
 
 - `configure(config)`
-  输入：标题、说明、状态、图标文本、强调色、禁用态和最小高度。
-  行为：刷新列表项显示。
+  输入：标题、说明、状态、图标文本、强调色、禁用态、`draggable`、`disabled_reason`（用作 tooltip）、最小高度等。
+  行为：刷新列表项显示；当 `draggable=true` 且非 disabled 时按住卡片后位移超过 `DRAG_START_THRESHOLD` 触发 `drag_started`；释放前未触发拖拽则发出 `pressed`。
 
 #### `UiDisplayText`
 
@@ -1773,7 +1756,7 @@ func hide_panel() -> void
 - 刷新商店：`EventBus.request_refresh_shop.emit()`
 - 选择祝福：`EventBus.blessing_chosen.emit(buff_id)`
 
-地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`、`MapInteractionPopup`、`CombatHudController` 或 `CombatSandbox` 根据当前模式解释为探索、建造、地图对象交互、选中单位或部署流程。
+地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`（未探索的可探索迷雾格自动 `request_explore`）、`MapInteractionPopup`（已探索格弹出资源/事件/建筑交互窗）、`CombatHudController` 或 `CombatSandbox`（战斗中的单位选中与部署流程）各自解释。建造请求改由 `CombatHudController` 监听 `BuildPanel.building_card_drag_started` 启动拖拽，并在释放时通过 `EventBus.request_build.emit(cell, building_id)` 提交。鼠标悬停通过 `EventBus.map_cell_hovered` 通知 `ActionPanel` 触发迷雾可探索高亮；右键 tap（5 px / 300 ms 内）通过 `EventBus.right_click_tapped` 通知 `MapInteractionPopup` 一键关闭浮层。
 
 作战 UI 组件本身仍只发出信号。例如 `CombatHud` 发出干员卡片、暂停、倍速、技能和撤退信号；主场景由 `CombatHudController` 调用 `UnitManager`、`MapRoot` 或修改 `SceneTree.paused`，调试场景由 `CombatSandbox` 做同样转接。
 

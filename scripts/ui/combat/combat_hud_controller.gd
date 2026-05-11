@@ -7,6 +7,7 @@ const DRAG_NONE := &"none"
 const DRAG_CARD := &"drag_card"
 const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
+const DRAG_BUILDING := &"drag_building"
 const INVALID_CELL := Vector2i(-9999, -9999)
 const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
 const ROUTE_LABEL_ALPHABET := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -29,6 +30,7 @@ var _selected_shop_can_purchase := false
 var _selected_shop_disabled_reason := ""
 var _deploy_drag_state: StringName = DRAG_NONE
 var _drag_operator_key := StringName()
+var _drag_building_id := StringName()
 var _locked_deploy_cell := INVALID_CELL
 var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
@@ -152,6 +154,8 @@ func _bind_combat_hud() -> void:
 		_combat_hud.set_wave_route_preview_enabled(_show_wave_routes)
 	if _build_panel != null and _build_panel.has_signal("shop_unit_preview_requested"):
 		_build_panel.connect(&"shop_unit_preview_requested", Callable(self, "_on_shop_unit_preview_requested"))
+	if _build_panel != null and _build_panel.has_signal("building_card_drag_started"):
+		_build_panel.connect(&"building_card_drag_started", Callable(self, "_on_building_card_drag_started"))
 
 
 func _connect_events() -> void:
@@ -311,6 +315,14 @@ func _update_deploy_drag() -> void:
 			_update_locked_deploy_preview(_current_drag_facing)
 			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 				_confirm_locked_deploy()
+		DRAG_BUILDING:
+			_update_drag_ghost_position()
+			_update_building_drag_preview()
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				if _current_drag_cell_valid:
+					_confirm_building_drag()
+				else:
+					_cancel_deploy_flow("")
 
 
 func _update_card_drag_preview() -> void:
@@ -360,14 +372,121 @@ func _confirm_locked_deploy() -> void:
 func _cancel_deploy_flow(message: String = "", warning := false) -> void:
 	_deploy_drag_state = DRAG_NONE
 	_drag_operator_key = StringName()
+	_drag_building_id = StringName()
 	_locked_deploy_cell = INVALID_CELL
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
 	if _combat_hud != null and _combat_hud.has_method("hide_drag_ghost"):
 		_combat_hud.hide_drag_ghost()
 	_clear_deploy_preview()
+	_clear_building_effect_range()
 	if not message.is_empty():
 		_show_message(message, StringName(), warning)
+
+
+func _clear_building_effect_range() -> void:
+	if _map_root != null and _map_root.has_method("clear_building_effect_range"):
+		_map_root.clear_building_effect_range()
+
+
+func get_dragging_building_id() -> StringName:
+	return _drag_building_id if _deploy_drag_state == DRAG_BUILDING else StringName()
+
+
+func _on_building_card_drag_started(building_id: StringName) -> void:
+	if not _is_day_phase():
+		_show_message("当前阶段不能建造")
+		return
+	if building_id == StringName():
+		return
+	_cancel_deploy_flow("")
+	_drag_building_id = building_id
+	_deploy_drag_state = DRAG_BUILDING
+	_current_drag_cell = INVALID_CELL
+	_current_drag_cell_valid = false
+	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
+		_combat_hud.show_drag_ghost(_format_building_drag_text(building_id))
+	_show_message("拖到合法位置释放即建造")
+
+
+func _update_building_drag_preview() -> void:
+	var cell := _get_mouse_cell()
+	_current_drag_cell = cell
+	var validation := _validate_building_drag_cell(_drag_building_id, cell)
+	_current_drag_cell_valid = bool(validation.get("ok", false))
+	var range_cells: Array[Vector2i] = []
+	if _current_drag_cell_valid:
+		range_cells = _get_building_drag_range_cells(_drag_building_id, cell)
+	var empty_range: Array[Vector2i] = []
+	if _map_root != null and _map_root.has_method("set_deploy_preview"):
+		_map_root.set_deploy_preview(cell, _current_drag_cell_valid, empty_range, "")
+	if _map_root != null and _map_root.has_method("set_building_effect_range"):
+		_map_root.set_building_effect_range(range_cells)
+
+
+func _confirm_building_drag() -> void:
+	var cell := _current_drag_cell
+	var building_id := _drag_building_id
+	_cancel_deploy_flow("")
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.request_build.emit(cell, building_id)
+
+
+func _validate_building_drag_cell(building_id: StringName, cell: Vector2i) -> Dictionary:
+	if building_id == StringName():
+		return ActionResult.err(&"NO_BUILDING", "")
+	if _map_manager == null or not _map_manager.is_inside(cell):
+		return ActionResult.err(&"OUT_OF_MAP", "")
+	var validator := BuildValidator.new()
+	validator.map_manager = _map_manager
+	validator.path_service = _path_service
+	return validator.can_place_building(cell, building_id)
+
+
+func _get_building_drag_range_cells(building_id: StringName, center: Vector2i) -> Array[Vector2i]:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return []
+	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
+	if cfg.is_empty() or _map_manager == null:
+		return []
+	var radius := _get_effective_building_radius(cfg)
+	if radius <= 0:
+		return []
+	var trimmed_square: bool = StringName(cfg.get("effect_shape", "")) == &"trimmed_square"
+	var cells: Array[Vector2i] = []
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			if trimmed_square and abs(dx) == radius and abs(dy) == radius:
+				continue
+			var c := Vector2i(center.x + dx, center.y + dy)
+			if _map_manager.is_inside(c):
+				cells.append(c)
+	return cells
+
+
+func _get_effective_building_radius(cfg: Dictionary) -> int:
+	var radius := int(cfg.get("effect_radius", 0))
+	if radius <= 0:
+		return radius
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+		radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", cfg))))
+	return max(radius, 0)
+
+
+func _format_building_drag_text(building_id: StringName) -> String:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return String(building_id)
+	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
+	return UiDisplayText.config_name(cfg, building_id)
+
+
+func _is_day_phase() -> bool:
+	var run_state = AppRefs.run_state()
+	return run_state != null and int(run_state.phase) == GameEnums.PHASE_DAY
 
 
 func _clear_deploy_preview() -> void:
@@ -941,13 +1060,11 @@ func _collect_route_warning_lines(routes: Array[Dictionary]) -> PackedStringArra
 
 
 func _get_blocking_build_preview_cell() -> Vector2i:
-	if _action_panel == null or _map_manager == null or _map_root == null:
+	if _map_manager == null or _map_root == null:
 		return INVALID_CELL
-	if not _action_panel.has_method("get_current_mode") or _action_panel.get_current_mode() != &"build":
+	if _deploy_drag_state != DRAG_BUILDING:
 		return INVALID_CELL
-	if not _action_panel.has_method("get_current_building_id"):
-		return INVALID_CELL
-	var building_id := StringName(_action_panel.get_current_building_id())
+	var building_id := _drag_building_id
 	if building_id == StringName():
 		return INVALID_CELL
 	var data_repo = AppRefs.data_repo()

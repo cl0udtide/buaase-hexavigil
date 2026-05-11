@@ -5,21 +5,29 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
+const EXPLORE_AP_COST := 2
+
 var _current_mode: StringName = &"idle"
 var _current_building_id: StringName = &""
 var _current_phase := GameEnums.PHASE_MENU
 var _selected_building_runtime_id := -1
 
 @onready var _mode_label: Label = %ModeLabel
-@onready var _idle_button: Button = %IdleButton
-@onready var _explore_button: Button = %ExploreButton
 @onready var _start_night_button: Button = %StartNightButton
 @onready var _repair_building_button: Button = %RepairBuildingButton
 @onready var _demolish_building_button: Button = %DemolishBuildingButton
 @onready var _toggle_building_button: Button = %ToggleBuildingButton
 @onready var _building_info_label: Label = %BuildingInfoLabel
-@onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
-@onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
+@onready var _map_root: Node = _resolve_node(["../../World/MapRoot", "../../../../World/MapRoot"])
+@onready var _map_manager: Node = _resolve_node(["../../Managers/MapManager", "../../../../Managers/MapManager"])
+
+
+func _resolve_node(paths: Array) -> Node:
+	for path in paths:
+		var node := get_node_or_null(String(path))
+		if node != null:
+			return node
+	return null
 
 
 func _ready() -> void:
@@ -75,8 +83,6 @@ func get_current_building_id() -> StringName:
 
 
 func _bind_buttons() -> void:
-	_idle_button.pressed.connect(set_mode_idle)
-	_explore_button.pressed.connect(set_mode_explore)
 	_start_night_button.pressed.connect(_on_start_night_pressed)
 	_repair_building_button.pressed.connect(_on_repair_building_pressed)
 	_demolish_building_button.pressed.connect(_on_demolish_building_pressed)
@@ -88,7 +94,10 @@ func _bind_events() -> void:
 	if event_bus == null:
 		return
 	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+	event_bus.map_cell_hovered.connect(_on_map_cell_hovered)
 	event_bus.phase_changed.connect(_on_phase_changed)
+	event_bus.action_points_changed.connect(_on_action_points_changed)
+	event_bus.fog_revealed.connect(_on_fog_revealed)
 	event_bus.building_placed.connect(_on_building_placed)
 	event_bus.building_destroyed.connect(_on_building_changed)
 	event_bus.building_state_changed.connect(_on_building_state_changed)
@@ -103,8 +112,57 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 		return
 	if _current_mode == &"explore":
 		event_bus.request_explore.emit(cell)
-	elif _current_mode == &"build" and _current_building_id != StringName():
+		return
+	if _current_mode == &"build" and _current_building_id != StringName():
 		event_bus.request_build.emit(cell, _current_building_id)
+		return
+	if _can_auto_explore_cell(cell):
+		event_bus.request_explore.emit(cell)
+
+
+func _can_auto_explore_cell(cell: Vector2i) -> bool:
+	if _map_manager == null:
+		return false
+	if not _map_manager.is_inside(cell) or _map_manager.is_discovered(cell):
+		return false
+	if not _map_manager.has_method("has_discovered_neighbor"):
+		return false
+	return bool(_map_manager.has_discovered_neighbor(cell))
+
+
+func _has_enough_ap_to_explore() -> bool:
+	var run_state = AppRefs.run_state()
+	return run_state != null and int(run_state.action_points) >= EXPLORE_AP_COST
+
+
+func _on_map_cell_hovered(cell: Vector2i) -> void:
+	if _map_root == null or not _map_root.has_method("set_fog_hover_active"):
+		return
+	if _current_phase != GameEnums.PHASE_DAY:
+		_map_root.set_fog_hover_active(false)
+		return
+	if _current_mode != &"idle":
+		_map_root.set_fog_hover_active(false)
+		return
+	var active := _can_auto_explore_cell(cell) and _has_enough_ap_to_explore()
+	_map_root.set_fog_hover_active(active)
+
+
+func _refresh_fog_hover_from_cursor() -> void:
+	if _map_root == null or _map_manager == null:
+		return
+	var cell: Vector2i = _map_manager.world_to_cell(_map_root.get_global_mouse_position())
+	if not _map_manager.is_inside(cell):
+		cell = Vector2i(-1, -1)
+	_on_map_cell_hovered(cell)
+
+
+func _on_action_points_changed(_value: int) -> void:
+	_refresh_fog_hover_from_cursor()
+
+
+func _on_fog_revealed(_cells: Array) -> void:
+	_refresh_fog_hover_from_cursor()
 
 
 func _try_toggle_idle_building(cell: Vector2i) -> bool:
@@ -124,8 +182,11 @@ func _on_phase_changed(_old_phase: int, new_phase: int) -> void:
 	if new_phase != GameEnums.PHASE_DAY:
 		_clear_building_range_preview()
 		set_mode_idle()
+		if _map_root != null and _map_root.has_method("set_fog_hover_active"):
+			_map_root.set_fog_hover_active(false)
 	else:
 		_refresh_state()
+		_refresh_fog_hover_from_cursor()
 
 
 func _on_start_night_pressed() -> void:
@@ -139,11 +200,7 @@ func _refresh_state() -> void:
 	_refresh_building_controls()
 	var day_phase := _current_phase == GameEnums.PHASE_DAY
 	visible = day_phase
-	_idle_button.disabled = not day_phase
-	_explore_button.disabled = not day_phase
 	_start_night_button.disabled = not day_phase
-	_style_action_button(_idle_button, _current_mode == &"idle")
-	_style_action_button(_explore_button, _current_mode == &"explore")
 	_style_action_button(_start_night_button, not day_phase)
 
 
@@ -173,7 +230,7 @@ func _apply_visual_style() -> void:
 	if _mode_label != null:
 		_mode_label.visible = false
 		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	for button in [_idle_button, _explore_button, _start_night_button, _repair_building_button, _demolish_building_button, _toggle_building_button]:
+	for button in [_start_night_button, _repair_building_button, _demolish_building_button, _toggle_building_button]:
 		if button != null:
 			button.set_custom_minimum_size(Vector2(74.0, 36.0))
 			GameUiStyle.center_button_text(button)
@@ -207,8 +264,6 @@ func _style_action_button(button: Button, selected: bool) -> void:
 
 
 func _icon_for_action_button(button: Button) -> Texture2D:
-	if button == _explore_button:
-		return UiArtRegistry.get_catalog_icon(&"map_marker")
 	if button == _start_night_button:
 		return UiArtRegistry.get_catalog_icon(&"phase_night")
 	if button == _repair_building_button:
