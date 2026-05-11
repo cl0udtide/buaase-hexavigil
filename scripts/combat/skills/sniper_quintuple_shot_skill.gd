@@ -24,6 +24,7 @@ func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array:
 		facing_vec = facing_vec.normalized()
 	var side_vec: Vector2 = Vector2(-facing_vec.y, facing_vec.x)
 	var origin: Vector2 = owner_position + facing_vec * 18.0
+	_play_volley_tracer(origin, target_position)
 	var spread: float = 7.0
 	var base_speed: float = float(owner_unit.cfg.get("projectile_speed", 520.0))
 	var base_hit_radius: float = float(owner_unit.cfg.get("projectile_hit_radius", 8.0))
@@ -61,3 +62,23 @@ func after_attack(target: Node, damage_value: int) -> void:
 
 func _segment_damage(base_damage: int) -> int:
 	return max(int(round(float(base_damage) * float(owner_unit.cfg.get("skill_hit_multiplier", 0.7)))), 1)
+
+
+func _play_volley_tracer(start_position: Vector2, end_position: Vector2) -> void:
+	if owner_unit == null or not owner_unit.has_method("spawn_world_effect"):
+		return
+	var delta := end_position - start_position
+	if delta.length_squared() <= 0.001:
+		return
+	owner_unit.spawn_world_effect(
+		"res://assets/effects/operators/exusiai_volley_tracer_strip.png",
+		(start_position + end_position) * 0.5,
+		0.28,
+		6,
+		6,
+		20.0,
+		Vector2(max(delta.length(), 96.0), 54.0),
+		delta.angle(),
+		false,
+		25
+	)

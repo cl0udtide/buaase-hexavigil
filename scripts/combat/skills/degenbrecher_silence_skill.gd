@@ -3,6 +3,7 @@ extends "res://scripts/combat/skills/unit_skill_behavior.gd"
 
 var _slash_timer := 0.0
 var _slashes_left := 0
+const CELL_SIZE := 64.0
 
 
 func tick(delta: float) -> void:
@@ -27,6 +28,7 @@ func _do_slash() -> void:
 	var targets: Array = _sort_targets_by_priority(_enemies_in_radius(owner_unit.current_cell, int(owner_unit.cfg.get("skill_radius", 3))))
 	var limit: int = int(owner_unit.cfg.get("skill_target_limit", 5))
 	var damage: int = max(int(round(float(owner_unit.get_effective_atk()) * float(owner_unit.cfg.get("skill_attack_multiplier", 1.55)))), 1)
+	_play_slash_pull_effect(int(owner_unit.cfg.get("skill_radius", 3)))
 	var hit_count := 0
 	for enemy in targets:
 		if hit_count >= limit:
@@ -49,3 +51,18 @@ func _pull_enemy(enemy: Node, tiles: int) -> void:
 	var delta_cell: Vector2i = owner_unit.current_cell - enemy.get_current_cell()
 	var direction: Vector2i = _normalize_direction(delta_cell)
 	enemy.apply_push(direction, tiles)
+
+
+func _play_slash_pull_effect(radius: int) -> void:
+	if not owner_unit.has_method("spawn_one_shot_effect"):
+		return
+	owner_unit.spawn_one_shot_effect({
+		"texture_path": "res://assets/effects/operators/degenbrecher_multi_slash_pull_strip.png",
+		"position": (owner_unit as Node2D).global_position,
+		"hframes": 6,
+		"frame_count": 6,
+		"fps": 18.0,
+		"duration": 0.34,
+		"size": Vector2.ONE * float(radius * 2 + 1) * CELL_SIZE,
+		"z_index": 24
+	})

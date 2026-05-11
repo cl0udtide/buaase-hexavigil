@@ -536,6 +536,16 @@
         "block":  1,
         "attack_interval":  1.6,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -607,6 +617,16 @@
         "block":  1,
         "attack_interval":  1.8,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -681,6 +701,16 @@
         "block":  1,
         "attack_interval":  2.0,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -1483,6 +1513,16 @@
         "block":  0,
         "attack_interval":  1.6,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -1586,6 +1626,16 @@
         "block":  0,
         "attack_interval":  1.45,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -1635,15 +1685,14 @@
         "sp_recover_per_sec":  1.0,
         "skill_id":  "nymph_psychic_collapse",
         "skill_name":  "心防溃决",
-        "skill_description":  "开启后攻击力变为135%，每次攻击最多同时攻击2名敌人；命中使目标累积42点凋亡损伤，累计达到阈值后爆发6秒：每秒受到8点法术伤害且受到伤害提高25%；攻击命中已爆发目标时，额外造成本次伤害55%的法术伤害，技能持续12秒。",
+        "skill_description":  "开启后攻击力变为135%，每次攻击最多同时攻击2名敌人；命中使目标在6秒内每秒受到8点法术伤害，技能持续12秒。",
         "skill_duration":  12.0,
         "skill_atk_multiplier":  1.35,
         "skill_target_limit":  2,
-        "skill_necrosis_amount":  42.0,
-        "skill_necrosis_duration":  6.0,
-        "skill_necrosis_vulnerability":  0.25,
-        "skill_necrosis_dot_per_sec":  8.0,
-        "skill_burst_bonus_multiplier":  0.55,
+        "skill_dot_duration":  6.0,
+        "skill_dot_damage_per_sec":  8.0,
+        "skill_dot_tick_interval":  1.0,
+        "skill_dot_damage_type":  "magic",
         "scene_key":  "unit_actor",
         "skill_behavior_key":  "nymph_psychic_collapse",
         "icon_text":  "妮",
@@ -1663,6 +1712,16 @@
         "block":  0,
         "attack_interval":  1.4,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -1740,6 +1799,16 @@
         "block":  0,
         "attack_interval":  1.5,
         "damage_type":  "magic",
+        "attack_delivery":  "projectile",
+        "projectile_scene_key":  "projectile",
+        "projectile_speed":  420.0,
+        "projectile_hit_radius":  9.0,
+        "projectile_color":  [
+                                 0.55,
+                                 0.82,
+                                 1.0,
+                                 0.96
+                             ],
         "target_type":  "all",
         "range_pattern":  [
                               [
@@ -1984,7 +2053,7 @@
         "skill_name":  "离离枯荣",
         "skill_description":  "开启后每1秒治疗自身半径2格内所有友方，每名恢复当前攻击力75%的生命，并使其受到伤害变为82%，持续1.4秒；首次进入半径2格内的敌人会被记录当前位置并减速至60%，持续1.4秒；被记录敌人离开记录点距离达到3格时会被拉回记录点，技能持续18秒。",
         "skill_duration":  18.0,
-        "skill_seed_radius":  2,
+        "skill_growth_radius":  2,
         "skill_tick_interval":  1.0,
         "skill_heal_multiplier":  0.75,
         "skill_damage_taken_multiplier":  0.82,

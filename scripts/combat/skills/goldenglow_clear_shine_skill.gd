@@ -21,6 +21,18 @@ func tick(delta: float) -> void:
 	var damage_value: int = max(int(round(float(owner_unit.get_effective_atk()) * float(owner_unit.cfg.get("skill_lightning_multiplier", 0.85)))), 1)
 	for index in range(count):
 		var enemy: Node = targets[index]
+		if owner_unit.has_method("spawn_one_shot_effect"):
+			owner_unit.spawn_one_shot_effect({
+				"texture_path": "res://assets/effects/operators/goldenglow_lightning_strike_strip.png",
+				"follow_target": enemy,
+				"local_position": Vector2(0.0, -10.0),
+				"hframes": 6,
+				"frame_count": 6,
+				"fps": 18.0,
+				"duration": 0.34,
+				"size": Vector2(120.0, 170.0),
+				"z_index": 25
+			})
 		enemy.receive_damage(damage_value, GameEnums.DAMAGE_MAGIC)
 		if enemy.has_method("apply_move_speed_multiplier"):
 			enemy.apply_move_speed_multiplier(&"goldenglow_clear_shine", float(owner_unit.cfg.get("skill_slow_multiplier", 0.65)), float(owner_unit.cfg.get("skill_slow_duration", 0.8)))
