@@ -1,27 +1,28 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene format=3 uid="uid://dt2d2gea25boo"]
 
-[ext_resource type="Script" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_5d67m"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_right_detail_sidebar_base.tres" id="2_panel_base"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_unit_header_strip.tres" id="3_header_strip"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_detail_section_base.tres" id="4_detail_section"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_unit_portrait_backplate.tres" id="5_portrait_backplate"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_unit_portrait_frame.tres" id="6_portrait_frame"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/bar_progress_track.tres" id="7_progress_track"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/bar_progress_fill_hp.tres" id="8_progress_hp"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/bar_progress_fill_sp.tres" id="9_progress_sp"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_unit_stat_row.tres" id="10_stat_row"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_skill_icon_backplate.tres" id="11_skill_backplate"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_skill_icon_frame.tres" id="12_skill_frame"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_base.tres" id="14_button_base"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="15_button_primary"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="16_button_danger"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="17_button_disabled"]
+[ext_resource type="Script" uid="uid://ddcsa4amltbei" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_5d67m"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_right_detail_sidebar_base.tres" id="2_panel_base"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_header_strip.tres" id="3_header_strip"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="4_detail_section"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_portrait_backplate.tres" id="5_portrait_backplate"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_portrait_frame.tres" id="6_portrait_frame"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_track.tres" id="7_progress_track"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_hp.tres" id="8_progress_hp"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_sp.tres" id="9_progress_sp"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_stat_row.tres" id="10_stat_row"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_backplate.tres" id="11_skill_backplate"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_frame.tres" id="12_skill_frame"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="14_button_base"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="15_button_primary"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="16_button_danger"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="17_button_disabled"]
 
 [node name="UnitDetailPanel" type="Control" unique_id=740705112]
 layout_mode = 3
 anchors_preset = 0
-mouse_filter = 0
+offset_right = 384.0
+offset_bottom = 628.0
 script = ExtResource("1_5d67m")
 
 [node name="PanelBase" type="Panel" parent="." unique_id=611847481]
@@ -41,15 +42,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 18
+theme_override_constants/margin_top = 39
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 36
 
 [node name="MainVBox" type="VBoxContainer" parent="ContentMargin" unique_id=1050191978]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 0
 
 [node name="Header" type="Control" parent="ContentMargin/MainVBox" unique_id=693785272]
 unique_name_in_owner = true
@@ -82,6 +83,7 @@ layout_mode = 2
 theme_override_constants/separation = 1
 
 [node name="TitleRow" type="HBoxContainer" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox" unique_id=568979123]
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_constants/separation = 8
 
@@ -96,62 +98,10 @@ text_overrun_behavior = 3
 
 [node name="LevelLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/TitleRow" unique_id=1740080164]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(40, 0)
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 text = "#--"
-horizontal_alignment = 2
 vertical_alignment = 1
-
-[node name="HeaderMetaRow" type="HBoxContainer" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox" unique_id=1201041475]
-layout_mode = 2
-theme_override_constants/separation = 6
-alignment = 1
-
-[node name="DamagePill" type="Panel" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow" unique_id=1326765037]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(112, 24)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("10_stat_row")
-
-[node name="DamageLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow/DamagePill" unique_id=556766114]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 4.0
-offset_right = -10.0
-offset_bottom = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "伤害 --"
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="FacingPill" type="Panel" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow" unique_id=1399786519]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(112, 24)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("10_stat_row")
-
-[node name="FacingLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/HeaderMetaRow/FacingPill" unique_id=1615876878]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 4.0
-offset_right = -10.0
-offset_bottom = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "朝向 --"
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
 
 [node name="VitalsSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1486827303]
 unique_name_in_owner = true
@@ -337,7 +287,7 @@ theme_override_constants/margin_bottom = 10
 layout_mode = 2
 columns = 2
 
-[node name="AtkStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows"]
+[node name="AtkStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1312812221]
 custom_minimum_size = Vector2(132, 26)
 layout_mode = 2
 mouse_filter = 2
@@ -349,7 +299,7 @@ layout_mode = 2
 text = "攻击 --"
 text_overrun_behavior = 3
 
-[node name="DefStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows"]
+[node name="DefStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1729132832]
 custom_minimum_size = Vector2(132, 26)
 layout_mode = 2
 mouse_filter = 2
@@ -361,7 +311,7 @@ layout_mode = 2
 text = "防御 --"
 text_overrun_behavior = 3
 
-[node name="ResStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows"]
+[node name="ResStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=410505669]
 custom_minimum_size = Vector2(132, 26)
 layout_mode = 2
 mouse_filter = 2
@@ -373,7 +323,7 @@ layout_mode = 2
 text = "法抗 --"
 text_overrun_behavior = 3
 
-[node name="BlockStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows"]
+[node name="BlockStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=279448192]
 custom_minimum_size = Vector2(132, 26)
 layout_mode = 2
 mouse_filter = 2
@@ -385,7 +335,7 @@ layout_mode = 2
 text = "阻挡 --"
 text_overrun_behavior = 3
 
-[node name="AspdStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows"]
+[node name="AspdStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1066944862]
 custom_minimum_size = Vector2(132, 26)
 layout_mode = 2
 mouse_filter = 2
@@ -517,48 +467,48 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_skill_desc")
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 0
-theme_override_styles/panel = ExtResource("13_skill_desc")
 
 [node name="SkillLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillScroll" unique_id=1682618284]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
 text = "技能信息"
 autowrap_mode = 3
 
 [node name="Actions" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=267080745]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = -2
 
-[node name="DetailSourceLabel" type="Label" parent="ContentMargin/MainVBox/Actions"]
+[node name="DetailSourceLabel" type="Label" parent="ContentMargin/MainVBox/Actions" unique_id=1112522701]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text_overrun_behavior = 3
 autowrap_mode = 2
+text_overrun_behavior = 3
 
-[node name="PurchaseButton" type="Button" parent="ContentMargin/MainVBox/Actions"]
+[node name="PurchaseButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1503553436]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "璐拱"
 theme_override_styles/normal = ExtResource("15_button_primary")
-theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/pressed = ExtResource("15_button_primary")
+theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
+text = "购买"
 
-[node name="PurchaseReasonLabel" type="Label" parent="ContentMargin/MainVBox/Actions"]
+[node name="PurchaseReasonLabel" type="Label" parent="ContentMargin/MainVBox/Actions" unique_id=809795252]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text_overrun_behavior = 3
 autowrap_mode = 2
+text_overrun_behavior = 3
 
 [node name="CastSkillButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1282514617]
 unique_name_in_owner = true
@@ -566,11 +516,11 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "激活技能"
 theme_override_styles/normal = ExtResource("15_button_primary")
-theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/pressed = ExtResource("15_button_primary")
+theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
+text = "激活技能"
 
 [node name="RetreatButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1465338668]
 unique_name_in_owner = true
@@ -578,8 +528,8 @@ custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-text = "撤退"
 theme_override_styles/normal = ExtResource("14_button_base")
-theme_override_styles/hover = ExtResource("16_button_danger")
 theme_override_styles/pressed = ExtResource("16_button_danger")
+theme_override_styles/hover = ExtResource("16_button_danger")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
+text = "撤退"
