@@ -28,6 +28,7 @@ func process_blocked_attack(delta: float, blocker: Node) -> void:
 	var damage_type: int = _parse_damage_type(String(_owner_actor.cfg.get("damage_type", "physical")))
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), _runtime_id(), blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
+	_play_owner_attack_lunge()
 	blocker.receive_damage(damage_value, damage_type, _owner_actor)
 	set_attack_cooldown_from_cfg()
 
@@ -42,6 +43,7 @@ func process_building_attack(delta: float, building: Node) -> void:
 	var damage_type: int = _parse_damage_type(String(_owner_actor.cfg.get("damage_type", "physical")))
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 攻击路径建筑 %s，%s伤害 %d" % [_debug_name(), _runtime_id(), _target_debug_name(building), _damage_type_text(damage_type), damage_value])
+	_play_owner_attack_lunge()
 	_damage_building(building, damage_value, damage_type)
 	set_attack_cooldown_from_cfg()
 
@@ -59,6 +61,7 @@ func process_range_attack(delta: float) -> bool:
 	var damage_type: int = _parse_damage_type(String(_owner_actor.cfg.get("damage_type", "physical")))
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 远程攻击 %s，%s伤害 %d" % [_debug_name(), _runtime_id(), _target_debug_name(target), _damage_type_text(damage_type), damage_value])
+	_play_owner_attack_lunge()
 	if target.has_method("receive_damage"):
 		if target.is_in_group("units"):
 			target.receive_damage(damage_value, damage_type, _owner_actor)
@@ -151,6 +154,11 @@ func _is_wall_building(building: Node) -> bool:
 		return false
 	var building_cfg: Dictionary = cfg_variant
 	return bool(building_cfg.get("blocks_path", false))
+
+
+func _play_owner_attack_lunge() -> void:
+	if _owner_actor != null and _owner_actor.has_method("play_attack_lunge"):
+		_owner_actor.play_attack_lunge()
 
 
 func _parse_damage_type(raw_type: String) -> int:
