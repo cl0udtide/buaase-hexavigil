@@ -380,28 +380,28 @@ func _get_resource_collect_amount(resource_type: StringName) -> int:
 
 
 func _is_idle_action_mode() -> bool:
-	var action_panel := get_node_or_null("../ScreenLayout/ActionPanelSlot/ActionPanel")
+	var action_panel := get_node_or_null("../../ScreenLayout/ActionPanelSlot/ActionPanel")
 	if action_panel == null:
-		action_panel = get_node_or_null("../ActionPanel")
+		action_panel = get_node_or_null("../../ActionPanel")
 	if action_panel == null or not action_panel.has_method("get_current_mode"):
 		return true
 	return StringName(action_panel.get_current_mode()) == &"idle"
 
 
 func _get_map_manager() -> Node:
-	return get_node_or_null("../../Managers/MapManager")
+	return get_node_or_null("../../../Managers/MapManager")
 
 
 func _get_day_manager() -> Node:
-	return get_node_or_null("../../Managers/DayManager")
+	return get_node_or_null("../../../Managers/DayManager")
 
 
 func _get_building_manager() -> Node:
-	return get_node_or_null("../../Managers/BuildingManager")
+	return get_node_or_null("../../../Managers/BuildingManager")
 
 
 func _get_random_event_manager() -> Node:
-	return get_node_or_null("../../Managers/RandomEventManager")
+	return get_node_or_null("../../../Managers/RandomEventManager")
 
 
 func _has_event_at_cell(cell: Vector2i) -> bool:
@@ -433,14 +433,14 @@ func _refresh_building_range_preview(building: Node) -> void:
 		_clear_building_range_preview()
 		return
 	var map_manager := _get_map_manager()
-	var map_root := get_node_or_null("../../World/MapRoot")
+	var map_root := get_node_or_null("../../../World/MapRoot")
 	if map_manager == null or map_root == null or not map_root.has_method("set_building_effect_range"):
 		return
 	map_root.set_building_effect_range(_get_building_range_cells(building.get_current_cell(), radius, building.cfg))
 
 
 func _clear_building_range_preview() -> void:
-	var map_root := get_node_or_null("../../World/MapRoot")
+	var map_root := get_node_or_null("../../../World/MapRoot")
 	if map_root != null and map_root.has_method("clear_building_effect_range"):
 		map_root.clear_building_effect_range()
 
