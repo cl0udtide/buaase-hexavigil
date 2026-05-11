@@ -94,6 +94,8 @@ const RESOURCE_DELTA_BADGE := &"frame_resource_delta_badge"
 const TOOLTIP := &"frame_tooltip_base"
 const SCROLL_TRACK := &"frame_scroll_track"
 const SCROLL_THUMB := &"frame_scroll_thumb"
+const SCROLL_TRACK_HORIZONTAL := &"frame_scroll_track_horizontal"
+const SCROLL_THUMB_HORIZONTAL := &"frame_scroll_thumb_horizontal"
 const SLIDER_TRACK := &"frame_slider_track"
 const SLIDER_FILL := &"frame_slider_fill"
 const SLIDER_HANDLE := &"frame_slider_handle"
@@ -246,7 +248,7 @@ static func _texture_margin(component: StringName) -> Vector4:
 
 
 static func _default_texture_margin(component: StringName) -> Vector4:
-	if component == SCROLL_TRACK or component == SCROLL_THUMB:
+	if component in [SCROLL_TRACK, SCROLL_THUMB, SCROLL_TRACK_HORIZONTAL, SCROLL_THUMB_HORIZONTAL]:
 		return Vector4(5.0, 5.0, 5.0, 5.0)
 	if component == SLIDER_HANDLE:
 		return Vector4(8.0, 8.0, 8.0, 8.0)

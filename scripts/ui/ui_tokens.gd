@@ -77,8 +77,8 @@ const ACTION_PANEL_SIZE := Vector2(318.0, 76.0)
 const ACTION_PANEL_SIZE_COMPACT := Vector2(304.0, 70.0)
 const ACTION_PANEL_SIZE_NARROW := Vector2(286.0, 66.0)
 
-const OPERATOR_CARD_SIZE := Vector2(164.0, 160.0)
-const OPERATOR_CARD_COMPACT_SIZE := Vector2(148.0, 150.0)
+const OPERATOR_CARD_SIZE := Vector2(164.0, 184.0)
+const OPERATOR_CARD_COMPACT_SIZE := Vector2(148.0, 172.0)
 
 
 static func edge_for_width(width: float) -> float:

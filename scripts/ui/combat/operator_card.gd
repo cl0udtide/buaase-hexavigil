@@ -50,6 +50,7 @@ var _cooldown_icon_texture: TextureRect
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
+	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_set_descendant_mouse_filter_ignore(self)
 	gui_input.connect(_on_gui_input)
@@ -220,8 +221,9 @@ func _sync_state_overlays() -> void:
 func _apply_density() -> void:
 	set_custom_minimum_size(UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE)
 	set_size(custom_minimum_size)
+	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_portrait_stack.set_custom_minimum_size(Vector2(0.0, 52.0 if _compact else 60.0))
+	_portrait_stack.set_custom_minimum_size(Vector2(0.0, 64.0 if _compact else 76.0))
 	_name_label.add_theme_font_size_override("font_size", 14 if _compact else 15)
 	_cost_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
 	_class_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
@@ -229,7 +231,7 @@ func _apply_density() -> void:
 	for label in [_hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.add_theme_font_size_override("font_size", 10 if _compact else 11)
 	for row in [_hp_stat_row, _sp_stat_row, _cd_stat_row]:
-		row.custom_minimum_size.y = 17.0 if _compact else 18.0
+		row.custom_minimum_size.y = 18.0 if _compact else 20.0
 	_portrait_label.add_theme_font_size_override("font_size", 24 if _compact else 26)
 	_cooldown_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
 
