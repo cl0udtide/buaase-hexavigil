@@ -1285,6 +1285,7 @@ mouse_filter = 2
 
 [node name="AudioSettingsPanel" type="Control" parent="PopupLayer/SettingsPanelSlot" unique_id=1813098785]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1326,8 +1327,11 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 theme_override_font_sizes/font_size = 16
 text = "    声音设置"
+horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1600475914]
@@ -1387,7 +1391,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
+theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 6
 
 [node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin" unique_id=1595461419]
@@ -1397,6 +1401,8 @@ theme_override_constants/separation = 8
 [node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2121226643]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1412,6 +1418,8 @@ stretch_mode = 5
 [node name="MasterLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=394814768]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 text = "主音量"
 vertical_alignment = 1
 
@@ -1426,11 +1434,15 @@ theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
 theme_override_styles/slider = ExtResource("24_slidertrack")
 theme_override_styles/grabber_area = ExtResource("25_sliderfill")
 theme_override_styles/grabber_area_highlight = ExtResource("25_sliderfill")
+max_value = 1.0
+step = 0.01
 
 [node name="MasterValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2048464643]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 horizontal_alignment = 2
 vertical_alignment = 1
 
@@ -1463,7 +1475,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
+theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 6
 
 [node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin" unique_id=1740202446]
@@ -1473,6 +1485,8 @@ theme_override_constants/separation = 8
 [node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=50218736]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1488,6 +1502,8 @@ stretch_mode = 5
 [node name="MusicLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=550238741]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 text = "音乐"
 vertical_alignment = 1
 
@@ -1502,11 +1518,15 @@ theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
 theme_override_styles/slider = ExtResource("24_slidertrack")
 theme_override_styles/grabber_area = ExtResource("25_sliderfill")
 theme_override_styles/grabber_area_highlight = ExtResource("25_sliderfill")
+max_value = 1.0
+step = 0.01
 
 [node name="MusicValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=1973106036]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 horizontal_alignment = 2
 vertical_alignment = 1
 
@@ -1539,7 +1559,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
+theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 6
 
 [node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin" unique_id=1000262509]
@@ -1549,6 +1569,8 @@ theme_override_constants/separation = 8
 [node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=406330431]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1564,6 +1586,8 @@ stretch_mode = 5
 [node name="SfxLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1098896980]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 text = "音效"
 vertical_alignment = 1
 
@@ -1578,11 +1602,15 @@ theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
 theme_override_styles/slider = ExtResource("24_slidertrack")
 theme_override_styles/grabber_area = ExtResource("25_sliderfill")
 theme_override_styles/grabber_area_highlight = ExtResource("25_sliderfill")
+max_value = 1.0
+step = 0.01
 
 [node name="SfxValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1134437594]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 horizontal_alignment = 2
 vertical_alignment = 1
 
