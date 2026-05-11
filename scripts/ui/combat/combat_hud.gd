@@ -660,10 +660,6 @@ func _place_speed_active_overlay(_button: Button) -> void:
 
 
 func _apply_frame_margins() -> void:
-	if _top_content != null:
-		_apply_margin_constants(_top_content, TOP_CONTENT_INSETS)
-	if _time_controls != null:
-		_apply_margin_constants(_time_controls.get_node_or_null("TimeMargin") as MarginContainer, SPEED_TOGGLE_CONTENT_INSETS)
 	GameUiStyle.apply_frame_margin(_wave_preview_panel.get_node_or_null("WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(_legend_panel.get_node_or_null("LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
