@@ -37,6 +37,7 @@ offset_left = 14.0
 offset_top = 8.0
 offset_right = 58.0
 offset_bottom = 52.0
+mouse_filter = 2
 
 [node name="SettingsButton" type="Button" parent="HudChromeLayer/SettingsButtonSlot" unique_id=464889424]
 unique_name_in_owner = true
@@ -70,6 +71,7 @@ offset_left = 66.0
 offset_top = 8.0
 offset_right = 1906.0
 offset_bottom = 90.0
+mouse_filter = 2
 
 [node name="TopBar" type="Control" parent="HudChromeLayer/TopHudSlot" unique_id=111752268]
 unique_name_in_owner = true
@@ -78,6 +80,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="TopBarBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar" unique_id=375891098]
 unique_name_in_owner = true
@@ -761,14 +764,14 @@ offset_left = 66.0
 offset_top = 96.0
 offset_right = 1166.0
 offset_bottom = 140.0
+mouse_filter = 2
 
 [node name="RelicStrip" type="Control" parent="HudChromeLayer/RelicStripSlot" unique_id=625474051 instance=ExtResource("3_40812")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(360, 40)
+custom_minimum_size = Vector2(126, 40)
 anchors_preset = 0
-anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
+offset_right = 126.0
 grow_vertical = 2
 script = ExtResource("4_0tkwj")
 
@@ -779,6 +782,7 @@ offset_left = 1522.0
 offset_top = 104.0
 offset_right = 1906.0
 offset_bottom = 872.0
+mouse_filter = 2
 
 [node name="RightColumnVBox" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot" unique_id=1282847888]
 unique_name_in_owner = true
@@ -964,6 +968,7 @@ offset_left = 338.0
 offset_top = 876.0
 offset_right = 1906.0
 offset_bottom = 1066.0
+mouse_filter = 2
 
 [node name="DeployDeck" type="Control" parent="HudChromeLayer/DeployDeckSlot" unique_id=1798001651]
 unique_name_in_owner = true
@@ -1056,6 +1061,7 @@ offset_left = 14.0
 offset_top = 58.0
 offset_right = 434.0
 offset_bottom = 284.0
+mouse_filter = 2
 
 [node name="AudioSettingsPanel" type="Control" parent="PopupLayer/SettingsPanelSlot" unique_id=1813098785]
 unique_name_in_owner = true
@@ -1259,6 +1265,7 @@ offset_left = 510.0
 offset_top = 220.0
 offset_right = 1410.0
 offset_bottom = 860.0
+mouse_filter = 2
 
 [node name="RelicPanel" type="Control" parent="PopupLayer/RelicPanelSlot" unique_id=1252642806 instance=ExtResource("7_nkwv8")]
 unique_name_in_owner = true

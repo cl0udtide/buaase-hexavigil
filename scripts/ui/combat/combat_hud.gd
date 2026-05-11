@@ -474,20 +474,10 @@ func _apply_chip_icon(chip: Control, icon_id: StringName) -> void:
 
 func _style_top_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
-	if button == _pause_button:
-		var empty_normal := StyleBoxEmpty.new()
-		var empty_hover := StyleBoxEmpty.new()
-		var empty_pressed := StyleBoxEmpty.new()
-		var empty_disabled := StyleBoxEmpty.new()
-		button.add_theme_stylebox_override("normal", empty_normal)
-		button.add_theme_stylebox_override("hover", empty_hover)
-		button.add_theme_stylebox_override("pressed", empty_pressed)
-		button.add_theme_stylebox_override("disabled", empty_disabled)
-	else:
-		button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
-		button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-		button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
-		button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(false))
+	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
+	button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
+	button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(false))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
