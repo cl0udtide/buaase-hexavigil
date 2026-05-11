@@ -19,12 +19,14 @@ var _buildings_by_runtime_id: Dictionary = {}
 var _buildings_by_cell: Dictionary = {}
 var _validator := BuildValidator.new()
 var _unit_heal_remainders: Dictionary = {}
+var _active_aura_outline_ids: Dictionary = {}
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _path_service: Node = get_node_or_null("../PathService")
 @onready var _unit_manager: Node = get_node_or_null("../UnitManager")
 @onready var _enemy_manager: Node = get_node_or_null("../EnemyManager")
 @onready var _building_root: Node = get_node_or_null("../../World/BuildingRoot")
+@onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
 
 
 func _ready() -> void:
@@ -220,6 +222,8 @@ func try_toggle_building(building_runtime_id: int) -> Dictionary:
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "无法切换：只有白天可以切换建筑")
 	var enabled: bool = actor.toggle_enabled()
+	if not enabled:
+		_clear_building_aura_outline(actor)
 	_emit_building_state_changed(actor, enabled)
 	return ActionResult.ok({"runtime_id": building_runtime_id, "enabled": enabled})
 
@@ -241,6 +245,7 @@ func remove_building(building_runtime_id: int) -> void:
 	var cell: Vector2i = actor.get_current_cell()
 	var cfg: Dictionary = actor.cfg
 	var was_destroyed := _is_building_destroyed(actor)
+	_clear_building_aura_outline(actor)
 	_buildings_by_runtime_id.erase(building_runtime_id)
 	_buildings_by_cell.erase(cell)
 	if _map_manager != null:
@@ -352,6 +357,7 @@ func _emit_path_grid_changed(message: String = "") -> void:
 func _mark_building_destroyed(actor: Node) -> void:
 	var cell: Vector2i = actor.get_current_cell()
 	var cfg: Dictionary = actor.cfg
+	_clear_building_aura_outline(actor)
 	if actor.has_method("can_toggle_enabled") and actor.can_toggle_enabled() and actor.has_method("set_enabled"):
 		actor.set_enabled(false)
 	if bool(cfg.get("blocks_path", false)) and _path_service != null:
@@ -440,6 +446,7 @@ func _apply_aura_effects(delta: float) -> void:
 	var unit_attack_bonuses: Dictionary = {}
 	var unit_heal_amounts: Dictionary = {}
 	var enemy_speed_multipliers: Dictionary = {}
+	var active_aura_outline_ids: Dictionary = {}
 
 	for unit in units:
 		if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
@@ -467,6 +474,7 @@ func _apply_aura_effects(delta: float) -> void:
 			effect_radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", actor_cfg))))
 			effect_value *= 1.0 + float(run_state.get_buff_effect_total_for_building(&"building_aura_effect_percent", actor_cfg))
 		var building_cell: Vector2i = actor.get_current_cell()
+		_sync_building_aura_outline(actor, effect_radius, effect_type, actor_cfg, active_aura_outline_ids)
 		match effect_type:
 			&"heal":
 				for unit in units:
@@ -503,6 +511,7 @@ func _apply_aura_effects(delta: float) -> void:
 					var unit_runtime_id: int = int(unit.get_runtime_id())
 					unit_attack_bonuses[unit_runtime_id] = int(unit_attack_bonuses.get(unit_runtime_id, 0)) + int(effect_value)
 
+	_clear_inactive_building_aura_outlines(active_aura_outline_ids)
 	_apply_unit_aura_effects(units, unit_interval_multipliers, unit_attack_bonuses, unit_heal_amounts)
 	_apply_enemy_aura_effects(enemies, enemy_speed_multipliers)
 
@@ -615,6 +624,62 @@ func _is_target_within_building_range(origin: Vector2i, target: Vector2i, radius
 	if StringName(cfg.get("effect_shape", "")) == &"trimmed_square" and dx == radius and dy == radius:
 		return false
 	return true
+
+
+func _sync_building_aura_outline(actor: Node, effect_radius: int, effect_type: StringName, cfg: Dictionary, active_outline_ids: Dictionary) -> void:
+	if actor == null or not is_instance_valid(actor) or effect_radius <= 0:
+		return
+	if _map_root == null or not _map_root.has_method("set_range_outline"):
+		return
+	var outline_id := _building_aura_outline_id(actor)
+	active_outline_ids[outline_id] = true
+	_map_root.set_range_outline(outline_id, _get_building_aura_cells(actor.get_current_cell(), effect_radius, cfg), {
+		"style": _building_aura_outline_style(effect_type),
+		"duration": -1.0,
+		"draw_nodes": true,
+		"edge_length": 74.0,
+		"edge_thickness": 26.0,
+		"node_size": 26.0
+	})
+
+
+func _clear_inactive_building_aura_outlines(active_outline_ids: Dictionary) -> void:
+	if _map_root != null and _map_root.has_method("clear_range_outline"):
+		for outline_id in _active_aura_outline_ids.keys().duplicate():
+			if not active_outline_ids.has(outline_id):
+				_map_root.clear_range_outline(outline_id)
+	_active_aura_outline_ids = active_outline_ids.duplicate()
+
+
+func _clear_building_aura_outline(actor: Node) -> void:
+	if actor == null or _map_root == null or not _map_root.has_method("clear_range_outline"):
+		return
+	var outline_id := _building_aura_outline_id(actor)
+	_map_root.clear_range_outline(outline_id)
+	_active_aura_outline_ids.erase(outline_id)
+
+
+func _building_aura_outline_id(actor: Node) -> StringName:
+	return StringName("building_aura_%d" % int(actor.get_runtime_id()))
+
+
+func _building_aura_outline_style(effect_type: StringName) -> StringName:
+	return &"gravity" if effect_type == &"slow" else &"building"
+
+
+func _get_building_aura_cells(center: Vector2i, radius: int, cfg: Dictionary) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if _map_manager == null:
+		return cells
+	var trimmed_square: bool = StringName(cfg.get("effect_shape", "")) == &"trimmed_square"
+	for y in range(center.y - radius, center.y + radius + 1):
+		for x in range(center.x - radius, center.x + radius + 1):
+			var cell := Vector2i(x, y)
+			if trimmed_square and abs(cell.x - center.x) == radius and abs(cell.y - center.y) == radius:
+				continue
+			if _map_manager.is_inside(cell) and not cells.has(cell):
+				cells.append(cell)
+	return cells
 
 
 func _emit_building_state_changed(actor: Node, enabled: bool) -> void:
