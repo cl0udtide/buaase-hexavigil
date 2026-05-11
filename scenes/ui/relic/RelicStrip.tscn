@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/relic/relic_strip.gd" id="1_c303q"]
 
 [node name="RelicStrip" type="Control" unique_id=625474051]
-custom_minimum_size = Vector2(360, 40)
+custom_minimum_size = Vector2(126, 40)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_c303q")
@@ -39,7 +39,7 @@ text = "遗物 0"
 [node name="IconRow" type="HBoxContainer" parent="StripMargin/Row" unique_id=2112069031]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
 theme_override_constants/separation = 6
 
 [node name="OverflowLabel" type="Label" parent="StripMargin/Row" unique_id=2127205520]
