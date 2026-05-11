@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/combat/combat_hud.gd" id="1_ril48"]
 [ext_resource type="Script" path="res://scripts/ui/audio_settings_button.gd" id="2_fvafi"]
@@ -9,6 +9,12 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
 [ext_resource type="Script" path="res://scripts/ui/relic/relic_panel.gd" id="8_nd5fi"]
 [ext_resource type="Script" path="res://scripts/ui/audio_settings_panel.gd" id="9_7wb5u"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="10_wave_preview"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="11_wave_route"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="12_legend_panel"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_legend_row_base.tres" id="13_legend_row"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="14_button_primary"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="15_button_disabled"]
 
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
@@ -810,6 +816,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("10_wave_preview")
 
 [node name="WavePreviewMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel" unique_id=1848359695]
 layout_mode = 0
@@ -817,6 +825,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
 [node name="WavePreviewContent" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin" unique_id=1430930927]
 clip_contents = true
@@ -844,6 +856,10 @@ size_flags_horizontal = 8
 size_flags_vertical = 8
 focus_mode = 0
 text = "路线"
+theme_override_styles/normal = ExtResource("11_wave_route")
+theme_override_styles/hover = ExtResource("14_button_primary")
+theme_override_styles/pressed = ExtResource("14_button_primary")
+theme_override_styles/disabled = ExtResource("15_button_disabled")
 
 [node name="WavePreviewLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1472852463]
 unique_name_in_owner = true
@@ -875,6 +891,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("12_legend_panel")
 
 [node name="LegendMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel" unique_id=1255148119]
 layout_mode = 0
@@ -882,6 +900,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
 [node name="LegendVBox" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin" unique_id=1301954710]
 layout_mode = 2
@@ -896,68 +918,103 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="EnemyPathRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1113705758]
+[node name="EnemyPathRow" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1113705758]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_legend_row")
+
+[node name="RowContent" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow" unique_id=322349278]
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow/RowContent" unique_id=322349278]
 custom_minimum_size = Vector2(18, 12)
 layout_mode = 2
+mouse_filter = 2
 color = Color(0.9, 0.36, 0.22, 0.9)
 
-[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow" unique_id=1640932252]
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow/RowContent" unique_id=1640932252]
 layout_mode = 2
 text = "敌人路径"
 
-[node name="DeployTileRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=911310821]
+[node name="DeployTileRow" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=911310821]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_legend_row")
+
+[node name="RowContent" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow" unique_id=577881296]
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow/RowContent" unique_id=577881296]
 custom_minimum_size = Vector2(18, 12)
 layout_mode = 2
+mouse_filter = 2
 color = Color(0.26, 0.76, 0.92, 0.85)
 
-[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow" unique_id=452756517]
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow/RowContent" unique_id=452756517]
 layout_mode = 2
 text = "可部署地块"
 
-[node name="FriendlyBuildingRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=434991344]
+[node name="FriendlyBuildingRow" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=434991344]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_legend_row")
+
+[node name="RowContent" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow" unique_id=1711101058]
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow/RowContent" unique_id=1711101058]
 custom_minimum_size = Vector2(18, 12)
 layout_mode = 2
+mouse_filter = 2
 color = Color(0.29, 0.7, 0.43, 0.85)
 
-[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow" unique_id=959075252]
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow/RowContent" unique_id=959075252]
 layout_mode = 2
 text = "我方建筑"
 
-[node name="BlockerRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1685001542]
+[node name="BlockerRow" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1685001542]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_legend_row")
+
+[node name="RowContent" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow" unique_id=450837111]
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow/RowContent" unique_id=450837111]
 custom_minimum_size = Vector2(18, 12)
 layout_mode = 2
+mouse_filter = 2
 color = Color(0.95, 0.65, 0.22, 0.9)
 
-[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow" unique_id=1506285477]
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow/RowContent" unique_id=1506285477]
 layout_mode = 2
 text = "阻挡单元"
 
-[node name="CoreAreaRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1615749333]
+[node name="CoreAreaRow" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1615749333]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_legend_row")
+
+[node name="RowContent" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow" unique_id=1304523594]
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow/RowContent" unique_id=1304523594]
 custom_minimum_size = Vector2(18, 12)
 layout_mode = 2
+mouse_filter = 2
 color = Color(0.5, 0.42, 0.76, 0.9)
 
-[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow" unique_id=1633493512]
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow/RowContent" unique_id=1633493512]
 layout_mode = 2
 text = "核心区域"
 

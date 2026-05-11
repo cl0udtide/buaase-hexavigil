@@ -111,11 +111,11 @@ const SPECS := {
 	TOP_HUD: {"content": Vector4(24.0, 8.0, 24.0, 8.0)},
 	HUD_CELL: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
 	HUD_CELL_SELECTED: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
-	RIGHT_DETAIL_SIDEBAR: {"content": Vector4(18.0, 18.0, 18.0, 18.0)},
+	RIGHT_DETAIL_SIDEBAR: {"content": Vector4(20.0, 18.0, 20.0, 20.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUILD_SIDE_PANEL: {"content": Vector4(22.0, 20.0, 22.0, 20.0)},
 	DECK_PANEL: {"content": Vector4(24.0, 10.0, 24.0, 10.0)},
 	HUD_BOTTOM_RAIL: {"content": ZERO_INSETS},
-	DETAIL_SECTION: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
+	DETAIL_SECTION: {"content": Vector4(14.0, 10.0, 14.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	LIST_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
 	OPERATOR_CARD: {"content": Vector4(12.0, 10.0, 12.0, 10.0)},
 	OPERATOR_CARD_SELECTED: {"content": Vector4(12.0, 10.0, 12.0, 10.0)},
@@ -141,7 +141,19 @@ const SPECS := {
 	SETTINGS_PANEL: {"content": Vector4(14.0, 12.0, 14.0, 12.0)},
 	BLESSING_PANEL: {"content": Vector4(18.0, 16.0, 18.0, 16.0)},
 	BLESSING_CHOICE_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
-	LEGEND_PANEL: {"content": Vector4(12.0, 10.0, 12.0, 10.0)},
+	LEGEND_PANEL: {"content": Vector4(14.0, 12.0, 14.0, 12.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
+	LEGEND_ROW: {"content": Vector4(10.0, 4.0, 10.0, 4.0), "texture": Vector4(18.0, 10.0, 18.0, 10.0)},
+	WAVE_PREVIEW: {"content": Vector4(14.0, 12.0, 14.0, 12.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
+	WAVE_ENEMY_ROW: {"content": Vector4(10.0, 4.0, 10.0, 4.0), "texture": Vector4(18.0, 12.0, 18.0, 12.0)},
+	WAVE_ROUTE_TOGGLE: {"content": Vector4(10.0, 4.0, 10.0, 4.0), "texture": Vector4(18.0, 12.0, 18.0, 12.0)},
+	WAVE_WARNING_ROW: {"content": Vector4(10.0, 4.0, 10.0, 4.0), "texture": Vector4(18.0, 12.0, 18.0, 12.0)},
+	UNIT_HEADER_STRIP: {"content": Vector4(14.0, 8.0, 14.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
+	UNIT_PORTRAIT_BACKPLATE: {"content": Vector4(8.0, 8.0, 8.0, 8.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
+	UNIT_PORTRAIT_FRAME: {"content": Vector4(8.0, 8.0, 8.0, 8.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
+	UNIT_STAT_ROW: {"content": Vector4(10.0, 4.0, 10.0, 4.0), "texture": Vector4(18.0, 12.0, 18.0, 12.0)},
+	SKILL_ICON_BACKPLATE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
+	SKILL_ICON_FRAME: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
+	SKILL_DESC_BOX: {"content": Vector4(12.0, 10.0, 12.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUTTON_DANGER: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
 	PROGRESS_TRACK: {"content": ZERO_INSETS},
 	PROGRESS_BLUE: {"content": ZERO_INSETS},
@@ -160,6 +172,13 @@ static func style_box(component: StringName, fallback_fill: Color, fallback_bord
 
 static func content_insets(component: StringName) -> Vector4:
 	return _spec(component).get("content", DEFAULT_INSETS) as Vector4
+
+
+static func texture_insets(component: StringName) -> Vector4:
+	var explicit: Variant = _spec(component).get("texture", null)
+	if explicit is Vector4:
+		return explicit as Vector4
+	return _default_texture_margin(component)
 
 
 static func texture_path(component: StringName) -> String:
@@ -223,6 +242,10 @@ static func _texture_box(texture: Texture2D, component: StringName, fallback_fil
 
 
 static func _texture_margin(component: StringName) -> Vector4:
+	return texture_insets(component)
+
+
+static func _default_texture_margin(component: StringName) -> Vector4:
 	if component == SCROLL_TRACK or component == SCROLL_THUMB:
 		return Vector4(5.0, 5.0, 5.0, 5.0)
 	if component == SLIDER_HANDLE:
