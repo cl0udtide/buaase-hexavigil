@@ -34,7 +34,6 @@ func _on_pressed() -> void:
 
 
 func _apply_visual_style() -> void:
-	set_custom_minimum_size(Vector2(42.0, 40.0) if text.strip_edges().length() <= 2 else Vector2(94.0, 36.0))
 	tooltip_text = "设置"
 	var gear_texture := UiArtRegistry.get_catalog_icon(&"button_settings")
 	GameUiStyle.set_button_texture_icon(self, gear_texture, Vector2(20.0, 20.0), &"center")
@@ -44,9 +43,5 @@ func _apply_visual_style() -> void:
 		if gear_texture != null:
 			gear_label.visible = false
 	GameUiStyle.center_button_text(self)
-	add_theme_stylebox_override("normal", GameUiStyle.settings_button())
-	add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
-	add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
-	add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
 	add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)

@@ -18,10 +18,6 @@ const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"wood", &"stone", &"mana", &"prestige"]
 const CORE_HP_TITLE := "核心生命"
 
-# Top HUD micro-tuning lives here so visual adjustments do not require hunting
-# through layout code. Vector4 means left, top, right, bottom inset.
-const TOP_CONTENT_INSETS := Vector4(0.0, 5.0, 0.0, 5.0)
-const SPEED_TOGGLE_CONTENT_INSETS := Vector4(6.0, 13.0, 6.0, 13.0)
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const MESSAGE_WARNING_OVERLAY_ALPHA := 0.92
 const MESSAGE_WARNING_OVERLAY_FRAME := &"frame_button_danger_overlay"
@@ -152,16 +148,12 @@ func _ready() -> void:
 	set_process_unhandled_input(true)
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	_top_bar_base.visible = false
 	_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_speed_toggle_base.visible = false
 	_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
 	if resource_base != null:
 		resource_base.visible = false
 		resource_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_core_track.add_theme_stylebox_override("panel", GameUiStyle.progress_background())
-	_core_fill.add_theme_stylebox_override("panel", GameUiStyle.core_progress_fill())
 	_core_track.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.resized.connect(_refresh_core_fill)
@@ -195,7 +187,6 @@ func _ready() -> void:
 	_deploy_rail_base.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
 	GameUiStyle.apply_scroll_style(_deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer)
 	_style_legend_panel()
-	_speed_active_overlay.add_theme_stylebox_override("panel", GameUiStyle.speed_toggle_active())
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
 	_wave_preview_panel.z_index = 18
@@ -596,13 +587,13 @@ func _apply_frame_margins() -> void:
 		_apply_margin_constants(_top_content, TOP_CONTENT_INSETS)
 	if _time_controls != null:
 		_apply_margin_constants(_time_controls.get_node_or_null("TimeMargin") as MarginContainer, SPEED_TOGGLE_CONTENT_INSETS)
+	GameUiStyle.apply_frame_margin(_wave_preview_panel.get_node_or_null("WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("InteractionLayer/DragGhost/GhostMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
 func _style_top_cards() -> void:
 	if _top_bar_base != null:
-		_top_bar_base.visible = false
 		_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for card in [
 		_stage_chip.get_node_or_null("ChipBase") as Panel,
@@ -612,9 +603,7 @@ func _style_top_cards() -> void:
 	]:
 		if card != null:
 			card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
 	if _speed_toggle_base != null:
-		_speed_toggle_base.visible = false
 		_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
 	if resource_base != null:
@@ -624,11 +613,9 @@ func _style_top_cards() -> void:
 		var item_base := (item as Dictionary).get("base") as Panel
 		if item_base != null:
 			item_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			item_base.add_theme_stylebox_override("panel", GameUiStyle.resource_item())
 		var delta_badge := (item as Dictionary).get("delta_badge") as Panel
 		if delta_badge != null:
 			delta_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			delta_badge.add_theme_stylebox_override("panel", GameUiStyle.resource_delta_badge())
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
@@ -801,15 +788,6 @@ func _apply_legend_icon(row_name: String, icon_id: StringName) -> void:
 
 func _on_viewport_size_changed() -> void:
 	_refresh_core_fill()
-
-
-func _apply_margin_constants(container: MarginContainer, insets: Vector4) -> void:
-	if container == null:
-		return
-	container.add_theme_constant_override("margin_left", int(round(insets.x)))
-	container.add_theme_constant_override("margin_top", int(round(insets.y)))
-	container.add_theme_constant_override("margin_right", int(round(insets.z)))
-	container.add_theme_constant_override("margin_bottom", int(round(insets.w)))
 
 
 func _core_title_from_text(core_text: String) -> String:
