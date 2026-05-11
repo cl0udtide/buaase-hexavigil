@@ -2,8 +2,6 @@ extends PanelContainer
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
@@ -34,7 +32,6 @@ var _current_phase := GameEnums.PHASE_MENU
 
 func _ready() -> void:
 	AppTheme.apply(self)
-	_apply_visual_style()
 	visible = false
 	_bind_buttons()
 	_bind_events()
@@ -123,7 +120,6 @@ func _refresh_event_section(cell: Vector2i) -> void:
 	var event_desc := String(event_cfg.get("desc", ""))
 	_event_info_label.text = "%s\n%s\n消耗行动力：%d" % [event_name, event_desc, EVENT_TRIGGER_AP_COST]
 	_trigger_event_button.disabled = _current_phase != GameEnums.PHASE_DAY or not enough_ap
-	_style_button(_trigger_event_button, GameUiStyle.ACCENT)
 
 
 func _refresh_resource_section(data: CellData) -> void:
@@ -144,7 +140,6 @@ func _refresh_resource_section(data: CellData) -> void:
 		"今日已采集" if collected else "今日未采集"
 	]
 	_collect_button.disabled = _current_phase != GameEnums.PHASE_DAY or collected or not enough_ap
-	_style_button(_collect_button, GameUiStyle.SUCCESS)
 
 
 func _refresh_building_section(building: Node) -> void:
@@ -163,9 +158,6 @@ func _refresh_building_section(building: Node) -> void:
 	_toggle_button.disabled = _current_phase != GameEnums.PHASE_DAY
 	if _building_action_flow != null:
 		_building_action_flow.visible = _repair_button.visible or _demolish_button.visible or _toggle_button.visible
-	_style_button(_repair_button, GameUiStyle.AMBER)
-	_style_button(_demolish_button, GameUiStyle.DANGER)
-	_style_button(_toggle_button, GameUiStyle.ACCENT)
 
 
 func _make_title(data: CellData, building: Node) -> String:
@@ -500,44 +492,3 @@ func _get_effective_building_radius(cfg: Dictionary) -> int:
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
 		radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", cfg))))
 	return max(radius, 0)
-
-
-func _apply_visual_style() -> void:
-	set_custom_minimum_size(Vector2(POPUP_MIN_WIDTH, 0.0))
-	if _title_label != null:
-		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-		GameUiStyle.center_label_text(_title_label)
-	if _event_info_label != null:
-		_event_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	if _resource_info_label != null:
-		_resource_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	if _building_info_label != null:
-		_building_info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	if _message_label != null:
-		_message_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-		GameUiStyle.center_label_text(_message_label)
-
-
-func _style_button(button: Button, _accent: Color) -> void:
-	if button == null:
-		return
-	GameUiStyle.center_button_text(button)
-	button.set_custom_minimum_size(Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0)))
-	GameUiStyle.set_button_texture_icon(button, _icon_for_popup_button(button), &"left", 8.0)
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
-
-
-func _icon_for_popup_button(button: Button) -> Texture2D:
-	if button == _trigger_event_button:
-		return UiArtRegistry.get_catalog_icon(&"phase_blessing")
-	if button == _collect_button:
-		return UiArtRegistry.get_catalog_icon(&"button_confirm")
-	if button == _repair_button:
-		return UiArtRegistry.get_catalog_icon(&"button_confirm")
-	if button == _demolish_button:
-		return UiArtRegistry.get_catalog_icon(&"button_cancel")
-	if button == _toggle_button:
-		return UiArtRegistry.get_catalog_icon(&"button_refresh")
-	return null
