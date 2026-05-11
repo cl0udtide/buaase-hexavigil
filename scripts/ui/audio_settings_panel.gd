@@ -120,6 +120,7 @@ func _format_percent(value: float) -> String:
 
 
 func _apply_visual_style() -> void:
+	_panel_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_base.add_theme_stylebox_override("panel", GameUiStyle.settings_panel())
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SETTINGS_PANEL)
 	set_custom_minimum_size(Vector2(280.0, 180.0))
@@ -128,7 +129,9 @@ func _apply_visual_style() -> void:
 	var title_label := get_node_or_null("%TitleLabel") as Label
 	GameUiStyle.center_label_text(title_label)
 	for row_base in find_children("RowBase", "Panel", true, false):
-		(row_base as Panel).add_theme_stylebox_override("panel", GameUiStyle.settings_row())
+		var row_panel := row_base as Panel
+		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row_panel.add_theme_stylebox_override("panel", GameUiStyle.settings_row())
 	_refresh_volume_icons()
 
 
