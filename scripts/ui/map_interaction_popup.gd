@@ -494,7 +494,7 @@ func _style_button(button: Button, accent: Color) -> void:
 		return
 	GameUiStyle.center_button_text(button)
 	button.set_custom_minimum_size(Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0)))
-	GameUiStyle.set_button_texture_icon(button, _icon_for_popup_button(button), Vector2(15.0, 15.0), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(button, _icon_for_popup_button(button), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(accent, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))

@@ -535,7 +535,7 @@ func _style_command_button(button: Button, accent: Color) -> void:
 		return
 	GameUiStyle.center_button_text(button)
 	if button == _refresh_shop_button:
-		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_refresh"), Vector2(15.0, 15.0), &"left", 8.0)
+		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_refresh"), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.34))
