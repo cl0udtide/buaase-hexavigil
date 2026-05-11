@@ -153,6 +153,15 @@ mouse_filter = 2
 [node name="ActionPanel" parent="UI/ScreenLayout/ActionPanelSlot" unique_id=921141590 instance=ExtResource("21_ipajp")]
 z_index = 25
 layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_right = 0.0
+offset_left = 160.0
+offset_top = -42.0
+offset_right = 160.0
+offset_bottom = -42.0
+grow_horizontal = 1
+grow_vertical = 0
 
 [node name="CombatHudSlot" type="Control" parent="UI/ScreenLayout" unique_id=659321930]
 unique_name_in_owner = true
