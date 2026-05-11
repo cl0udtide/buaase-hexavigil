@@ -1,6 +1,12 @@
 extends Node
 
+const AppRefs = preload("res://scripts/common/app_refs.gd")
+
 const RANGED_ATTACK_HOLD_SECONDS := 1.0
+const DEFAULT_PROJECTILE_SPEED := 460.0
+const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
+const DEFAULT_PROJECTILE_LIFETIME := 3.0
+const DEMOLISHER_HIT_EFFECT_SIZE := Vector2(128.0, 104.0)
 
 var _owner_actor: Node2D = null
 var _attack_timer := 0.0
@@ -34,6 +40,7 @@ func process_blocked_attack(delta: float, blocker: Node) -> void:
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), _runtime_id(), blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	_play_owner_attack_lunge()
+	_play_melee_hit_effect(blocker)
 	blocker.receive_damage(damage_value, damage_type, _owner_actor)
 	set_attack_cooldown_from_cfg()
 
@@ -49,6 +56,7 @@ func process_building_attack(delta: float, building: Node) -> void:
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 攻击路径建筑 %s，%s伤害 %d" % [_debug_name(), _runtime_id(), _target_debug_name(building), _damage_type_text(damage_type), damage_value])
 	_play_owner_attack_lunge()
+	_play_building_hit_effect(building)
 	_damage_building(building, damage_value, damage_type)
 	set_attack_cooldown_from_cfg()
 
@@ -70,11 +78,12 @@ func process_range_attack(delta: float) -> bool:
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 远程攻击 %s，%s伤害 %d" % [_debug_name(), _runtime_id(), _target_debug_name(target), _damage_type_text(damage_type), damage_value])
 	_play_owner_attack_lunge()
-	if target.has_method("receive_damage"):
-		if target.is_in_group("units"):
-			target.receive_damage(damage_value, damage_type, _owner_actor)
-		else:
-			_damage_building(target, damage_value, damage_type)
+	if _uses_projectile_range_attack():
+		var projectile := _launch_projectile(target, damage_value, damage_type)
+		if projectile != null:
+			set_attack_cooldown_from_cfg()
+			return true
+	_resolve_range_hit(target, damage_value, damage_type)
 	set_attack_cooldown_from_cfg()
 	if attack_range > 1:
 		_range_attack_hold_timer = min(RANGED_ATTACK_HOLD_SECONDS, _attack_timer)
@@ -134,6 +143,102 @@ func _damage_building(building: Node, damage_value: int, damage_type: int) -> vo
 		building.receive_damage(damage_value, damage_type)
 
 
+func _resolve_range_hit(target: Node, damage_value: int, damage_type: int) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	if target.is_in_group("units") and target.has_method("receive_damage"):
+		target.receive_damage(damage_value, damage_type, _owner_actor)
+	elif target.is_in_group("buildings"):
+		_damage_building(target, damage_value, damage_type)
+	elif target.has_method("receive_damage"):
+		target.receive_damage(damage_value, damage_type)
+
+
+func _uses_projectile_range_attack() -> bool:
+	return _owner_actor != null and StringName(_owner_actor.cfg.get("attack_delivery", "instant")) == &"projectile"
+
+
+func _launch_projectile(target: Node, damage_value: int, damage_type: int) -> Node:
+	if target == null or not is_instance_valid(target):
+		return null
+	var projectile_root := _get_projectile_root()
+	if projectile_root == null:
+		return null
+	var scene_key := StringName(_owner_actor.cfg.get("projectile_scene_key", "projectile"))
+	var data_repo = AppRefs.data_repo()
+	var projectile_scene: PackedScene = data_repo.get_scene_by_key(scene_key) if data_repo != null else null
+	if projectile_scene == null:
+		return null
+	var projectile := projectile_scene.instantiate()
+	projectile_root.add_child(projectile)
+	var projectile_payload := {
+		"source": _owner_actor,
+		"target": target,
+		"origin": _get_projectile_origin(target),
+		"speed": float(_owner_actor.cfg.get("projectile_speed", DEFAULT_PROJECTILE_SPEED)),
+		"hit_radius": float(_owner_actor.cfg.get("projectile_hit_radius", DEFAULT_PROJECTILE_HIT_RADIUS)),
+		"max_lifetime": float(_owner_actor.cfg.get("projectile_lifetime", DEFAULT_PROJECTILE_LIFETIME)),
+		"damage": damage_value,
+		"damage_type": damage_type
+	}
+	_copy_projectile_visual_config(projectile_payload)
+	var projectile_color: Variant = _parse_projectile_color(_owner_actor.cfg.get("projectile_color", null))
+	if projectile_color is Color:
+		projectile_payload["color"] = projectile_color
+	if projectile.has_signal("hit"):
+		projectile.hit.connect(_on_projectile_hit)
+	if projectile.has_method("setup"):
+		projectile.setup(projectile_payload)
+	elif projectile is Node2D:
+		(projectile as Node2D).global_position = projectile_payload["origin"]
+	return projectile
+
+
+func _on_projectile_hit(_projectile: Node, target: Node, projectile_payload: Dictionary) -> void:
+	if _owner_actor == null or not is_instance_valid(_owner_actor):
+		return
+	if int(_owner_actor.get("current_hp")) <= 0:
+		return
+	_resolve_range_hit(
+		target,
+		int(projectile_payload.get("damage", int(_owner_actor.cfg.get("atk", 1)))),
+		int(projectile_payload.get("damage_type", _parse_damage_type(String(_owner_actor.cfg.get("damage_type", "physical")))))
+	)
+
+
+func _get_projectile_root() -> Node:
+	return _owner_actor.get_node_or_null("../../ProjectileRoot") if _owner_actor != null else null
+
+
+func _get_projectile_origin(target: Node) -> Vector2:
+	var origin := _owner_actor.global_position
+	var direction := Vector2.ZERO
+	if target is Node2D:
+		direction = (target as Node2D).global_position - origin
+	if direction.length_squared() <= 0.001:
+		direction = Vector2(_owner_actor.facing)
+	if direction.length_squared() <= 0.001:
+		direction = Vector2.RIGHT
+	return origin + direction.normalized() * 18.0
+
+
+func _copy_projectile_visual_config(projectile_payload: Dictionary) -> void:
+	for key in [
+		"projectile_texture_path",
+		"texture_path",
+		"projectile_visual_length",
+		"projectile_visual_height",
+		"visual_length",
+		"visual_height",
+		"impact_texture_path",
+		"impact_hframes",
+		"impact_frame_count",
+		"impact_fps"
+	]:
+		if not projectile_payload.has(key) and _owner_actor.cfg.has(key):
+			projectile_payload[key] = _owner_actor.cfg[key]
+
+
 func _should_attack_path_building(building: Node, movement_controller: Node) -> bool:
 	if _is_destroyed_building(building):
 		return false
@@ -171,6 +276,55 @@ func _play_owner_attack_lunge() -> void:
 		_owner_actor.play_attack_lunge()
 
 
+func _play_building_hit_effect(building: Node) -> void:
+	if _owner_actor == null or not _owner_actor.has_method("spawn_world_effect"):
+		return
+	if StringName(_owner_actor.cfg.get("behavior_type", "normal")) != &"demolisher":
+		return
+	var effect_position := _owner_actor.global_position
+	if building is Node2D:
+		effect_position = (building as Node2D).global_position
+	_owner_actor.spawn_world_effect(
+		"res://assets/effects/enemies/demolisher_heavy_hit_strip.png",
+		effect_position,
+		0.36,
+		6,
+		6,
+		18.0,
+		DEMOLISHER_HIT_EFFECT_SIZE,
+		0.0,
+		false,
+		25
+	)
+
+
+func _play_melee_hit_effect(target: Node) -> void:
+	if target == null or not is_instance_valid(target) or not target.has_method("play_follow_effect"):
+		return
+	if not _should_play_heavy_melee_effect():
+		return
+	target.play_follow_effect(
+		"res://assets/effects/enemies/enemy_melee_heavy_hit_strip.png",
+		0.34,
+		6,
+		6,
+		18.0,
+		Vector2(118.0, 118.0),
+		false,
+		Vector2(0.0, -8.0),
+		25
+	)
+
+
+func _should_play_heavy_melee_effect() -> bool:
+	if _owner_actor == null:
+		return false
+	var behavior_type := StringName(_owner_actor.cfg.get("behavior_type", "normal"))
+	if behavior_type == &"boss" or behavior_type == &"demolisher":
+		return true
+	return int(_owner_actor.cfg.get("atk", 0)) >= 60 or int(_owner_actor.cfg.get("block_weight", 1)) >= 2
+
+
 func _parse_damage_type(raw_type: String) -> int:
 	match raw_type:
 		"magic":
@@ -179,6 +333,17 @@ func _parse_damage_type(raw_type: String) -> int:
 			return GameEnums.DAMAGE_TRUE
 		_:
 			return GameEnums.DAMAGE_PHYSICAL
+
+
+func _parse_projectile_color(raw_color: Variant) -> Variant:
+	if raw_color is Color:
+		return raw_color
+	if typeof(raw_color) == TYPE_ARRAY:
+		var color_values := raw_color as Array
+		if color_values.size() >= 3:
+			var alpha := float(color_values[3]) if color_values.size() >= 4 else 1.0
+			return Color(float(color_values[0]), float(color_values[1]), float(color_values[2]), alpha)
+	return null
 
 
 func _damage_type_text(type_value: int) -> String:
