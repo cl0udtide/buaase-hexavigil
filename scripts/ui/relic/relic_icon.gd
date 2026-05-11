@@ -51,7 +51,7 @@ func set_highlighted(highlighted: bool) -> void:
 
 func _apply_config() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	custom_minimum_size = Vector2(34.0, 34.0)
+	set_custom_minimum_size(Vector2(34.0, 34.0))
 	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null

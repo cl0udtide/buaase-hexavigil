@@ -12,7 +12,7 @@
 
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -30,16 +30,28 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SettingsButton" type="Button" parent="HudChromeLayer" unique_id=464889424]
+[node name="SettingsButtonSlot" type="Control" parent="HudChromeLayer" unique_id=275257616]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = 58.0
+offset_bottom = 52.0
+
+[node name="SettingsButton" type="Button" parent="HudChromeLayer/SettingsButtonSlot" unique_id=464889424]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 44)
 layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 script = ExtResource("2_fvafi")
-panel_path = NodePath("../../PopupLayer/AudioSettingsPanel")
+panel_path = NodePath("../../../PopupLayer/SettingsPanelSlot/AudioSettingsPanel")
 auto_toggle_panel = false
 
-[node name="GearIcon" type="Label" parent="HudChromeLayer/SettingsButton" unique_id=1732485762]
+[node name="GearIcon" type="Label" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=1732485762]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
@@ -51,11 +63,23 @@ text = "⚙"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TopBar" type="Control" parent="HudChromeLayer" unique_id=111752268]
+[node name="TopHudSlot" type="Control" parent="HudChromeLayer" unique_id=1888998177]
 unique_name_in_owner = true
 anchors_preset = 0
+offset_left = 66.0
+offset_top = 8.0
+offset_right = 1906.0
+offset_bottom = 90.0
 
-[node name="TopBarBase" type="Panel" parent="HudChromeLayer/TopBar" unique_id=375891098]
+[node name="TopBar" type="Control" parent="HudChromeLayer/TopHudSlot" unique_id=111752268]
+unique_name_in_owner = true
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBarBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar" unique_id=375891098]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -65,41 +89,48 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TopContent" type="MarginContainer" parent="HudChromeLayer/TopBar" unique_id=545916971]
+[node name="TopContent" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar" unique_id=545916971]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TopContentRow" type="HBoxContainer" parent="HudChromeLayer/TopBar/TopContent" unique_id=218542850]
+[node name="TopContentRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent" unique_id=218542850]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="StageChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=2078754718]
+[node name="LeftStatusGroup" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow" unique_id=730004094]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="StageChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup" unique_id=2078754718]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(190, 72)
 layout_mode = 2
 
-[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/StageChip" unique_id=437228288]
+[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/StageChip" unique_id=437228288]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="QueueLabel" type="Label" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/StageChip" unique_id=1070513286]
+[node name="QueueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/StageChip" unique_id=1070513286]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 offset_left = 42.0
 offset_top = 10.0
 offset_right = -16.0
 offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_font_sizes/font_size = 13
 text = "当前阶段
 准备"
@@ -107,36 +138,47 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="CoreChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=64737828]
+[node name="ChipIconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/StageChip" unique_id=1943236635]
+layout_mode = 0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -14.0
+offset_right = 38.0
+offset_bottom = 14.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoreChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup" unique_id=64737828]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(196, 72)
 layout_mode = 2
 
-[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=508976087]
+[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=508976087]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CoreLabel" type="Label" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=2005078692]
+[node name="CoreLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=2005078692]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
-anchor_bottom = 0.0
-grow_horizontal = 2
-grow_vertical = 2
 offset_left = 42.0
 offset_top = 9.0
 offset_right = -16.0
 offset_bottom = 33.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_font_sizes/font_size = 14
 text = "核心生命"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="CoreTrack" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=887060446]
+[node name="CoreTrack" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=887060446]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
@@ -146,7 +188,7 @@ offset_right = -16.0
 offset_bottom = 60.0
 mouse_filter = 2
 
-[node name="CoreFill" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=482287457]
+[node name="CoreFill" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=482287457]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 44.0
@@ -155,29 +197,41 @@ offset_right = 44.0
 offset_bottom = 60.0
 mouse_filter = 2
 
-[node name="DeployChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=2078095591]
+[node name="ChipIconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=371790689]
+layout_mode = 0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -14.0
+offset_right = 38.0
+offset_bottom = 14.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DeployChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup" unique_id=2078095591]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 72)
 layout_mode = 2
 
-[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/DeployChip" unique_id=2108456734]
+[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/DeployChip" unique_id=2108456734]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="DeployLabel" type="Label" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/DeployChip" unique_id=893896498]
+[node name="DeployLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/DeployChip" unique_id=893896498]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 offset_left = 42.0
 offset_top = 10.0
 offset_right = -16.0
 offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_font_sizes/font_size = 13
 text = "部署上限
 0/0"
@@ -185,41 +239,71 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="MessageChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=1120363777]
+[node name="ChipIconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/DeployChip" unique_id=264759048]
+layout_mode = 0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -14.0
+offset_right = 38.0
+offset_bottom = 14.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MessageChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup" unique_id=1120363777]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 72)
 layout_mode = 2
 
-[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip" unique_id=987633476]
+[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/MessageChip" unique_id=987633476]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MessageLabel" type="Label" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip" unique_id=1694205662]
+[node name="MessageLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/MessageChip" unique_id=1694205662]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 offset_left = 42.0
 offset_top = 10.0
 offset_right = -18.0
 offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_font_sizes/font_size = 13
 text = "拖拽底部干员卡开始部署"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="TimeControls" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=1610632498]
+[node name="ChipIconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/MessageChip" unique_id=1191659712]
+layout_mode = 0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -14.0
+offset_right = 38.0
+offset_bottom = 14.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CenterTimeGroup" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow" unique_id=1433110601]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="TimeControls" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup" unique_id=1610632498]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(216, 72)
 layout_mode = 2
 
-[node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls" unique_id=1931574895]
+[node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1931574895]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -229,7 +313,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SpeedActiveOverlay" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls" unique_id=85741853]
+[node name="SpeedActiveOverlay" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=85741853]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -238,45 +322,52 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TimeMargin" type="MarginContainer" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls" unique_id=1207861169]
+[node name="TimeMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1207861169]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin" unique_id=319891359]
+[node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="PauseButton" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
+[node name="PauseButton" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 46)
 layout_mode = 2
 focus_mode = 0
 text = "暂停"
 
-[node name="Speed1Button" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
+[node name="Speed1Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
 text = "1X"
 
-[node name="Speed2Button" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
+[node name="Speed2Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
 text = "2X"
 
-[node name="ResourceChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=143598965]
+[node name="RightResourceGroup" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow" unique_id=161627506]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="ResourceChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup" unique_id=143598965]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(470, 72)
 layout_mode = 2
 
-[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip" unique_id=1247586543]
+[node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip" unique_id=1247586543]
 visible = false
 layout_mode = 0
 anchor_right = 1.0
@@ -285,8 +376,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ResourceLabel" type="Label" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip" unique_id=1471530199]
+[node name="ResourceLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip" unique_id=1471530199]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -299,19 +391,415 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="RelicStrip" type="Control" parent="HudChromeLayer" unique_id=625474051 instance=ExtResource("3_40812")]
+[node name="ResourceItemsRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip" unique_id=1523293765]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="ActionPointResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=1767111546]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 56)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ResourceItemBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem" unique_id=1096010094]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem" unique_id=1525859688]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin" unique_id=1862485233]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=261924926]
+visible = false
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=491002511]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+text = "AP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=921489748]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=701873469]
+visible = false
+custom_minimum_size = Vector2(32, 22)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=211448428]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="WoodResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=2031638811]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 56)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ResourceItemBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem" unique_id=1562465331]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem" unique_id=1236382566]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin" unique_id=660242077]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1543004957]
+visible = false
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=867250537]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+text = "W"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1868586252]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1428997117]
+visible = false
+custom_minimum_size = Vector2(32, 22)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1031293433]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="StoneResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=946219780]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 56)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ResourceItemBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem" unique_id=622173955]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem" unique_id=1280841138]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin" unique_id=1070141140]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=1671956047]
+visible = false
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=1419226041]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+text = "S"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=650064189]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=790195570]
+visible = false
+custom_minimum_size = Vector2(32, 22)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1943487582]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="ManaResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=569599095]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 56)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ResourceItemBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem" unique_id=1303996037]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem" unique_id=707922083]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin" unique_id=588509389]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=84525083]
+visible = false
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=477963794]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+text = "M"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1667809664]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1568509827]
+visible = false
+custom_minimum_size = Vector2(32, 22)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1189598343]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="PrestigeResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=1594135027]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 56)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ResourceItemBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem" unique_id=496529067]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem" unique_id=986607795]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin" unique_id=1789613663]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1565540578]
+visible = false
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=195775893]
+custom_minimum_size = Vector2(26, 0)
+layout_mode = 2
+text = "P"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1015055532]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1065418526]
+visible = false
+custom_minimum_size = Vector2(32, 22)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=307323838]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 66.0
+offset_top = 96.0
+offset_right = 1166.0
+offset_bottom = 140.0
+
+[node name="RelicStrip" type="Control" parent="HudChromeLayer/RelicStripSlot" unique_id=625474051 instance=ExtResource("3_40812")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(360, 40)
 anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("4_0tkwj")
 
-[node name="WavePreviewPanel" type="Control" parent="HudChromeLayer" unique_id=283437824]
+[node name="RightColumnSlot" type="Control" parent="HudChromeLayer" unique_id=1176662936]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 1522.0
+offset_top = 104.0
+offset_right = 1906.0
+offset_bottom = 872.0
+
+[node name="RightColumnVBox" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot" unique_id=1282847888]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="WavePreviewPanel" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox" unique_id=283437824]
 unique_name_in_owner = true
 visible = false
-anchors_preset = 0
 clip_contents = true
+custom_minimum_size = Vector2(0, 156)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
 
-[node name="WavePreviewBase" type="Panel" parent="HudChromeLayer/WavePreviewPanel" unique_id=371660081]
+[node name="WavePreviewBase" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel" unique_id=371660081]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
@@ -319,32 +807,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="WavePreviewMargin" type="MarginContainer" parent="HudChromeLayer/WavePreviewPanel" unique_id=1848359695]
+[node name="WavePreviewMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel" unique_id=1848359695]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="WavePreviewContent" type="VBoxContainer" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin" unique_id=1430930927]
+[node name="WavePreviewContent" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin" unique_id=1430930927]
+clip_contents = true
 layout_mode = 2
 theme_override_constants/separation = 6
-clip_contents = true
 
-[node name="WavePreviewHeader" type="HBoxContainer" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1459039869]
+[node name="WavePreviewHeader" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1459039869]
+clip_contents = true
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 theme_override_constants/separation = 8
-clip_contents = true
 
-[node name="WavePreviewTitleLabel" type="Label" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1742898346]
+[node name="WavePreviewTitleLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1742898346]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "今晚敌情"
 vertical_alignment = 1
 
-[node name="WaveRouteToggle" type="CheckBox" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1668780302]
+[node name="WaveRouteToggle" type="CheckBox" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1668780302]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 26)
 layout_mode = 2
@@ -353,7 +841,7 @@ size_flags_vertical = 8
 focus_mode = 0
 text = "路线"
 
-[node name="WavePreviewLabel" type="Label" parent="HudChromeLayer/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1472852463]
+[node name="WavePreviewLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1472852463]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
@@ -362,11 +850,130 @@ size_flags_vertical = 3
 text = "等待波次情报"
 autowrap_mode = 3
 
-[node name="DeployDeck" type="Control" parent="HudChromeLayer" unique_id=1798001651]
+[node name="UnitDetailPanel" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox" unique_id=740705112 instance=ExtResource("5_w2pd7")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("6_siwdo")
+
+[node name="LegendPanel" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox" unique_id=1482391782]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 144)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+
+[node name="LegendBase" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel" unique_id=1822553051]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LegendMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel" unique_id=1255148119]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LegendVBox" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin" unique_id=1301954710]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LegendTitleLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox" unique_id=579077485]
+layout_mode = 2
+text = "战场图例"
+horizontal_alignment = 1
+
+[node name="LegendRows" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox" unique_id=1862402343]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EnemyPathRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1113705758]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow" unique_id=322349278]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.9, 0.36, 0.22, 0.9)
+
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow" unique_id=1640932252]
+layout_mode = 2
+text = "敌人路径"
+
+[node name="DeployTileRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=911310821]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow" unique_id=577881296]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.26, 0.76, 0.92, 0.85)
+
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow" unique_id=452756517]
+layout_mode = 2
+text = "可部署地块"
+
+[node name="FriendlyBuildingRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=434991344]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow" unique_id=1711101058]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.29, 0.7, 0.43, 0.85)
+
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow" unique_id=959075252]
+layout_mode = 2
+text = "我方建筑"
+
+[node name="BlockerRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1685001542]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow" unique_id=450837111]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.95, 0.65, 0.22, 0.9)
+
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow" unique_id=1506285477]
+layout_mode = 2
+text = "阻挡单元"
+
+[node name="CoreAreaRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1615749333]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Swatch" type="ColorRect" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow" unique_id=1304523594]
+custom_minimum_size = Vector2(18, 12)
+layout_mode = 2
+color = Color(0.5, 0.42, 0.76, 0.9)
+
+[node name="Label" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow" unique_id=1633493512]
+layout_mode = 2
+text = "核心区域"
+
+[node name="DeployDeckSlot" type="Control" parent="HudChromeLayer" unique_id=119538567]
 unique_name_in_owner = true
 anchors_preset = 0
+offset_left = 338.0
+offset_top = 876.0
+offset_right = 1906.0
+offset_bottom = 1066.0
 
-[node name="DeployRailBase" type="Panel" parent="HudChromeLayer/DeployDeck" unique_id=947087228]
+[node name="DeployDeck" type="Control" parent="HudChromeLayer/DeployDeckSlot" unique_id=1798001651]
+unique_name_in_owner = true
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DeployRailBase" type="Panel" parent="HudChromeLayer/DeployDeckSlot/DeployDeck" unique_id=947087228]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
@@ -374,126 +981,24 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="DeckMargin" type="MarginContainer" parent="HudChromeLayer/DeployDeck" unique_id=1101104632]
+[node name="DeckMargin" type="MarginContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck" unique_id=1101104632]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HudChromeLayer/DeployDeck/DeckMargin" unique_id=725690026]
+[node name="ScrollContainer" type="ScrollContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck/DeckMargin" unique_id=725690026]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 vertical_scroll_mode = 0
 
-[node name="DeployDeckContainer" type="HBoxContainer" parent="HudChromeLayer/DeployDeck/DeckMargin/ScrollContainer" unique_id=1175022116]
+[node name="DeployDeckContainer" type="HBoxContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck/DeckMargin/ScrollContainer" unique_id=1175022116]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
-
-[node name="UnitDetailPanel" type="Control" parent="HudChromeLayer" unique_id=740705112 instance=ExtResource("5_w2pd7")]
-unique_name_in_owner = true
-anchors_preset = 0
-script = ExtResource("6_siwdo")
-
-[node name="LegendPanel" type="Control" parent="HudChromeLayer" unique_id=1482391782]
-unique_name_in_owner = true
-anchors_preset = 0
-
-[node name="LegendBase" type="Panel" parent="HudChromeLayer/LegendPanel" unique_id=1822553051]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LegendMargin" type="MarginContainer" parent="HudChromeLayer/LegendPanel" unique_id=1255148119]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LegendVBox" type="VBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin" unique_id=1301954710]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="LegendTitleLabel" type="Label" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox" unique_id=579077485]
-layout_mode = 2
-text = "战场图例"
-horizontal_alignment = 1
-
-[node name="LegendRows" type="VBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox" unique_id=1862402343]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="EnemyPathRow" type="HBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1113705758]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow" unique_id=322349278]
-custom_minimum_size = Vector2(18, 12)
-layout_mode = 2
-color = Color(0.9, 0.36, 0.22, 0.9)
-
-[node name="Label" type="Label" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/EnemyPathRow" unique_id=1640932252]
-layout_mode = 2
-text = "敌人路径"
-
-[node name="DeployTileRow" type="HBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=911310821]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow" unique_id=577881296]
-custom_minimum_size = Vector2(18, 12)
-layout_mode = 2
-color = Color(0.26, 0.76, 0.92, 0.85)
-
-[node name="Label" type="Label" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/DeployTileRow" unique_id=452756517]
-layout_mode = 2
-text = "可部署地块"
-
-[node name="FriendlyBuildingRow" type="HBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=434991344]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow" unique_id=1711101058]
-custom_minimum_size = Vector2(18, 12)
-layout_mode = 2
-color = Color(0.29, 0.7, 0.43, 0.85)
-
-[node name="Label" type="Label" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/FriendlyBuildingRow" unique_id=959075252]
-layout_mode = 2
-text = "我方建筑"
-
-[node name="BlockerRow" type="HBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1685001542]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow" unique_id=450837111]
-custom_minimum_size = Vector2(18, 12)
-layout_mode = 2
-color = Color(0.95, 0.65, 0.22, 0.9)
-
-[node name="Label" type="Label" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/BlockerRow" unique_id=1506285477]
-layout_mode = 2
-text = "阻挡单元"
-
-[node name="CoreAreaRow" type="HBoxContainer" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows" unique_id=1615749333]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Swatch" type="ColorRect" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow" unique_id=1304523594]
-custom_minimum_size = Vector2(18, 12)
-layout_mode = 2
-color = Color(0.5, 0.42, 0.76, 0.9)
-
-[node name="Label" type="Label" parent="HudChromeLayer/LegendPanel/LegendMargin/LegendVBox/LegendRows/CoreAreaRow" unique_id=1633493512]
-layout_mode = 2
-text = "核心区域"
 
 [node name="InteractionLayer" type="Control" parent="." unique_id=185512381]
 unique_name_in_owner = true
@@ -544,20 +1049,25 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="RelicPanel" type="Control" parent="PopupLayer" unique_id=1252642806 instance=ExtResource("7_nkwv8")]
+[node name="SettingsPanelSlot" type="Control" parent="PopupLayer" unique_id=1597879175]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(620, 420)
 anchors_preset = 0
-script = ExtResource("8_nd5fi")
+offset_left = 14.0
+offset_top = 58.0
+offset_right = 434.0
+offset_bottom = 284.0
 
-[node name="AudioSettingsPanel" type="Control" parent="PopupLayer" unique_id=1813098785]
+[node name="AudioSettingsPanel" type="Control" parent="PopupLayer/SettingsPanelSlot" unique_id=1813098785]
 unique_name_in_owner = true
 visible = false
 anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("9_7wb5u")
 
-[node name="PanelBase" type="Panel" parent="PopupLayer/AudioSettingsPanel" unique_id=163035696]
+[node name="PanelBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel" unique_id=163035696]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
@@ -565,22 +1075,22 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ContentMargin" type="MarginContainer" parent="PopupLayer/AudioSettingsPanel" unique_id=1365737163]
+[node name="ContentMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel" unique_id=1365737163]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MainVBox" type="VBoxContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin" unique_id=1912505798]
+[node name="MainVBox" type="VBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin" unique_id=1912505798]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Header" type="HBoxContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=434046545]
+[node name="Header" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=434046545]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1750009426]
+[node name="TitleLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1750009426]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -588,159 +1098,178 @@ theme_override_font_sizes/font_size = 16
 text = "声音设置"
 vertical_alignment = 1
 
-[node name="CloseButton" type="Button" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1600475914]
+[node name="CloseButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1600475914]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
 focus_mode = 0
 text = "×"
 
-[node name="MasterRow" type="Control" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=572802256]
+[node name="MasterRow" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=572802256]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
-[node name="RowBase" type="Panel" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow" unique_id=345216434]
+[node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow" unique_id=345216434]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RowMargin" type="MarginContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow" unique_id=326530263]
+[node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow" unique_id=326530263]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RowContent" type="HBoxContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin" unique_id=1595461419]
+[node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin" unique_id=1595461419]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="VolumeIcon" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2121226643]
+[node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2121226643]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
 text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MasterLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=394814768]
+[node name="MasterLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=394814768]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 text = "主音量"
 vertical_alignment = 1
 
-[node name="MasterSlider" type="HSlider" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=1281956284]
+[node name="MasterSlider" type="HSlider" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=1281956284]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MasterValueLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2048464643]
+[node name="MasterValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2048464643]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="MusicRow" type="Control" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=1090437026]
+[node name="MusicRow" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=1090437026]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
-[node name="RowBase" type="Panel" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow" unique_id=2009036794]
+[node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow" unique_id=2009036794]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RowMargin" type="MarginContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow" unique_id=1700025736]
+[node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow" unique_id=1700025736]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RowContent" type="HBoxContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin" unique_id=1740202446]
+[node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin" unique_id=1740202446]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="VolumeIcon" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=50218736]
+[node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=50218736]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
 text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MusicLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=550238741]
+[node name="MusicLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=550238741]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 text = "音乐"
 vertical_alignment = 1
 
-[node name="MusicSlider" type="HSlider" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=937863763]
+[node name="MusicSlider" type="HSlider" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=937863763]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MusicValueLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=1973106036]
+[node name="MusicValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=1973106036]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="SfxRow" type="Control" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=512333557]
+[node name="SfxRow" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=512333557]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
-[node name="RowBase" type="Panel" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow" unique_id=159804048]
+[node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow" unique_id=159804048]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RowMargin" type="MarginContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow" unique_id=1772377279]
+[node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow" unique_id=1772377279]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RowContent" type="HBoxContainer" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin" unique_id=1000262509]
+[node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin" unique_id=1000262509]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="VolumeIcon" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=406330431]
+[node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=406330431]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
 text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SfxLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1098896980]
+[node name="SfxLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1098896980]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 text = "音效"
 vertical_alignment = 1
 
-[node name="SfxSlider" type="HSlider" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=741557457]
+[node name="SfxSlider" type="HSlider" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=741557457]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SfxValueLabel" type="Label" parent="PopupLayer/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1134437594]
+[node name="SfxValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1134437594]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 0)
 layout_mode = 2
 horizontal_alignment = 2
 vertical_alignment = 1
+
+[node name="RelicPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619765]
+unique_name_in_owner = true
+anchors_preset = 0
+offset_left = 510.0
+offset_top = 220.0
+offset_right = 1410.0
+offset_bottom = 860.0
+
+[node name="RelicPanel" type="Control" parent="PopupLayer/RelicPanelSlot" unique_id=1252642806 instance=ExtResource("7_nkwv8")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(620, 420)
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8_nd5fi")
 
 [node name="TooltipLayer" type="Control" parent="." unique_id=541998327]
 unique_name_in_owner = true

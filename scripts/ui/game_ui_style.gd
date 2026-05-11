@@ -153,7 +153,7 @@ static func set_button_texture_icon(button: Button, texture: Texture2D, icon_siz
 static func fit_centered_icon(control: Control, icon_size: Vector2) -> void:
 	if control == null:
 		return
-	control.custom_minimum_size = Vector2.ZERO
+	control.set_custom_minimum_size(Vector2.ZERO)
 	control.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	control.anchor_left = 0.5
 	control.anchor_top = 0.5
@@ -182,7 +182,7 @@ static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, ra
 	style.content_margin_right = 10.0
 	style.content_margin_bottom = 8.0
 	style.shadow_color = Color(0.120, 0.180, 0.260, 0.10)
-	style.shadow_size = 8
+	style.set("shadow_size", 8)
 	style.shadow_offset = Vector2(0.0, 3.0)
 	return style
 
@@ -198,7 +198,7 @@ static func panel(fill: Color, border: Color, border_width: float = 1.0, radius:
 
 static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:
 	var style := flat_panel(fill, border, border_width, radius)
-	style.shadow_size = 0
+	style.set("shadow_size", 0)
 	style.shadow_offset = Vector2.ZERO
 	style.shadow_color = Color.TRANSPARENT
 	return style

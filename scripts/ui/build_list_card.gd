@@ -79,7 +79,7 @@ func configure(config: Dictionary) -> void:
 
 
 func _apply_config(config: Dictionary) -> void:
-	custom_minimum_size = Vector2(float(config.get("min_width", 0.0)), float(config.get("min_height", 96.0)))
+	set_custom_minimum_size(Vector2(float(config.get("min_width", 0.0)), float(config.get("min_height", 96.0))))
 	_accent = config.get("accent", GameUiStyle.STROKE_SOFT) as Color
 	_disabled = bool(config.get("disabled", false))
 	_pressable_when_disabled = bool(config.get("pressable_when_disabled", false))

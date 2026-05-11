@@ -34,9 +34,13 @@ var _latest_wave_preview_text := ""
 var _wave_route_revision := 0
 var _wave_preview_refresh_queued := false
 
-@onready var _combat_hud: Control = get_node_or_null("../CombatHud") as Control
-@onready var _action_panel: Control = get_node_or_null("../ActionPanel") as Control
-@onready var _build_panel: Control = get_node_or_null("../BuildPanel") as Control
+@export_node_path("Control") var combat_hud_path: NodePath = ^"../ScreenLayout/CombatHudSlot/CombatHud"
+@export_node_path("Control") var action_panel_path: NodePath = ^"../ScreenLayout/ActionPanelSlot/ActionPanel"
+@export_node_path("Control") var build_panel_path: NodePath = ^"../ScreenLayout/BuildPanelSlot/BuildPanel"
+
+@onready var _combat_hud: Control = get_node_or_null(combat_hud_path) as Control
+@onready var _action_panel: Control = get_node_or_null(action_panel_path) as Control
+@onready var _build_panel: Control = get_node_or_null(build_panel_path) as Control
 @onready var _map_root: Node = get_node_or_null("../../World/MapRoot")
 @onready var _map_manager: Node = get_node_or_null("../../Managers/MapManager")
 @onready var _path_service: Node = get_node_or_null("../../Managers/PathService")
@@ -51,7 +55,6 @@ func _ready() -> void:
 	set_process(true)
 	set_process_unhandled_input(true)
 	_bind_combat_hud()
-	_refresh_hud_reserved_width()
 	_connect_events()
 	call_deferred("_bootstrap_hud")
 
@@ -62,7 +65,6 @@ func _process(_delta: float) -> void:
 	_refresh_top_hud()
 	_refresh_detail_panel()
 	_refresh_wave_preview()
-	_refresh_hud_reserved_width()
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
 
@@ -1114,16 +1116,6 @@ func _show_message(text: String, cooldown_operator_key: StringName = &"") -> voi
 	_cooldown_message_operator_key = cooldown_operator_key
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
 		_combat_hud.show_message(text)
-
-
-func _refresh_hud_reserved_width() -> void:
-	if _combat_hud == null or not _combat_hud.has_method("set_left_reserved_width"):
-		return
-	var reserved_width := 0.0
-	for panel in [_build_panel, _action_panel]:
-		if panel != null and panel.visible:
-			reserved_width = max(reserved_width, panel.position.x + panel.size.x)
-	_combat_hud.set_left_reserved_width(reserved_width)
 
 
 func _show_result_message(result: Dictionary, success_text: String, failure_text: String) -> void:

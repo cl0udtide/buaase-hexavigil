@@ -16,6 +16,29 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 
 当前工程已接入 `assets/ui/generated/` 分层图片资产：面板、按钮、进度条、图标框、状态覆盖层通过统一样式与资源入口读取。仍需保留无资产兜底，缺图时回退到 `StyleBoxFlat` 或文本占位；组件脚本不得各自拼接图片路径。
 
+### 1.1 顶层布局槽位
+
+当前 UI 只支持 `1920x1080`。不要在脚本中实现移动端、小屏、宽屏响应式，也不要同时保留“场景树一套位置、脚本一套位置”的双重来源。
+
+常驻顶层 UI 的位置、尺寸、锚点和边距由场景 Slot 节点控制：
+
+- `scenes/game/Game.tscn` 的 `UI/ScreenLayout` 管理 `BuildPanelSlot`、`ActionPanelSlot`、`CombatHudSlot`。
+- `scenes/game/Game.tscn` 的 `UI/FloatingLayer` 管理鼠标附近浮层，`UI/ModalLayer` 管理 `EventPanelSlot`、`BlessingPanelSlot`、`ResultPanelSlot`。
+- `scenes/ui/combat/CombatHud.tscn` 的 `HudChromeLayer` 管理 `SettingsButtonSlot`、`TopHudSlot`、`RelicStripSlot`、`RightColumnSlot`、`DeployDeckSlot`。
+- `scenes/ui/combat/CombatHud.tscn` 的 `PopupLayer` 管理 `SettingsPanelSlot`、`RelicPanelSlot`。
+
+脚本不得定位常驻 HUD 模块，不得在运行时为这些模块写入 `position`、`size`、`anchor_*` 或 `offset_*`。脚本只负责数据绑定、文本/数值刷新、显隐、动态列表子项、信号转发和样式。
+
+允许的动态几何例外：
+
+- `DragGhost` 跟随鼠标。
+- `MapInteractionPopup` 出现在鼠标附近并避开屏幕边缘。
+- 核心、HP、SP 等进度条 fill 根据数值比例改变宽度。
+- 演员头顶状态条跟随世界对象。
+- Tooltip 跟随鼠标或目标节点。
+- 图标在父控件内部居中。
+- 文本或列表内容决定弹窗内部高度与滚动内容。
+
 ## 2. 遗物展示方案
 
 推荐方案：**遗物面板为主，顶部下方轻量摘要为辅。**
@@ -51,7 +74,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 6. `CombatHudController` 当前资源 tooltip 中的“遗物 N / 当前遗物列表”保留为兜底，但完整查看迁移到 `RelicPanel`。
 7. `UiDisplayText` 增加遗物稀有度、遗物分类标签和效果字段格式化方法，避免 `RelicPanel`、`BlessingPanel`、tooltip 各写一套文案。
 8. `BlessingPanel` 改成使用 `RelicCard` 的选择态版本，让“获得遗物”与“查看遗物”视觉一致。
-9. `UiLayoutRules` 增加 `relic_strip_rect`，确保 1920x1080、1600x900、1366x768、1280x720 下不遮挡地图、左侧建筑栏和右侧详情。
+9. 顶层位置统一落到 `Game.tscn` 与 `CombatHud.tscn` 的 Slot 节点，确保 1920x1080 下不遮挡地图、左侧建筑栏和右侧详情。
 10. 将设置入口固定到顶部最左侧：使用小齿轮按钮打开设置面板，设置面板至少包含主音量、音乐音量和音效音量滑条。
 11. 补齐键鼠交互：`R` 打开/关闭遗物面板，`Esc` 优先关闭当前打开的遗物/设置面板，鼠标悬停显示 tooltip，点击遗物卡可展开详情。
 
@@ -66,7 +89,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 ### 脚本负责
 
 - 从 `RunState`、`DataRepo`、Manager 或传入参数读取状态。
-- 调用 `GameUiStyle`、`UiFrameSpec`、`UiLayoutRules` 应用统一样式和布局。
+- 调用 `GameUiStyle`、`UiFrameSpec` 应用统一样式；不得定位常驻 HUD 模块。
 - 动态生成重复项，例如干员卡、建筑列表、商店槽位、遗物卡。
 - 发出 UI 信号或把 UI 信号转接为 Manager 请求。
 
@@ -75,6 +98,7 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - 组件脚本自行加载 `res://assets/...` UI 图片。
 - 在多个 UI 脚本重复维护职业、阶段、伤害类型、朝向、遗物稀有度等显示映射。
 - 在 `.tscn` 固定一套布局，同时又在脚本中创建另一套同名结构。
+- 脚本写入常驻 HUD 模块的 `position`、`size`、`anchor_*` 或 `offset_*`。
 - 业务真相数据保存在 UI 节点里。
 
 ## 5. 现有 UI 基线
@@ -82,7 +106,6 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 - `scripts/ui/app_theme.gd`：使用 Godot 默认字体，只设置字号、颜色和控件样式。
 - `scripts/ui/game_ui_style.gd`：唯一主题入口，按语义组件请求 frame、按钮、进度条、滚动条和滑条样式。
 - `scripts/ui/ui_frame_spec.gd`：集中维护 frame 资产 key、九宫格边距和内容边距；缺图时返回 `StyleBoxFlat`。
-- `scripts/ui/ui_layout_rules.gd`：作战 HUD 响应式矩形计算。
 - `scripts/ui/ui_tokens.gd`：断点、间距、字号和固定组件尺寸。
 - `scripts/ui/ui_display_text.gd`：跨 UI 显示文本转换。
 - `scripts/ui/ui_art_registry.gd`：统一图标接口，优先读取 JSON 中的显式路径，其次兼容旧字段和 catalog fallback。
@@ -796,10 +819,10 @@ ActionPanel
 7. 调整右侧列：`WavePreviewPanel` 在上方且路线开关位于标题行，`UnitDetailPanel` 在中部且层级最高，`LegendPanel` 固定右下角且不遮挡详情。
 8. 重构商店交互为“点击预览、按钮购买”，并让商店干员与底部干员卡都能打开右侧详情预览。
 9. 修正 `OperatorCard` 根节点、视觉卡面和鼠标命中区域一致，overlay 不拦截输入。
-10. 调整 `UiLayoutRules`，保证设置按钮、遗物条、今晚敌情、底部卡组、右侧详情、右下图例在小屏不互相遮挡。
+10. 调整 `Game.tscn` 与 `CombatHud.tscn` 的 Slot，保证设置按钮、遗物条、今晚敌情、底部卡组、右侧详情、右下图例在 1920x1080 下不互相遮挡。
 11. 生成并接入第一批分层资产：通用按钮、进度条、面板底板、backplate、frame、overlay、设置按钮/音量图标、资源图标、职业图标。
 12. 再补齐建筑图标、技能图标、遗物图标、地图图例图标。
-13. 用 1920x1080、1600x900、1366x768、1280x720 检查文本、按钮、卡片、tooltip、设置面板是否溢出。
+13. 用 1920x1080 检查文本、按钮、卡片、tooltip、设置面板是否溢出。
 
 ## 8. 验收标准
 
