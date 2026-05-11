@@ -18,6 +18,7 @@ signal wave_route_preview_toggled(enabled: bool)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"wood", &"stone", &"mana", &"prestige"]
+const CORE_HP_TITLE := "核心生命"
 const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 62.0
 const WAVE_PREVIEW_LINE_HEIGHT := 19.0
 const WAVE_PREVIEW_PANEL_BOTTOM_PADDING := 34.0
@@ -30,6 +31,8 @@ var _left_reserved_width := 0.0
 var _layout_profile: Dictionary = {}
 var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
+var _core_hp_current := 0
+var _core_hp_max := 0
 var _wave_preview_text_min_height := WAVE_PREVIEW_MIN_TEXT_HEIGHT
 
 @onready var _settings_button: Button = %SettingsButton
@@ -79,9 +82,12 @@ func _ready() -> void:
 	set_process_unhandled_input(true)
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	_top_bar_base.add_theme_stylebox_override("panel", GameUiStyle.top_hud_panel())
+	_top_bar_base.visible = false
+	_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.add_theme_stylebox_override("panel", GameUiStyle.progress_background())
-	_core_fill.add_theme_stylebox_override("panel", GameUiStyle.progress_fill(GameUiStyle.AMBER))
+	_core_fill.add_theme_stylebox_override("panel", GameUiStyle.core_progress_fill())
+	_core_track.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_core_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.resized.connect(_refresh_core_fill)
 	_ensure_top_bar_groups()
 	_apply_frame_margins()
@@ -158,7 +164,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func set_top_values(core_text: String, deploy_text: String, queue_text: String) -> void:
-	_core_label.text = core_text
+	_core_label.text = _core_title_from_text(core_text)
 	_deploy_label.text = deploy_text
 	_queue_label.text = queue_text
 	_apply_chip_icon(_stage_chip, _phase_icon_id_for_text(queue_text))
@@ -166,6 +172,26 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 	_apply_chip_icon(_deploy_chip, &"top_deploy_limit")
 	_apply_chip_icon(_message_chip, &"top_enemy_queue")
 	_set_core_progress_from_text(core_text)
+
+
+func set_core_hp(current: int, max_value: int) -> void:
+	_core_hp_current = maxi(current, 0)
+	_core_hp_max = maxi(max_value, 0)
+	if _core_hp_max <= 0:
+		_core_hp_ratio = 0.0
+		var tooltip_missing := "%s --/--" % CORE_HP_TITLE
+		_core_chip.tooltip_text = tooltip_missing
+		_core_track.tooltip_text = tooltip_missing
+		_core_fill.tooltip_text = tooltip_missing
+	else:
+		_core_hp_current = mini(_core_hp_current, _core_hp_max)
+		_core_hp_ratio = clampf(float(_core_hp_current) / float(_core_hp_max), 0.0, 1.0)
+		var tooltip_value := "%s %d/%d" % [CORE_HP_TITLE, _core_hp_current, _core_hp_max]
+		_core_chip.tooltip_text = tooltip_value
+		_core_track.tooltip_text = tooltip_value
+		_core_fill.tooltip_text = tooltip_value
+	_core_label.text = CORE_HP_TITLE
+	_refresh_core_fill()
 
 
 func show_message(text_value: String) -> void:
@@ -456,7 +482,7 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	var item_root := Control.new()
 	item_root.name = "%sResourceItem" % _resource_node_prefix(resource_key)
 	item_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	item_root.custom_minimum_size = Vector2(74.0, 42.0)
+	item_root.custom_minimum_size = Vector2(78.0, 48.0)
 	var base := Panel.new()
 	base.name = "ResourceItemBase"
 	base.anchor_right = 1.0
@@ -468,27 +494,27 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	margin.anchor_right = 1.0
 	margin.anchor_bottom = 1.0
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 5)
-	margin.add_theme_constant_override("margin_top", 3)
-	margin.add_theme_constant_override("margin_right", 5)
-	margin.add_theme_constant_override("margin_bottom", 3)
+	margin.add_theme_constant_override("margin_left", 6)
+	margin.add_theme_constant_override("margin_top", 5)
+	margin.add_theme_constant_override("margin_right", 6)
+	margin.add_theme_constant_override("margin_bottom", 5)
 	item_root.add_child(margin)
 	var row := HBoxContainer.new()
 	row.name = "ItemRow"
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 3)
+	row.add_theme_constant_override("separation", 4)
 	margin.add_child(row)
 	var icon_label := Label.new()
 	icon_label.name = "IconLabel"
-	icon_label.custom_minimum_size = Vector2(22.0, 0.0)
+	icon_label.custom_minimum_size = Vector2(24.0, 0.0)
 	icon_label.text = _resource_default_icon(resource_key)
 	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	icon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var icon_texture := TextureRect.new()
 	icon_texture.name = "IconTexture"
-	icon_texture.custom_minimum_size = Vector2(22.0, 22.0)
+	icon_texture.custom_minimum_size = Vector2(24.0, 24.0)
 	icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -506,7 +532,7 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	var delta_badge := Panel.new()
 	delta_badge.name = "DeltaBadge"
 	delta_badge.visible = false
-	delta_badge.custom_minimum_size = Vector2(30.0, 20.0)
+	delta_badge.custom_minimum_size = Vector2(32.0, 22.0)
 	delta_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	delta_badge.add_theme_stylebox_override("panel", GameUiStyle.resource_delta_badge())
 	row.add_child(delta_badge)
@@ -577,16 +603,16 @@ func _apply_chip_icon(chip: Control, icon_id: StringName) -> void:
 		icon.anchor_right = 0.0
 		icon.anchor_bottom = 0.5
 		icon.offset_left = 8.0
-		icon.offset_top = -12.0
-		icon.offset_right = 32.0
-		icon.offset_bottom = 12.0
+		icon.offset_top = -14.0
+		icon.offset_right = 36.0
+		icon.offset_bottom = 14.0
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		chip.add_child(icon)
 	var label := chip.find_child("*Label", true, false) as Label
 	if label != null:
-		label.offset_left = maxf(label.offset_left, 24.0)
+		label.offset_left = maxf(label.offset_left, 34.0)
 	icon.texture = texture
 	icon.visible = true
 
@@ -623,7 +649,12 @@ func _place_speed_active_overlay(button: Button) -> void:
 
 
 func _apply_frame_margins() -> void:
-	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/TopBar/TopContent") as MarginContainer, GameUiStyle.FRAME_TOP_HUD, Vector4(4.0, 0.0, 4.0, 0.0))
+	var top_content := get_node_or_null("HudChromeLayer/TopBar/TopContent") as MarginContainer
+	if top_content != null:
+		top_content.add_theme_constant_override("margin_left", 0)
+		top_content.add_theme_constant_override("margin_top", 4)
+		top_content.add_theme_constant_override("margin_right", 0)
+		top_content.add_theme_constant_override("margin_bottom", 4)
 	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/LegendPanel/LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
@@ -793,7 +824,7 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 			group = _top_content_row.get_node_or_null(group_name) as HBoxContainer
 		if group != null:
 			group.add_theme_constant_override("separation", 6 if compact else 8)
-	var card_height := maxf(36.0, top_height - 8.0)
+	var card_height := maxf(46.0, top_height - 8.0)
 	var show_message_card := float(widths.get("message", 0.0)) > 0.0
 	if _message_chip != null:
 		_message_chip.visible = show_message_card
@@ -802,6 +833,7 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	_set_top_card_min(_deploy_chip, widths.get("deploy", 160.0), card_height)
 	_set_top_card_min(_message_chip, widths.get("message", 260.0), card_height)
 	_set_top_card_min(_time_controls, widths.get("time", 200.0), card_height)
+	_apply_core_bar_layout(card_height, compact)
 	var resource_item_width := float(widths.get("resource_item", 74.0))
 	var resource_total_width := resource_item_width * float(RESOURCE_ORDER.size()) + float(maxi(RESOURCE_ORDER.size() - 1, 0)) * (6.0 if compact else 8.0) + 8.0
 	_set_top_card_min(_resource_chip, resource_total_width, card_height)
@@ -813,25 +845,29 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	for item in _resource_item_controls.values():
 		var root := (item as Dictionary).get("root") as Control
 		if root != null:
-			root.custom_minimum_size = Vector2(resource_item_width, maxf(34.0, card_height - 8.0))
-	var label_size := 12 if compact else 13
+			root.custom_minimum_size = Vector2(resource_item_width, maxf(42.0, card_height - 10.0))
+	var label_size := 13 if compact else 14
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_font_size_override("font_size", label_size)
 	for item in _resource_item_controls.values():
 		var item_dict := item as Dictionary
 		var icon_label := item_dict.get("icon") as Label
+		var icon_texture := item_dict.get("icon_texture") as TextureRect
 		var value_label := item_dict.get("value") as Label
 		var delta_label := item_dict.get("delta") as Label
 		if icon_label != null:
-			icon_label.add_theme_font_size_override("font_size", 10 if compact else 11)
+			icon_label.add_theme_font_size_override("font_size", 11 if compact else 12)
+			icon_label.custom_minimum_size = Vector2(24.0 if compact else 26.0, 0.0)
+		if icon_texture != null:
+			icon_texture.custom_minimum_size = Vector2(24.0 if compact else 26.0, 24.0 if compact else 26.0)
 		if value_label != null:
-			value_label.add_theme_font_size_override("font_size", 12)
+			value_label.add_theme_font_size_override("font_size", 13)
 		if delta_label != null:
 			delta_label.add_theme_font_size_override("font_size", 10)
-	var button_height := 34.0 if compact else 36.0
-	_pause_button.custom_minimum_size = Vector2(74.0 if compact else 82.0, button_height)
-	_speed_1_button.custom_minimum_size = Vector2(58.0 if compact else 64.0, button_height)
-	_speed_2_button.custom_minimum_size = Vector2(58.0 if compact else 64.0, button_height)
+	var button_height := 40.0 if compact else 42.0
+	_pause_button.custom_minimum_size = Vector2(76.0 if compact else 84.0, button_height)
+	_speed_1_button.custom_minimum_size = Vector2(60.0 if compact else 66.0, button_height)
+	_speed_2_button.custom_minimum_size = Vector2(60.0 if compact else 66.0, button_height)
 
 
 func _set_top_card_min(card: Control, width: float, height: float) -> void:
@@ -839,20 +875,61 @@ func _set_top_card_min(card: Control, width: float, height: float) -> void:
 		card.custom_minimum_size = Vector2(width, height)
 
 
+func _apply_core_bar_layout(card_height: float, compact: bool) -> void:
+	if _core_label != null:
+		_core_label.anchor_left = 0.0
+		_core_label.anchor_top = 0.0
+		_core_label.anchor_right = 1.0
+		_core_label.anchor_bottom = 0.0
+		_core_label.offset_left = 36.0 if compact else 40.0
+		_core_label.offset_top = 8.0
+		_core_label.offset_right = -12.0
+		_core_label.offset_bottom = 30.0 if compact else 32.0
+		_core_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	if _core_track != null:
+		_core_track.anchor_left = 0.0
+		_core_track.anchor_top = 0.0
+		_core_track.anchor_right = 1.0
+		_core_track.anchor_bottom = 0.0
+		_core_track.offset_left = 38.0 if compact else 42.0
+		_core_track.offset_top = card_height - (25.0 if compact else 27.0)
+		_core_track.offset_right = -14.0
+		_core_track.offset_bottom = card_height - 8.0
+	if _core_fill != null and _core_track != null:
+		_refresh_core_fill()
+
+
+func _core_title_from_text(core_text: String) -> String:
+	for token in core_text.split("\n", false):
+		var title := token.strip_edges()
+		if title.is_empty() or title.contains("/"):
+			continue
+		return title
+	return CORE_HP_TITLE
+
+
 func _set_core_progress_from_text(core_text: String) -> void:
-	var ratio := 0.0
+	var ratio := _core_hp_ratio
+	var parsed_hp_text := false
 	for token in core_text.split("\n", false):
 		var slash_index := token.find("/")
 		if slash_index <= 0:
 			continue
+		parsed_hp_text = true
 		var current_text := token.substr(0, slash_index).strip_edges()
 		var max_text := token.substr(slash_index + 1).strip_edges()
 		if current_text.is_valid_int() and max_text.is_valid_int():
-			var max_value := maxf(float(max_text.to_int()), 1.0)
-			ratio = clampf(float(current_text.to_int()) / max_value, 0.0, 1.0)
+			var max_value := max_text.to_int()
+			if max_value <= 0:
+				ratio = 0.0
+			else:
+				ratio = clampf(float(current_text.to_int()) / float(max_value), 0.0, 1.0)
 			break
-	_core_hp_ratio = ratio
-	_refresh_core_fill()
+		else:
+			ratio = 0.0
+	if parsed_hp_text:
+		_core_hp_ratio = ratio
+		_refresh_core_fill()
 
 
 func _refresh_core_fill() -> void:
