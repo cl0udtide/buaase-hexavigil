@@ -79,7 +79,7 @@ alignment = 1
 
 [node name="StageChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=2078754718]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(190, 64)
+custom_minimum_size = Vector2(190, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/StageChip" unique_id=437228288]
@@ -96,6 +96,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+offset_left = 42.0
+offset_top = 10.0
+offset_right = -16.0
+offset_bottom = -10.0
 theme_override_font_sizes/font_size = 13
 text = "当前阶段
 准备"
@@ -105,7 +109,7 @@ text_overrun_behavior = 3
 
 [node name="CoreChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=64737828]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(196, 64)
+custom_minimum_size = Vector2(196, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=508976087]
@@ -122,10 +126,10 @@ anchor_right = 1.0
 anchor_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
-offset_left = 40.0
-offset_top = 8.0
-offset_right = -12.0
-offset_bottom = 32.0
+offset_left = 42.0
+offset_top = 9.0
+offset_right = -16.0
+offset_bottom = 33.0
 theme_override_font_sizes/font_size = 14
 text = "核心生命"
 horizontal_alignment = 1
@@ -136,24 +140,24 @@ text_overrun_behavior = 3
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
-offset_left = 42.0
-offset_top = 37.0
-offset_right = -14.0
-offset_bottom = 55.0
+offset_left = 44.0
+offset_top = 42.0
+offset_right = -16.0
+offset_bottom = 60.0
 mouse_filter = 2
 
 [node name="CoreFill" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=482287457]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 42.0
-offset_top = 37.0
-offset_right = 42.0
-offset_bottom = 55.0
+offset_left = 44.0
+offset_top = 42.0
+offset_right = 44.0
+offset_bottom = 60.0
 mouse_filter = 2
 
 [node name="DeployChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=2078095591]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 64)
+custom_minimum_size = Vector2(160, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/DeployChip" unique_id=2108456734]
@@ -170,6 +174,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+offset_left = 42.0
+offset_top = 10.0
+offset_right = -16.0
+offset_bottom = -10.0
 theme_override_font_sizes/font_size = 13
 text = "部署上限
 0/0"
@@ -179,7 +187,7 @@ text_overrun_behavior = 3
 
 [node name="MessageChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=1120363777]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 64)
+custom_minimum_size = Vector2(300, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip" unique_id=987633476]
@@ -196,6 +204,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+offset_left = 42.0
+offset_top = 10.0
+offset_right = -18.0
+offset_bottom = -10.0
 theme_override_font_sizes/font_size = 13
 text = "拖拽底部干员卡开始部署"
 horizontal_alignment = 1
@@ -204,16 +216,18 @@ text_overrun_behavior = 3
 
 [node name="TimeControls" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=1610632498]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(216, 64)
+custom_minimum_size = Vector2(216, 72)
 layout_mode = 2
 
 [node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls" unique_id=1931574895]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="SpeedActiveOverlay" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls" unique_id=85741853]
 unique_name_in_owner = true
@@ -238,36 +252,38 @@ alignment = 1
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 42)
+custom_minimum_size = Vector2(56, 46)
 layout_mode = 2
 focus_mode = 0
 text = "暂停"
 
 [node name="Speed1Button" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(66, 42)
+custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
 text = "1X"
 
 [node name="Speed2Button" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(66, 42)
+custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
 text = "2X"
 
 [node name="ResourceChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=143598965]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(430, 64)
+custom_minimum_size = Vector2(470, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip" unique_id=1247586543]
+visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="ResourceLabel" type="Label" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip" unique_id=1471530199]
 unique_name_in_owner = true
