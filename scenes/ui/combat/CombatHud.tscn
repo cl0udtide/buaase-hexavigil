@@ -57,11 +57,13 @@ anchors_preset = 0
 
 [node name="TopBarBase" type="Panel" parent="HudChromeLayer/TopBar" unique_id=375891098]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="TopContent" type="MarginContainer" parent="HudChromeLayer/TopBar" unique_id=545916971]
 layout_mode = 0
@@ -77,7 +79,7 @@ alignment = 1
 
 [node name="StageChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=2078754718]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(190, 56)
+custom_minimum_size = Vector2(190, 64)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/StageChip" unique_id=437228288]
@@ -103,7 +105,7 @@ text_overrun_behavior = 3
 
 [node name="CoreChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=64737828]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(190, 56)
+custom_minimum_size = Vector2(196, 64)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=508976087]
@@ -117,12 +119,15 @@ grow_vertical = 2
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 13
-text = "核心生命
---/--"
+offset_left = 40.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = 32.0
+theme_override_font_sizes/font_size = 14
+text = "核心生命"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
@@ -130,23 +135,25 @@ text_overrun_behavior = 3
 [node name="CoreTrack" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=887060446]
 unique_name_in_owner = true
 layout_mode = 0
-anchor_left = 0.1
-anchor_top = 0.72
-anchor_right = 0.9
-anchor_bottom = 0.88
+anchor_right = 1.0
+offset_left = 42.0
+offset_top = 37.0
+offset_right = -14.0
+offset_bottom = 55.0
+mouse_filter = 2
 
 [node name="CoreFill" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/CoreChip" unique_id=482287457]
 unique_name_in_owner = true
 layout_mode = 0
-anchor_left = 0.1
-anchor_top = 0.72
-anchor_right = 0.1
-anchor_bottom = 0.88
-offset_right = 48.0
+offset_left = 42.0
+offset_top = 37.0
+offset_right = 42.0
+offset_bottom = 55.0
+mouse_filter = 2
 
 [node name="DeployChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=2078095591]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 56)
+custom_minimum_size = Vector2(160, 64)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/DeployChip" unique_id=2108456734]
@@ -172,7 +179,7 @@ text_overrun_behavior = 3
 
 [node name="MessageChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=1120363777]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 56)
+custom_minimum_size = Vector2(300, 64)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/MessageChip" unique_id=987633476]
@@ -197,7 +204,7 @@ text_overrun_behavior = 3
 
 [node name="TimeControls" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=1610632498]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 56)
+custom_minimum_size = Vector2(216, 64)
 layout_mode = 2
 
 [node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls" unique_id=1931574895]
@@ -231,28 +238,28 @@ alignment = 1
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 36)
+custom_minimum_size = Vector2(84, 42)
 layout_mode = 2
 focus_mode = 0
 text = "暂停"
 
 [node name="Speed1Button" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 36)
+custom_minimum_size = Vector2(66, 42)
 layout_mode = 2
 focus_mode = 0
 text = "1X"
 
 [node name="Speed2Button" type="Button" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 36)
+custom_minimum_size = Vector2(66, 42)
 layout_mode = 2
 focus_mode = 0
 text = "2X"
 
 [node name="ResourceChip" type="Control" parent="HudChromeLayer/TopBar/TopContent/TopContentRow" unique_id=143598965]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(245, 56)
+custom_minimum_size = Vector2(430, 64)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopBar/TopContent/TopContentRow/ResourceChip" unique_id=1247586543]

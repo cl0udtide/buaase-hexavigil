@@ -63,6 +63,7 @@ const FRAME_SCROLL_THUMB := UiFrameSpec.SCROLL_THUMB
 const FRAME_SLIDER_TRACK := UiFrameSpec.SLIDER_TRACK
 const FRAME_SLIDER_FILL := UiFrameSpec.SLIDER_FILL
 const FRAME_SLIDER_HANDLE := UiFrameSpec.SLIDER_HANDLE
+const FRAME_CORE_PROGRESS_FILL := &"bar_progress_fill_core"
 
 
 const BG := Color(0.035, 0.045, 0.052, 1.0)
@@ -501,6 +502,10 @@ static func progress_fill(color: Color) -> StyleBox:
 	elif color.g > color.b or color == AMBER:
 		component = UiFrameSpec.PROGRESS_AMBER
 	return frame_box(component, color, color)
+
+
+static func core_progress_fill() -> StyleBox:
+	return frame_box(FRAME_CORE_PROGRESS_FILL, AMBER, AMBER, false)
 
 
 static func resource_item() -> StyleBox:

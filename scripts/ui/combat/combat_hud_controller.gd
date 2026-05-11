@@ -583,10 +583,12 @@ func _refresh_top_hud() -> void:
 	if _combat_hud == null or not _combat_hud.has_method("set_top_values"):
 		return
 	var run_state = AppRefs.run_state()
-	var core_text := "核心生命\n--/--"
+	var core_text := "核心生命"
 	var deploy_text := "部署上限\n0/0"
 	var resource_text := "资源\n--"
 	var resource_tooltip := ""
+	var core_hp_current := 0
+	var core_hp_max := 0
 	var resource_items := {
 		&"ap": {"icon": "AP", "value": "--"},
 		&"wood": {"icon": "W", "value": "--"},
@@ -596,7 +598,9 @@ func _refresh_top_hud() -> void:
 	}
 	var phase_text := "准备"
 	if run_state != null:
-		core_text = "核心生命\n%d/%d" % [int(run_state.core_hp), int(run_state.core_hp_max)]
+		core_hp_current = int(run_state.core_hp)
+		core_hp_max = int(run_state.core_hp_max)
+		core_text = "核心生命"
 		deploy_text = "部署上限\n%d/%d" % [int(run_state.deployed_count), int(run_state.deploy_limit)]
 		var buff_ids: Array[StringName] = run_state.get_all_buffs() if run_state.has_method("get_all_buffs") else []
 		resource_text = "行动 %d/%d  声望 %d\n木 %d  石 %d  魔 %d  遗物 %d" % [
@@ -619,6 +623,8 @@ func _refresh_top_hud() -> void:
 		phase_text = "Day %d %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
 	var enemy_count: int = int(_enemy_manager.get_alive_enemy_count()) if _enemy_manager != null and _enemy_manager.has_method("get_alive_enemy_count") else 0
 	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s    敌人 %d" % [phase_text, enemy_count])
+	if _combat_hud.has_method("set_core_hp"):
+		_combat_hud.set_core_hp(core_hp_current, core_hp_max)
 	if _combat_hud.has_method("set_resource_items"):
 		_combat_hud.set_resource_items(resource_items, resource_tooltip)
 	elif _combat_hud.has_method("set_resource_values"):
