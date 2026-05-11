@@ -47,19 +47,12 @@ func _ready() -> void:
 	_state_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_icon_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_cost_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	GameUiStyle.center_label_text(_state_label)
-	GameUiStyle.center_label_text(_cost_label)
-	for label in [_title_label, _subtitle_label, _state_label, _cost_label]:
-		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_add_label_shadow(_title_label)
 	_add_label_shadow(_subtitle_label)
 	_add_label_shadow(_detail_label)
 	_add_label_shadow(_state_label)
 	_add_label_shadow(_icon_label)
 	_add_label_shadow(_cost_label)
-	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(48.0, 48.0))
 	if not _pending_config.is_empty():
 		_apply_config(_pending_config)
 	else:
@@ -75,7 +68,8 @@ func configure(config: Dictionary) -> void:
 func _apply_config(config: Dictionary) -> void:
 	if config.has("audio_cue"):
 		set_meta("audio_cue", config.get("audio_cue"))
-	set_custom_minimum_size(Vector2(float(config.get("min_width", 0.0)), float(config.get("min_height", 96.0))))
+	if config.has("min_width") or config.has("min_height"):
+		set_custom_minimum_size(Vector2(float(config.get("min_width", custom_minimum_size.x)), float(config.get("min_height", custom_minimum_size.y))))
 	_accent = config.get("accent", GameUiStyle.STROKE_SOFT) as Color
 	_disabled = bool(config.get("disabled", false))
 	_pressable_when_disabled = bool(config.get("pressable_when_disabled", false))

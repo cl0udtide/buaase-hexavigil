@@ -1,16 +1,18 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://df1k2dhjj7vn8"]
 
-[ext_resource type="Script" path="res://scripts/ui/build_list_card.gd" id="1_1uyh3"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_list_card_base.tres" id="2_card_base"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_icon_backplate.tres" id="3_icon_backplate"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_icon_frame.tres" id="4_icon_frame"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_cost_badge_base.tres" id="5_cost_badge"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_list_card_selected_overlay.tres" id="6_selected_overlay"]
+[ext_resource type="Script" uid="uid://ck4s65hv2aoxq" path="res://scripts/ui/build_list_card.gd" id="1_1uyh3"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_list_card_base.tres" id="2_card_base"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_icon_backplate.tres" id="3_icon_backplate"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_icon_frame.tres" id="4_icon_frame"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_cost_badge_base.tres" id="5_cost_badge"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_list_card_selected_overlay.tres" id="6_selected_overlay"]
 
 [node name="BuildListCard" type="Control" unique_id=420263796]
 custom_minimum_size = Vector2(0, 104)
 layout_mode = 3
 anchors_preset = 0
+offset_right = 280.0
+offset_bottom = 104.0
 size_flags_horizontal = 3
 script = ExtResource("1_1uyh3")
 
@@ -40,7 +42,7 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = -3
 
 [node name="IconStack" type="Control" parent="ContentMargin/Row" unique_id=2012463023]
 unique_name_in_owner = true
@@ -103,43 +105,53 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("4_icon_frame")
 
-[node name="TextColumn" type="VBoxContainer" parent="ContentMargin/Row" unique_id=1058986093]
+[node name="TextMargin" type="MarginContainer" parent="ContentMargin/Row" unique_id=1832461001]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+theme_override_constants/margin_top = 4
 
-[node name="TitleLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=994304328]
+[node name="TextColumn" type="VBoxContainer" parent="ContentMargin/Row/TextMargin" unique_id=1058986093]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="TitleLabel" type="Label" parent="ContentMargin/Row/TextMargin/TextColumn" unique_id=994304328]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "卡片"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="SubtitleLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=463474161]
+[node name="SubtitleLabel" type="Label" parent="ContentMargin/Row/TextMargin/TextColumn" unique_id=463474161]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "副标题"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="DetailLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=45281399]
+[node name="DetailLabel" type="Label" parent="ContentMargin/Row/TextMargin/TextColumn" unique_id=45281399]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "说明"
+horizontal_alignment = 1
 autowrap_mode = 3
 text_overrun_behavior = 3
 max_lines_visible = 4
 
-[node name="StateLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=1551428723]
+[node name="StateLabel" type="Label" parent="ContentMargin/Row/TextMargin/TextColumn" unique_id=1551428723]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="CostBadge" type="Panel" parent="ContentMargin/Row" unique_id=1892939879]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 32)
+custom_minimum_size = Vector2(40, 32)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -158,6 +170,7 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
+text_overrun_behavior = 3
 
 [node name="SelectedOverlay" type="Panel" parent="." unique_id=1915811268]
 unique_name_in_owner = true
