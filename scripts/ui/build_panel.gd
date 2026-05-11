@@ -1,6 +1,7 @@
 extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 
@@ -35,6 +36,7 @@ var _current_phase := GameEnums.PHASE_MENU
 
 
 func _ready() -> void:
+	AppTheme.apply(self)
 	_bind_events()
 	_bind_buttons()
 	_sync_shop_stock_from_manager()
