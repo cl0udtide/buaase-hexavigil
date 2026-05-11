@@ -57,15 +57,9 @@ func _ready() -> void:
 	_add_label_shadow(_state_label)
 	_add_label_shadow(_icon_label)
 	_add_label_shadow(_cost_label)
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
-	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.build_icon_backplate())
-	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame())
-	_cost_badge.add_theme_stylebox_override("panel", GameUiStyle.cost_badge())
-	_selected_overlay.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_LIST_CARD, Color(0.950, 0.650, 0.220, 0.06), GameUiStyle.AMBER, false))
-	_disabled_overlay.color = Color(0.02, 0.03, 0.035, 0.38)
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(42.0, 42.0))
+	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(48.0, 48.0))
 	if not _pending_config.is_empty():
 		_apply_config(_pending_config)
 	else:
@@ -115,9 +109,9 @@ func _apply_icon_texture(config: Dictionary) -> void:
 func _apply_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame(_accent))
-	_selected_overlay.visible = _selected or _hovered
+	_selected_overlay.visible = _selected or (_hovered and not _disabled)
 	_disabled_overlay.visible = _disabled
-	modulate.a = 0.86 if _disabled else 1.0
+	modulate.a = 1.0
 
 
 func _add_label_shadow(label: Label) -> void:

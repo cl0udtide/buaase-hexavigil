@@ -1,6 +1,10 @@
-[gd_scene format=3 uid="uid://ea07qr350arq"]
+[gd_scene load_steps=6 format=3 uid="uid://ea07qr350arq"]
 
 [ext_resource type="Script" uid="uid://d04mapcqqp3c0" path="res://scripts/ui/action_panel.gd" id="1_xpfpg"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_action_panel_base.tres" id="2_action_panel"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_action_button_base.tres" id="3_action_button"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="4_button_primary"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="5_button_disabled"]
 
 [node name="ActionPanel" type="PanelContainer" unique_id=921141590]
 anchors_preset = 15
@@ -9,13 +13,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_xpfpg")
+theme_override_styles/panel = ExtResource("2_action_panel")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000101]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin" unique_id=255313322]
 layout_mode = 2
@@ -36,24 +41,36 @@ alignment = 1
 
 [node name="IdleButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=1068372288]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(74, 36)
 layout_mode = 2
 focus_mode = 0
 text = "待机"
+theme_override_styles/normal = ExtResource("3_action_button")
+theme_override_styles/hover = ExtResource("4_button_primary")
+theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/disabled = ExtResource("5_button_disabled")
 
 [node name="ExploreButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=1093985431]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(74, 36)
 layout_mode = 2
 focus_mode = 0
 text = "探索"
+theme_override_styles/normal = ExtResource("3_action_button")
+theme_override_styles/hover = ExtResource("4_button_primary")
+theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/disabled = ExtResource("5_button_disabled")
 
 [node name="StartNightButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=875692889]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(74, 36)
 layout_mode = 2
 focus_mode = 0
 text = "夜晚"
+theme_override_styles/normal = ExtResource("3_action_button")
+theme_override_styles/hover = ExtResource("4_button_primary")
+theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/disabled = ExtResource("5_button_disabled")
 
 [node name="BuildingActionFlow" type="HFlowContainer" parent="ContentMargin/VBoxContainer"]
 layout_mode = 2
@@ -62,24 +79,36 @@ theme_override_constants/v_separation = 4
 
 [node name="RepairBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(74, 36)
 layout_mode = 2
 focus_mode = 0
 text = "修复"
+theme_override_styles/normal = ExtResource("3_action_button")
+theme_override_styles/hover = ExtResource("4_button_primary")
+theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/disabled = ExtResource("5_button_disabled")
 
 [node name="DemolishBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(74, 36)
 layout_mode = 2
 focus_mode = 0
 text = "拆除"
+theme_override_styles/normal = ExtResource("3_action_button")
+theme_override_styles/hover = ExtResource("4_button_primary")
+theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/disabled = ExtResource("5_button_disabled")
 
 [node name="ToggleBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 32)
+custom_minimum_size = Vector2(74, 36)
 layout_mode = 2
 focus_mode = 0
 text = "开关"
+theme_override_styles/normal = ExtResource("3_action_button")
+theme_override_styles/hover = ExtResource("4_button_primary")
+theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/disabled = ExtResource("5_button_disabled")
 
 [node name="BuildingInfoLabel" type="Label" parent="ContentMargin/VBoxContainer"]
 unique_name_in_owner = true

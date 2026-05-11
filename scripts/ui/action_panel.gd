@@ -164,15 +164,18 @@ func _refresh_mode_label() -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.action_bar_panel())
 	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
-	GameUiStyle.apply_frame_margin(content_margin, GameUiStyle.FRAME_ACTION_PANEL, Vector4(0.0, -2.0, 0.0, -2.0))
+	if content_margin != null:
+		content_margin.add_theme_constant_override("margin_left", 0)
+		content_margin.add_theme_constant_override("margin_top", 0)
+		content_margin.add_theme_constant_override("margin_right", 0)
+		content_margin.add_theme_constant_override("margin_bottom", 0)
 	if _mode_label != null:
 		_mode_label.visible = false
 		_mode_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	for button in [_idle_button, _explore_button, _start_night_button, _repair_building_button, _demolish_building_button, _toggle_building_button]:
 		if button != null:
-			button.set_custom_minimum_size(Vector2(66.0, 32.0))
+			button.set_custom_minimum_size(Vector2(74.0, 36.0))
 			GameUiStyle.center_button_text(button)
 	var action_button_flow := get_node_or_null("%ActionButtonFlow") as BoxContainer
 	if action_button_flow != null:
@@ -195,9 +198,9 @@ func _style_action_button(button: Button, selected: bool) -> void:
 	var normal_style := GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD, accent)
 	GameUiStyle.set_button_texture_icon(button, _icon_for_action_button(button), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", normal_style)
-	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.26))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
-	button.add_theme_stylebox_override("disabled", normal_style if selected else GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
+	button.add_theme_stylebox_override("hover", GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD_HOVER, GameUiStyle.ACCENT))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD_HOVER, GameUiStyle.AMBER))
+	button.add_theme_stylebox_override("disabled", normal_style if selected else GameUiStyle.frame_box(GameUiStyle.FRAME_ACTION_BUTTON, GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED if selected else GameUiStyle.TEXT_INVERTED_DIM)

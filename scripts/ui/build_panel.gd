@@ -5,6 +5,7 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
+const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 
 const MODE_BUILD: StringName = &"build"
@@ -26,7 +27,6 @@ var _current_phase := GameEnums.PHASE_MENU
 
 @onready var _build_mode_button: Button = %BuildModeButton
 @onready var _shop_mode_button: Button = %ShopModeButton
-@onready var _sidebar_base: Panel = %SidebarBase
 @onready var _selection_label: Label = %BuildSelectionLabel
 @onready var _card_list: VBoxContainer = %BuildCardList
 @onready var _category_tabs: HBoxContainer = %CategoryTabs
@@ -508,8 +508,6 @@ func _on_data_loaded() -> void:
 
 
 func _apply_visual_style() -> void:
-	_sidebar_base.add_theme_stylebox_override("panel", GameUiStyle.build_side_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_BUILD_SIDE_PANEL, Vector4(2.0, 0.0, 2.0, 8.0))
 	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	GameUiStyle.center_label_text(_selection_label)
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -523,11 +521,13 @@ func _style_tab_button(button: Button, selected: bool) -> void:
 	if button == null:
 		return
 	GameUiStyle.center_button_text(button)
-	button.custom_minimum_size.y = 32.0
-	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
-	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.30))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(true))
+	button.custom_minimum_size.y = 36.0
+	var normal_component := UiFrameSpec.TAB_SELECTED if selected else UiFrameSpec.TAB
+	var normal_border := GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT
+	button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(normal_component, GameUiStyle.BG_CARD, normal_border))
+	button.add_theme_stylebox_override("hover", GameUiStyle.frame_box(UiFrameSpec.TAB_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.ACCENT))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.frame_box(UiFrameSpec.TAB_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
+	button.add_theme_stylebox_override("disabled", GameUiStyle.frame_box(UiFrameSpec.TAB_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED)
