@@ -266,24 +266,23 @@ func collect_day_income() -> void:
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return
-	var gained_wood := 0
-	var gained_stone := 0
-	var gained_mana := 0
-	for actor in _get_building_list():
-		if not _is_building_operational(actor):
-			continue
-		var actor_cfg: Dictionary = actor.cfg
-		var effect_type := StringName(actor_cfg.get("effect_type", ""))
-		var effect_value := int(actor_cfg.get("effect_value", 0))
-		match effect_type:
-			&"collect_wood":
-				gained_wood += _get_income_value(actor_cfg, effect_value, &"wood")
-			&"collect_stone":
-				gained_stone += _get_income_value(actor_cfg, effect_value, &"stone")
-			&"collect_mana":
-				gained_mana += _get_income_value(actor_cfg, effect_value, &"mana")
+	var income := _get_day_income_delta()
+	var gained_wood := int(income.get("wood", 0))
+	var gained_stone := int(income.get("stone", 0))
+	var gained_mana := int(income.get("mana", 0))
 	if gained_wood > 0 or gained_stone > 0 or gained_mana > 0:
 		run_state.add_materials(gained_wood, gained_stone, gained_mana)
+
+
+func get_projected_material_delta_to_next_day() -> Dictionary:
+	var delta := _get_day_income_delta()
+	var run_state = AppRefs.run_state()
+	if run_state != null and int(run_state.phase) == GameEnums.PHASE_DAY:
+		var pending_cost := _get_pending_night_material_costs(int(run_state.mana))
+		delta["wood"] = int(delta.get("wood", 0)) - int(pending_cost.get("wood", 0))
+		delta["stone"] = int(delta.get("stone", 0)) - int(pending_cost.get("stone", 0))
+		delta["mana"] = int(delta.get("mana", 0)) - int(pending_cost.get("mana", 0))
+	return delta
 
 
 func refresh_daytime_repair() -> void:
@@ -612,6 +611,54 @@ func _is_building_operational(actor: Node) -> bool:
 	if actor.has_method("is_aura_active"):
 		return actor.is_aura_active()
 	return true
+
+
+func _get_day_income_delta() -> Dictionary:
+	var delta := {
+		"wood": 0,
+		"stone": 0,
+		"mana": 0
+	}
+	for actor in _get_building_list():
+		if not _is_building_operational(actor):
+			continue
+		var actor_cfg: Dictionary = actor.cfg
+		var effect_type := StringName(actor_cfg.get("effect_type", ""))
+		var effect_value := int(actor_cfg.get("effect_value", 0))
+		match effect_type:
+			&"collect_wood":
+				delta["wood"] = int(delta.get("wood", 0)) + _get_income_value(actor_cfg, effect_value, &"wood")
+			&"collect_stone":
+				delta["stone"] = int(delta.get("stone", 0)) + _get_income_value(actor_cfg, effect_value, &"stone")
+			&"collect_mana":
+				delta["mana"] = int(delta.get("mana", 0)) + _get_income_value(actor_cfg, effect_value, &"mana")
+	return delta
+
+
+func _get_pending_night_material_costs(available_mana: int) -> Dictionary:
+	var costs := {
+		"wood": 0,
+		"stone": 0,
+		"mana": 0
+	}
+	var remaining_mana: int = maxi(available_mana, 0)
+	for actor in _get_building_list():
+		if actor == null or not is_instance_valid(actor):
+			continue
+		if _is_building_destroyed(actor):
+			continue
+		if actor.get("building_id") != &"war_shrine":
+			continue
+		if not actor.has_method("is_enabled") or not actor.is_enabled():
+			continue
+		var night_cost: int = int(actor.cfg.get("night_mana_cost", 0))
+		if night_cost <= 0:
+			continue
+		if remaining_mana < night_cost:
+			continue
+		remaining_mana -= night_cost
+		costs["mana"] = int(costs.get("mana", 0)) + night_cost
+	return costs
 
 
 func _is_target_within_building_range(origin: Vector2i, target: Vector2i, radius: int, cfg: Dictionary) -> bool:

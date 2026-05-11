@@ -10,6 +10,14 @@ const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
 const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
 const ROUTE_LABEL_ALPHABET := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const RESOURCE_DISPLAY_NAMES := {
+	&"ap": "行动力",
+	&"prestige": "声望",
+	&"wood": "木材",
+	&"stone": "石头",
+	&"mana": "魔力矿"
+}
+const MATERIAL_RESOURCE_KEYS: Array[StringName] = [&"wood", &"stone", &"mana"]
 
 var _operator_defs: Array[Dictionary] = []
 var _selected_unit_runtime_id := -1
@@ -47,6 +55,7 @@ var _wave_preview_refresh_queued := false
 @onready var _wave_manager: Node = get_node_or_null("../../Managers/WaveManager")
 @onready var _unit_manager: Node = get_node_or_null("../../Managers/UnitManager")
 @onready var _enemy_manager: Node = get_node_or_null("../../Managers/EnemyManager")
+@onready var _building_manager: Node = get_node_or_null("../../Managers/BuildingManager")
 
 
 func _ready() -> void:
@@ -151,9 +160,13 @@ func _connect_events() -> void:
 		event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
 		event_bus.deploy_limit_changed.connect(_on_deploy_limit_changed)
 		event_bus.core_hp_changed.connect(_on_core_hp_changed)
+		event_bus.action_points_changed.connect(_on_action_points_changed)
+		event_bus.prestige_changed.connect(_on_prestige_changed)
+		event_bus.materials_changed.connect(_on_materials_changed)
 		event_bus.buffs_changed.connect(_on_buffs_changed)
 		event_bus.phase_changed.connect(_on_phase_changed)
 		event_bus.day_started.connect(_on_day_started)
+		event_bus.night_started.connect(_on_night_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
 		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
@@ -196,6 +209,18 @@ func _on_core_hp_changed(_current: int, _max_value: int) -> void:
 	_refresh_top_hud()
 
 
+func _on_action_points_changed(_value: int) -> void:
+	_refresh_top_hud()
+
+
+func _on_prestige_changed(_value: int) -> void:
+	_refresh_top_hud()
+
+
+func _on_materials_changed(_wood: int, _stone: int, _mana: int) -> void:
+	_refresh_top_hud()
+
+
 func _on_buffs_changed(buff_ids: Array[StringName]) -> void:
 	if _combat_hud != null and _combat_hud.has_method("set_relics"):
 		_combat_hud.set_relics(buff_ids)
@@ -216,7 +241,12 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 
 
 func _on_day_started(_day: int) -> void:
+	_refresh_top_hud()
 	_force_wave_preview_refresh()
+
+
+func _on_night_started(_day: int) -> void:
+	_refresh_top_hud()
 
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
@@ -531,10 +561,12 @@ func _on_path_grid_changed() -> void:
 
 
 func _on_building_changed(_building_runtime_id: int, _building_id: StringName, _cell: Vector2i) -> void:
+	_refresh_top_hud()
 	_queue_wave_preview_refresh()
 
 
 func _on_building_state_changed(_building_runtime_id: int, _building_id: StringName, _enabled: bool) -> void:
+	_refresh_top_hud()
 	_queue_wave_preview_refresh()
 
 
@@ -591,13 +623,7 @@ func _refresh_top_hud() -> void:
 	var resource_tooltip := ""
 	var core_hp_current := 0
 	var core_hp_max := 0
-	var resource_items := {
-		&"ap": {"icon": "AP", "value": "--"},
-		&"wood": {"icon": "W", "value": "--"},
-		&"stone": {"icon": "S", "value": "--"},
-		&"mana": {"icon": "M", "value": "--"},
-		&"prestige": {"icon": "P", "value": "--"}
-	}
+	var resource_items := _make_empty_resource_items()
 	var phase_text := "准备"
 	if run_state != null:
 		core_hp_current = int(run_state.core_hp)
@@ -614,12 +640,13 @@ func _refresh_top_hud() -> void:
 			int(run_state.mana),
 			buff_ids.size()
 		]
+		var material_delta := _get_projected_material_delta_to_next_day()
 		resource_items = {
-			&"ap": {"icon": "AP", "value": "%d/%d" % [int(run_state.action_points), int(run_state.DEFAULT_ACTION_POINTS)], "tooltip": "行动点"},
-			&"wood": {"icon": "W", "value": str(int(run_state.wood)), "tooltip": "木材"},
-			&"stone": {"icon": "S", "value": str(int(run_state.stone)), "tooltip": "石材"},
-			&"mana": {"icon": "M", "value": str(int(run_state.mana)), "tooltip": "魔力"},
-			&"prestige": {"icon": "P", "value": str(int(run_state.prestige)), "tooltip": "声望"}
+			&"ap": _make_resource_item(&"ap", "AP", str(int(run_state.action_points)), "行动力 %d/%d" % [int(run_state.action_points), int(run_state.DEFAULT_ACTION_POINTS)]),
+			&"prestige": _make_resource_item(&"prestige", "P", str(int(run_state.prestige)), "声望"),
+			&"wood": _make_resource_item(&"wood", "W", str(int(run_state.wood)), "木材", int(material_delta.get("wood", 0))),
+			&"stone": _make_resource_item(&"stone", "S", str(int(run_state.stone)), "石头", int(material_delta.get("stone", 0))),
+			&"mana": _make_resource_item(&"mana", "M", str(int(run_state.mana)), "魔力矿", int(material_delta.get("mana", 0)))
 		}
 		resource_tooltip = _format_resource_tooltip(buff_ids)
 		phase_text = "Day %d %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
@@ -631,6 +658,49 @@ func _refresh_top_hud() -> void:
 		_combat_hud.set_resource_items(resource_items, resource_tooltip)
 	elif _combat_hud.has_method("set_resource_values"):
 		_combat_hud.set_resource_values(resource_text, resource_tooltip)
+
+
+func _make_empty_resource_items() -> Dictionary:
+	return {
+		&"ap": _make_resource_item(&"ap", "AP", "--", "行动力"),
+		&"prestige": _make_resource_item(&"prestige", "P", "--", "声望"),
+		&"wood": _make_resource_item(&"wood", "W", "--", "木材"),
+		&"stone": _make_resource_item(&"stone", "S", "--", "石头"),
+		&"mana": _make_resource_item(&"mana", "M", "--", "魔力矿")
+	}
+
+
+func _make_resource_item(resource_key: StringName, icon_text: String, value_text: String, tooltip_text: String, delta_value: int = 0) -> Dictionary:
+	var item := {
+		"icon": icon_text,
+		"label": String(RESOURCE_DISPLAY_NAMES.get(resource_key, String(resource_key))),
+		"value": value_text,
+		"tooltip": tooltip_text
+	}
+	if MATERIAL_RESOURCE_KEYS.has(resource_key):
+		var delta_text := _format_resource_delta(delta_value)
+		if not delta_text.is_empty():
+			item["delta"] = delta_text
+			item["delta_sign"] = 1 if delta_value > 0 else -1
+	return item
+
+
+func _format_resource_delta(delta_value: int) -> String:
+	if delta_value > 0:
+		return "↑ %d" % delta_value
+	if delta_value < 0:
+		return "↓ %d" % absi(delta_value)
+	return ""
+
+
+func _get_projected_material_delta_to_next_day() -> Dictionary:
+	if _building_manager != null and _building_manager.has_method("get_projected_material_delta_to_next_day"):
+		return _building_manager.get_projected_material_delta_to_next_day()
+	return {
+		"wood": 0,
+		"stone": 0,
+		"mana": 0
+	}
 
 
 func _refresh_time_controls() -> void:
