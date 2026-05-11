@@ -91,7 +91,7 @@ static func top_card_widths(viewport_width: float) -> Dictionary:
 	if viewport_width <= 720.0:
 		return {
 			"stage": 112.0,
-			"core": 112.0,
+			"core": 132.0,
 			"deploy": 100.0,
 			"message": 0.0,
 			"time": 164.0,
@@ -100,7 +100,7 @@ static func top_card_widths(viewport_width: float) -> Dictionary:
 	if viewport_width <= UiTokens.BREAKPOINT_NARROW:
 		return {
 			"stage": 132.0,
-			"core": 136.0,
+			"core": 150.0,
 			"deploy": 118.0,
 			"message": 0.0,
 			"time": 188.0,
@@ -109,7 +109,7 @@ static func top_card_widths(viewport_width: float) -> Dictionary:
 	if viewport_width <= UiTokens.BREAKPOINT_COMPACT:
 		return {
 			"stage": 152.0,
-			"core": 154.0,
+			"core": 172.0,
 			"deploy": 128.0,
 			"message": 0.0,
 			"time": 198.0,
@@ -117,9 +117,9 @@ static func top_card_widths(viewport_width: float) -> Dictionary:
 		}
 	return {
 		"stage": 180.0,
-		"core": 180.0,
+		"core": 196.0,
 		"deploy": 150.0,
-		"message": 300.0 if viewport_width <= 1680.0 else 360.0,
+		"message": 240.0 if viewport_width <= 1680.0 else 340.0,
 		"time": 216.0,
 		"resource_item": 78.0 if viewport_width <= 1680.0 else 86.0,
 	}
