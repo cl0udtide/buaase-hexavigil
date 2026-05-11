@@ -1,13 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c7jldlop83igt"]
 
-[ext_resource type="Script" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
+[ext_resource type="Script" uid="uid://dvngnxtdahi02" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_base.tres" id="2_cardbase"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="3_titlestrip"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_cost_badge.tres" id="4_costbadge"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_portrait_backplate.tres" id="5_portraitback"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_portrait_frame.tres" id="6_portraitframe"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="7_statrow"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_selected_overlay.tres" id="8_selected"]
+[ext_resource type="StyleBox" uid="uid://bh2epfexus27p" path="res://assets/ui/styles/frame_operator_card_selected_overlay.tres" id="8_selected"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_deployed_overlay.tres" id="9_deployed"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_cooldown_overlay.tres" id="10_cooldown"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres" id="11_cooldownselected"]
@@ -39,9 +36,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 12
+theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
+theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 10
 
 [node name="VBox" type="VBoxContainer" parent="CardContent" unique_id=1736721889]
@@ -52,7 +49,7 @@ theme_override_constants/separation = 4
 
 [node name="TitleStrip" type="Panel" parent="CardContent/VBox" unique_id=584067749]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("3_titlestrip")
@@ -64,9 +61,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 8
+theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 8
+theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 4
 
 [node name="TitleRow" type="HBoxContainer" parent="CardContent/VBox/TitleStrip/TitleMargin" unique_id=1970096828]
@@ -87,90 +84,9 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "干员"
+horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
-
-[node name="CostBadge" type="Panel" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=1960770915]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(42, 24)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("4_costbadge")
-
-[node name="CostLabel" type="Label" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow/CostBadge" unique_id=596955364]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 4.0
-offset_right = -6.0
-offset_bottom = -4.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PortraitStack" type="Control" parent="CardContent/VBox" unique_id=2130632873]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 76)
-layout_mode = 2
-
-[node name="PortraitBackplate" type="Panel" parent="CardContent/VBox/PortraitStack" unique_id=548983614]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("5_portraitback")
-
-[node name="PortraitTexture" type="TextureRect" parent="CardContent/VBox/PortraitStack" unique_id=304711351]
-unique_name_in_owner = true
-visible = false
-z_index = 2
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="PortraitLabel" type="Label" parent="CardContent/VBox/PortraitStack" unique_id=1064207845]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 24
-text = "*"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PortraitFrame" type="Panel" parent="CardContent/VBox/PortraitStack" unique_id=1246630243]
-unique_name_in_owner = true
-z_index = 4
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("6_portraitframe")
 
 [node name="MetaRow" type="HBoxContainer" parent="CardContent/VBox" unique_id=347160266]
 layout_mode = 2
@@ -181,44 +97,45 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "职业"
+horizontal_alignment = 1
 
 [node name="StateLabel" type="Label" parent="CardContent/VBox/MetaRow" unique_id=900159003]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(46, 0)
+custom_minimum_size = Vector2(66, 0)
 layout_mode = 2
 text = "READY"
-horizontal_alignment = 2
+horizontal_alignment = 1
 
 [node name="StatRows" type="VBoxContainer" parent="CardContent/VBox" unique_id=1580391540]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 2
+theme_override_constants/separation = -4
 
 [node name="HpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1064524550]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_statrow")
 
 [node name="HpStatLabel" type="Label" parent="CardContent/VBox/StatRows/HpStatRow" unique_id=804832331]
 unique_name_in_owner = true
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 8.0
 offset_top = 2.0
 offset_right = -8.0
 offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
 text = "HP --"
+horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="SpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1072089532]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_statrow")
@@ -235,12 +152,13 @@ offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "SP --"
+horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="CdStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=43464145]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_statrow")
@@ -257,6 +175,7 @@ offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "CD READY"
+horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
@@ -312,7 +231,7 @@ theme_override_styles/panel = ExtResource("11_cooldownselected")
 unique_name_in_owner = true
 visible = false
 z_index = 20
-layout_mode = 0
+anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -321,13 +240,14 @@ mouse_filter = 2
 
 [node name="CooldownLabel" type="Label" parent="CooldownTopContent" unique_id=460056569]
 unique_name_in_owner = true
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
-offset_top = 10.0
+offset_top = 24.0
 offset_right = -12.0
-offset_bottom = -10.0
+offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 24
