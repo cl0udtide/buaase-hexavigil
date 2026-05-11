@@ -67,6 +67,8 @@ func recalc_path() -> void:
 			_path_mode = PATH_MODE_DEMOLISHER
 			_debug_log("核心被挡路建筑封闭，敌人 %s#%d 临时切换为拆墙路径" % [_debug_name(), _runtime_id()])
 	_path_index = min(1, _path.size() - 1) if not _path.is_empty() else 0
+	if not _path.is_empty() and not has_arrived():
+		_update_owner_facing_from_cell_delta(get_next_path_cell() - _owner_actor.current_cell)
 
 
 func has_path() -> bool:
@@ -96,6 +98,7 @@ func process_path_movement(delta: float) -> bool:
 	if map_manager == null:
 		return false
 	_update_crowd_offset()
+	_update_owner_facing_from_cell_delta(_path[_path_index] - _owner_actor.current_cell)
 	var target_pos: Vector2 = map_manager.cell_to_world(_path[_path_index]) + _crowd_offset
 	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, get_effective_move_speed() * CELL_SIZE * delta)
 	if _owner_actor.global_position.distance_to(target_pos) < 2.0:
@@ -119,6 +122,7 @@ func process_idle_crowd_spacing(delta: float) -> void:
 
 func process_blocked_motion(delta: float, blocker: Node) -> void:
 	var target_pos: Vector2 = _get_block_hold_position(blocker)
+	_update_owner_facing_from_vector(target_pos - _owner_actor.global_position)
 	var snap_speed: float = float(_owner_actor.cfg.get("blocked_snap_speed", BLOCK_SNAP_SPEED / CELL_SIZE)) * CELL_SIZE
 	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, snap_speed * delta)
 	var map_manager: Node = _get_map_manager()
@@ -282,6 +286,24 @@ func _normalize_push_direction(direction: Vector2i) -> Vector2i:
 	if abs(direction.x) >= abs(direction.y):
 		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
 	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
+
+
+func _update_owner_facing_from_cell_delta(direction: Vector2i) -> void:
+	if direction == Vector2i.ZERO:
+		return
+	if _owner_actor != null and _owner_actor.has_method("set_facing"):
+		_owner_actor.set_facing(_normalize_push_direction(direction))
+
+
+func _update_owner_facing_from_vector(direction: Vector2) -> void:
+	if direction.length_squared() <= 0.01:
+		return
+	var cell_direction := Vector2i.ZERO
+	if abs(direction.x) >= abs(direction.y):
+		cell_direction = Vector2i.RIGHT if direction.x >= 0.0 else Vector2i.LEFT
+	else:
+		cell_direction = Vector2i.DOWN if direction.y >= 0.0 else Vector2i.UP
+	_update_owner_facing_from_cell_delta(cell_direction)
 
 
 func _get_unit_by_runtime_id(unit_runtime_id: int) -> Node:

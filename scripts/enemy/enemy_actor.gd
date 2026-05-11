@@ -15,10 +15,22 @@ const VISUAL_DISPLAY_SIZE := 70.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
+const ATTACK_LUNGE_DISTANCE := 5.0
+const ATTACK_LUNGE_ROTATION_DEGREES := 7.0
+const ATTACK_LUNGE_IN_SECONDS := 0.055
+const ATTACK_LUNGE_OUT_SECONDS := 0.11
+const IDLE_MOTION_ROOT_NAME := "IdleMotionRoot"
+const IDLE_MOTION_GROUND_BREATH_SCALE := Vector2(0.993, 1.016)
+const IDLE_MOTION_FLYING_BREATH_SCALE := Vector2(0.99, 1.02)
+const IDLE_MOTION_GROUND_BOB_Y := -0.8
+const IDLE_MOTION_FLYING_BOB_Y := -2.4
+const IDLE_MOTION_MIN_SECONDS := 1.7
+const IDLE_MOTION_MAX_SECONDS := 2.45
 
 var enemy_id: StringName
 var runtime_id := -1
 var current_cell := Vector2i.ZERO
+var facing := Vector2i.RIGHT
 var cfg: Dictionary = {}
 var current_hp := 1
 var max_hp := 1
@@ -42,6 +54,9 @@ var _necrosis_dot_carry := 0.0
 var _shield_hp := 0
 var _max_shield_hp := 0
 var _regen_carry := 0.0
+var _idle_motion_root: Node2D = null
+var _idle_motion_tween: Tween = null
+var _attack_lunge_tween: Tween = null
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _visual_root: Node2D = get_node_or_null("%VisualRoot") as Node2D
@@ -106,6 +121,7 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	_shield_hp = _max_shield_hp
 	_regen_carry = 0.0
 	current_cell = spawn_cell
+	facing = Vector2i.RIGHT
 	_is_dead = false
 	_clear_temporary_status()
 	_setup_movement_controller()
@@ -309,6 +325,34 @@ func set_external_move_speed_multiplier(value: float) -> void:
 		_movement_controller.set_external_move_speed_multiplier(value)
 
 
+func set_facing(direction: Vector2i) -> void:
+	var normalized := _normalize_visual_direction(direction)
+	if facing == normalized:
+		return
+	facing = normalized
+	_refresh_visual_facing()
+
+
+func play_attack_lunge() -> void:
+	if _visual_root == null:
+		return
+	var normalized := _normalize_visual_direction(facing)
+	var forward := Vector2(float(normalized.x), float(normalized.y))
+	if forward.length_squared() <= 0.0:
+		return
+	if _attack_lunge_tween != null and _attack_lunge_tween.is_valid():
+		_attack_lunge_tween.kill()
+	_visual_root.position = Vector2.ZERO
+	_visual_root.rotation_degrees = 0.0
+	_attack_lunge_tween = create_tween()
+	_attack_lunge_tween.set_trans(Tween.TRANS_QUAD)
+	_attack_lunge_tween.set_ease(Tween.EASE_OUT)
+	_attack_lunge_tween.tween_property(_visual_root, "position", forward * ATTACK_LUNGE_DISTANCE, ATTACK_LUNGE_IN_SECONDS)
+	_attack_lunge_tween.parallel().tween_property(_visual_root, "rotation_degrees", _get_attack_lunge_rotation(normalized), ATTACK_LUNGE_IN_SECONDS)
+	_attack_lunge_tween.tween_property(_visual_root, "position", Vector2.ZERO, ATTACK_LUNGE_OUT_SECONDS)
+	_attack_lunge_tween.parallel().tween_property(_visual_root, "rotation_degrees", 0.0, ATTACK_LUNGE_OUT_SECONDS)
+
+
 func _update_status_view() -> void:
 	if _status_view != null and _status_view.has_method("set_hp"):
 		_status_view.set_hp(current_hp, max_hp)
@@ -377,18 +421,131 @@ func _setup_visual_sprite() -> void:
 		_visual_root.name = "VisualRoot"
 		_visual_root.unique_name_in_owner = true
 		add_child(_visual_root)
-	var sprite := _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	_idle_motion_root = _get_idle_motion_root()
+	var sprite := _get_or_create_idle_sprite()
 	if sprite == null:
-		sprite = Sprite2D.new()
-		sprite.name = "IdleSprite"
-		_visual_root.add_child(sprite)
+		return
 	sprite.texture = texture
 	sprite.centered = true
 	sprite.position = VISUAL_OFFSET
 	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
+	sprite.flip_h = _should_visual_face_left(facing)
 	sprite.z_index = VISUAL_Z_INDEX
 	_has_visual_sprite = true
+	_start_idle_motion()
 	queue_redraw()
+
+
+func _get_idle_motion_root() -> Node2D:
+	if _visual_root == null:
+		return null
+	var root := _visual_root.get_node_or_null(IDLE_MOTION_ROOT_NAME) as Node2D
+	if root == null:
+		root = Node2D.new()
+		root.name = IDLE_MOTION_ROOT_NAME
+		root.unique_name_in_owner = true
+		_visual_root.add_child(root)
+	return root
+
+
+func _get_or_create_idle_sprite() -> Sprite2D:
+	if _idle_motion_root == null:
+		return null
+	var sprite := _idle_motion_root.get_node_or_null("IdleSprite") as Sprite2D
+	if sprite != null:
+		return sprite
+	var legacy_sprite: Sprite2D = null
+	if _visual_root != null:
+		legacy_sprite = _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	if legacy_sprite != null:
+		_visual_root.remove_child(legacy_sprite)
+		_idle_motion_root.add_child(legacy_sprite)
+		return legacy_sprite
+	sprite = Sprite2D.new()
+	sprite.name = "IdleSprite"
+	_idle_motion_root.add_child(sprite)
+	return sprite
+
+
+func _start_idle_motion() -> void:
+	if _idle_motion_root == null:
+		return
+	if _idle_motion_tween != null and _idle_motion_tween.is_valid():
+		_idle_motion_tween.kill()
+	_idle_motion_root.position = Vector2.ZERO
+	_idle_motion_root.scale = Vector2.ONE
+	_idle_motion_root.rotation_degrees = 0.0
+	if not bool(cfg.get("idle_motion_enabled", true)):
+		return
+	var cycle_seconds := randf_range(
+		float(cfg.get("idle_motion_min_seconds", IDLE_MOTION_MIN_SECONDS)),
+		float(cfg.get("idle_motion_max_seconds", IDLE_MOTION_MAX_SECONDS))
+	)
+	var breath_scale := _get_idle_motion_breath_scale()
+	var bob_y := _get_idle_motion_bob_y()
+	var start_delay := randf_range(0.0, cycle_seconds)
+	if start_delay <= 0.01:
+		_begin_idle_motion_loop(cycle_seconds, breath_scale, bob_y)
+		return
+	_idle_motion_tween = create_tween()
+	_idle_motion_tween.tween_interval(start_delay)
+	_idle_motion_tween.tween_callback(Callable(self, "_begin_idle_motion_loop").bind(cycle_seconds, breath_scale, bob_y))
+
+
+func _begin_idle_motion_loop(cycle_seconds: float, breath_scale: Vector2, bob_y: float) -> void:
+	if _idle_motion_root == null:
+		return
+	var half_cycle: float = max(cycle_seconds * 0.5, 0.1)
+	_idle_motion_tween = create_tween()
+	_idle_motion_tween.set_loops()
+	_idle_motion_tween.set_trans(Tween.TRANS_SINE)
+	_idle_motion_tween.set_ease(Tween.EASE_IN_OUT)
+	_idle_motion_tween.tween_property(_idle_motion_root, "scale", breath_scale, half_cycle)
+	_idle_motion_tween.parallel().tween_property(_idle_motion_root, "position", Vector2(0.0, bob_y), half_cycle)
+	_idle_motion_tween.tween_property(_idle_motion_root, "scale", Vector2.ONE, half_cycle)
+	_idle_motion_tween.parallel().tween_property(_idle_motion_root, "position", Vector2.ZERO, half_cycle)
+
+
+func _get_idle_motion_breath_scale() -> Vector2:
+	var default_scale := IDLE_MOTION_FLYING_BREATH_SCALE if _is_flying_enemy() else IDLE_MOTION_GROUND_BREATH_SCALE
+	return Vector2(
+		float(cfg.get("idle_motion_scale_x", default_scale.x)),
+		float(cfg.get("idle_motion_scale_y", default_scale.y))
+	)
+
+
+func _get_idle_motion_bob_y() -> float:
+	var default_bob_y := IDLE_MOTION_FLYING_BOB_Y if _is_flying_enemy() else IDLE_MOTION_GROUND_BOB_Y
+	return float(cfg.get("idle_motion_bob_y", default_bob_y))
+
+
+func _is_flying_enemy() -> bool:
+	return StringName(cfg.get("move_type", "ground")) == &"flying"
+
+
+func _refresh_visual_facing() -> void:
+	if _idle_motion_root == null:
+		return
+	var sprite := _idle_motion_root.get_node_or_null("IdleSprite") as Sprite2D
+	if sprite != null:
+		sprite.flip_h = _should_visual_face_left(facing)
+
+
+func _should_visual_face_left(direction: Vector2i) -> bool:
+	var normalized := _normalize_visual_direction(direction)
+	return normalized == Vector2i.LEFT or normalized == Vector2i.UP
+
+
+func _normalize_visual_direction(direction: Vector2i) -> Vector2i:
+	if direction == Vector2i.ZERO:
+		return Vector2i.RIGHT
+	if abs(direction.x) >= abs(direction.y):
+		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
+	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
+
+
+func _get_attack_lunge_rotation(direction: Vector2i) -> float:
+	return -ATTACK_LUNGE_ROTATION_DEGREES if _should_visual_face_left(direction) else ATTACK_LUNGE_ROTATION_DEGREES
 
 
 func _load_visual_texture() -> Texture2D:
