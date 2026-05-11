@@ -1,16 +1,21 @@
 extends Node
 
+const RANGED_ATTACK_HOLD_SECONDS := 1.0
+
 var _owner_actor: Node2D = null
 var _attack_timer := 0.0
+var _range_attack_hold_timer := 0.0
 
 
 func setup(owner_actor: Node2D) -> void:
 	_owner_actor = owner_actor
 	_attack_timer = 0.0
+	_range_attack_hold_timer = 0.0
 
 
 func reset_attack_timer() -> void:
 	_attack_timer = 0.0
+	_range_attack_hold_timer = 0.0
 
 
 func set_attack_cooldown_from_cfg() -> void:
@@ -52,12 +57,15 @@ func process_range_attack(delta: float) -> bool:
 	var attack_range: int = get_attack_range_tiles()
 	if attack_range <= 0:
 		return false
+	_attack_timer = max(_attack_timer - delta, 0.0)
+	if _range_attack_hold_timer > 0.0:
+		_range_attack_hold_timer = max(_range_attack_hold_timer - delta, 0.0)
+		return true
+	if _attack_timer > 0.0:
+		return false
 	var target: Node = _find_attack_target_in_range(attack_range)
 	if target == null:
 		return false
-	_attack_timer = max(_attack_timer - delta, 0.0)
-	if _attack_timer > 0.0:
-		return true
 	var damage_type: int = _parse_damage_type(String(_owner_actor.cfg.get("damage_type", "physical")))
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
 	_debug_log("敌人 %s#%d 远程攻击 %s，%s伤害 %d" % [_debug_name(), _runtime_id(), _target_debug_name(target), _damage_type_text(damage_type), damage_value])
@@ -68,6 +76,8 @@ func process_range_attack(delta: float) -> bool:
 		else:
 			_damage_building(target, damage_value, damage_type)
 	set_attack_cooldown_from_cfg()
+	if attack_range > 1:
+		_range_attack_hold_timer = min(RANGED_ATTACK_HOLD_SECONDS, _attack_timer)
 	return true
 
 
