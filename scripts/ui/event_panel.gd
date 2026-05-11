@@ -66,7 +66,7 @@ func _apply_visual_style() -> void:
 
 func _style_button(button: Button, accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
-	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(15.0, 15.0), &"left", 8.0)
+	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_close"), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.event_choice_button())
 	button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.AMBER))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.42))

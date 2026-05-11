@@ -175,7 +175,7 @@ func _ready() -> void:
 	_wave_route_toggle.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_wave_route_toggle.size_flags_vertical = Control.SIZE_SHRINK_END
 	_style_wave_route_toggle()
-	GameUiStyle.set_button_texture_icon(_wave_route_toggle, UiArtRegistry.get_catalog_icon(&"map_range"), Vector2(14.0, 14.0), &"left", 6.0)
+	GameUiStyle.set_button_texture_icon(_wave_route_toggle, UiArtRegistry.get_catalog_icon(&"map_range"), &"left", 6.0)
 	var wave_header := _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent/WavePreviewHeader") as HBoxContainer
 	if wave_header != null:
 		wave_header.custom_minimum_size.y = 34.0
@@ -386,9 +386,9 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 		speed_2_selected = is_equal_approx(speed, 2.0)
 	var pause_texture := UiArtRegistry.get_catalog_icon(&"top_play" if pause_selected else &"top_pause")
 	_pause_button.text = "" if pause_texture != null else "暂停"
-	GameUiStyle.set_button_texture_icon(_pause_button, pause_texture, Vector2(18.0, 18.0), &"center")
-	GameUiStyle.set_button_texture_icon(_speed_1_button, null, Vector2(1.0, 1.0))
-	GameUiStyle.set_button_texture_icon(_speed_2_button, null, Vector2(1.0, 1.0))
+	GameUiStyle.set_button_texture_icon(_pause_button, pause_texture, &"center")
+	GameUiStyle.set_button_texture_icon(_speed_1_button, null)
+	GameUiStyle.set_button_texture_icon(_speed_2_button, null)
 	_style_top_button(_pause_button, pause_selected)
 	_style_top_button(_speed_1_button, false)
 	_style_top_button(_speed_2_button, false)
