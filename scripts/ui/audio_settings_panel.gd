@@ -81,7 +81,6 @@ func _configure_slider(slider: HSlider) -> void:
 	slider.min_value = 0.0
 	slider.max_value = 1.0
 	slider.step = 0.01
-	GameUiStyle.apply_slider_style(slider)
 
 
 func _on_master_changed(value: float) -> void:
@@ -121,9 +120,6 @@ func _format_percent(value: float) -> String:
 
 func _apply_visual_style() -> void:
 	_panel_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel_base.add_theme_stylebox_override("panel", GameUiStyle.settings_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_SETTINGS_PANEL)
-	set_custom_minimum_size(Vector2(280.0, 180.0))
 	for label in find_children("*", "Label", true, false):
 		(label as Label).add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	var title_label := get_node_or_null("%TitleLabel") as Label
@@ -131,17 +127,12 @@ func _apply_visual_style() -> void:
 	for row_base in find_children("RowBase", "Panel", true, false):
 		var row_panel := row_base as Panel
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row_panel.add_theme_stylebox_override("panel", GameUiStyle.settings_row())
 	_refresh_volume_icons()
 
 
 func _style_close_button() -> void:
-	_close_button.set_custom_minimum_size(Vector2(30.0, 28.0))
 	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(14.0, 14.0), &"center")
 	GameUiStyle.center_button_text(_close_button)
-	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
-	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-	_close_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
 	_close_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 
 
