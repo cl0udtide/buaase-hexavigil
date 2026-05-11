@@ -131,7 +131,7 @@ func _apply_visual_style() -> void:
 
 
 func _style_close_button() -> void:
-	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), &"center")
+	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), &"overlay_center")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 
