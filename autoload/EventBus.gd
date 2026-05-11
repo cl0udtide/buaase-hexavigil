@@ -53,6 +53,12 @@ signal owned_units_changed(unit_ids: Array[StringName])
 signal map_cell_clicked(cell: Vector2i)
 
 @warning_ignore("unused_signal")
+signal map_cell_hovered(cell: Vector2i)
+
+@warning_ignore("unused_signal")
+signal right_click_tapped()
+
+@warning_ignore("unused_signal")
 signal fog_revealed(cells: Array[Vector2i])
 @warning_ignore("unused_signal")
 signal building_placed(building_runtime_id: int, building_id: StringName, cell: Vector2i)
