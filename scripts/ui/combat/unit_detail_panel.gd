@@ -5,18 +5,12 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
-const SKILL_SECTION_MIN_HEIGHT := 230.0
-const SKILL_TEXT_MIN_HEIGHT := 120.0
-const SKILL_SECTION_EXTRA_HEIGHT := 62.0
-
 signal cast_skill_requested
 signal retreat_requested
 signal purchase_requested(slot_index: int)
 
 @onready var _title_label: Label = %TitleLabel
 @onready var _level_label: Label = %LevelLabel
-@onready var _damage_label: Label = %DamageLabel
-@onready var _facing_label: Label = %FacingLabel
 @onready var _portrait_texture: TextureRect = %PortraitTexture
 @onready var _portrait_label: Label = %PortraitLabel
 @onready var _hp_value_label: Label = %HpValueLabel
@@ -30,8 +24,6 @@ signal purchase_requested(slot_index: int)
 @onready var _res_stat_label: Label = %ResStatLabel
 @onready var _block_stat_label: Label = %BlockStatLabel
 @onready var _aspd_stat_label: Label = %AspdStatLabel
-@onready var _skill_section: Control = %SkillSection
-@onready var _skill_header_row: Control = get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow") as Control
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
 @onready var _skill_icon_label: Label = %SkillIconLabel
 @onready var _skill_title_label: Label = %SkillTitleLabel
@@ -48,39 +40,23 @@ var _last_skill_scroll_key := ""
 var _hp_ratio := 0.0
 var _sp_ratio := 0.0
 var _shop_slot_index := -1
-var _detail_scroll: ScrollContainer
 
 
 func _ready() -> void:
 	AppTheme.apply(self)
-	var main_vbox := get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
-	if main_vbox != null:
-		main_vbox.add_theme_constant_override("separation", 12)
-	if _skill_section != null:
-		_skill_section.set_custom_minimum_size(Vector2(0.0, SKILL_SECTION_MIN_HEIGHT))
-		_skill_section.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	GameUiStyle.apply_scroll_style(_skill_scroll)
 	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_skill_scroll.resized.connect(_refresh_skill_layout)
 	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_skill_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	GameUiStyle.fit_centered_icon(_skill_icon_texture, Vector2(48.0, 48.0))
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
-	_damage_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	_facing_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_hp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_sp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	GameUiStyle.center_label_text(_title_label)
-	for label in [_damage_label, _facing_label]:
-		GameUiStyle.center_label_text(label)
 	for label in [_atk_stat_label, _def_stat_label, _res_stat_label, _block_stat_label, _aspd_stat_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
@@ -103,13 +79,10 @@ func _ready() -> void:
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
 	_purchase_button.pressed.connect(_on_purchase_pressed)
-	_ensure_scroll_wrapper()
-	GameUiStyle.apply_scroll_style(_detail_scroll)
-	gui_input.connect(_on_detail_gui_input)
 	clear_unit()
 
 
-func show_unit(unit: Node, display_name: String, damage_label: String, direction_label: String) -> void:
+func show_unit(unit: Node, display_name: String, _damage_label_text: String, _direction_label_text: String) -> void:
 	if unit == null:
 		clear_unit()
 		return
@@ -121,8 +94,6 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(unit.cfg), _icon_text(unit.cfg, "◆"))
 	_apply_texture_or_text(_skill_icon_texture, _skill_icon_label, _skill_icon_texture_from_cfg(unit.cfg), _icon_text(unit.cfg, "◇"))
 	_level_label.text = "#%d" % int(unit.get_runtime_id())
-	_damage_label.text = "伤害 %s" % damage_label
-	_facing_label.text = "朝向 %s" % direction_label
 	_set_progress(_hp_bar, _hp_fill, float(unit.current_hp), max(float(unit.max_hp), 1.0))
 	_hp_bar.tooltip_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
 	_hp_value_label.text = "生命 %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
@@ -151,8 +122,6 @@ func show_unit(unit: Node, display_name: String, damage_label: String, direction
 	if not status_lines.is_empty():
 		_skill_status_label.text = " / ".join(status_lines)
 	_skill_label.text = unit.get_skill_description()
-	_refresh_skill_layout()
-	call_deferred("_refresh_skill_layout")
 	var skill_scroll_key := "%d:%s:%s:%s" % [int(unit.get_runtime_id()), unit.get_skill_name(), active_state, ammo_text]
 	if skill_scroll_key != _last_skill_scroll_key:
 		_skill_scroll.scroll_vertical = 0
@@ -197,8 +166,6 @@ func clear_unit() -> void:
 	_last_skill_scroll_key = ""
 	_title_label.text = "未选中"
 	_level_label.text = "#--"
-	_damage_label.text = "伤害 --"
-	_facing_label.text = "朝向 --"
 	_portrait_texture.visible = false
 	_portrait_label.visible = true
 	_portrait_label.text = "◆"
@@ -229,8 +196,6 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_last_skill_scroll_key = ""
 	_title_label.text = display_name
 	_level_label.text = level_text
-	_damage_label.text = "伤害 %s" % _damage_label_from_cfg(cfg)
-	_facing_label.text = "来源 预览"
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(cfg), _icon_text(cfg, "*"))
 	_apply_texture_or_text(_skill_icon_texture, _skill_icon_label, _skill_icon_texture_from_cfg(cfg), _icon_text(cfg, "*"))
 	var max_hp := int(cfg.get("max_hp", 0))
@@ -249,8 +214,6 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
 	_skill_status_label.text = skill_status_text
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
-	_refresh_skill_layout()
-	call_deferred("_refresh_skill_layout")
 	_skill_scroll.scroll_vertical = 0
 	_refresh_action_icons()
 
@@ -273,86 +236,9 @@ func _set_action_mode(mode: StringName, source_text: String, can_purchase: bool,
 	_refresh_action_icons()
 
 
-func _ensure_scroll_wrapper() -> void:
-	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
-	var main_vbox := get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
-	if content_margin == null or main_vbox == null:
-		return
-	var scroll := ScrollContainer.new()
-	scroll.name = "DetailScroll"
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
-	scroll.gui_input.connect(_on_detail_scroll_gui_input)
-	content_margin.remove_child(main_vbox)
-	content_margin.add_child(scroll)
-	scroll.add_child(main_vbox)
-	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_detail_scroll = scroll
-	GameUiStyle.apply_scroll_style(_detail_scroll)
-
-
-func _on_detail_scroll_gui_input(event: InputEvent) -> void:
-	if _handle_scroll_event(event, _detail_scroll):
-		accept_event()
-
-
-func _on_detail_gui_input(event: InputEvent) -> void:
-	if _handle_scroll_event(event, _detail_scroll):
-		accept_event()
-
-
-func _handle_scroll_event(event: InputEvent, scroll: ScrollContainer) -> bool:
-	if scroll == null or not (event is InputEventMouseButton):
-		return false
-	var mouse_event := event as InputEventMouseButton
-	if not mouse_event.pressed:
-		return false
-	var direction := 0
-	if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
-		direction = -1
-	elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-		direction = 1
-	else:
-		return false
-	scroll.scroll_vertical = maxi(0, scroll.scroll_vertical + direction * 48)
-	return true
-
-
-func _refresh_skill_layout() -> void:
-	if _skill_scroll == null or _skill_label == null:
-		return
-	var text_width := maxf(1.0, _skill_scroll.size.x - 18.0)
-	if text_width <= 1.0 and _skill_section != null:
-		text_width = maxf(1.0, _skill_section.size.x - 40.0)
-	_skill_label.set_custom_minimum_size(Vector2(text_width, 0.0))
-	var label_height := maxf(SKILL_TEXT_MIN_HEIGHT, _skill_label.get_combined_minimum_size().y)
-	_skill_label.set_custom_minimum_size(Vector2(text_width, label_height))
-	_skill_scroll.custom_minimum_size.y = label_height
-	if _skill_section == null:
-		return
-	var header_height := 52.0
-	if _skill_header_row != null:
-		header_height = maxf(header_height, _skill_header_row.get_combined_minimum_size().y)
-	_skill_section.custom_minimum_size.y = maxf(SKILL_SECTION_MIN_HEIGHT, header_height + label_height + SKILL_SECTION_EXTRA_HEIGHT)
-
-
 func _on_purchase_pressed() -> void:
 	if _shop_slot_index >= 0:
 		purchase_requested.emit(_shop_slot_index)
-
-
-func _damage_label_from_cfg(cfg: Dictionary) -> String:
-	match String(cfg.get("damage_type", "physical")):
-		"magic":
-			return UiDisplayText.damage_type_label(GameEnums.DAMAGE_MAGIC)
-		"true":
-			return UiDisplayText.damage_type_label(GameEnums.DAMAGE_TRUE)
-		_:
-			return UiDisplayText.damage_type_label(GameEnums.DAMAGE_PHYSICAL)
 
 
 func _set_progress(bar: Control, fill: Control, value: float, max_value: float) -> void:
