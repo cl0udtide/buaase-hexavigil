@@ -6,6 +6,9 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 signal pressed
+signal drag_started
+
+const DRAG_START_THRESHOLD := 10.0
 
 var _pending_config: Dictionary = {}
 var _accent := GameUiStyle.STROKE_SOFT
@@ -13,6 +16,10 @@ var _disabled := false
 var _pressable_when_disabled := false
 var _selected := false
 var _hovered := false
+var _draggable := false
+var _pressing := false
+var _press_start_mouse := Vector2.ZERO
+var _drag_started := false
 
 @onready var _card_base: Panel = %CardBase
 @onready var _icon_backplate: Panel = %IconBackplate
@@ -73,7 +80,9 @@ func _apply_config(config: Dictionary) -> void:
 	_accent = config.get("accent", GameUiStyle.STROKE_SOFT) as Color
 	_disabled = bool(config.get("disabled", false))
 	_pressable_when_disabled = bool(config.get("pressable_when_disabled", false))
+	_draggable = bool(config.get("draggable", false))
 	_selected = bool(config.get("selected", false))
+	tooltip_text = String(config.get("disabled_reason", ""))
 	_title_label.text = String(config.get("title", ""))
 	_subtitle_label.text = String(config.get("subtitle", ""))
 	_detail_label.text = String(config.get("detail", ""))
@@ -117,9 +126,26 @@ func _add_label_shadow(label: Label) -> void:
 
 
 func _on_gui_input(event: InputEvent) -> void:
-	if (_disabled and not _pressable_when_disabled) or not (event is InputEventMouseButton):
+	if _disabled and not _pressable_when_disabled:
 		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-		pressed.emit()
-		accept_event()
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mouse_event.pressed:
+			_pressing = true
+			_drag_started = false
+			_press_start_mouse = get_global_mouse_position()
+			accept_event()
+			if not _draggable:
+				pressed.emit()
+		elif _pressing:
+			_pressing = false
+			if _draggable and not _drag_started:
+				pressed.emit()
+			accept_event()
+	elif event is InputEventMouseMotion and _pressing and _draggable and not _drag_started:
+		if get_global_mouse_position().distance_to(_press_start_mouse) >= DRAG_START_THRESHOLD:
+			_drag_started = true
+			drag_started.emit()
+			accept_event()

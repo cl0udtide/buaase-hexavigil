@@ -29,6 +29,7 @@ const RANGE_GRAVITY_EDGE: Texture2D = preload("res://assets/effects/range/gravit
 const RANGE_BUILDING_EDGE: Texture2D = preload("res://assets/effects/range/building_aura_edge_pulse_strip.png")
 const GRID_COLOR := Color(0.02, 0.045, 0.065, 0.36)
 const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
+const FOG_EXPLORE_HOVER_COLOR := Color(0.55, 1.0, 0.70, 0.55)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
 const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
 const ATTACK_RANGE_BORDER := Color(0.30, 0.85, 1.0, 0.95)
@@ -91,7 +92,14 @@ var _map_manager: Node
 var _building_manager: Node
 var _random_event_manager: Node
 var _hovered_cell := Vector2i(-1, -1)
+var _fog_hover_active := false
 var _selected_cell := Vector2i(-1, -1)
+var _right_press_pos := Vector2.ZERO
+var _right_press_time_ms := 0
+var _right_press_tracking := false
+
+const RIGHT_TAP_MAX_DISTANCE := 5.0
+const RIGHT_TAP_MAX_DURATION_MS := 300
 var _camera: Camera2D
 var _fit_zoom := 1.0
 var _zoom_scalar := 1.0
@@ -138,9 +146,16 @@ func _process(delta: float) -> void:
 	if map_manager.is_inside(hovered) and hovered != _hovered_cell:
 		_hovered_cell = hovered
 		queue_redraw()
+		var event_bus = AppRefs.event_bus()
+		if event_bus != null:
+			event_bus.map_cell_hovered.emit(hovered)
 	elif not map_manager.is_inside(hovered) and _hovered_cell != Vector2i(-1, -1):
 		_hovered_cell = Vector2i(-1, -1)
+		_fog_hover_active = false
 		queue_redraw()
+		var event_bus = AppRefs.event_bus()
+		if event_bus != null:
+			event_bus.map_cell_hovered.emit(Vector2i(-1, -1))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -186,7 +201,8 @@ func _draw() -> void:
 			if cell == _deploy_locked_cell:
 				_draw_deploy_locked_cell(rect)
 			if cell == _hovered_cell:
-				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, HOVER_COLOR, Color.TRANSPARENT, 2.0, 0.0)
+				var hover_tint := FOG_EXPLORE_HOVER_COLOR if _fog_hover_active else HOVER_COLOR
+				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, hover_tint, Color.TRANSPARENT, 2.0, 0.0)
 			if cell == _selected_cell:
 				_draw_cell_overlay(OVERLAY_MAP_SELECTED, rect, SELECT_COLOR, Color.TRANSPARENT, 6.0, 0.0)
 	_draw_range_outlines(map_manager)
@@ -258,6 +274,13 @@ func clear_range_outlines_for_owner(owner_runtime_id: int) -> void:
 			changed = true
 	if changed:
 		queue_redraw()
+
+
+func set_fog_hover_active(active: bool) -> void:
+	if _fog_hover_active == active:
+		return
+	_fog_hover_active = active
+	queue_redraw()
 
 
 func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = [], visual_key: String = "") -> void:
@@ -983,6 +1006,19 @@ func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> vo
 				_zoom_at_mouse(ZOOM_STEP)
 		MOUSE_BUTTON_RIGHT:
 			_is_dragging = event.pressed
+			if event.pressed:
+				_right_press_pos = event.position
+				_right_press_time_ms = Time.get_ticks_msec()
+				_right_press_tracking = true
+			else:
+				if _right_press_tracking:
+					var distance: float = event.position.distance_to(_right_press_pos)
+					var elapsed: int = Time.get_ticks_msec() - _right_press_time_ms
+					if distance <= RIGHT_TAP_MAX_DISTANCE and elapsed <= RIGHT_TAP_MAX_DURATION_MS:
+						var event_bus = AppRefs.event_bus()
+						if event_bus != null:
+							event_bus.right_click_tapped.emit()
+				_right_press_tracking = false
 		MOUSE_BUTTON_LEFT:
 			if event.pressed and not _is_dragging:
 				var cell: Vector2i = map_manager.world_to_cell(get_global_mouse_position())

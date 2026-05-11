@@ -70,10 +70,16 @@ func _bind_events() -> void:
 	event_bus.building_destroyed.connect(_on_building_changed)
 	event_bus.building_state_changed.connect(_on_building_state_changed)
 	event_bus.resource_collected.connect(_on_resource_collected)
+	event_bus.right_click_tapped.connect(_on_right_click_tapped)
+
+
+func _on_right_click_tapped() -> void:
+	if visible:
+		hide()
 
 
 func _on_map_cell_clicked(cell: Vector2i) -> void:
-	if _current_phase != GameEnums.PHASE_DAY or not _is_idle_action_mode():
+	if _current_phase != GameEnums.PHASE_DAY:
 		hide()
 		return
 	_current_cell = cell
@@ -396,15 +402,6 @@ func _resource_unit_name(resource_type: StringName) -> String:
 
 func _get_resource_collect_amount(resource_type: StringName) -> int:
 	return WOOD_RESOURCE_COLLECT_AMOUNT if resource_type == &"wood" else DEFAULT_RESOURCE_COLLECT_AMOUNT
-
-
-func _is_idle_action_mode() -> bool:
-	var action_panel := get_node_or_null("../../ScreenLayout/ActionPanelSlot/ActionPanel")
-	if action_panel == null:
-		action_panel = get_node_or_null("../../ActionPanel")
-	if action_panel == null or not action_panel.has_method("get_current_mode"):
-		return true
-	return StringName(action_panel.get_current_mode()) == &"idle"
 
 
 func _get_map_manager() -> Node:

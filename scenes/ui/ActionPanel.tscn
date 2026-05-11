@@ -39,28 +39,6 @@ layout_mode = 2
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="IdleButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=1068372288]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 36)
-layout_mode = 2
-focus_mode = 0
-text = "待机"
-theme_override_styles/normal = ExtResource("3_action_button")
-theme_override_styles/hover = ExtResource("4_button_primary")
-theme_override_styles/pressed = ExtResource("4_button_primary")
-theme_override_styles/disabled = ExtResource("5_button_disabled")
-
-[node name="ExploreButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=1093985431]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 36)
-layout_mode = 2
-focus_mode = 0
-text = "探索"
-theme_override_styles/normal = ExtResource("3_action_button")
-theme_override_styles/hover = ExtResource("4_button_primary")
-theme_override_styles/pressed = ExtResource("4_button_primary")
-theme_override_styles/disabled = ExtResource("5_button_disabled")
-
 [node name="StartNightButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=875692889]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(74, 36)

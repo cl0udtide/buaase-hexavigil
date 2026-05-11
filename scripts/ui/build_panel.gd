@@ -12,6 +12,7 @@ const CATEGORY_BLOCK: StringName = &"block"
 const REFRESH_COST := 2
 
 signal shop_unit_preview_requested(slot_index: int, unit_id: StringName, price: int, can_purchase: bool, disabled_reason: String)
+signal building_card_drag_started(building_id: StringName)
 
 var _current_mode: StringName = MODE_BUILD
 var _current_category: StringName = CATEGORY_RESOURCE
@@ -49,9 +50,21 @@ func _bind_events() -> void:
 		event_bus.shop_stock_changed.connect(_on_shop_stock_changed)
 		event_bus.shop_action_result.connect(_on_shop_action_result)
 		event_bus.building_placed.connect(_on_building_placed)
+		event_bus.materials_changed.connect(_on_materials_changed)
+		event_bus.action_points_changed.connect(_on_action_points_changed)
 	var data_repo = AppRefs.data_repo()
 	if data_repo != null and data_repo.has_signal("data_loaded"):
 		data_repo.data_loaded.connect(_on_data_loaded)
+
+
+func _on_materials_changed(_wood: int, _stone: int, _mana: int) -> void:
+	if _current_mode == MODE_BUILD:
+		refresh_from_state()
+
+
+func _on_action_points_changed(_value: int) -> void:
+	if _current_mode == MODE_BUILD:
+		refresh_from_state()
 
 
 func _bind_buttons() -> void:
@@ -155,12 +168,24 @@ func _make_building_card(building_id: StringName) -> Control:
 	var card := BuildListCardScene.instantiate() as Control
 	card.call("configure", card_model)
 	card.connect(&"pressed", _on_building_card_pressed.bind(building_id))
+	if card.has_signal("drag_started"):
+		card.connect(&"drag_started", _on_building_card_drag_started.bind(building_id))
 	return card
+
+
+func _on_building_card_drag_started(building_id: StringName) -> void:
+	if _current_phase != GameEnums.PHASE_DAY:
+		return
+	_selected_building_id = building_id
+	refresh_from_state()
+	building_card_drag_started.emit(building_id)
 
 
 func _make_building_card_model(building_id: StringName) -> Dictionary:
 	var cfg := _get_building_cfg(building_id)
 	var selected := building_id == _selected_building_id
+	var lack_reason := _build_card_lack_reason(cfg)
+	var disabled := cfg.is_empty() or not lack_reason.is_empty()
 	return {
 		"title": UiDisplayText.config_name(cfg, building_id),
 		"subtitle": _format_building_cost(cfg),
@@ -171,9 +196,38 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"state": "已选择" if selected else "",
 		"cost_badge_text": str(int(cfg.get("ap_cost", 0))),
 		"selected": selected,
-		"disabled": cfg.is_empty(),
+		"disabled": disabled,
+		"draggable": not disabled,
+		"disabled_reason": lack_reason,
 		"audio_cue": &"ui_card_select",
 	}
+
+
+func _build_card_lack_reason(cfg: Dictionary) -> String:
+	if cfg.is_empty():
+		return ""
+	if _current_phase != GameEnums.PHASE_DAY:
+		return "夜晚阶段无法建造"
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ""
+	var missing: PackedStringArray = []
+	var ap_cost := int(cfg.get("ap_cost", 0))
+	if int(run_state.action_points) < ap_cost:
+		missing.append("行动力 %d/%d" % [int(run_state.action_points), ap_cost])
+	var costs := BuildValidator.get_building_material_costs(cfg)
+	var wood_cost := int(costs.get("wood", 0))
+	var stone_cost := int(costs.get("stone", 0))
+	var mana_cost := int(costs.get("mana", 0))
+	if int(run_state.wood) < wood_cost:
+		missing.append("木材 %d/%d" % [int(run_state.wood), wood_cost])
+	if int(run_state.stone) < stone_cost:
+		missing.append("石材 %d/%d" % [int(run_state.stone), stone_cost])
+	if int(run_state.mana) < mana_cost:
+		missing.append("魔力矿 %d/%d" % [int(run_state.mana), mana_cost])
+	if missing.is_empty():
+		return ""
+	return "资源不足：" + "、".join(missing)
 
 
 func _make_shop_card(slot: Dictionary) -> Control:
@@ -299,9 +353,6 @@ func _get_action_panel() -> Node:
 func _on_building_card_pressed(building_id: StringName) -> void:
 	_selected_building_id = building_id
 	refresh_from_state()
-	var action_panel := _get_action_panel()
-	if action_panel != null and action_panel.has_method("set_mode_build"):
-		action_panel.set_mode_build(building_id)
 
 
 func _on_shop_card_pressed(slot_index: int) -> void:
