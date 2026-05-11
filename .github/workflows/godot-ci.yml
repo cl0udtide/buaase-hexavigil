@@ -9,6 +9,7 @@ on:
 env:
   GODOT_VERSION: 4.6.2
   EXPORT_NAME: HexaVigil
+  ITCH_TARGET: cloudtide/hexavigil:web
   PROJECT_PATH: .
 
 jobs:
@@ -60,3 +61,34 @@ jobs:
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Web" "$EXPORT_DIR/web/index.html"
+      - name: Install Web Packaging Tools
+        run: |
+          apt-get update
+          apt-get install -y curl unzip zip
+      - name: Package Web Build
+        run: |
+          cd build/web
+          zip -r ../web.zip .
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: build/web.zip
+      - name: Install Butler
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          curl -fsSL --retry 3 --retry-delay 5 -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip -o butler.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/butler
+          butler -V
+      - name: Publish Web Build to itch.io
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [ -z "$BUTLER_API_KEY" ]; then
+            echo "::error::Missing BUTLER_API_KEY repository secret."
+            exit 1
+          fi
+
+          butler push build/web.zip "$ITCH_TARGET" --userversion "${GITHUB_SHA::7}"
