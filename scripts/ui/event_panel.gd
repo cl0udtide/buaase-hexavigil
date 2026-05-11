@@ -38,12 +38,6 @@ func _on_random_event_triggered(event_id: StringName, _cell: Vector2i) -> void:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.event_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_EVENT_PANEL, Vector4(8.0, 6.0, 8.0, 8.0))
-	var body_card := get_node_or_null("ContentMargin/VBoxContainer/BodyCard") as PanelContainer
-	if body_card != null:
-		body_card.add_theme_stylebox_override("panel", GameUiStyle.list_card(false))
-		GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/VBoxContainer/BodyCard/BodyMargin") as MarginContainer, GameUiStyle.FRAME_LIST_CARD)
 	var vbox := get_node_or_null("ContentMargin/VBoxContainer") as VBoxContainer
 	if vbox != null:
 		vbox.add_theme_constant_override("separation", 12)
@@ -64,13 +58,9 @@ func _apply_visual_style() -> void:
 		_style_button(close_button, GameUiStyle.ACCENT)
 
 
-func _style_button(button: Button, accent: Color) -> void:
+func _style_button(button: Button, _accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
 	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_close"), &"left", 8.0)
-	button.add_theme_stylebox_override("normal", GameUiStyle.event_choice_button())
-	button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.AMBER))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.42))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)

@@ -333,10 +333,6 @@ func _set_descendant_mouse_filter(root: Node, filter: int) -> void:
 
 
 func _apply_style() -> void:
-	_text_box.add_theme_stylebox_override("panel", GameUiStyle.dialog_box())
-	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.dialog_speaker_plate())
-	GameUiStyle.apply_frame_margin(get_node_or_null("TextBox/TextMargin") as MarginContainer, GameUiStyle.FRAME_DIALOG_BOX)
-	GameUiStyle.apply_frame_margin(get_node_or_null("TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin") as MarginContainer, GameUiStyle.FRAME_DIALOG_SPEAKER)
 	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_speaker_label.add_theme_font_size_override("font_size", 22)
 	GameUiStyle.center_label_text(_speaker_label)

@@ -503,8 +503,6 @@ func _get_effective_building_radius(cfg: Dictionary) -> int:
 
 
 func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.map_popup())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_MAP_POPUP)
 	set_custom_minimum_size(Vector2(POPUP_MIN_WIDTH, 0.0))
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
@@ -520,16 +518,12 @@ func _apply_visual_style() -> void:
 		GameUiStyle.center_label_text(_message_label)
 
 
-func _style_button(button: Button, accent: Color) -> void:
+func _style_button(button: Button, _accent: Color) -> void:
 	if button == null:
 		return
 	GameUiStyle.center_button_text(button)
 	button.set_custom_minimum_size(Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0)))
 	GameUiStyle.set_button_texture_icon(button, _icon_for_popup_button(button), &"left", 8.0)
-	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
-	button.add_theme_stylebox_override("hover", GameUiStyle.button(accent, 0.28))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.32))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
