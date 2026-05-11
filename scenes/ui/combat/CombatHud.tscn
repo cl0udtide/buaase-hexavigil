@@ -44,6 +44,7 @@
 [ext_resource type="Texture2D" uid="uid://bfebku8sc6g1u" path="res://assets/ui/generated/icon_volume_master.png" id="39_iconmaster"]
 [ext_resource type="Texture2D" uid="uid://bfk1f2fh2w0e8" path="res://assets/ui/generated/icon_volume_music.png" id="40_iconmusic"]
 [ext_resource type="Texture2D" uid="uid://hm7kf3qhrwhq" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
 
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
@@ -1253,6 +1254,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="DeployRailBase" type="Panel" parent="HudChromeLayer/DeployDeckSlot/DeployDeck" unique_id=947087228]
 unique_name_in_owner = true
@@ -1261,6 +1263,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("42_deckrail")
 
 [node name="DeckMargin" type="MarginContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck" unique_id=1101104632]
 layout_mode = 0
@@ -1268,6 +1272,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 14
 
 [node name="ScrollContainer" type="ScrollContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck/DeckMargin" unique_id=725690026]
 layout_mode = 2
