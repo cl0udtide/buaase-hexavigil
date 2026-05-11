@@ -1,11 +1,7 @@
 extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
-const AppTheme = preload("res://scripts/ui/app_theme.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
-const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 
 const MODE_BUILD: StringName = &"build"
@@ -38,8 +34,6 @@ var _current_phase := GameEnums.PHASE_MENU
 
 
 func _ready() -> void:
-	AppTheme.apply(self)
-	_apply_visual_style()
 	_bind_events()
 	_bind_buttons()
 	_sync_shop_stock_from_manager()
@@ -108,17 +102,12 @@ func _sync_runtime_state() -> void:
 func _refresh_mode_buttons() -> void:
 	_build_mode_button.disabled = _current_mode == MODE_BUILD
 	_shop_mode_button.disabled = _current_mode == MODE_SHOP
-	_style_tab_button(_build_mode_button, _current_mode == MODE_BUILD)
-	_style_tab_button(_shop_mode_button, _current_mode == MODE_SHOP)
 
 
 func _refresh_category_buttons() -> void:
 	_resource_button.disabled = _current_category == CATEGORY_RESOURCE
 	_aura_button.disabled = _current_category == CATEGORY_AURA
 	_block_button.disabled = _current_category == CATEGORY_BLOCK
-	_style_tab_button(_resource_button, _current_category == CATEGORY_RESOURCE)
-	_style_tab_button(_aura_button, _current_category == CATEGORY_AURA)
-	_style_tab_button(_block_button, _current_category == CATEGORY_BLOCK)
 
 
 func _refresh_bottom_controls() -> void:
@@ -127,7 +116,6 @@ func _refresh_bottom_controls() -> void:
 	var refresh_cost := _get_shop_refresh_cost()
 	_refresh_shop_button.text = "刷新 %d 声望" % refresh_cost
 	_refresh_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY or _current_prestige < refresh_cost
-	_style_command_button(_refresh_shop_button, GameUiStyle.STROKE_SOFT)
 	_refresh_category_buttons()
 
 
@@ -180,15 +168,11 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"icon_text": UiDisplayText.icon_text(cfg),
 		"fallback_icon_key": &"",
 		"source_cfg": cfg,
-		"accent": GameUiStyle.STROKE_SOFT,
-		"title_color": GameUiStyle.TEXT,
 		"state": "已选择" if selected else "",
-		"state_color": GameUiStyle.AMBER,
 		"cost_badge_text": str(int(cfg.get("ap_cost", 0))),
 		"selected": selected,
 		"disabled": cfg.is_empty(),
 		"audio_cue": &"ui_card_select",
-		"min_height": 108.0
 	}
 
 
@@ -199,21 +183,16 @@ func _make_shop_card(slot: Dictionary) -> Control:
 	var cfg := _get_unit_cfg(unit_id)
 	var base_cost := int(cfg.get("cost_prestige", 0))
 	var cost := _get_shop_unit_purchase_cost(cfg)
-	var accent := UiDisplayText.tier_color(base_cost)
-	if sold or unit_id == StringName():
-		accent = GameUiStyle.STROKE_SOFT
 	var title := ""
 	var subtitle := ""
 	var detail := ""
 	var state := ""
-	var title_color := UiDisplayText.tier_color(base_cost)
 	if unit_id == StringName():
 		title = "空槽位"
-		title_color = GameUiStyle.TEXT_MUTED
 	else:
 		title = UiDisplayText.config_name(cfg, unit_id)
-		subtitle = "%s  %s" % [UiDisplayText.class_label(str(cfg.get("class", ""))), UiDisplayText.tier_label(base_cost)]
-		detail = _format_shop_cost(base_cost, cost)
+		subtitle = UiDisplayText.class_label(str(cfg.get("class", "")))
+		detail = UiDisplayText.tier_label(base_cost)
 		if sold:
 			state = "已购买"
 		elif _current_prestige < cost:
@@ -227,15 +206,11 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"icon_text": _unit_icon_text(unit_id),
 		"fallback_icon_key": StringName("class_%s" % String(cfg.get("class", ""))),
 		"source_cfg": cfg,
-		"accent": accent,
-		"title_color": title_color,
-		"state_color": GameUiStyle.TEXT_MUTED if sold else GameUiStyle.AMBER,
 		"cost_badge_text": str(cost) if unit_id != StringName() else "",
 		"selected": slot_index == _selected_shop_slot_index,
 		"disabled": sold or unit_id == StringName() or _current_phase != GameEnums.PHASE_DAY or _current_prestige < cost,
 		"pressable_when_disabled": unit_id != StringName(),
 		"audio_cue": &"ui_card_select",
-		"min_height": 102.0
 	})
 	card.connect(&"pressed", _on_shop_card_pressed.bind(slot_index))
 	return card
@@ -246,11 +221,8 @@ func _make_empty_state(text_value: String) -> Control:
 	card.call("configure", {
 		"title": text_value,
 		"icon_text": "-",
-		"accent": GameUiStyle.STROKE_SOFT,
-		"title_color": GameUiStyle.TEXT_DIM,
 		"disabled": true,
 		"audio_cue": &"ui_click",
-		"min_height": 96.0
 	})
 	return card
 
@@ -258,11 +230,10 @@ func _make_empty_state(text_value: String) -> Control:
 func _format_building_cost(cfg: Dictionary) -> String:
 	if cfg.is_empty():
 		return "配置未加载"
-	return "木 %d   石 %d   魔 %d   行动 %d" % [
+	return "木 %d   石 %d   魔 %d" % [
 		int(cfg.get("cost_wood", 0)),
 		int(cfg.get("cost_stone", 0)),
-		int(cfg.get("cost_mana", 0)),
-		int(cfg.get("ap_cost", 0))
+		int(cfg.get("cost_mana", 0))
 	]
 
 
@@ -505,44 +476,3 @@ func _on_phase_changed(_old_phase: int, new_phase: int) -> void:
 
 func _on_data_loaded() -> void:
 	refresh_from_state()
-
-
-func _apply_visual_style() -> void:
-	_selection_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	GameUiStyle.center_label_text(_selection_label)
-	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	GameUiStyle.center_label_text(_message_label)
-	_style_tab_button(_build_mode_button, true)
-	_style_tab_button(_shop_mode_button, false)
-	_style_command_button(_refresh_shop_button, GameUiStyle.STROKE_SOFT)
-
-
-func _style_tab_button(button: Button, selected: bool) -> void:
-	if button == null:
-		return
-	GameUiStyle.center_button_text(button)
-	button.custom_minimum_size.y = 36.0
-	var normal_component := UiFrameSpec.TAB_SELECTED if selected else UiFrameSpec.TAB
-	var normal_border := GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT
-	button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(normal_component, GameUiStyle.BG_CARD, normal_border))
-	button.add_theme_stylebox_override("hover", GameUiStyle.frame_box(UiFrameSpec.TAB_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.ACCENT))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.frame_box(UiFrameSpec.TAB_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.frame_box(UiFrameSpec.TAB_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED)
-
-
-func _style_command_button(button: Button, accent: Color) -> void:
-	if button == null:
-		return
-	GameUiStyle.center_button_text(button)
-	if button == _refresh_shop_button:
-		GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(&"button_refresh"), &"left", 8.0)
-	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
-	button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.ACCENT, 0.28))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.34))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
