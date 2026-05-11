@@ -20,6 +20,15 @@ const VISUAL_DISPLAY_SIZE := 72.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
+const ATTACK_LUNGE_DISTANCE := 5.0
+const ATTACK_LUNGE_ROTATION_DEGREES := 7.0
+const ATTACK_LUNGE_IN_SECONDS := 0.055
+const ATTACK_LUNGE_OUT_SECONDS := 0.11
+const IDLE_MOTION_ROOT_NAME := "IdleMotionRoot"
+const IDLE_MOTION_BREATH_SCALE := Vector2(0.99, 1.02)
+const IDLE_MOTION_BOB_Y := -1.1
+const IDLE_MOTION_MIN_SECONDS := 1.65
+const IDLE_MOTION_MAX_SECONDS := 2.35
 const SKILL_BEHAVIOR_REGISTRY := {
 	&"common_atk_up": "res://scripts/combat/skills/common_atk_up_skill.gd",
 	&"guard_hold_line": "res://scripts/combat/skills/guard_hold_line_skill.gd",
@@ -76,6 +85,9 @@ var _blocked_enemy_ids: Array[int] = []
 var _current_target_runtime_id := -1
 var _is_dead := false
 var _damage_reduction_effects: Dictionary = {}
+var _idle_motion_root: Node2D = null
+var _idle_motion_tween: Tween = null
+var _attack_lunge_tween: Tween = null
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _skill_behavior: Node = get_node_or_null("%SkillBehavior")
@@ -476,17 +488,114 @@ func _setup_visual_sprite() -> void:
 		_visual_root.name = "VisualRoot"
 		_visual_root.unique_name_in_owner = true
 		add_child(_visual_root)
-	var sprite := _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	_idle_motion_root = _get_idle_motion_root()
+	var sprite := _get_or_create_idle_sprite()
 	if sprite == null:
-		sprite = Sprite2D.new()
-		sprite.name = "IdleSprite"
-		_visual_root.add_child(sprite)
+		return
 	sprite.texture = texture
 	sprite.centered = true
 	sprite.position = VISUAL_OFFSET
 	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
 	sprite.flip_h = _should_visual_face_left(facing)
 	sprite.z_index = VISUAL_Z_INDEX
+	_start_idle_motion()
+
+
+func _get_idle_motion_root() -> Node2D:
+	if _visual_root == null:
+		return null
+	var root := _visual_root.get_node_or_null(IDLE_MOTION_ROOT_NAME) as Node2D
+	if root == null:
+		root = Node2D.new()
+		root.name = IDLE_MOTION_ROOT_NAME
+		root.unique_name_in_owner = true
+		_visual_root.add_child(root)
+	return root
+
+
+func _get_or_create_idle_sprite() -> Sprite2D:
+	if _idle_motion_root == null:
+		return null
+	var sprite := _idle_motion_root.get_node_or_null("IdleSprite") as Sprite2D
+	if sprite != null:
+		return sprite
+	var legacy_sprite: Sprite2D = null
+	if _visual_root != null:
+		legacy_sprite = _visual_root.get_node_or_null("IdleSprite") as Sprite2D
+	if legacy_sprite != null:
+		_visual_root.remove_child(legacy_sprite)
+		_idle_motion_root.add_child(legacy_sprite)
+		return legacy_sprite
+	sprite = Sprite2D.new()
+	sprite.name = "IdleSprite"
+	_idle_motion_root.add_child(sprite)
+	return sprite
+
+
+func _start_idle_motion() -> void:
+	if _idle_motion_root == null:
+		return
+	if _idle_motion_tween != null and _idle_motion_tween.is_valid():
+		_idle_motion_tween.kill()
+	_idle_motion_root.position = Vector2.ZERO
+	_idle_motion_root.scale = Vector2.ONE
+	_idle_motion_root.rotation_degrees = 0.0
+	if not bool(cfg.get("idle_motion_enabled", true)):
+		return
+	var cycle_seconds := randf_range(
+		float(cfg.get("idle_motion_min_seconds", IDLE_MOTION_MIN_SECONDS)),
+		float(cfg.get("idle_motion_max_seconds", IDLE_MOTION_MAX_SECONDS))
+	)
+	var breath_scale := Vector2(
+		float(cfg.get("idle_motion_scale_x", IDLE_MOTION_BREATH_SCALE.x)),
+		float(cfg.get("idle_motion_scale_y", IDLE_MOTION_BREATH_SCALE.y))
+	)
+	var bob_y := float(cfg.get("idle_motion_bob_y", IDLE_MOTION_BOB_Y))
+	var start_delay := randf_range(0.0, cycle_seconds)
+	if start_delay <= 0.01:
+		_begin_idle_motion_loop(cycle_seconds, breath_scale, bob_y)
+		return
+	_idle_motion_tween = create_tween()
+	_idle_motion_tween.tween_interval(start_delay)
+	_idle_motion_tween.tween_callback(Callable(self, "_begin_idle_motion_loop").bind(cycle_seconds, breath_scale, bob_y))
+
+
+func _begin_idle_motion_loop(cycle_seconds: float, breath_scale: Vector2, bob_y: float) -> void:
+	if _idle_motion_root == null:
+		return
+	var half_cycle: float = max(cycle_seconds * 0.5, 0.1)
+	_idle_motion_tween = create_tween()
+	_idle_motion_tween.set_loops()
+	_idle_motion_tween.set_trans(Tween.TRANS_SINE)
+	_idle_motion_tween.set_ease(Tween.EASE_IN_OUT)
+	_idle_motion_tween.tween_property(_idle_motion_root, "scale", breath_scale, half_cycle)
+	_idle_motion_tween.parallel().tween_property(_idle_motion_root, "position", Vector2(0.0, bob_y), half_cycle)
+	_idle_motion_tween.tween_property(_idle_motion_root, "scale", Vector2.ONE, half_cycle)
+	_idle_motion_tween.parallel().tween_property(_idle_motion_root, "position", Vector2.ZERO, half_cycle)
+
+
+func _play_attack_lunge(direction: Vector2i) -> void:
+	if _visual_root == null:
+		return
+	var normalized := _normalize_direction(direction)
+	var forward := Vector2(float(normalized.x), float(normalized.y))
+	if forward.length_squared() <= 0.0:
+		return
+	if _attack_lunge_tween != null and _attack_lunge_tween.is_valid():
+		_attack_lunge_tween.kill()
+	_visual_root.position = Vector2.ZERO
+	_visual_root.rotation_degrees = 0.0
+	_attack_lunge_tween = create_tween()
+	_attack_lunge_tween.set_trans(Tween.TRANS_QUAD)
+	_attack_lunge_tween.set_ease(Tween.EASE_OUT)
+	_attack_lunge_tween.tween_property(_visual_root, "position", forward * ATTACK_LUNGE_DISTANCE, ATTACK_LUNGE_IN_SECONDS)
+	_attack_lunge_tween.parallel().tween_property(_visual_root, "rotation_degrees", _get_attack_lunge_rotation(normalized), ATTACK_LUNGE_IN_SECONDS)
+	_attack_lunge_tween.tween_property(_visual_root, "position", Vector2.ZERO, ATTACK_LUNGE_OUT_SECONDS)
+	_attack_lunge_tween.parallel().tween_property(_visual_root, "rotation_degrees", 0.0, ATTACK_LUNGE_OUT_SECONDS)
+
+
+func _get_attack_lunge_rotation(direction: Vector2i) -> float:
+	return -ATTACK_LUNGE_ROTATION_DEGREES if _should_visual_face_left(direction) else ATTACK_LUNGE_ROTATION_DEGREES
 
 
 func _load_visual_texture() -> Texture2D:
@@ -597,6 +706,7 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	_current_target_runtime_id = target.get_runtime_id()
+	_play_attack_lunge(facing)
 	var damage_value := get_effective_atk()
 	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
