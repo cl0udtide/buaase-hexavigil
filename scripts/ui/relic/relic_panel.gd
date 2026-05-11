@@ -150,7 +150,7 @@ func _bind_filter_buttons() -> void:
 		var button := Button.new()
 		button.text = String(filter_def.get("label", ""))
 		button.focus_mode = Control.FOCUS_NONE
-		button.custom_minimum_size = Vector2(72.0, 32.0)
+		button.set_custom_minimum_size(Vector2(72.0, 32.0))
 		button.set_meta("category", filter_def.get("category", &"all"))
 		_filter_bar.add_child(button)
 		var category := StringName(filter_def.get("category", &"all"))
@@ -196,7 +196,7 @@ func _style_filter_button(button: Button, selected: bool) -> void:
 
 
 func _style_close_button() -> void:
-	_close_button.custom_minimum_size = Vector2(34.0, 30.0)
+	_close_button.set_custom_minimum_size(Vector2(34.0, 30.0))
 	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), Vector2(14.0, 14.0), &"center")
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))

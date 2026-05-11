@@ -101,7 +101,7 @@ func _icon_capacity_for_width(width: float) -> int:
 
 
 func _style_entry_button() -> void:
-	_entry_button.custom_minimum_size = Vector2(86.0, 30.0)
+	_entry_button.set_custom_minimum_size(Vector2(86.0, 30.0))
 	GameUiStyle.center_button_text(_entry_button)
 	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(UiFrameSpec.RELIC_ENTRY_BUTTON, GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT))
 	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))

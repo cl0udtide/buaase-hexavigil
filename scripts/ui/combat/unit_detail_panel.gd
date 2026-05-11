@@ -80,7 +80,7 @@ func _ready() -> void:
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/StatsSection/StatsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(4.0, 4.0, 4.0, 4.0))
 	if _skill_section != null:
-		_skill_section.custom_minimum_size = Vector2(0.0, SKILL_SECTION_MIN_HEIGHT)
+		_skill_section.set_custom_minimum_size(Vector2(0.0, SKILL_SECTION_MIN_HEIGHT))
 		_skill_section.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -360,9 +360,9 @@ func _refresh_skill_layout() -> void:
 	var text_width := maxf(1.0, _skill_scroll.size.x - 18.0)
 	if text_width <= 1.0 and _skill_section != null:
 		text_width = maxf(1.0, _skill_section.size.x - 40.0)
-	_skill_label.custom_minimum_size = Vector2(text_width, 0.0)
+	_skill_label.set_custom_minimum_size(Vector2(text_width, 0.0))
 	var label_height := maxf(SKILL_TEXT_MIN_HEIGHT, _skill_label.get_combined_minimum_size().y)
-	_skill_label.custom_minimum_size = Vector2(text_width, label_height)
+	_skill_label.set_custom_minimum_size(Vector2(text_width, label_height))
 	_skill_scroll.custom_minimum_size.y = label_height
 	if _skill_section == null:
 		return
@@ -464,7 +464,7 @@ func _ensure_icon_row_for_label(label: Label, icon_id: StringName) -> void:
 	parent.move_child(row, insert_index)
 	var icon_rect := TextureRect.new()
 	icon_rect.name = "IconTexture"
-	icon_rect.custom_minimum_size = Vector2(18.0, 18.0)
+	icon_rect.set_custom_minimum_size(Vector2(18.0, 18.0))
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
