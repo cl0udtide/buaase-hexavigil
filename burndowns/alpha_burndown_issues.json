@@ -645,5 +645,27 @@
     "labels": [
       "estimate:3"
     ]
+  },
+  {
+    "number": 127,
+    "title": "UI 顶层布局槽位化重构",
+    "state": "closed",
+    "created_at": "2026-05-11T04:59:50+00:00",
+    "closed_at": "2026-05-11T05:27:54+00:00",
+    "estimate": 2,
+    "labels": [
+      "estimate:2"
+    ]
+  },
+  {
+    "number": 130,
+    "title": "优化 top_hud_settings UI 资产层级与错误提示遮罩",
+    "state": "closed",
+    "created_at": "2026-05-11T06:29:27+00:00",
+    "closed_at": "2026-05-11T06:33:47+00:00",
+    "estimate": 2,
+    "labels": [
+      "estimate:2"
+    ]
   }
 ]
