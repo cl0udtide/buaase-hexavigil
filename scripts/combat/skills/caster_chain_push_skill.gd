@@ -43,11 +43,12 @@ func after_attack(target: Node, damage_value: int) -> void:
 		var next_target: Node = _find_next_chain_target(current, hit_targets, chain_range)
 		if next_target == null:
 			break
-		hit_targets.append(next_target)
-		var chain_damage: int = max(int(round(float(damage_value) * max(1.0 - decay * float(chain_index + 1), 0.1))), 1)
-		next_target.receive_damage(chain_damage, owner_unit.damage_type)
-		_push_if_active(next_target)
-		current = next_target
+			hit_targets.append(next_target)
+			var chain_damage: int = max(int(round(float(damage_value) * max(1.0 - decay * float(chain_index + 1), 0.1))), 1)
+			_play_chain_arc(current, next_target)
+			next_target.receive_damage(chain_damage, owner_unit.damage_type)
+			_push_if_active(next_target)
+			current = next_target
 	if hit_targets.size() > 1:
 		_debug_log("链法：%s#%d 连锁命中 %d 个敌人" % [
 			owner_unit.unit_id,
@@ -76,3 +77,27 @@ func _push_if_active(enemy: Node) -> void:
 		return
 	if enemy.has_method("apply_push"):
 		enemy.apply_push(owner_unit.facing, int(owner_unit.cfg.get("skill_push_tiles", 1)))
+
+
+func _play_chain_arc(from_target: Node, to_target: Node) -> void:
+	if owner_unit == null or not owner_unit.has_method("spawn_world_effect"):
+		return
+	if not (from_target is Node2D) or not (to_target is Node2D):
+		return
+	var start_position := (from_target as Node2D).global_position
+	var end_position := (to_target as Node2D).global_position
+	var delta := end_position - start_position
+	if delta.length_squared() <= 0.001:
+		return
+	owner_unit.spawn_world_effect(
+		"res://assets/effects/operators/caster_chain_arc_strip.png",
+		(start_position + end_position) * 0.5,
+		0.32,
+		6,
+		6,
+		18.0,
+		Vector2(max(delta.length(), 80.0), 72.0),
+		delta.angle(),
+		false,
+		25
+	)

@@ -23,6 +23,7 @@ func _on_skill_start() -> void:
 	owner_unit.attack_interval = max(_base_attack_interval + float(owner_unit.cfg.get("skill_attack_interval_add", 2.0)), 0.05)
 	if owner_unit.has_method("refresh_status_view"):
 		owner_unit.refresh_status_view()
+	_play_mark_effect()
 	_debug_log("技能启动：%s#%d “永恒狩猎”，标记 %d，弹药 %d" % [owner_unit.unit_id, owner_unit.get_runtime_id(), _marked_enemy_runtime_id, _ammo])
 
 
@@ -78,11 +79,12 @@ func after_attack(target: Node, damage_value: int) -> void:
 			var candidates: Array = _enemies_in_radius(marked.get_current_cell(), int(owner_unit.cfg.get("skill_mark_radius", 2)))
 			if candidates.is_empty():
 				break
-			candidates.shuffle()
-			var enemy: Node = candidates[0]
-			enemy.receive_damage(max(int(round(float(damage_value) * hit_multiplier)), 1), owner_unit.damage_type)
-			if enemy.has_method("apply_stun"):
-				enemy.apply_stun(float(owner_unit.cfg.get("skill_stun_duration", 0.35)))
+				candidates.shuffle()
+				var enemy: Node = candidates[0]
+				_play_extra_hit_effect(enemy)
+				enemy.receive_damage(max(int(round(float(damage_value) * hit_multiplier)), 1), owner_unit.damage_type)
+				if enemy.has_method("apply_stun"):
+					enemy.apply_stun(float(owner_unit.cfg.get("skill_stun_duration", 0.35)))
 	if target != null and is_instance_valid(target) and target.has_method("apply_stun"):
 		target.apply_stun(float(owner_unit.cfg.get("skill_stun_duration", 0.35)))
 	_ammo -= 1
@@ -106,3 +108,39 @@ func _get_marked_enemy() -> Node:
 		if enemy != null and is_instance_valid(enemy) and int(enemy.get_runtime_id()) == _marked_enemy_runtime_id and int(enemy.get("current_hp")) > 0:
 			return enemy
 	return null
+
+
+func _play_mark_effect() -> void:
+	if not owner_unit.has_method("spawn_one_shot_effect"):
+		return
+	var marked := _get_marked_enemy()
+	if marked == null:
+		return
+	owner_unit.spawn_one_shot_effect({
+		"texture_path": "res://assets/effects/auras/mark_target_lock_strip.png",
+		"follow_target": marked,
+		"local_position": Vector2(0.0, -8.0),
+		"hframes": 8,
+		"frame_count": 8,
+		"fps": 10.0,
+		"duration": get_duration(),
+		"size": Vector2(112.0, 112.0),
+		"loop": true,
+			"z_index": 25
+		})
+
+
+func _play_extra_hit_effect(target: Node) -> void:
+	if target == null or not is_instance_valid(target) or not target.has_method("play_follow_effect"):
+		return
+	target.play_follow_effect(
+		"res://assets/effects/operators/typhon_hunt_extra_hit_strip.png",
+		0.3,
+		6,
+		6,
+		18.0,
+		Vector2(96.0, 96.0),
+		false,
+		Vector2(0.0, -8.0),
+		25
+	)

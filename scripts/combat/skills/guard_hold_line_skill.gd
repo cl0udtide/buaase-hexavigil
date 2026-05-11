@@ -31,3 +31,21 @@ func get_attack_targets_override() -> Array:
 	if owner_unit == null or active_timer <= 0.0:
 		return []
 	return owner_unit.get_blocked_enemies()
+
+
+func after_attack(target: Node, _damage_value: int) -> void:
+	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
+		return
+	if not target.has_method("play_follow_effect"):
+		return
+	target.play_follow_effect(
+		"res://assets/effects/operators/guard_hold_line_arc_strip.png",
+		0.32,
+		6,
+		6,
+		18.0,
+		Vector2(112.0, 88.0),
+		false,
+		Vector2(0.0, -8.0),
+		25
+	)

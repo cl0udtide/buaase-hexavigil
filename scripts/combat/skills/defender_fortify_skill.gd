@@ -24,6 +24,17 @@ func _on_skill_start() -> void:
 	_heal_pool = 0.0
 	owner_unit.defense = max(int(round(float(_base_defense) * float(owner_unit.cfg.get("skill_def_multiplier", 1.6)))), 0)
 	owner_unit.block_count = _base_block_count + int(owner_unit.cfg.get("skill_block_bonus", 1))
+	owner_unit.play_follow_effect(
+		_get_fortify_effect_path(),
+		get_duration(),
+		6,
+		6,
+		10.0,
+		Vector2(116.0, 116.0),
+		true,
+		Vector2(0.0, -8.0),
+		22
+	)
 	_debug_log("技能启动：%s#%d 加防回血，阻挡 %d，防御 %d，持续 %.1f 秒" % [
 		owner_unit.unit_id,
 		owner_unit.get_runtime_id(),
@@ -42,3 +53,9 @@ func _on_skill_end() -> void:
 		owner_unit.unit_id,
 		owner_unit.get_runtime_id()
 	])
+
+
+func _get_fortify_effect_path() -> String:
+	if String(owner_unit.cfg.get("visual_key", owner_unit.unit_id)) == "nian":
+		return "res://assets/effects/auras/nian_iron_guard_loop_strip.png"
+	return "res://assets/effects/auras/defender_fortify_loop_strip.png"
