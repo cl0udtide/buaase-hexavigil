@@ -2,12 +2,15 @@ extends Node2D
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 
 const CELL_SIZE := 64.0
 const BLOCK_RADIUS_TILES := 0.7071
 const DEFAULT_PROJECTILE_SPEED := 520.0
 const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
 const DEFAULT_PROJECTILE_LIFETIME := 3.0
+const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
+const DEFAULT_STATUS_EFFECT_SIZE := Vector2(112.0, 112.0)
 const TARGET_TYPE_GROUND: StringName = &"ground"
 const TARGET_TYPE_FLYING: StringName = &"flying"
 const TARGET_TYPE_ALL: StringName = &"all"
@@ -85,6 +88,7 @@ var _blocked_enemy_ids: Array[int] = []
 var _current_target_runtime_id := -1
 var _is_dead := false
 var _damage_reduction_effects: Dictionary = {}
+var _registered_range_outline_ids: Array[StringName] = []
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
 var _attack_lunge_tween: Tween = null
@@ -96,6 +100,10 @@ var _attack_lunge_tween: Tween = null
 
 func _ready() -> void:
 	add_to_group("units")
+
+
+func _exit_tree() -> void:
+	clear_all_skill_range_outlines()
 
 
 func _process(delta: float) -> void:
@@ -178,7 +186,7 @@ func receive_damage(value: int, damage_type_value: int, source: Node = null) -> 
 	var hp_before := current_hp
 	current_hp = max(current_hp - final_damage, 0)
 	_update_status_view()
-	_play_hit_effect()
+	_play_hit_effect(damage_type_value)
 	_debug_log("单位 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type_value), value, final_damage, current_hp, max_hp])
 	if final_damage > 0 and current_hp < hp_before and _skill_behavior != null and _skill_behavior.has_method("after_receive_damage"):
 		_skill_behavior.after_receive_damage(source, final_damage)
@@ -200,6 +208,7 @@ func receive_heal(value: int, source: Node = null) -> void:
 		return
 	current_hp = min(current_hp + final_value, max_hp)
 	_update_status_view()
+	_play_heal_effect()
 
 
 func lose_hp(value: int, allow_death: bool = false) -> void:
@@ -222,10 +231,21 @@ func lose_hp(value: int, allow_death: bool = false) -> void:
 func apply_damage_reduction(effect_key: StringName, multiplier: float, duration: float) -> void:
 	if duration <= 0.0:
 		return
+	var was_active := _damage_reduction_effects.has(effect_key)
 	_damage_reduction_effects[effect_key] = {
 		"multiplier": clamp(multiplier, 0.0, 1.0),
 		"remaining": duration
 	}
+	if not was_active:
+		play_follow_effect(
+			"res://assets/effects/auras/barrier_guard_loop_strip.png",
+			duration,
+			8,
+			8,
+			10.0,
+			Vector2(112.0, 112.0),
+			true
+		)
 
 
 func gain_sp(value: int) -> void:
@@ -402,6 +422,10 @@ func get_map_manager() -> Node:
 	return get_node_or_null("../../../Managers/MapManager")
 
 
+func get_map_root() -> Node:
+	return get_node_or_null("../../MapRoot")
+
+
 func get_unit_manager() -> Node:
 	return get_node_or_null("../../../Managers/UnitManager")
 
@@ -412,6 +436,108 @@ func get_enemy_manager() -> Node:
 
 func get_projectile_root() -> Node:
 	return get_node_or_null("../../ProjectileRoot")
+
+
+func get_effect_root() -> Node:
+	return get_node_or_null("../../EffectRoot")
+
+
+func show_skill_range_outline(outline_key: StringName, cells: Array[Vector2i], options: Dictionary = {}) -> void:
+	var map_root := get_map_root()
+	if map_root == null or not map_root.has_method("set_range_outline"):
+		return
+	var effect_id := _make_skill_range_outline_id(outline_key)
+	var payload := options.duplicate(true)
+	payload["owner_runtime_id"] = runtime_id
+	map_root.set_range_outline(effect_id, cells, payload)
+	if not _registered_range_outline_ids.has(effect_id):
+		_registered_range_outline_ids.append(effect_id)
+
+
+func clear_skill_range_outline(outline_key: StringName) -> void:
+	var map_root := get_map_root()
+	var effect_id := _make_skill_range_outline_id(outline_key)
+	if map_root != null and map_root.has_method("clear_range_outline"):
+		map_root.clear_range_outline(effect_id)
+	_registered_range_outline_ids.erase(effect_id)
+
+
+func clear_all_skill_range_outlines() -> void:
+	var map_root := get_map_root()
+	if runtime_id >= 0 and map_root != null and map_root.has_method("clear_range_outlines_for_owner"):
+		map_root.clear_range_outlines_for_owner(runtime_id)
+	elif map_root != null and map_root.has_method("clear_range_outline"):
+		for effect_id: StringName in _registered_range_outline_ids:
+			map_root.clear_range_outline(effect_id)
+	_registered_range_outline_ids.clear()
+
+
+func spawn_one_shot_effect(payload: Dictionary) -> Node:
+	var effect_root := get_effect_root()
+	if effect_root == null:
+		return null
+	var effect := OneShotEffect.new()
+	effect_root.add_child(effect)
+	effect.setup(payload)
+	return effect
+
+
+func _make_skill_range_outline_id(outline_key: StringName) -> StringName:
+	var normalized_key := String(outline_key).strip_edges()
+	if normalized_key.is_empty():
+		normalized_key = "skill"
+	return StringName("unit_%d_%s" % [runtime_id, normalized_key])
+
+
+func play_follow_effect(
+	texture_path: String,
+	duration: float,
+	hframes: int = 6,
+	frame_count: int = 6,
+	fps: float = 18.0,
+	size: Vector2 = DEFAULT_STATUS_EFFECT_SIZE,
+	loop: bool = false,
+	local_position: Vector2 = VISUAL_OFFSET,
+	z_index_value: int = 24
+) -> void:
+	spawn_one_shot_effect({
+		"texture_path": texture_path,
+		"follow_target": self,
+		"local_position": local_position,
+		"hframes": hframes,
+		"frame_count": frame_count,
+		"fps": fps,
+		"duration": duration,
+		"size": size,
+		"loop": loop,
+		"z_index": z_index_value
+	})
+
+
+func spawn_world_effect(
+	texture_path: String,
+	position_value: Vector2,
+	duration: float,
+	hframes: int = 6,
+	frame_count: int = 6,
+	fps: float = 18.0,
+	size: Vector2 = DEFAULT_STATUS_EFFECT_SIZE,
+	rotation_value: float = 0.0,
+	loop: bool = false,
+	z_index_value: int = 24
+) -> void:
+	spawn_one_shot_effect({
+		"texture_path": texture_path,
+		"position": position_value,
+		"rotation": rotation_value,
+		"hframes": hframes,
+		"frame_count": frame_count,
+		"fps": fps,
+		"duration": duration,
+		"size": size,
+		"loop": loop,
+		"z_index": z_index_value
+	})
 
 
 func launch_projectile(target: Node, payload: Dictionary = {}) -> Node:
@@ -438,6 +564,11 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node:
 		projectile_payload["hit_radius"] = float(cfg.get("projectile_hit_radius", DEFAULT_PROJECTILE_HIT_RADIUS))
 	if not projectile_payload.has("max_lifetime"):
 		projectile_payload["max_lifetime"] = float(cfg.get("projectile_lifetime", DEFAULT_PROJECTILE_LIFETIME))
+	if not projectile_payload.has("color"):
+		var projectile_color: Variant = _parse_projectile_color(cfg.get("projectile_color", null))
+		if projectile_color is Color:
+			projectile_payload["color"] = projectile_color
+	_copy_projectile_visual_config(projectile_payload)
 	if projectile.has_signal("hit"):
 		projectile.hit.connect(_on_projectile_hit)
 	if projectile.has_method("setup"):
@@ -675,9 +806,29 @@ func _update_status_view() -> void:
 		_status_view.set_ammo(int(ammo_status.get("current", 0)), int(ammo_status.get("max", 0)))
 
 
-func _play_hit_effect() -> void:
-	if _status_view != null and _status_view.has_method("play_hit_effect"):
-		_status_view.play_hit_effect()
+func _play_hit_effect(damage_type_value: int = GameEnums.DAMAGE_PHYSICAL) -> void:
+	spawn_one_shot_effect({
+		"texture_path": _default_impact_texture_path(damage_type_value),
+		"follow_target": self,
+		"local_position": VISUAL_OFFSET,
+		"hframes": 6,
+		"frame_count": 6,
+		"fps": 18.0,
+		"size": DEFAULT_IMPACT_SIZE,
+		"z_index": 24
+	})
+
+
+func _play_heal_effect() -> void:
+	play_follow_effect(
+		"res://assets/effects/common/heal_tick_small_strip.png",
+		0.36,
+		6,
+		6,
+		18.0,
+		Vector2(92.0, 92.0),
+		false
+	)
 
 
 func _tick_attack(delta: float) -> void:
@@ -766,6 +917,33 @@ func _get_attack_projectile_payloads(target: Node, damage_value: int) -> Array[D
 			"trigger_after_attack": true
 		})
 	return payloads
+
+
+func _copy_projectile_visual_config(projectile_payload: Dictionary) -> void:
+	for key in [
+		"projectile_texture_path",
+		"texture_path",
+		"projectile_visual_length",
+		"projectile_visual_height",
+		"visual_length",
+		"visual_height",
+		"impact_texture_path",
+		"impact_hframes",
+		"impact_frame_count",
+		"impact_fps"
+	]:
+		if not projectile_payload.has(key) and cfg.has(key):
+			projectile_payload[key] = cfg[key]
+
+
+func _default_impact_texture_path(damage_type_value: int) -> String:
+	match damage_type_value:
+		GameEnums.DAMAGE_MAGIC:
+			return "res://assets/effects/common/impact_arts_small_strip.png"
+		GameEnums.DAMAGE_TRUE:
+			return "res://assets/effects/common/impact_true_damage_small_strip.png"
+		_:
+			return "res://assets/effects/common/impact_physical_small_strip.png"
 
 
 func _select_attack_target() -> Node:
@@ -975,6 +1153,17 @@ func parse_damage_type(raw_type: String) -> int:
 			return GameEnums.DAMAGE_TRUE
 		_:
 			return GameEnums.DAMAGE_PHYSICAL
+
+
+func _parse_projectile_color(raw_color: Variant) -> Variant:
+	if raw_color is Color:
+		return raw_color
+	if typeof(raw_color) == TYPE_ARRAY:
+		var color_values := raw_color as Array
+		if color_values.size() >= 3:
+			var alpha := float(color_values[3]) if color_values.size() >= 4 else 1.0
+			return Color(float(color_values[0]), float(color_values[1]), float(color_values[2]), alpha)
+	return null
 
 
 func parse_target_type(raw_type: String) -> StringName:

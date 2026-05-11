@@ -1,6 +1,7 @@
 extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 
 const VISUAL_TEXTURE_ROOT := "res://assets/sprites/buildings"
 const VISUAL_IDLE_ANIM := "idle"
@@ -10,6 +11,7 @@ const VISUAL_OFFSET := Vector2(0.0, -8.0)
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
 const DESTROYED_VISUAL_KEY := "generic_destroyed_building"
+const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
 
 var building_id: StringName
 var runtime_id := -1
@@ -48,12 +50,12 @@ func setup_from_cfg(new_building_id: StringName, new_cfg: Dictionary, cell: Vect
 	_update_status_view()
 
 
-func receive_damage(value: int, _damage_type: int) -> void:
+func receive_damage(value: int, damage_type: int) -> void:
 	if _is_destroyed:
 		return
 	current_hp = max(current_hp - value, 0)
 	_update_status_view()
-	_play_hit_effect()
+	_play_hit_effect(damage_type)
 	if current_hp == 0:
 		_set_destroyed(true)
 
@@ -62,6 +64,7 @@ func repair_full() -> void:
 	current_hp = max_hp
 	_set_destroyed(false)
 	_update_status_view()
+	_play_repair_effect()
 
 
 func is_destroyed() -> bool:
@@ -303,9 +306,53 @@ func _update_status_view() -> void:
 		_status_view.set_hp(current_hp, max_hp)
 
 
-func _play_hit_effect() -> void:
-	if _status_view != null and _status_view.has_method("play_hit_effect"):
-		_status_view.play_hit_effect()
+func _play_hit_effect(damage_type_value: int = GameEnums.DAMAGE_PHYSICAL) -> void:
+	var effect_root := _get_effect_root()
+	var effect_parent: Node = effect_root if effect_root != null else self
+	var effect := OneShotEffect.new()
+	effect_parent.add_child(effect)
+	effect.setup({
+		"texture_path": _default_impact_texture_path(damage_type_value),
+		"follow_target": self,
+		"local_position": VISUAL_OFFSET,
+		"hframes": 6,
+		"frame_count": 6,
+		"fps": 18.0,
+		"size": DEFAULT_IMPACT_SIZE,
+		"z_index": 24
+	})
+
+
+func _play_repair_effect() -> void:
+	var effect_root := _get_effect_root()
+	var effect_parent: Node = effect_root if effect_root != null else self
+	var effect := OneShotEffect.new()
+	effect_parent.add_child(effect)
+	effect.setup({
+		"texture_path": "res://assets/effects/common/building_repair_heal_pulse_strip.png",
+		"follow_target": self,
+		"local_position": VISUAL_OFFSET,
+		"hframes": 6,
+		"frame_count": 6,
+		"fps": 14.0,
+		"duration": 0.5,
+		"size": Vector2(112.0, 112.0),
+		"z_index": 24
+	})
+
+
+func _get_effect_root() -> Node:
+	return get_node_or_null("../../EffectRoot")
+
+
+func _default_impact_texture_path(damage_type_value: int) -> String:
+	match damage_type_value:
+		GameEnums.DAMAGE_MAGIC:
+			return "res://assets/effects/common/impact_arts_small_strip.png"
+		GameEnums.DAMAGE_TRUE:
+			return "res://assets/effects/common/impact_true_damage_small_strip.png"
+		_:
+			return "res://assets/effects/common/impact_physical_small_strip.png"
 
 
 func _set_destroyed(value: bool) -> void:
