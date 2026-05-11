@@ -20,6 +20,13 @@ const OVERLAY_ATTACK_RANGE: Texture2D = preload("res://assets/map/CommandMap/ove
 const OVERLAY_BUILDING_RANGE: Texture2D = preload("res://assets/map/CommandMap/overlay_building_range.png")
 const OVERLAY_DEPLOY_VALID: Texture2D = preload("res://assets/map/CommandMap/overlay_deploy_valid.png")
 const OVERLAY_DEPLOY_INVALID: Texture2D = preload("res://assets/map/CommandMap/overlay_deploy_invalid.png")
+const RANGE_EDGE_BASE: Texture2D = preload("res://assets/effects/range/range_outline_edge_base.png")
+const RANGE_NODE_GLOW: Texture2D = preload("res://assets/effects/range/range_outline_node_glow_strip.png")
+const RANGE_SKILL_EDGE: Texture2D = preload("res://assets/effects/range/skill_range_warning_edge_pulse_strip.png")
+const RANGE_AOE_WARNING_EDGE: Texture2D = preload("res://assets/effects/range/aoe_warning_edge_pulse_strip.png")
+const RANGE_FIELD_NODE: Texture2D = preload("res://assets/effects/range/field_boundary_node_pulse_strip.png")
+const RANGE_GRAVITY_EDGE: Texture2D = preload("res://assets/effects/range/gravity_field_edge_pulse_strip.png")
+const RANGE_BUILDING_EDGE: Texture2D = preload("res://assets/effects/range/building_aura_edge_pulse_strip.png")
 const GRID_COLOR := Color(0.02, 0.045, 0.065, 0.36)
 const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
@@ -27,6 +34,10 @@ const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
 const ATTACK_RANGE_BORDER := Color(0.30, 0.85, 1.0, 0.95)
 const BUILDING_RANGE_FILL := Color(0.28, 0.90, 0.42, 0.22)
 const BUILDING_RANGE_BORDER := Color(0.46, 1.0, 0.58, 0.86)
+const RANGE_OUTLINE_DEFAULT_COLOR := Color(0.55, 0.92, 1.0, 0.86)
+const RANGE_OUTLINE_WARNING_COLOR := Color(1.0, 0.58, 0.22, 0.92)
+const RANGE_OUTLINE_SHU_COLOR := Color(0.72, 0.96, 0.50, 0.88)
+const RANGE_OUTLINE_SARIA_COLOR := Color(1.0, 0.82, 0.52, 0.90)
 const DEPLOY_VALID_FILL := Color(0.18, 0.85, 0.65, 0.38)
 const DEPLOY_VALID_BORDER := Color(0.38, 1.0, 0.82, 0.95)
 const DEPLOY_INVALID_FILL := Color(1.0, 0.12, 0.10, 0.36)
@@ -70,6 +81,11 @@ const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
 const PAN_OVERSCROLL_VIEWPORT_RATIO := 0.75
+const RANGE_TEXTURE_FRAME_COUNT := 6
+const RANGE_TEXTURE_FPS := 7.0
+const RANGE_EDGE_TEXTURE_SIZE := Vector2(72.0, 26.0)
+const RANGE_NODE_TEXTURE_SIZE := Vector2(30.0, 30.0)
+const RANGE_CORNER_TEXTURE_SIZE := Vector2(42.0, 42.0)
 
 var _map_manager: Node
 var _building_manager: Node
@@ -84,6 +100,8 @@ var _last_map_size := Vector2.ZERO
 var _is_dragging := false
 var _debug_attack_range_cells: Array[Vector2i] = []
 var _building_effect_range_cells: Array[Vector2i] = []
+var _range_outline_effects: Dictionary = {}
+var _range_outline_time := 0.0
 var _deploy_preview_cell := Vector2i(-1, -1)
 var _deploy_preview_valid := false
 var _deploy_locked_cell := Vector2i(-1, -1)
@@ -110,7 +128,9 @@ func _ready() -> void:
 	call_deferred("_fit_camera_to_map")
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_range_outline_time += delta
+	_tick_range_outline_effects(delta)
 	var map_manager := _get_map_manager()
 	if map_manager == null:
 		return
@@ -169,6 +189,7 @@ func _draw() -> void:
 				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, HOVER_COLOR, Color.TRANSPARENT, 2.0, 0.0)
 			if cell == _selected_cell:
 				_draw_cell_overlay(OVERLAY_MAP_SELECTED, rect, SELECT_COLOR, Color.TRANSPARENT, 6.0, 0.0)
+	_draw_range_outlines(map_manager)
 	_draw_wave_route_previews(map_manager)
 	_draw_deploy_visual_preview(map_manager)
 	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
@@ -193,6 +214,50 @@ func set_building_effect_range(cells: Array[Vector2i]) -> void:
 func clear_building_effect_range() -> void:
 	_building_effect_range_cells.clear()
 	queue_redraw()
+
+
+func set_range_outline(effect_id: StringName, cells: Array[Vector2i], options: Dictionary = {}) -> void:
+	if effect_id == StringName():
+		return
+	var outline_cells := _dedupe_range_outline_cells(cells)
+	if outline_cells.is_empty():
+		clear_range_outline(effect_id)
+		return
+	var duration := float(options.get("duration", -1.0))
+	var data := {
+		"cells": outline_cells,
+		"style": StringName(options.get("style", &"skill")),
+		"owner_runtime_id": int(options.get("owner_runtime_id", -1)),
+		"duration": duration,
+		"remaining": duration,
+		"width": float(options.get("width", 2.5)),
+		"halo_width": float(options.get("halo_width", 7.0)),
+		"pulse_amount": float(options.get("pulse_amount", 0.22)),
+		"pulse_speed": float(options.get("pulse_speed", 3.0)),
+		"draw_nodes": bool(options.get("draw_nodes", false)),
+		"node_radius": float(options.get("node_radius", 2.5)),
+		"use_texture": bool(options.get("use_texture", true))
+	}
+	if options.has("color"):
+		data["color"] = options["color"]
+	_range_outline_effects[effect_id] = data
+	queue_redraw()
+
+
+func clear_range_outline(effect_id: StringName) -> void:
+	if _range_outline_effects.erase(effect_id):
+		queue_redraw()
+
+
+func clear_range_outlines_for_owner(owner_runtime_id: int) -> void:
+	var changed := false
+	for effect_id in _range_outline_effects.keys().duplicate():
+		var data: Dictionary = _range_outline_effects[effect_id]
+		if int(data.get("owner_runtime_id", -1)) == owner_runtime_id:
+			_range_outline_effects.erase(effect_id)
+			changed = true
+	if changed:
+		queue_redraw()
 
 
 func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = [], visual_key: String = "") -> void:
@@ -234,6 +299,250 @@ func set_wave_route_previews(routes: Array[Dictionary]) -> void:
 func clear_wave_route_previews() -> void:
 	_wave_route_previews.clear()
 	queue_redraw()
+
+
+func _tick_range_outline_effects(delta: float) -> void:
+	if _range_outline_effects.is_empty():
+		return
+	for effect_id in _range_outline_effects.keys().duplicate():
+		var data: Dictionary = _range_outline_effects[effect_id]
+		var remaining := float(data.get("remaining", -1.0))
+		if remaining <= 0.0:
+			continue
+		remaining -= delta
+		if remaining <= 0.0:
+			_range_outline_effects.erase(effect_id)
+		else:
+			data["remaining"] = remaining
+			_range_outline_effects[effect_id] = data
+	queue_redraw()
+
+
+func _draw_range_outlines(map_manager: Node) -> void:
+	if _range_outline_effects.is_empty():
+		return
+	for effect_id in _range_outline_effects.keys():
+		var data: Dictionary = _range_outline_effects[effect_id]
+		var cells: Array = data.get("cells", [])
+		_draw_range_outline_cells(map_manager, cells, data)
+
+
+func _draw_range_outline_cells(map_manager: Node, cells: Array, data: Dictionary) -> void:
+	var lookup: Dictionary = {}
+	for raw_cell: Variant in cells:
+		if not (raw_cell is Vector2i):
+			continue
+		var cell: Vector2i = raw_cell
+		if map_manager != null and map_manager.has_method("is_inside") and not map_manager.is_inside(cell):
+			continue
+		lookup[cell] = true
+	if lookup.is_empty():
+		return
+	var core_color: Color = _range_outline_color(data)
+	var pulse_amount: float = clampf(float(data.get("pulse_amount", 0.22)), 0.0, 0.75)
+	var pulse_speed: float = maxf(float(data.get("pulse_speed", 3.0)), 0.01)
+	var pulse: float = 0.5 + sin(_range_outline_time * pulse_speed) * 0.5
+	core_color.a *= 1.0 - pulse_amount + pulse * pulse_amount
+	var texture_modulate := _range_outline_texture_modulate(data, core_color)
+	var halo_color := Color(core_color.r, core_color.g, core_color.b, core_color.a * 0.24)
+	var width: float = maxf(float(data.get("width", 2.5)), 1.0)
+	var halo_width: float = maxf(float(data.get("halo_width", width + 4.0)), width)
+	var style_data := _range_outline_style_data(data)
+	var edge_texture: Texture2D = style_data.get("edge_texture", null)
+	var node_texture: Texture2D = style_data.get("node_texture", null)
+	var corner_texture: Texture2D = style_data.get("corner_texture", null)
+	var use_texture := bool(data.get("use_texture", true)) and edge_texture != null
+	var edge_frame_count := int(style_data.get("edge_frame_count", 1))
+	var node_frame_count := int(style_data.get("node_frame_count", 1))
+	var corner_frame_count := int(style_data.get("corner_frame_count", 1))
+	var frame_index := _range_outline_frame_index(edge_frame_count)
+	var node_frame_index := _range_outline_frame_index(node_frame_count)
+	var corner_frame_index := _range_outline_frame_index(corner_frame_count)
+	var directions: Array[Dictionary] = [
+		{"neighbor": Vector2i(0, -1), "from": Vector2(0.0, 0.0), "to": Vector2(CELL_SIZE, 0.0)},
+		{"neighbor": Vector2i(1, 0), "from": Vector2(CELL_SIZE, 0.0), "to": Vector2(CELL_SIZE, CELL_SIZE)},
+		{"neighbor": Vector2i(0, 1), "from": Vector2(CELL_SIZE, CELL_SIZE), "to": Vector2(0.0, CELL_SIZE)},
+		{"neighbor": Vector2i(-1, 0), "from": Vector2(0.0, CELL_SIZE), "to": Vector2(0.0, 0.0)}
+	]
+	var node_points: Dictionary = {}
+	var draw_nodes := bool(data.get("draw_nodes", false))
+	for raw_cell: Variant in lookup.keys():
+		var cell: Vector2i = raw_cell
+		var origin := Vector2(float(cell.x), float(cell.y)) * CELL_SIZE
+		for direction: Dictionary in directions:
+			var neighbor: Vector2i = cell + direction["neighbor"]
+			if lookup.has(neighbor):
+				continue
+			var from_point: Vector2 = origin + direction["from"]
+			var to_point: Vector2 = origin + direction["to"]
+			var edge_angle := (to_point - from_point).angle()
+			if use_texture:
+				_draw_range_texture_piece(edge_texture, edge_frame_count, frame_index, (from_point + to_point) * 0.5, edge_angle, Vector2(float(data.get("edge_length", RANGE_EDGE_TEXTURE_SIZE.x)), float(data.get("edge_thickness", RANGE_EDGE_TEXTURE_SIZE.y))), texture_modulate)
+			elif halo_width > width:
+				draw_line(from_point, to_point, halo_color, halo_width, true)
+				draw_line(from_point, to_point, core_color, width, true)
+			else:
+				draw_line(from_point, to_point, core_color, width, true)
+			if draw_nodes:
+				_add_range_outline_node(node_points, from_point, edge_angle)
+				_add_range_outline_node(node_points, to_point, edge_angle)
+	if draw_nodes:
+		var node_radius: float = maxf(float(data.get("node_radius", 2.5)), 1.0)
+		var node_size := Vector2.ONE * float(data.get("node_size", RANGE_NODE_TEXTURE_SIZE.x))
+		var corner_size := Vector2.ONE * float(data.get("corner_size", RANGE_CORNER_TEXTURE_SIZE.x))
+		for node_data in node_points.values():
+			var point: Vector2 = node_data.get("point", Vector2.ZERO)
+			var angles: Array = node_data.get("angles", [])
+			if not _is_range_outline_corner_node(angles):
+				continue
+			if corner_texture != null:
+				_draw_range_texture_piece(corner_texture, corner_frame_count, corner_frame_index, point, 0.0, corner_size, texture_modulate)
+			elif node_texture != null:
+				_draw_range_texture_piece(node_texture, node_frame_count, node_frame_index, point, 0.0, node_size, texture_modulate)
+			else:
+				draw_circle(point, node_radius + 2.0, halo_color)
+				draw_circle(point, node_radius, core_color)
+
+
+func _range_outline_color(data: Dictionary) -> Color:
+	var color_variant: Variant = data.get("color", null)
+	if color_variant is Color:
+		return color_variant
+	match StringName(data.get("style", &"skill")):
+		&"building":
+			return BUILDING_RANGE_BORDER
+		&"warning":
+			return RANGE_OUTLINE_WARNING_COLOR
+		&"shu_growth":
+			return RANGE_OUTLINE_SHU_COLOR
+		&"saria_calcification":
+			return RANGE_OUTLINE_SARIA_COLOR
+		_:
+			return RANGE_OUTLINE_DEFAULT_COLOR
+
+
+func _range_outline_texture_modulate(data: Dictionary, core_color: Color) -> Color:
+	if data.has("color"):
+		return core_color
+	match StringName(data.get("style", &"skill")):
+		&"shu_growth":
+			return Color(0.82, 1.0, 0.68, core_color.a)
+		&"saria_calcification":
+			return Color(1.0, 0.96, 0.78, core_color.a)
+		_:
+			return Color(1.0, 1.0, 1.0, core_color.a)
+
+
+func _range_outline_style_data(data: Dictionary) -> Dictionary:
+	match StringName(data.get("style", &"skill")):
+		&"building":
+			return {
+				"edge_texture": RANGE_BUILDING_EDGE,
+				"node_texture": RANGE_FIELD_NODE,
+				"edge_frame_count": RANGE_TEXTURE_FRAME_COUNT,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+		&"gravity":
+			return {
+				"edge_texture": RANGE_GRAVITY_EDGE,
+				"node_texture": RANGE_FIELD_NODE,
+				"edge_frame_count": RANGE_TEXTURE_FRAME_COUNT,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+		&"warning":
+			return {
+				"edge_texture": RANGE_AOE_WARNING_EDGE,
+				"node_texture": RANGE_FIELD_NODE,
+				"edge_frame_count": RANGE_TEXTURE_FRAME_COUNT,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+		&"shu_growth":
+			return {
+				"edge_texture": RANGE_BUILDING_EDGE,
+				"node_texture": RANGE_FIELD_NODE,
+				"edge_frame_count": RANGE_TEXTURE_FRAME_COUNT,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+		&"saria_calcification":
+			return {
+				"edge_texture": RANGE_SKILL_EDGE,
+				"node_texture": RANGE_FIELD_NODE,
+				"edge_frame_count": RANGE_TEXTURE_FRAME_COUNT,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+		&"skill":
+			return {
+				"edge_texture": RANGE_SKILL_EDGE,
+				"node_texture": RANGE_FIELD_NODE,
+				"edge_frame_count": RANGE_TEXTURE_FRAME_COUNT,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+		_:
+			return {
+				"edge_texture": RANGE_EDGE_BASE,
+				"node_texture": RANGE_NODE_GLOW,
+				"edge_frame_count": 1,
+				"node_frame_count": RANGE_TEXTURE_FRAME_COUNT
+			}
+
+
+func _range_outline_frame_index(frame_count: int) -> int:
+	var normalized_count := maxi(frame_count, 1)
+	return int(floor(_range_outline_time * RANGE_TEXTURE_FPS)) % normalized_count
+
+
+func _draw_range_texture_piece(texture: Texture2D, hframes: int, frame_index: int, center: Vector2, rotation_value: float, size: Vector2, modulate: Color) -> void:
+	if texture == null:
+		return
+	var normalized_hframes := maxi(hframes, 1)
+	var frame_size := Vector2(
+		float(texture.get_width()) / float(normalized_hframes),
+		float(texture.get_height())
+	)
+	if frame_size.x <= 0.0 or frame_size.y <= 0.0:
+		return
+	var source_rect := Rect2(Vector2(frame_size.x * float(frame_index % normalized_hframes), 0.0), frame_size)
+	draw_set_transform(center, rotation_value, Vector2.ONE)
+	draw_texture_rect_region(texture, Rect2(-size * 0.5, size), source_rect, modulate)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _add_range_outline_node(node_points: Dictionary, point: Vector2, edge_angle: float) -> void:
+	var key := _range_outline_node_key(point)
+	var data: Dictionary = node_points.get(key, {"point": point, "angles": []})
+	var angles: Array = data.get("angles", [])
+	angles.append(edge_angle)
+	data["angles"] = angles
+	node_points[key] = data
+
+
+func _is_range_outline_corner_node(angles: Array) -> bool:
+	var normalized_angles: Array[float] = []
+	for raw_angle: Variant in angles:
+		var angle := fposmod(float(raw_angle), PI)
+		var matched := false
+		for existing: float in normalized_angles:
+			if abs(existing - angle) < 0.01 or abs(abs(existing - angle) - PI) < 0.01:
+				matched = true
+				break
+		if not matched:
+			normalized_angles.append(angle)
+	return normalized_angles.size() >= 2
+
+
+func _range_outline_node_key(point: Vector2) -> String:
+	return "%d:%d" % [int(round(point.x)), int(round(point.y))]
+
+
+func _dedupe_range_outline_cells(cells: Array[Vector2i]) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	var seen := {}
+	for cell: Vector2i in cells:
+		if seen.has(cell):
+			continue
+		seen[cell] = true
+		result.append(cell)
+	return result
 
 
 func _draw_attack_range_cell(rect: Rect2) -> void:
