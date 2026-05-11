@@ -12,7 +12,7 @@
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_stat_row.tres" id="10_stat_row"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_backplate.tres" id="11_skill_backplate"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_frame.tres" id="12_skill_frame"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
+[ext_resource type="StyleBox" uid="uid://b4phcukgldcr8" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="14_button_base"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="15_button_primary"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="16_button_danger"]
@@ -25,7 +25,7 @@
 layout_mode = 3
 anchors_preset = 0
 offset_right = 384.0
-offset_bottom = 628.0
+offset_bottom = 780.0
 script = ExtResource("1_5d67m")
 
 [node name="PanelBase" type="Panel" parent="." unique_id=611847481]
@@ -45,9 +45,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 39
+theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 36
+theme_override_constants/margin_bottom = 21
 
 [node name="MainVBox" type="VBoxContainer" parent="ContentMargin" unique_id=1050191978]
 layout_mode = 2
@@ -200,7 +200,7 @@ theme_override_styles/panel = ExtResource("6_portrait_frame")
 [node name="VitalsColumn" type="VBoxContainer" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow" unique_id=987401178]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 5
+theme_override_constants/separation = -5
 
 [node name="HpValueLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=471523324]
 unique_name_in_owner = true
@@ -210,7 +210,7 @@ text_overrun_behavior = 3
 
 [node name="HpBar" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=1560407174]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -239,7 +239,7 @@ text_overrun_behavior = 3
 
 [node name="SpBar" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=413069968]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -267,31 +267,40 @@ layout_mode = 2
 
 [node name="StatsSectionBase" type="Panel" parent="ContentMargin/MainVBox/StatsSection" unique_id=123499350]
 unique_name_in_owner = true
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -8.0
+offset_bottom = 8.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("4_detail_section")
 
 [node name="StatsMargin" type="MarginContainer" parent="ContentMargin/MainVBox/StatsSection" unique_id=1481552703]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -12.0
+offset_bottom = 12.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
 [node name="StatRows" type="GridContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin" unique_id=1289660169]
+custom_minimum_size = Vector2(0, 92)
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = -15
 columns = 2
 
 [node name="AtkStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1312812221]
-custom_minimum_size = Vector2(132, 26)
+custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("10_stat_row")
@@ -300,10 +309,11 @@ theme_override_styles/panel = ExtResource("10_stat_row")
 unique_name_in_owner = true
 layout_mode = 2
 text = "攻击 --"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="DefStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1729132832]
-custom_minimum_size = Vector2(132, 26)
+custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("10_stat_row")
@@ -312,10 +322,11 @@ theme_override_styles/panel = ExtResource("10_stat_row")
 unique_name_in_owner = true
 layout_mode = 2
 text = "防御 --"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="ResStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=410505669]
-custom_minimum_size = Vector2(132, 26)
+custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("10_stat_row")
@@ -324,10 +335,11 @@ theme_override_styles/panel = ExtResource("10_stat_row")
 unique_name_in_owner = true
 layout_mode = 2
 text = "法抗 --"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="BlockStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=279448192]
-custom_minimum_size = Vector2(132, 26)
+custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("10_stat_row")
@@ -336,10 +348,11 @@ theme_override_styles/panel = ExtResource("10_stat_row")
 unique_name_in_owner = true
 layout_mode = 2
 text = "阻挡 --"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="AspdStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1066944862]
-custom_minimum_size = Vector2(132, 26)
+custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("10_stat_row")
@@ -348,6 +361,7 @@ theme_override_styles/panel = ExtResource("10_stat_row")
 unique_name_in_owner = true
 layout_mode = 2
 text = "攻速 --"
+horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="SkillSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1052511950]
@@ -455,27 +469,61 @@ text = "技能"
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="SkillStatusLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=2058992784]
+[node name="SkillStatusSlot" type="MarginContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=1607472222]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(74, 0)
 layout_mode = 2
+
+[node name="SkillStatusLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillStatusSlot" unique_id=2058992784]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 text = "未就绪"
-horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="SkillScroll" type="ScrollContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=556901269]
+[node name="SkillDescFrame" type="PanelContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=1214507721]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_skill_desc")
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 0
 
-[node name="SkillLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillScroll" unique_id=1682618284]
+[node name="SkillTextMargin" type="MarginContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillDescFrame" unique_id=2113779001]
 unique_name_in_owner = true
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 9
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 9
+theme_override_constants/margin_bottom = 79
+
+[node name="SkillClipArea" type="Control" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillDescFrame/SkillTextMargin" unique_id=1924674293]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="SkillScroll" type="ScrollContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillDescFrame/SkillTextMargin/SkillClipArea" unique_id=556901269]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+horizontal_scroll_mode = 0
+
+[node name="SkillLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillDescFrame/SkillTextMargin/SkillClipArea/SkillScroll" unique_id=1682618284]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 1)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "技能信息"
@@ -484,19 +532,12 @@ autowrap_mode = 3
 [node name="Actions" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=267080745]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = -2
-
-[node name="DetailSourceLabel" type="Label" parent="ContentMargin/MainVBox/Actions" unique_id=1112522701]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-autowrap_mode = 2
-text_overrun_behavior = 3
+theme_override_constants/separation = -7
 
 [node name="PurchaseButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1503553436]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -506,20 +547,24 @@ theme_override_styles/normal = ExtResource("15_button_primary")
 theme_override_styles/pressed = ExtResource("15_button_primary")
 theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
-icon = ExtResource("18_iconconfirm")
-expand_icon = true
 text = "购买"
-
-[node name="PurchaseReasonLabel" type="Label" parent="ContentMargin/MainVBox/Actions" unique_id=809795252]
+[node name="PurchaseButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/PurchaseButton" unique_id=2034748711]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-autowrap_mode = 2
-text_overrun_behavior = 3
+layout_mode = 1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 18.0
+offset_top = -9.0
+offset_right = 36.0
+offset_bottom = 9.0
+mouse_filter = 2
+texture = ExtResource("18_iconconfirm")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="CastSkillButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1282514617]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -529,13 +574,24 @@ theme_override_styles/normal = ExtResource("15_button_primary")
 theme_override_styles/pressed = ExtResource("15_button_primary")
 theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
-icon = ExtResource("20_iconskillready")
-expand_icon = true
 text = "激活技能"
+[node name="CastSkillButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/CastSkillButton" unique_id=1341597023]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 18.0
+offset_top = -9.0
+offset_right = 36.0
+offset_bottom = 9.0
+mouse_filter = 2
+texture = ExtResource("20_iconskillready")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="RetreatButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1465338668]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -545,6 +601,17 @@ theme_override_styles/normal = ExtResource("14_button_base")
 theme_override_styles/pressed = ExtResource("16_button_danger")
 theme_override_styles/hover = ExtResource("16_button_danger")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
-icon = ExtResource("22_iconretreat")
-expand_icon = true
 text = "撤退"
+[node name="RetreatButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/RetreatButton" unique_id=208887704]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 18.0
+offset_top = -9.0
+offset_right = 36.0
+offset_bottom = 9.0
+mouse_filter = 2
+texture = ExtResource("22_iconretreat")
+expand_mode = 1
+stretch_mode = 5
