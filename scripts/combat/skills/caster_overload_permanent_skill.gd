@@ -2,23 +2,26 @@ extends "res://scripts/combat/skills/unit_skill_behavior.gd"
 
 
 var _base_attack_multiplier := 1.0
+var _overload_effect: Node = null
 
 
 func _on_skill_start() -> void:
 	_base_attack_multiplier = owner_unit.attack_multiplier
 	var multiplier := float(owner_unit.cfg.get("skill_atk_multiplier", 1.55))
 	owner_unit.attack_multiplier = _base_attack_multiplier * multiplier
-	owner_unit.play_follow_effect(
-		"res://assets/effects/auras/caster_overload_aura_strip.png",
-		3600.0,
-		6,
-		6,
-		10.0,
-		Vector2(110.0, 110.0),
-		true,
-		Vector2(0.0, -8.0),
-		22
-	)
+	_clear_overload_effect()
+	_overload_effect = owner_unit.spawn_one_shot_effect({
+		"texture_path": "res://assets/effects/auras/caster_overload_aura_strip.png",
+		"follow_target": owner_unit,
+		"local_position": Vector2(0.0, -8.0),
+		"hframes": 6,
+		"frame_count": 6,
+		"fps": 10.0,
+		"duration": 3600.0,
+		"size": Vector2(110.0, 110.0),
+		"loop": true,
+		"z_index": 22
+	})
 	_debug_log("技能启动：%s#%d 术式过载，攻击力倍率 %.2f，持续时间无限" % [
 		owner_unit.unit_id,
 		owner_unit.get_runtime_id(),
@@ -27,9 +30,16 @@ func _on_skill_start() -> void:
 
 
 func _on_skill_end() -> void:
+	_clear_overload_effect()
 	if owner_unit == null:
 		return
 	owner_unit.attack_multiplier = _base_attack_multiplier
+
+
+func _clear_overload_effect() -> void:
+	if _overload_effect != null and is_instance_valid(_overload_effect):
+		_overload_effect.queue_free()
+	_overload_effect = null
 
 
 func after_attack(target: Node, damage_value: int) -> void:
