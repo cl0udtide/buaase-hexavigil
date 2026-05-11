@@ -856,3 +856,35 @@
 6. frame_action_panel_base：白天上下文操作面板底板，约 520x150。用于探索、入夜、建筑维修/拆除/启停等操作，不画固定按钮。
 7. frame_action_button_base：ActionPanel 按钮底，约 150x44。不写文字，不画图标。
 ```
+
+## 31. 页面叙事背景：开始与结算
+
+这些图不是可九宫格裁切的 UI 框架件，而是 `MainMenu` 与 `Result` 页面使用的全屏叙事背景。运行时图保存到 `assets/story/backgrounds/`，原始生成图保存到 `assets/story/backgrounds/raw/`。
+
+通用约束：
+
+- 输出为 16:9 横版背景，运行时导出为 1920x1080。
+- 画面右侧 40% 是 UI 安全区，只保留低细节天空、雾、地面或色块过渡；不放角色、建筑、强光焦点、高对比边缘、文字或假 UI。
+- 画面左侧 60% 承载叙事主体。不要在图里画按钮、菜单、标题、Logo、水印、签名、字母或数字。
+- 不参考或使用 `assets/story/portraits/` 下的对话立绘。开始和胜利页不画具体角色 likeness，只用核心、防线、地形、旗帜、光线和环境叙事。
+- 风格保持轻微奇幻、清新低饱和、战术塔防感；避免厚重黑金、霓虹科幻、过度写实和人像立绘感。
+
+保存文件：
+
+1. `page_start_defense.png`
+2. `page_result_victory.png`
+3. `page_result_defeat_milk_dragon.png`
+
+```text
+Global prompt:
+stylized painterly fantasy tower-defense key art, fresh low-saturation palette, clear narrative, no text, no UI, no logo, no watermark, no fake buttons, rightmost 40% quiet atmospheric negative space for UI.
+
+Start page:
+Create a narrative key art background for the start page. The scene is a watch line just before nightfall: a glowing hexagonal core and low defensive barricades in the left/middle distance, distant enemy silhouettes gathering near the horizon, banners and lanterns catching wind, and a sense that the night defense is about to begin. Keep all major storytelling in the left 60%; make the right 40% quiet low-detail dusk sky/fog/terrain for UI.
+
+Victory page:
+Create a narrative key art background for the victory page. The same watch line after surviving the night: dawn light breaks through mist, the hexagonal core remains intact and glowing gently, battered barricades stand around it, broken enemy weapons and harmless debris lie outside the defense, and the mood is earned relief and quiet triumph. Keep all major storytelling in the left 60%; make the right 40% quiet low-detail morning mist/sky/terrain for UI.
+
+Defeat page:
+Use only the milk dragon chief reference at assets/sprites/enemies/raw/milk_dragon_chief_redraw_source.png. Preserve the round yellow body, cream belly, laughing open mouth, tiny fangs, leafy tribal cloak/collar, skull and feather head ornament, rope/bone accessories, wooden staff with red spiral mark, and playful but threatening boss energy. Create a dynamic defeat illustration where the chief leads small follower creatures in a triumphant charge across a broken night defense line, with dust, splinters, torn banners, cracked barricades, and scattered stones. Keep the chief and followers in the left 60%; make the right 40% quiet smoky dark teal fog/ground for UI.
+```

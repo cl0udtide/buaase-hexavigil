@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://cmig1vsmvy2ld"]
+[gd_scene load_steps=3 format=3 uid="uid://cmig1vsmvy2ld"]
 
 [ext_resource type="Script" uid="uid://b34pdpjgqu06l" path="res://scripts/bootstrap/main_menu_scene.gd" id="1_3dsqt"]
+[ext_resource type="Texture2D" path="res://assets/story/backgrounds/page_start_defense.png" id="2_start_bg"]
 
 [node name="MainMenu" type="Control" unique_id=1052527302]
 layout_mode = 3
@@ -11,22 +12,59 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_3dsqt")
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=750469912]
+[node name="Background" type="TextureRect" parent="." unique_id=2202899578]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_start_bg")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=2047200006]
+[node name="RightUiSlot" type="Control" parent="." unique_id=1520077338]
+layout_mode = 1
+anchor_left = 0.6
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="RightUiSlot" unique_id=750469912]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 80.0
+offset_right = -96.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RightUiSlot/CenterContainer" unique_id=2047200006]
+custom_minimum_size = Vector2(430, 300)
 layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=2078786049]
+[node name="TitleLabel" type="Label" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2078786049]
 layout_mode = 2
 text = "HexaVigil"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=2140411556]
-unique_name_in_owner = true
+[node name="SubtitleLabel" type="Label" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=827243283]
 layout_mode = 2
-text = "开始游戏"
+text = "昼夜防线指挥"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StartButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2140411556]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "开始行动"
