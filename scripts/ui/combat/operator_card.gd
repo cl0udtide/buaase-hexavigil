@@ -27,10 +27,6 @@ var _cooldown_icon_texture: TextureRect
 
 @onready var _class_icon_texture: TextureRect = %ClassIcon
 @onready var _name_label: Label = %NameLabel
-@onready var _cost_label: Label = %CostLabel
-@onready var _portrait_stack: Control = %PortraitStack
-@onready var _portrait_texture: TextureRect = %PortraitTexture
-@onready var _portrait_label: Label = %PortraitLabel
 @onready var _selected_overlay: Panel = %SelectedOverlay
 @onready var _deployed_overlay: Panel = %DeployedOverlay
 @onready var _cooldown_overlay: Panel = %CooldownOverlay
@@ -39,9 +35,6 @@ var _cooldown_icon_texture: TextureRect
 @onready var _cooldown_label: Label = %CooldownLabel
 @onready var _class_label: Label = %ClassLabel
 @onready var _state_label: Label = %StateLabel
-@onready var _hp_stat_row: Panel = %HpStatRow
-@onready var _sp_stat_row: Panel = %SpStatRow
-@onready var _cd_stat_row: Panel = %CdStatRow
 @onready var _hp_stat_label: Label = %HpStatLabel
 @onready var _sp_stat_label: Label = %SpStatLabel
 @onready var _cd_stat_label: Label = %CdStatLabel
@@ -62,29 +55,23 @@ func _ready() -> void:
 		_hovered = false
 		_apply_card_style()
 	)
-	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	_cost_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	_apply_name_tier_color()
 	_class_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_state_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	_portrait_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_cooldown_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	for label in [_hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	for label in [_name_label, _cost_label, _class_label, _state_label, _hp_stat_label, _sp_stat_label, _cd_stat_label]:
+	for label in [_name_label, _class_label, _state_label, _hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_add_label_shadow(_name_label)
-	_add_label_shadow(_cost_label)
 	_add_label_shadow(_class_label)
 	_add_label_shadow(_state_label)
-	_add_label_shadow(_portrait_label)
 	_add_label_shadow(_cooldown_label)
 	_add_label_shadow(_hp_stat_label)
 	_add_label_shadow(_sp_stat_label)
 	_add_label_shadow(_cd_stat_label)
 	_prepare_class_icon_texture()
 	_prepare_cooldown_icon_texture()
-	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_sync_state_overlays()
 	_apply_density()
 	_apply_card_style()
@@ -123,21 +110,17 @@ func _parse_display_text(text_value: String) -> void:
 	_name_label.text = lines[0] if lines.size() > 0 else str(operator_key)
 	var meta := lines[1] if lines.size() > 1 else ""
 	_class_label.text = meta
-	var cost := "--"
 	var marker := "COST "
 	var cost_index := meta.find(marker)
 	if cost_index >= 0:
-		cost = meta.substr(cost_index + marker.length()).strip_edges()
 		_class_label.text = meta.substr(0, cost_index).strip_edges()
 	else:
 		marker = "费用 "
 		cost_index = meta.find(marker)
 		if cost_index >= 0:
-			cost = meta.substr(cost_index + marker.length()).strip_edges()
 			_class_label.text = meta.substr(0, cost_index).strip_edges()
 		else:
 			_normalize_meta_without_cost(meta)
-	_cost_label.text = "◆%s" % cost
 	_apply_unit_art()
 	_state_label.text = _state_label_text()
 	_hp_stat_label.text = lines[2] if lines.size() > 2 else "HP --"
@@ -223,16 +206,11 @@ func _apply_density() -> void:
 	set_size(custom_minimum_size)
 	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_portrait_stack.set_custom_minimum_size(Vector2(0.0, 64.0 if _compact else 76.0))
 	_name_label.add_theme_font_size_override("font_size", 14 if _compact else 15)
-	_cost_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
 	_class_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
 	_state_label.add_theme_font_size_override("font_size", 12)
 	for label in [_hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.add_theme_font_size_override("font_size", 10 if _compact else 11)
-	for row in [_hp_stat_row, _sp_stat_row, _cd_stat_row]:
-		row.custom_minimum_size.y = 18.0 if _compact else 20.0
-	_portrait_label.add_theme_font_size_override("font_size", 24 if _compact else 26)
 	_cooldown_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
 
 
@@ -257,13 +235,9 @@ func _resolve_unit_cfg() -> Dictionary:
 
 
 func _apply_unit_art() -> void:
+	_apply_name_tier_color()
 	if _unit_cfg.is_empty():
 		return
-	var portrait_texture := UiArtRegistry.get_portrait_texture(_unit_cfg)
-	_portrait_texture.texture = portrait_texture
-	_portrait_texture.visible = portrait_texture != null
-	_portrait_label.visible = portrait_texture == null
-	_portrait_label.text = UiDisplayText.icon_text(_unit_cfg, "*")
 	var class_texture := UiArtRegistry.get_class_icon_texture(_unit_cfg)
 	if _class_icon_texture != null:
 		_class_icon_texture.texture = class_texture
@@ -271,6 +245,15 @@ func _apply_unit_art() -> void:
 	if _class_icon_label != null:
 		_class_icon_label.visible = class_texture == null
 		_class_icon_label.text = UiDisplayText.class_label(String(_unit_cfg.get("class", ""))).substr(0, 1)
+
+
+func _apply_name_tier_color() -> void:
+	if _name_label == null:
+		return
+	if _unit_cfg.is_empty():
+		_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+		return
+	_name_label.add_theme_color_override("font_color", UiDisplayText.tier_color(int(_unit_cfg.get("cost_prestige", 0))))
 
 
 func _prepare_class_icon_texture() -> void:
