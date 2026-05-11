@@ -57,6 +57,14 @@ func end_skill() -> void:
 	_on_skill_end()
 
 
+func cleanup() -> void:
+	if active_timer > 0.0:
+		active_timer = 0.0
+		_infinite_active = false
+		_on_skill_end()
+	owner_unit = null
+
+
 func get_skill_name() -> String:
 	return String(owner_unit.cfg.get("skill_name", owner_unit.cfg.get("skill_id", "未配置技能"))) if owner_unit != null else "未配置技能"
 
