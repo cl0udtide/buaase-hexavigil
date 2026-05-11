@@ -21,6 +21,76 @@ const CORE_HP_TITLE := "核心生命"
 # Top HUD micro-tuning lives here so visual adjustments do not require hunting
 # through layout code. Vector4 means left, top, right, bottom inset.
 const TOP_CONTENT_INSETS := Vector4(0.0, 5.0, 0.0, 5.0)
+const SPEED_TOGGLE_CONTENT_INSETS := Vector4(6.0, 13.0, 6.0, 13.0)
+const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
+const MESSAGE_WARNING_OVERLAY_ALPHA := 0.92
+const MESSAGE_WARNING_OVERLAY_FRAME := &"frame_button_danger_overlay"
+const MESSAGE_WARNING_OVERLAY_PATCH_MARGIN := 18
+const MESSAGE_CHIP_BASE_Z := 0
+const MESSAGE_CHIP_WARNING_Z := 1
+const MESSAGE_CHIP_CONTENT_Z := 2
+const CORE_FILL_INSET := 2.0
+const MESSAGE_WARNING_TOKENS := [
+	"失败",
+	"无法",
+	"不能",
+	"不可",
+	"不足",
+	"无效",
+	"没有可",
+	"尚未",
+	"未选中",
+	"未选择",
+	"先选择",
+	"冷却中",
+	"无路",
+	"封死",
+	"警告"
+]
+const MESSAGE_TEXT_OVERRIDES := {
+	"APP_REFS_MISSING": "操作失败：运行时服务不可用",
+	"BUILDING_CONFIG_MISSING": "建造失败：建筑配置缺失",
+	"BUILDING_DESTROYED": "操作失败：建筑已损毁",
+	"BUILDING_NOT_DESTROYED": "无法修复：建筑尚未完全损毁",
+	"BUILDING_NOT_FOUND": "操作失败：找不到目标建筑",
+	"BUILDING_NOT_TOGGLEABLE": "无法切换：该建筑没有开关状态",
+	"BUILDING_SCENE_MISSING": "建造失败：建筑场景缺失",
+	"CANCELED": "操作失败：部署流程已取消",
+	"CELL_ALREADY_HAS_BUILDING": "无法建造：目标格已有建筑",
+	"CELL_BLOCKED": "无法建造：目标格不可通行",
+	"CELL_HAS_BUILDING": "无法建造：目标格已有建筑",
+	"CELL_HAS_UNIT": "无法建造：目标格已有部署单位",
+	"CELL_IS_CORE": "无法建造：不能建在核心上",
+	"CELL_IS_SPAWN": "无法建造：不能建在出怪点上",
+	"CELL_MISSING": "操作失败：目标格数据缺失",
+	"CELL_NOT_BUILDABLE": "无法建造：目标格不可建造",
+	"CELL_NOT_DISCOVERED": "无法部署：目标格尚未探索",
+	"CELL_NOT_FOUND": "操作失败：目标格数据不可用",
+	"CELL_NOT_WALKABLE": "无法部署：目标格不可部署",
+	"CELL_OUT_OF_BOUNDS": "操作失败：目标格不在地图内",
+	"CELL_OUT_OF_RANGE": "无法部署：目标格不在地图内",
+	"DEPLOY_LIMIT_REACHED": "无法部署：部署上限已满",
+	"INVALID_PHASE": "操作失败：当前阶段不允许该操作",
+	"MAP_MANAGER_MISSING": "操作失败：地图管理器不可用",
+	"MAP_UNAVAILABLE": "操作失败：地图尚未初始化",
+	"NOT_ENOUGH_ACTION_POINTS": "资源不足：行动力不足",
+	"NOT_ENOUGH_AP": "资源不足：行动力不足",
+	"NOT_ENOUGH_MATERIALS": "资源不足：材料不足",
+	"OPERATOR_COOLDOWN": "无法部署：干员正在再部署冷却中",
+	"OPERATOR_DEPLOYED": "无法部署：干员已经在场",
+	"OPERATOR_NOT_OWNED": "无法部署：未拥有该干员",
+	"PLACE_RULE_MISMATCH": "无法建造：目标格不满足放置规则",
+	"RUN_STATE_MISSING": "操作失败：运行状态不可用",
+	"SCENE_MISSING": "操作失败：场景资源缺失",
+	"SHOP_SLOT_EMPTY": "购买失败：商店槽位为空",
+	"SHOP_SLOT_INVALID": "购买失败：商店槽位无效",
+	"SHOP_SLOT_SOLD": "购买失败：该槽位已购买",
+	"SP_NOT_READY": "无法释放技能：技力尚未准备好",
+	"UNIT_MANAGER_MISSING": "操作失败：单位管理器不可用",
+	"UNIT_NOT_FOUND": "操作失败：找不到单位配置",
+	"UNKNOWN_PLACE_RULE": "无法建造：未知放置规则",
+	"WORLD_NOT_READY": "操作失败：战场节点尚未就绪"
+}
 
 const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 62.0
 const WAVE_PREVIEW_LINE_HEIGHT := 19.0
@@ -32,6 +102,7 @@ var _core_hp_ratio := 0.0
 var _core_hp_current := 0
 var _core_hp_max := 0
 var _wave_preview_text_min_height := WAVE_PREVIEW_MIN_TEXT_HEIGHT
+var _message_warning_overlay: NinePatchRect
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
@@ -54,6 +125,7 @@ var _wave_preview_text_min_height := WAVE_PREVIEW_MIN_TEXT_HEIGHT
 @onready var _deploy_label: Label = %DeployLabel
 @onready var _queue_label: Label = %QueueLabel
 @onready var _message_label: Label = %MessageLabel
+@onready var _message_icon_texture: TextureRect = _message_chip.get_node_or_null("ChipIconTexture") as TextureRect
 @onready var _resource_label: Label = %ResourceLabel
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
@@ -98,6 +170,7 @@ func _ready() -> void:
 	_collect_resource_items()
 	_apply_frame_margins()
 	_style_top_cards()
+	_setup_message_warning_overlay()
 	_wave_preview_base.add_theme_stylebox_override("panel", GameUiStyle.wave_preview_panel())
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
@@ -127,6 +200,8 @@ func _ready() -> void:
 	_legend_base.add_theme_stylebox_override("panel", GameUiStyle.legend_panel())
 	_style_legend_panel()
 	_speed_active_overlay.add_theme_stylebox_override("panel", GameUiStyle.speed_toggle_active())
+	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
 	_wave_preview_panel.z_index = 18
 	_deck_panel.z_index = 12
 	_legend_panel.z_index = 14
@@ -200,8 +275,13 @@ func set_core_hp(current: int, max_value: int) -> void:
 	_refresh_core_fill()
 
 
-func show_message(text_value: String) -> void:
-	_message_label.text = text_value
+func show_message(text_value: String, warning := false) -> void:
+	var display_text := _localized_message_text(text_value)
+	_message_label.text = display_text
+	if _message_warning_overlay == null:
+		_setup_message_warning_overlay()
+	if _message_warning_overlay != null:
+		_message_warning_overlay.visible = warning or _is_warning_message(display_text) or _is_warning_message(text_value)
 
 
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
@@ -313,8 +393,8 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	GameUiStyle.set_button_texture_icon(_speed_1_button, null, Vector2(1.0, 1.0))
 	GameUiStyle.set_button_texture_icon(_speed_2_button, null, Vector2(1.0, 1.0))
 	_style_top_button(_pause_button, pause_selected)
-	_style_top_button(_speed_1_button, speed_1_selected)
-	_style_top_button(_speed_2_button, speed_2_selected)
+	_style_top_button(_speed_1_button, false)
+	_style_top_button(_speed_2_button, false)
 	call_deferred("_place_speed_active_overlay", _speed_1_button if speed_1_selected else (_speed_2_button if speed_2_selected else null))
 
 
@@ -487,12 +567,32 @@ func _style_top_button(button: Button, selected: bool) -> void:
 func _place_speed_active_overlay(_button: Button) -> void:
 	if _speed_active_overlay == null:
 		return
-	_speed_active_overlay.visible = false
+	if _button == null or not _button.visible:
+		_speed_active_overlay.visible = false
+		return
+	var overlay_parent := _speed_active_overlay.get_parent() as Control
+	if overlay_parent == null:
+		_speed_active_overlay.visible = false
+		return
+	var button_rect := _button.get_global_rect()
+	var parent_to_local := overlay_parent.get_global_transform_with_canvas().affine_inverse()
+	var local_position := parent_to_local * button_rect.position
+	var inset := Vector2(-2.0, -3.0)
+	var top_left := local_position + inset
+	var bottom_right := local_position + button_rect.size - inset
+	_speed_active_overlay.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	_speed_active_overlay.offset_left = top_left.x
+	_speed_active_overlay.offset_top = top_left.y
+	_speed_active_overlay.offset_right = bottom_right.x
+	_speed_active_overlay.offset_bottom = bottom_right.y
+	_speed_active_overlay.visible = true
 
 
 func _apply_frame_margins() -> void:
 	if _top_content != null:
 		_apply_margin_constants(_top_content, TOP_CONTENT_INSETS)
+	if _time_controls != null:
+		_apply_margin_constants(_time_controls.get_node_or_null("TimeMargin") as MarginContainer, SPEED_TOGGLE_CONTENT_INSETS)
 	GameUiStyle.apply_frame_margin(_wave_preview_panel.get_node_or_null("WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(_legend_panel.get_node_or_null("LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
@@ -500,6 +600,9 @@ func _apply_frame_margins() -> void:
 
 
 func _style_top_cards() -> void:
+	if _top_bar_base != null:
+		_top_bar_base.visible = false
+		_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for card in [
 		_stage_chip.get_node_or_null("ChipBase") as Panel,
 		_core_chip.get_node_or_null("ChipBase") as Panel,
@@ -507,6 +610,7 @@ func _style_top_cards() -> void:
 		_message_chip.get_node_or_null("ChipBase") as Panel
 	]:
 		if card != null:
+			card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
 	if _speed_toggle_base != null:
 		_speed_toggle_base.visible = false
@@ -518,7 +622,12 @@ func _style_top_cards() -> void:
 	for item in _resource_item_controls.values():
 		var item_base := (item as Dictionary).get("base") as Panel
 		if item_base != null:
+			item_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			item_base.add_theme_stylebox_override("panel", GameUiStyle.resource_item())
+		var delta_badge := (item as Dictionary).get("delta_badge") as Panel
+		if delta_badge != null:
+			delta_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			delta_badge.add_theme_stylebox_override("panel", GameUiStyle.resource_delta_badge())
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
@@ -545,6 +654,99 @@ func _style_top_cards() -> void:
 		var delta := item_dict.get("delta") as Label
 		if delta != null:
 			delta.add_theme_color_override("font_color", GameUiStyle.SUCCESS)
+
+
+func _setup_message_warning_overlay() -> void:
+	if _message_chip == null:
+		return
+	_message_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chip_base := _message_chip.get_node_or_null("ChipBase") as Panel
+	if chip_base != null:
+		chip_base.z_index = MESSAGE_CHIP_BASE_Z
+	var existing_overlay := _message_chip.get_node_or_null("MessageWarningOverlay")
+	if existing_overlay != null and not (existing_overlay is NinePatchRect):
+		_message_chip.remove_child(existing_overlay)
+		existing_overlay.queue_free()
+		existing_overlay = null
+	_message_warning_overlay = existing_overlay as NinePatchRect
+	if _message_warning_overlay == null:
+		_message_warning_overlay = NinePatchRect.new()
+		_message_warning_overlay.name = "MessageWarningOverlay"
+		_message_chip.add_child(_message_warning_overlay)
+	_message_warning_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_message_warning_overlay.offset_left = 0.0
+	_message_warning_overlay.offset_top = 0.0
+	_message_warning_overlay.offset_right = 0.0
+	_message_warning_overlay.offset_bottom = 0.0
+	_message_warning_overlay.z_index = MESSAGE_CHIP_WARNING_Z
+	_message_warning_overlay.z_as_relative = true
+	_message_warning_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_message_warning_overlay.visible = false
+	_message_warning_overlay.modulate = Color(1.0, 1.0, 1.0, MESSAGE_WARNING_OVERLAY_ALPHA)
+	_message_warning_overlay.texture = UiArtRegistry.get_frame_texture(MESSAGE_WARNING_OVERLAY_FRAME)
+	_message_warning_overlay.draw_center = true
+	_message_warning_overlay.patch_margin_left = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_warning_overlay.patch_margin_top = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_warning_overlay.patch_margin_right = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_warning_overlay.patch_margin_bottom = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_chip.move_child(_message_warning_overlay, mini(1, _message_chip.get_child_count() - 1))
+	_message_label.z_index = MESSAGE_CHIP_CONTENT_Z
+	if _message_icon_texture != null:
+		_message_icon_texture.z_index = MESSAGE_CHIP_CONTENT_Z
+		_message_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+func _is_warning_message(text_value: String) -> bool:
+	for token in MESSAGE_WARNING_TOKENS:
+		if text_value.contains(token):
+			return true
+	if _looks_like_unlocalized_message(text_value):
+		return true
+	return false
+
+
+func _localized_message_text(text_value: String) -> String:
+	var trimmed := text_value.strip_edges()
+	if trimmed.is_empty():
+		return text_value
+	if MESSAGE_TEXT_OVERRIDES.has(trimmed):
+		return String(MESSAGE_TEXT_OVERRIDES[trimmed])
+	var upper_text := trimmed.to_upper()
+	if MESSAGE_TEXT_OVERRIDES.has(upper_text):
+		return String(MESSAGE_TEXT_OVERRIDES[upper_text])
+	var canonical_code := _canonical_message_code(trimmed)
+	if MESSAGE_TEXT_OVERRIDES.has(canonical_code):
+		return String(MESSAGE_TEXT_OVERRIDES[canonical_code])
+	if _looks_like_unlocalized_message(trimmed):
+		return "错误码 %s：请查看调试日志" % canonical_code
+	return text_value
+
+
+func _looks_like_unlocalized_message(text_value: String) -> bool:
+	for index in text_value.length():
+		var code := text_value.unicode_at(index)
+		if code >= 65 and code <= 90:
+			return true
+		if code >= 97 and code <= 122:
+			return true
+	return false
+
+
+func _canonical_message_code(text_value: String) -> String:
+	var result := ""
+	var previous_was_separator := true
+	for index in text_value.length():
+		var code := text_value.unicode_at(index)
+		var is_digit := code >= 48 and code <= 57
+		var is_upper := code >= 65 and code <= 90
+		var is_lower := code >= 97 and code <= 122
+		if is_digit or is_upper or is_lower:
+			result += char(code).to_upper()
+			previous_was_separator = false
+		elif not previous_was_separator:
+			result += "_"
+			previous_was_separator = true
+	return result.trim_suffix("_")
 
 
 func _style_legend_panel() -> void:
@@ -644,10 +846,11 @@ func _refresh_core_fill() -> void:
 	_core_fill.anchor_top = _core_track.anchor_top
 	_core_fill.anchor_right = _core_track.anchor_left
 	_core_fill.anchor_bottom = _core_track.anchor_bottom
-	_core_fill.offset_left = _core_track.offset_left
-	_core_fill.offset_top = _core_track.offset_top
-	_core_fill.offset_right = _core_track.offset_left + maxf(0.0, _core_track.size.x * _core_hp_ratio)
-	_core_fill.offset_bottom = _core_track.offset_bottom
+	var fill_width := maxf(0.0, (_core_track.size.x - CORE_FILL_INSET * 2.0) * _core_hp_ratio)
+	_core_fill.offset_left = _core_track.offset_left + CORE_FILL_INSET
+	_core_fill.offset_top = _core_track.offset_top + CORE_FILL_INSET
+	_core_fill.offset_right = _core_track.offset_left + CORE_FILL_INSET + fill_width
+	_core_fill.offset_bottom = _core_track.offset_bottom - CORE_FILL_INSET
 
 
 func _bind_overlay_panels() -> void:

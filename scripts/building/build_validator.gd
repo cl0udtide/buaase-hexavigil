@@ -11,21 +11,21 @@ func can_place_building(cell: Vector2i, building_id: StringName, material_costs:
 	var data_repo = _get_data_repo()
 	var run_state = _get_run_state()
 	if data_repo == null or run_state == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 
 	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
 	if cfg.is_empty():
-		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building config was not found")
+		return ActionResult.err(&"BUILDING_NOT_FOUND", "建造失败：找不到建筑配置")
 	if run_state.phase != GameEnums.PHASE_DAY:
-		return ActionResult.err(&"INVALID_PHASE", "Buildings can only be placed during the day")
+		return ActionResult.err(&"INVALID_PHASE", "无法建造：只有白天可以建造")
 	if map_manager == null or not map_manager.is_inside(cell):
-		return ActionResult.err(&"OUT_OF_MAP", "Target cell is outside the map")
+		return ActionResult.err(&"OUT_OF_MAP", "无法建造：目标格不在地图内")
 	if not map_manager.is_buildable(cell):
-		return ActionResult.err(&"CELL_NOT_BUILDABLE", "Target cell cannot be built on")
+		return ActionResult.err(&"CELL_NOT_BUILDABLE", "无法建造：目标格不可建造")
 
 	var cell_data: CellData = map_manager.get_cell_data(cell)
 	if cell_data == null:
-		return ActionResult.err(&"CELL_NOT_FOUND", "Target cell data is unavailable")
+		return ActionResult.err(&"CELL_NOT_FOUND", "操作失败：目标格数据不可用")
 
 	var place_rule := StringName(cfg.get("place_rule", "plain_only"))
 	var place_rule_result := _validate_place_rule(cell_data, place_rule)
@@ -34,9 +34,9 @@ func can_place_building(cell: Vector2i, building_id: StringName, material_costs:
 
 	var costs := material_costs if not material_costs.is_empty() else get_building_material_costs(cfg)
 	if run_state.wood < int(costs.get("wood", 0)) or run_state.stone < int(costs.get("stone", 0)) or run_state.mana < int(costs.get("mana", 0)):
-		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "Not enough materials")
+		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "资源不足：材料不足")
 	if run_state.action_points < int(cfg.get("ap_cost", 0)):
-		return ActionResult.err(&"NOT_ENOUGH_AP", "Not enough action points")
+		return ActionResult.err(&"NOT_ENOUGH_AP", "资源不足：行动力不足")
 	if bool(cfg.get("blocks_path", false)):
 		var path_result := _validate_path_after_block(cell)
 		if not bool(path_result.get("ok", false)):
@@ -67,9 +67,9 @@ static func get_building_material_cost(cfg: Dictionary, material: StringName) ->
 func can_repair_building(_building_runtime_id: int) -> Dictionary:
 	var run_state = _get_run_state()
 	if run_state == null:
-		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
+		return ActionResult.err(&"RUN_STATE_MISSING", "操作失败：运行状态不可用")
 	if run_state.phase != GameEnums.PHASE_DAY:
-		return ActionResult.err(&"INVALID_PHASE", "Buildings can only be repaired during the day")
+		return ActionResult.err(&"INVALID_PHASE", "无法修复：只有白天可以修复")
 	return ActionResult.ok()
 
 
@@ -77,18 +77,18 @@ func _validate_place_rule(cell_data: CellData, place_rule: StringName) -> Dictio
 	match place_rule:
 		&"plain_only":
 			if cell_data.resource_type != StringName():
-				return ActionResult.err(&"PLACE_RULE_MISMATCH", "Requires a plain cell")
+				return ActionResult.err(&"PLACE_RULE_MISMATCH", "无法建造：需要普通地块")
 		&"wood_resource_only":
 			if cell_data.resource_type != &"wood":
-				return ActionResult.err(&"PLACE_RULE_MISMATCH", "Requires a wood resource cell")
+				return ActionResult.err(&"PLACE_RULE_MISMATCH", "无法建造：需要木材资源点")
 		&"stone_resource_only":
 			if cell_data.resource_type != &"stone":
-				return ActionResult.err(&"PLACE_RULE_MISMATCH", "Requires a stone resource cell")
+				return ActionResult.err(&"PLACE_RULE_MISMATCH", "无法建造：需要石材资源点")
 		&"mana_resource_only":
 			if cell_data.resource_type != &"mana":
-				return ActionResult.err(&"PLACE_RULE_MISMATCH", "Requires a mana resource cell")
+				return ActionResult.err(&"PLACE_RULE_MISMATCH", "无法建造：需要魔力资源点")
 		_:
-			return ActionResult.err(&"UNKNOWN_PLACE_RULE", "Unknown place rule")
+			return ActionResult.err(&"UNKNOWN_PLACE_RULE", "无法建造：未知放置规则")
 	return ActionResult.ok()
 
 
@@ -106,7 +106,7 @@ func _validate_path_after_block(block_cell: Vector2i) -> Dictionary:
 		if not bool(result.get("ok", false)):
 			blocked_spawns.append(spawn_key)
 	if not blocked_spawns.is_empty():
-		return ActionResult.err(&"PATH_BLOCKED", "该建筑会封死出怪点 %s 到核心的路径" % "、".join(blocked_spawns))
+		return ActionResult.err(&"PATH_BLOCKED", "该建筑会封死出怪点 " + "、".join(blocked_spawns) + " 到核心的路径")
 	return ActionResult.ok()
 
 

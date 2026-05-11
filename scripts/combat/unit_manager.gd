@@ -37,36 +37,36 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	var data_repo = AppRefs.data_repo()
 	var event_bus = AppRefs.event_bus()
 	if run_state == null or data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 	var operator_info: Dictionary = run_state.get_owned_operator(operator_key) if run_state.has_method("get_owned_operator") else {}
 	if operator_info.is_empty():
-		return ActionResult.err(&"OPERATOR_NOT_OWNED", "OPERATOR_NOT_OWNED")
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "无法部署：未拥有该干员")
 	if _runtime_by_operator_key.has(operator_key):
-		return ActionResult.err(&"OPERATOR_DEPLOYED", "OPERATOR_DEPLOYED")
+		return ActionResult.err(&"OPERATOR_DEPLOYED", "无法部署：干员已经在场")
 	if is_operator_redeploying(operator_key):
-		return ActionResult.err(&"OPERATOR_COOLDOWN", "OPERATOR_COOLDOWN")
+		return ActionResult.err(&"OPERATOR_COOLDOWN", "无法部署：干员正在再部署冷却中")
 	var unit_id := StringName(operator_info.get("unit_id", ""))
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
-		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
+		return ActionResult.err(&"UNIT_NOT_FOUND", "操作失败：找不到单位配置")
 	if not _is_deploy_phase(int(run_state.phase)):
 		return ActionResult.err(&"INVALID_PHASE", "当前阶段不能部署")
 	var deploy_slot_cost := _get_operator_deploy_slot_cost(cfg)
 	if run_state.deployed_count + deploy_slot_cost > run_state.deploy_limit:
-		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "DEPLOY_LIMIT_REACHED")
+		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "无法部署：部署上限已满")
 	if _map_manager == null:
-		return ActionResult.err(&"MAP_UNAVAILABLE", "MAP_UNAVAILABLE")
+		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
 	if not _map_manager.is_walkable(cell):
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
 	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
 	if cell_data != null and cell_data.is_core:
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：不能部署在核心上")
 
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
 		return ActionResult.err(&"SCENE_MISSING", "单位场景尚未创建")
 	if _unit_root == null:
-		return ActionResult.err(&"WORLD_NOT_READY", "WORLD_NOT_READY")
+		return ActionResult.err(&"WORLD_NOT_READY", "操作失败：战场节点尚未就绪")
 	var actor: Node = scene.instantiate()
 	_unit_root.add_child(actor)
 	actor.runtime_id = _next_runtime_id
@@ -90,34 +90,34 @@ func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dict
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 	var operator_info: Dictionary = run_state.get_owned_operator(operator_key) if run_state.has_method("get_owned_operator") else {}
 	if operator_info.is_empty():
-		return ActionResult.err(&"OPERATOR_NOT_OWNED", "OPERATOR_NOT_OWNED")
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "无法部署：未拥有该干员")
 	if _runtime_by_operator_key.has(operator_key):
-		return ActionResult.err(&"OPERATOR_DEPLOYED", "OPERATOR_DEPLOYED")
+		return ActionResult.err(&"OPERATOR_DEPLOYED", "无法部署：干员已经在场")
 	if is_operator_redeploying(operator_key):
-		return ActionResult.err(&"OPERATOR_COOLDOWN", "OPERATOR_COOLDOWN")
+		return ActionResult.err(&"OPERATOR_COOLDOWN", "无法部署：干员正在再部署冷却中")
 	var unit_id := StringName(operator_info.get("unit_id", ""))
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
-		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
+		return ActionResult.err(&"UNIT_NOT_FOUND", "操作失败：找不到单位配置")
 	if not _is_deploy_phase(int(run_state.phase)):
 		return ActionResult.err(&"INVALID_PHASE", "当前阶段不能部署")
 	var deploy_slot_cost := _get_operator_deploy_slot_cost(cfg)
 	if run_state.deployed_count + deploy_slot_cost > run_state.deploy_limit:
-		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "DEPLOY_LIMIT_REACHED")
+		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "无法部署：部署上限已满")
 	if _map_manager == null:
-		return ActionResult.err(&"MAP_UNAVAILABLE", "MAP_UNAVAILABLE")
+		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
 	if not _map_manager.is_inside(cell):
-		return ActionResult.err(&"CELL_OUT_OF_RANGE", "CELL_OUT_OF_RANGE")
+		return ActionResult.err(&"CELL_OUT_OF_RANGE", "无法部署：目标格不在地图内")
 	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
 	if cell_data != null and cell_data.is_core:
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：不能部署在核心上")
 	if _map_manager.has_method("is_discovered") and not _map_manager.is_discovered(cell):
-		return ActionResult.err(&"CELL_NOT_DISCOVERED", "CELL_NOT_DISCOVERED")
+		return ActionResult.err(&"CELL_NOT_DISCOVERED", "无法部署：目标格尚未探索")
 	if not _map_manager.is_walkable(cell):
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "CELL_NOT_WALKABLE")
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
 	return ActionResult.ok({"operator_key": operator_key, "unit_id": unit_id})
 
 
@@ -128,7 +128,7 @@ func _is_deploy_phase(phase: int) -> bool:
 func try_retreat_unit(unit_runtime_id: int) -> Dictionary:
 	var unit := get_unit_by_runtime_id(unit_runtime_id)
 	if unit == null:
-		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
+		return ActionResult.err(&"UNIT_NOT_FOUND", "操作失败：找不到目标单位")
 	_debug_log("撤退干员 %s#%d" % [_get_unit_display_name(unit), unit_runtime_id])
 	remove_unit(unit_runtime_id, GameEnums.UNIT_REMOVE_RETREAT)
 	return ActionResult.ok()
@@ -137,9 +137,9 @@ func try_retreat_unit(unit_runtime_id: int) -> Dictionary:
 func try_cast_skill(unit_runtime_id: int) -> Dictionary:
 	var unit := get_unit_by_runtime_id(unit_runtime_id)
 	if unit == null:
-		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
+		return ActionResult.err(&"UNIT_NOT_FOUND", "操作失败：找不到目标单位")
 	if not unit.can_cast_skill():
-		return ActionResult.err(&"SP_NOT_READY", "SP_NOT_READY")
+		return ActionResult.err(&"SP_NOT_READY", "无法释放技能：技力尚未准备好")
 	unit.cast_skill()
 	return ActionResult.ok()
 

@@ -377,7 +377,7 @@ func _update_locked_deploy_preview(facing: Vector2i) -> void:
 
 func _confirm_locked_deploy() -> void:
 	if _unit_manager == null or _locked_deploy_cell == INVALID_CELL:
-		_cancel_deploy_flow("部署失败")
+		_cancel_deploy_flow("部署失败：单位管理器不可用", true)
 		return
 	var result: Dictionary = _unit_manager.try_deploy_operator(_drag_operator_key, _locked_deploy_cell, _current_drag_facing)
 	var payload: Dictionary = result.get("payload", {})
@@ -392,7 +392,7 @@ func _confirm_locked_deploy() -> void:
 	_show_result_message(result, "部署完成", "部署失败")
 
 
-func _cancel_deploy_flow(message: String = "") -> void:
+func _cancel_deploy_flow(message: String = "", warning := false) -> void:
 	_deploy_drag_state = DRAG_NONE
 	_drag_operator_key = StringName()
 	_locked_deploy_cell = INVALID_CELL
@@ -402,7 +402,7 @@ func _cancel_deploy_flow(message: String = "") -> void:
 		_combat_hud.hide_drag_ghost()
 	_clear_deploy_preview()
 	if not message.is_empty():
-		_show_message(message)
+		_show_message(message, StringName(), warning)
 
 
 func _clear_deploy_preview() -> void:
@@ -417,7 +417,7 @@ func _update_drag_ghost_position() -> void:
 
 func _validate_drag_cell(operator_key: StringName, cell: Vector2i) -> Dictionary:
 	if _unit_manager == null or not _unit_manager.has_method("validate_deploy_operator"):
-		return ActionResult.err(&"UNIT_MANAGER_MISSING", "UNIT_MANAGER_MISSING")
+		return ActionResult.err(&"UNIT_MANAGER_MISSING", "操作失败：单位管理器不可用")
 	return _unit_manager.validate_deploy_operator(operator_key, cell)
 
 
@@ -2709,12 +2709,12 @@ func _normalize_direction(direction: Vector2i) -> Vector2i:
 	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
 
 
-func _show_message(text: String, cooldown_operator_key: StringName = &"") -> void:
+func _show_message(text: String, cooldown_operator_key: StringName = &"", warning := false) -> void:
 	_cooldown_message_operator_key = cooldown_operator_key
 	if _message_label != null:
 		_message_label.text = text
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
-		_combat_hud.show_message(text)
+		_combat_hud.show_message(text, warning)
 
 
 func append_combat_debug(text: String) -> void:
@@ -2737,7 +2737,7 @@ func _show_result_message(result: Dictionary, success_text: String, failure_text
 	var message := String(result.get("message", ""))
 	if message.is_empty():
 		message = success_text if result.get("ok", false) else failure_text
-	_show_message(message)
+	_show_message(message, StringName(), not bool(result.get("ok", false)))
 	append_combat_debug(message)
 
 

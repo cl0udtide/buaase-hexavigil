@@ -74,7 +74,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			if _combat_hud != null and _combat_hud.has_method("close_top_panel") and _combat_hud.close_top_panel():
 				return
-			_cancel_deploy_flow("Canceled")
+			_cancel_deploy_flow("已取消")
 			return
 		if event.keycode == KEY_R:
 			if _combat_hud != null and _combat_hud.has_method("toggle_relic_panel"):
@@ -84,7 +84,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed and _deploy_drag_state != DRAG_NONE:
-			_cancel_deploy_flow("Canceled")
+			_cancel_deploy_flow("已取消")
 			return
 		if _deploy_drag_state == DRAG_LOCKED and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			if _get_mouse_cell() == _locked_deploy_cell:
@@ -275,7 +275,7 @@ func _update_deploy_drag() -> void:
 				if _current_drag_cell_valid:
 					_lock_deploy_cell(_current_drag_cell)
 				else:
-					_cancel_deploy_flow("部署位置无效")
+					_cancel_deploy_flow("部署位置无效", true)
 		DRAG_FACING:
 			_current_drag_facing = _get_facing_from_mouse(_locked_deploy_cell)
 			_update_locked_deploy_preview(_current_drag_facing)
@@ -313,7 +313,7 @@ func _update_locked_deploy_preview(facing: Vector2i) -> void:
 
 func _confirm_locked_deploy() -> void:
 	if _unit_manager == null or not _unit_manager.has_method("try_deploy_operator"):
-		_cancel_deploy_flow("Canceled")
+		_cancel_deploy_flow("部署失败：单位管理器不可用", true)
 		return
 	var result: Dictionary = _unit_manager.try_deploy_operator(_drag_operator_key, _locked_deploy_cell, _current_drag_facing)
 	if result.get("ok", false):
@@ -324,10 +324,10 @@ func _confirm_locked_deploy() -> void:
 			_select_unit(unit)
 		_show_message("部署完成")
 	else:
-		_cancel_deploy_flow(String(result.get("message", "部署失败")))
+		_cancel_deploy_flow(String(result.get("message", "部署失败")), true)
 
 
-func _cancel_deploy_flow(message: String = "") -> void:
+func _cancel_deploy_flow(message: String = "", warning := false) -> void:
 	_deploy_drag_state = DRAG_NONE
 	_drag_operator_key = StringName()
 	_locked_deploy_cell = INVALID_CELL
@@ -337,7 +337,7 @@ func _cancel_deploy_flow(message: String = "") -> void:
 		_combat_hud.hide_drag_ghost()
 	_clear_deploy_preview()
 	if not message.is_empty():
-		_show_message(message)
+		_show_message(message, StringName(), warning)
 
 
 func _clear_deploy_preview() -> void:
@@ -543,7 +543,7 @@ func _on_build_action_result(_building_id: StringName, _cell: Vector2i, result: 
 		return
 	var message := String(result.get("message", "建造失败"))
 	if not message.is_empty():
-		_show_message(message)
+		_show_message(message, StringName(), true)
 
 
 func _on_wave_route_preview_toggled(enabled: bool) -> void:
@@ -977,7 +977,7 @@ func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
 
 func _validate_drag_cell(operator_key: StringName, cell: Vector2i) -> Dictionary:
 	if _unit_manager == null or not _unit_manager.has_method("validate_deploy_operator"):
-		return ActionResult.err(&"UNIT_MANAGER_MISSING", "UNIT_MANAGER_MISSING")
+		return ActionResult.err(&"UNIT_MANAGER_MISSING", "操作失败：单位管理器不可用")
 	return _unit_manager.validate_deploy_operator(operator_key, cell)
 
 
@@ -1112,14 +1112,14 @@ func _get_unit_display_name(unit: Node) -> String:
 	return String(unit.cfg.get("name", unit.unit_id))
 
 
-func _show_message(text: String, cooldown_operator_key: StringName = &"") -> void:
+func _show_message(text: String, cooldown_operator_key: StringName = &"", warning := false) -> void:
 	_cooldown_message_operator_key = cooldown_operator_key
 	if _combat_hud != null and _combat_hud.has_method("show_message"):
-		_combat_hud.show_message(text)
+		_combat_hud.show_message(text, warning)
 
 
 func _show_result_message(result: Dictionary, success_text: String, failure_text: String) -> void:
 	var message := String(result.get("message", ""))
 	if message.is_empty():
 		message = success_text if result.get("ok", false) else failure_text
-	_show_message(message)
+	_show_message(message, StringName(), not bool(result.get("ok", false)))
