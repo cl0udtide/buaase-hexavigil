@@ -1285,7 +1285,6 @@ mouse_filter = 2
 
 [node name="AudioSettingsPanel" type="Control" parent="PopupLayer/SettingsPanelSlot" unique_id=1813098785]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1311,13 +1310,13 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
+theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
 [node name="MainVBox" type="VBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin" unique_id=1912505798]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="Header" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=434046545]
 layout_mode = 2
@@ -1328,7 +1327,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
-text = "声音设置"
+text = "    声音设置"
 vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1600475914]
@@ -1340,9 +1339,24 @@ theme_override_styles/normal = ExtResource("21_buttonbase")
 theme_override_styles/pressed = ExtResource("22_buttonactive")
 theme_override_styles/hover = ExtResource("22_buttonactive")
 theme_override_styles/disabled = ExtResource("23_buttondisabled")
-text = "×"
-icon = ExtResource("38_iconclose")
 icon_alignment = 1
+
+[node name="FittedIcon" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=849751617]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -7.0
+offset_top = -7.0
+offset_right = 7.0
+offset_bottom = 7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("38_iconclose")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="MasterRow" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=572802256]
 unique_name_in_owner = true
@@ -1350,11 +1364,17 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
 [node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow" unique_id=345216434]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 136.0
+offset_top = 13.0
+offset_right = 136.0
+offset_bottom = 13.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.48000002, 0.52)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("18_settingsrow")
 
@@ -1365,7 +1385,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 10
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 6
@@ -1377,7 +1397,6 @@ theme_override_constants/separation = 8
 [node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2121226643]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
-text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1401,6 +1420,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
 theme_override_icons/grabber = ExtResource("26_sliderhandle")
 theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
 theme_override_styles/slider = ExtResource("24_slidertrack")
@@ -1420,11 +1440,17 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
 [node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow" unique_id=2009036794]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 136.0
+offset_top = 13.0
+offset_right = 136.0
+offset_bottom = 13.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.48000002, 0.52)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("18_settingsrow")
 
@@ -1435,7 +1461,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 10
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 6
@@ -1447,7 +1473,6 @@ theme_override_constants/separation = 8
 [node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=50218736]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
-text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1471,6 +1496,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
 theme_override_icons/grabber = ExtResource("26_sliderhandle")
 theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
 theme_override_styles/slider = ExtResource("24_slidertrack")
@@ -1490,11 +1516,17 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
 [node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow" unique_id=159804048]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 136.0
+offset_top = 13.0
+offset_right = 136.0
+offset_bottom = 13.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.48000002, 0.52)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("18_settingsrow")
 
@@ -1505,7 +1537,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 10
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 6
@@ -1517,7 +1549,6 @@ theme_override_constants/separation = 8
 [node name="VolumeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=406330431]
 custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
-text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1541,6 +1572,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 4
 theme_override_icons/grabber = ExtResource("26_sliderhandle")
 theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
 theme_override_styles/slider = ExtResource("24_slidertrack")
