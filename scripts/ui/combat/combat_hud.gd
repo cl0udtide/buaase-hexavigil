@@ -490,6 +490,11 @@ func _collect_resource_items() -> void:
 		if item_root == null:
 			push_warning("%sResourceItem is missing from CombatHud scene." % _resource_node_prefix(resource_key))
 			continue
+		var projected_delta_badge := item_root.get_node_or_null("ProjectedDeltaBadge") as Control
+		var inline_delta_badge := item_root.get_node_or_null("ItemMargin/ItemRow/DeltaBadge") as Control
+		var delta_badge := projected_delta_badge if projected_delta_badge != null else inline_delta_badge
+		if projected_delta_badge != null and inline_delta_badge != null:
+			inline_delta_badge.visible = false
 		var item := {
 			"root": item_root,
 			"base": item_root.get_node_or_null("ResourceItemBase"),
@@ -497,8 +502,8 @@ func _collect_resource_items() -> void:
 			"icon": item_root.get_node_or_null("ItemMargin/ItemRow/IconLabel"),
 			"icon_texture": item_root.get_node_or_null("ItemMargin/ItemRow/IconTexture"),
 			"value": item_root.get_node_or_null("ItemMargin/ItemRow/ValueLabel"),
-			"delta_badge": item_root.get_node_or_null("ItemMargin/ItemRow/DeltaBadge"),
-			"delta": item_root.get_node_or_null("ItemMargin/ItemRow/DeltaBadge/DeltaLabel")
+			"delta_badge": delta_badge,
+			"delta": delta_badge.get_node_or_null("DeltaLabel") if delta_badge != null else null
 		}
 		_resource_item_controls[resource_key] = item
 	_order_resource_item_nodes()
@@ -674,14 +679,6 @@ func _style_top_cards() -> void:
 			var label := item_dict.get(label_key) as Label
 			if label == null:
 				continue
-			match label_key:
-				"value":
-					label.add_theme_font_size_override("font_size", 13)
-					label.add_theme_constant_override("line_spacing", 0)
-				"delta":
-					label.add_theme_font_size_override("font_size", 12)
-				"icon":
-					label.add_theme_font_size_override("font_size", 12)
 			label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 			label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 			label.add_theme_constant_override("shadow_offset_x", 0)
