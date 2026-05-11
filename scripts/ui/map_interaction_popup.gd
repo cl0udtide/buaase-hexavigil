@@ -380,7 +380,9 @@ func _get_resource_collect_amount(resource_type: StringName) -> int:
 
 
 func _is_idle_action_mode() -> bool:
-	var action_panel := get_node_or_null("../ActionPanel")
+	var action_panel := get_node_or_null("../ScreenLayout/ActionPanelSlot/ActionPanel")
+	if action_panel == null:
+		action_panel = get_node_or_null("../ActionPanel")
 	if action_panel == null or not action_panel.has_method("get_current_mode"):
 		return true
 	return StringName(action_panel.get_current_mode()) == &"idle"
@@ -472,7 +474,7 @@ func _get_effective_building_radius(cfg: Dictionary) -> int:
 func _apply_visual_style() -> void:
 	add_theme_stylebox_override("panel", GameUiStyle.map_popup())
 	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_MAP_POPUP)
-	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
+	set_custom_minimum_size(Vector2(POPUP_MIN_WIDTH, 0.0))
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 		GameUiStyle.center_label_text(_title_label)
@@ -491,7 +493,7 @@ func _style_button(button: Button, accent: Color) -> void:
 	if button == null:
 		return
 	GameUiStyle.center_button_text(button)
-	button.custom_minimum_size = Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0))
+	button.set_custom_minimum_size(Vector2(maxf(button.custom_minimum_size.x, 64.0), maxf(button.custom_minimum_size.y, 32.0)))
 	GameUiStyle.set_button_texture_icon(button, _icon_for_popup_button(button), Vector2(15.0, 15.0), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent, 0.18))
 	button.add_theme_stylebox_override("hover", GameUiStyle.button(accent, 0.28))

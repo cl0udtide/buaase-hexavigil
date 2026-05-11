@@ -16,7 +16,7 @@ static func get_theme() -> Theme:
 		return _theme
 
 	var theme := Theme.new()
-	theme.default_font_size = SIZE_BODY
+	theme.set("default_font_size", SIZE_BODY)
 	for type_name in ["LineEdit", "TextEdit", "RichTextLabel", "OptionButton"]:
 		theme.set_font_size("font_size", type_name, SIZE_BODY)
 	for type_name in ["Label", "CheckBox"]:

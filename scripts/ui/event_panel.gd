@@ -5,13 +5,10 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
-const PANEL_SIZE := Vector2(540.0, 260.0)
-
 
 func _ready() -> void:
 	AppTheme.apply(self)
 	_apply_visual_style()
-	_place_centered()
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.random_event_triggered.connect(_on_random_event_triggered)
@@ -21,7 +18,6 @@ func _ready() -> void:
 
 
 func show_event(event_cfg: Dictionary) -> void:
-	_place_centered()
 	visible = true
 	var title := get_node_or_null("%TitleLabel") as Label
 	var desc := get_node_or_null("%DescLabel") as Label
@@ -63,7 +59,7 @@ func _apply_visual_style() -> void:
 		desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	if close_button != null:
-		close_button.custom_minimum_size = Vector2(150.0, 40.0)
+		close_button.set_custom_minimum_size(Vector2(150.0, 40.0))
 		close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		_style_button(close_button, GameUiStyle.ACCENT)
 
@@ -78,14 +74,3 @@ func _style_button(button: Button, accent: Color) -> void:
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
-
-
-func _place_centered() -> void:
-	anchor_left = 0.5
-	anchor_top = 0.5
-	anchor_right = 0.5
-	anchor_bottom = 0.5
-	offset_left = -PANEL_SIZE.x * 0.5
-	offset_top = -PANEL_SIZE.y * 0.5
-	offset_right = PANEL_SIZE.x * 0.5
-	offset_bottom = PANEL_SIZE.y * 0.5

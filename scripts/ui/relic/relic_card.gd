@@ -83,7 +83,7 @@ func set_selected(selected: bool) -> void:
 
 func _apply_config() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	custom_minimum_size = Vector2(0.0, 104.0 if _compact else 116.0)
+	set_custom_minimum_size(Vector2(0.0, 104.0 if _compact else 116.0))
 	if _choice_mode:
 		custom_minimum_size.y = 96.0
 	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
@@ -109,8 +109,8 @@ func _apply_density() -> void:
 	_desc_label.add_theme_font_size_override("font_size", 12 if compact_font else 13)
 	_tag_label.add_theme_font_size_override("font_size", 12)
 	var icon_size := 46.0 if compact_font else 54.0
-	_icon_backplate.custom_minimum_size = Vector2(icon_size, 0.0)
-	_icon_frame.custom_minimum_size = Vector2(icon_size, 0.0)
+	_icon_backplate.set_custom_minimum_size(Vector2(icon_size, 0.0))
+	_icon_frame.set_custom_minimum_size(Vector2(icon_size, 0.0))
 	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(icon_size * 0.70, icon_size * 0.70))
 
 

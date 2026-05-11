@@ -34,7 +34,7 @@ func _on_pressed() -> void:
 
 
 func _apply_visual_style() -> void:
-	custom_minimum_size = Vector2(42.0, 40.0) if text.strip_edges().length() <= 2 else Vector2(94.0, 36.0)
+	set_custom_minimum_size(Vector2(42.0, 40.0) if text.strip_edges().length() <= 2 else Vector2(94.0, 36.0))
 	tooltip_text = "设置"
 	var gear_texture := UiArtRegistry.get_catalog_icon(&"button_settings")
 	GameUiStyle.set_button_texture_icon(self, gear_texture, Vector2(20.0, 20.0), &"center")

@@ -18,7 +18,7 @@ var _accent := GameUiStyle.ACCENT
 var _hovered := false
 var _compact := false
 var _pressing := false
-var _press_start_position := Vector2.ZERO
+var _press_start_mouse := Vector2.ZERO
 var _drag_started := false
 var _operator_info: Dictionary = {}
 var _unit_cfg: Dictionary = {}
@@ -200,7 +200,7 @@ func _on_gui_input(event: InputEvent) -> void:
 		if mouse_event.pressed:
 			_pressing = true
 			_drag_started = false
-			_press_start_position = get_global_mouse_position()
+			_press_start_mouse = get_global_mouse_position()
 			accept_event()
 		elif _pressing:
 			_pressing = false
@@ -208,7 +208,7 @@ func _on_gui_input(event: InputEvent) -> void:
 				operator_card_pressed.emit(operator_key)
 			accept_event()
 	elif event is InputEventMouseMotion and _pressing and not _drag_started:
-		if get_global_mouse_position().distance_to(_press_start_position) >= DRAG_START_THRESHOLD:
+		if get_global_mouse_position().distance_to(_press_start_mouse) >= DRAG_START_THRESHOLD:
 			_drag_started = true
 			operator_card_drag_started.emit(operator_key)
 			accept_event()
@@ -225,10 +225,10 @@ func _apply_card_style() -> void:
 
 
 func _apply_density() -> void:
-	custom_minimum_size = UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE
-	size = custom_minimum_size
+	set_custom_minimum_size(UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE)
+	set_size(custom_minimum_size)
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_portrait_stack.custom_minimum_size = Vector2(0.0, 52.0 if _compact else 60.0)
+	_portrait_stack.set_custom_minimum_size(Vector2(0.0, 52.0 if _compact else 60.0))
 	_name_label.add_theme_font_size_override("font_size", 14 if _compact else 15)
 	_cost_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
 	_class_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
@@ -281,7 +281,7 @@ func _apply_unit_art() -> void:
 func _prepare_class_icon_texture() -> void:
 	if _class_icon_texture == null:
 		return
-	_class_icon_texture.custom_minimum_size = Vector2(18.0, 18.0)
+	_class_icon_texture.set_custom_minimum_size(Vector2(18.0, 18.0))
 	_class_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_class_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_class_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -292,7 +292,7 @@ func _prepare_class_icon_texture() -> void:
 		return
 	_class_icon_label = Label.new()
 	_class_icon_label.name = "ClassIconFallback"
-	_class_icon_label.custom_minimum_size = Vector2(18.0, 18.0)
+	_class_icon_label.set_custom_minimum_size(Vector2(18.0, 18.0))
 	_class_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_class_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_class_icon_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
