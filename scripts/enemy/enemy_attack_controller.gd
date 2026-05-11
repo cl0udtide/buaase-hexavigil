@@ -82,12 +82,17 @@ func process_range_attack(delta: float) -> bool:
 		var projectile := _launch_projectile(target, damage_value, damage_type)
 		if projectile != null:
 			set_attack_cooldown_from_cfg()
+			_start_range_attack_hold(attack_range)
 			return true
 	_resolve_range_hit(target, damage_value, damage_type)
 	set_attack_cooldown_from_cfg()
+	_start_range_attack_hold(attack_range)
+	return true
+
+
+func _start_range_attack_hold(attack_range: int) -> void:
 	if attack_range > 1:
 		_range_attack_hold_timer = min(RANGED_ATTACK_HOLD_SECONDS, _attack_timer)
-	return true
 
 
 func get_blocking_building_on_path(movement_controller: Node) -> Node:
