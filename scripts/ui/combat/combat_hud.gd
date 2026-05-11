@@ -19,6 +19,26 @@ signal wave_route_preview_toggled(enabled: bool)
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"wood", &"stone", &"mana", &"prestige"]
 const CORE_HP_TITLE := "核心生命"
+
+# Top HUD micro-tuning lives here so visual adjustments do not require hunting
+# through layout code. Vector4 means left, top, right, bottom inset.
+const TOP_CONTENT_INSETS := Vector4(0.0, 5.0, 0.0, 5.0)
+const TOP_CHIP_LABEL_INSETS := Vector4(42.0, 10.0, 16.0, 10.0)
+const TOP_MESSAGE_LABEL_INSETS := Vector4(42.0, 10.0, 18.0, 10.0)
+const TOP_CORE_LABEL_LEFT := 42.0
+const TOP_CORE_LABEL_TOP := 9.0
+const TOP_CORE_LABEL_HEIGHT := 24.0
+const TOP_CORE_BAR_LEFT := 44.0
+const TOP_CORE_BAR_RIGHT := 16.0
+const TOP_CORE_BAR_BOTTOM := 12.0
+const TOP_CORE_BAR_HEIGHT := 18.0
+const TOP_ICON_LEFT := 10.0
+const TOP_ICON_SIZE := 28.0
+const TIME_BUTTON_ROW_INSETS := Vector4(0.0, 10.0, 0.0, 10.0)
+const RESOURCE_ROW_INSETS := Vector4(0.0, 4.0, 0.0, 4.0)
+const RESOURCE_ITEM_INSETS := Vector4(8.0, 7.0, 8.0, 7.0)
+const RESOURCE_ITEM_INSETS_COMPACT := Vector4(7.0, 6.0, 7.0, 6.0)
+
 const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 62.0
 const WAVE_PREVIEW_LINE_HEIGHT := 19.0
 const WAVE_PREVIEW_PANEL_BOTTOM_PADDING := 34.0
@@ -84,6 +104,12 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_top_bar_base.visible = false
 	_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_toggle_base.visible = false
+	_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
+	if resource_base != null:
+		resource_base.visible = false
+		resource_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.add_theme_stylebox_override("panel", GameUiStyle.progress_background())
 	_core_fill.add_theme_stylebox_override("panel", GameUiStyle.core_progress_fill())
 	_core_track.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -310,7 +336,7 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	_style_top_button(_pause_button, pause_selected)
 	_style_top_button(_speed_1_button, speed_1_selected)
 	_style_top_button(_speed_2_button, speed_2_selected)
-	call_deferred("_place_speed_active_overlay", _pause_button if pause_selected else (_speed_1_button if speed_1_selected else (_speed_2_button if speed_2_selected else null)))
+	call_deferred("_place_speed_active_overlay", _speed_1_button if speed_1_selected else (_speed_2_button if speed_2_selected else null))
 
 
 func set_operators(operators: Array[Dictionary]) -> void:
@@ -453,13 +479,10 @@ func _build_resource_items() -> void:
 		resource_row.name = "ResourceItemsRow"
 		resource_row.anchor_right = 1.0
 		resource_row.anchor_bottom = 1.0
-		resource_row.offset_left = 4.0
-		resource_row.offset_top = 4.0
-		resource_row.offset_right = -4.0
-		resource_row.offset_bottom = -4.0
 		resource_row.alignment = BoxContainer.ALIGNMENT_END
 		resource_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_resource_chip.add_child(resource_row)
+	_apply_control_insets(resource_row, RESOURCE_ROW_INSETS)
 	_resource_item_controls.clear()
 	for resource_key in RESOURCE_ORDER:
 		var item_root := resource_row.get_node_or_null("%sResourceItem" % _resource_node_prefix(resource_key)) as Control
@@ -469,6 +492,7 @@ func _build_resource_items() -> void:
 		var item := {
 			"root": item_root,
 			"base": item_root.get_node_or_null("ResourceItemBase"),
+			"margin": item_root.get_node_or_null("ItemMargin"),
 			"icon": item_root.get_node_or_null("ItemMargin/ItemRow/IconLabel"),
 			"icon_texture": item_root.get_node_or_null("ItemMargin/ItemRow/IconTexture"),
 			"value": item_root.get_node_or_null("ItemMargin/ItemRow/ValueLabel"),
@@ -494,10 +518,7 @@ func _create_resource_item(resource_key: StringName) -> Control:
 	margin.anchor_right = 1.0
 	margin.anchor_bottom = 1.0
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 6)
-	margin.add_theme_constant_override("margin_top", 5)
-	margin.add_theme_constant_override("margin_right", 6)
-	margin.add_theme_constant_override("margin_bottom", 5)
+	_apply_margin_constants(margin, RESOURCE_ITEM_INSETS)
 	item_root.add_child(margin)
 	var row := HBoxContainer.new()
 	row.name = "ItemRow"
@@ -602,27 +623,34 @@ func _apply_chip_icon(chip: Control, icon_id: StringName) -> void:
 		icon.anchor_top = 0.5
 		icon.anchor_right = 0.0
 		icon.anchor_bottom = 0.5
-		icon.offset_left = 8.0
-		icon.offset_top = -14.0
-		icon.offset_right = 36.0
-		icon.offset_bottom = 14.0
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		chip.add_child(icon)
-	var label := chip.find_child("*Label", true, false) as Label
-	if label != null:
-		label.offset_left = maxf(label.offset_left, 34.0)
+	icon.offset_left = TOP_ICON_LEFT
+	icon.offset_top = -TOP_ICON_SIZE * 0.5
+	icon.offset_right = TOP_ICON_LEFT + TOP_ICON_SIZE
+	icon.offset_bottom = TOP_ICON_SIZE * 0.5
 	icon.texture = texture
 	icon.visible = true
 
 
 func _style_top_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
-	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
-	button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(false))
+	if button == _pause_button:
+		var empty_normal := StyleBoxEmpty.new()
+		var empty_hover := StyleBoxEmpty.new()
+		var empty_pressed := StyleBoxEmpty.new()
+		var empty_disabled := StyleBoxEmpty.new()
+		button.add_theme_stylebox_override("normal", empty_normal)
+		button.add_theme_stylebox_override("hover", empty_hover)
+		button.add_theme_stylebox_override("pressed", empty_pressed)
+		button.add_theme_stylebox_override("disabled", empty_disabled)
+	else:
+		button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
+		button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
+		button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
+		button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(false))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
@@ -651,10 +679,7 @@ func _place_speed_active_overlay(button: Button) -> void:
 func _apply_frame_margins() -> void:
 	var top_content := get_node_or_null("HudChromeLayer/TopBar/TopContent") as MarginContainer
 	if top_content != null:
-		top_content.add_theme_constant_override("margin_left", 0)
-		top_content.add_theme_constant_override("margin_top", 4)
-		top_content.add_theme_constant_override("margin_right", 0)
-		top_content.add_theme_constant_override("margin_bottom", 4)
+		_apply_margin_constants(top_content, TOP_CONTENT_INSETS)
 	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/WavePreviewPanel/WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/DeployDeck/DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("HudChromeLayer/LegendPanel/LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
@@ -666,13 +691,17 @@ func _style_top_cards() -> void:
 		_stage_chip.get_node_or_null("ChipBase") as Panel,
 		_core_chip.get_node_or_null("ChipBase") as Panel,
 		_deploy_chip.get_node_or_null("ChipBase") as Panel,
-		_message_chip.get_node_or_null("ChipBase") as Panel,
-		_resource_chip.get_node_or_null("ChipBase") as Panel
+		_message_chip.get_node_or_null("ChipBase") as Panel
 	]:
 		if card != null:
 			card.add_theme_stylebox_override("panel", GameUiStyle.top_card())
 	if _speed_toggle_base != null:
-		_speed_toggle_base.add_theme_stylebox_override("panel", GameUiStyle.speed_toggle_base())
+		_speed_toggle_base.visible = false
+		_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
+	if resource_base != null:
+		resource_base.visible = false
+		resource_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for item in _resource_item_controls.values():
 		var item_base := (item as Dictionary).get("base") as Panel
 		if item_base != null:
@@ -824,7 +853,7 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 			group = _top_content_row.get_node_or_null(group_name) as HBoxContainer
 		if group != null:
 			group.add_theme_constant_override("separation", 6 if compact else 8)
-	var card_height := maxf(46.0, top_height - 8.0)
+	var card_height := maxf(54.0, top_height - TOP_CONTENT_INSETS.y - TOP_CONTENT_INSETS.w)
 	var show_message_card := float(widths.get("message", 0.0)) > 0.0
 	if _message_chip != null:
 		_message_chip.visible = show_message_card
@@ -833,6 +862,7 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 	_set_top_card_min(_deploy_chip, widths.get("deploy", 160.0), card_height)
 	_set_top_card_min(_message_chip, widths.get("message", 260.0), card_height)
 	_set_top_card_min(_time_controls, widths.get("time", 200.0), card_height)
+	_apply_top_chip_content_layout(card_height, compact)
 	_apply_core_bar_layout(card_height, compact)
 	var resource_item_width := float(widths.get("resource_item", 74.0))
 	var resource_total_width := resource_item_width * float(RESOURCE_ORDER.size()) + float(maxi(RESOURCE_ORDER.size() - 1, 0)) * (6.0 if compact else 8.0) + 8.0
@@ -842,10 +872,14 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 		resource_row = _resource_chip.get_node_or_null("ResourceItemsRow") as HBoxContainer
 	if resource_row != null:
 		resource_row.add_theme_constant_override("separation", 6 if compact else 8)
+		_apply_control_insets(resource_row, RESOURCE_ROW_INSETS)
 	for item in _resource_item_controls.values():
 		var root := (item as Dictionary).get("root") as Control
 		if root != null:
-			root.custom_minimum_size = Vector2(resource_item_width, maxf(42.0, card_height - 10.0))
+			root.custom_minimum_size = Vector2(resource_item_width, maxf(48.0, card_height - 8.0))
+		var margin := (item as Dictionary).get("margin") as MarginContainer
+		if margin != null:
+			_apply_margin_constants(margin, RESOURCE_ITEM_INSETS_COMPACT if compact else RESOURCE_ITEM_INSETS)
 	var label_size := 13 if compact else 14
 	for label in [_core_label, _deploy_label, _queue_label, _message_label]:
 		label.add_theme_font_size_override("font_size", label_size)
@@ -864,15 +898,48 @@ func _apply_top_bar_density(viewport_width: float) -> void:
 			value_label.add_theme_font_size_override("font_size", 13)
 		if delta_label != null:
 			delta_label.add_theme_font_size_override("font_size", 10)
-	var button_height := 40.0 if compact else 42.0
-	_pause_button.custom_minimum_size = Vector2(76.0 if compact else 84.0, button_height)
-	_speed_1_button.custom_minimum_size = Vector2(60.0 if compact else 66.0, button_height)
-	_speed_2_button.custom_minimum_size = Vector2(60.0 if compact else 66.0, button_height)
+	var button_height := 44.0 if compact else 46.0
+	_pause_button.custom_minimum_size = Vector2(52.0 if compact else 56.0, button_height)
+	_speed_1_button.custom_minimum_size = Vector2(62.0 if compact else 68.0, button_height)
+	_speed_2_button.custom_minimum_size = Vector2(62.0 if compact else 68.0, button_height)
+	var time_margin := get_node_or_null("HudChromeLayer/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin") as MarginContainer
+	if time_margin == null:
+		time_margin = get_node_or_null("HudChromeLayer/TopBar/TopContent/TopContentRow/TimeControls/TimeMargin") as MarginContainer
+	if time_margin != null:
+		_apply_margin_constants(time_margin, TIME_BUTTON_ROW_INSETS)
 
 
 func _set_top_card_min(card: Control, width: float, height: float) -> void:
 	if card != null:
 		card.custom_minimum_size = Vector2(width, height)
+
+
+func _apply_top_chip_content_layout(_card_height: float, _compact: bool) -> void:
+	_apply_control_insets(_queue_label, TOP_CHIP_LABEL_INSETS)
+	_apply_control_insets(_deploy_label, TOP_CHIP_LABEL_INSETS)
+	_apply_control_insets(_message_label, TOP_MESSAGE_LABEL_INSETS)
+
+
+func _apply_control_insets(control: Control, insets: Vector4) -> void:
+	if control == null:
+		return
+	control.anchor_left = 0.0
+	control.anchor_top = 0.0
+	control.anchor_right = 1.0
+	control.anchor_bottom = 1.0
+	control.offset_left = insets.x
+	control.offset_top = insets.y
+	control.offset_right = -insets.z
+	control.offset_bottom = -insets.w
+
+
+func _apply_margin_constants(container: MarginContainer, insets: Vector4) -> void:
+	if container == null:
+		return
+	container.add_theme_constant_override("margin_left", int(round(insets.x)))
+	container.add_theme_constant_override("margin_top", int(round(insets.y)))
+	container.add_theme_constant_override("margin_right", int(round(insets.z)))
+	container.add_theme_constant_override("margin_bottom", int(round(insets.w)))
 
 
 func _apply_core_bar_layout(card_height: float, compact: bool) -> void:
@@ -881,20 +948,20 @@ func _apply_core_bar_layout(card_height: float, compact: bool) -> void:
 		_core_label.anchor_top = 0.0
 		_core_label.anchor_right = 1.0
 		_core_label.anchor_bottom = 0.0
-		_core_label.offset_left = 36.0 if compact else 40.0
-		_core_label.offset_top = 8.0
-		_core_label.offset_right = -12.0
-		_core_label.offset_bottom = 30.0 if compact else 32.0
+		_core_label.offset_left = TOP_CORE_LABEL_LEFT - (4.0 if compact else 0.0)
+		_core_label.offset_top = TOP_CORE_LABEL_TOP
+		_core_label.offset_right = -TOP_CORE_BAR_RIGHT
+		_core_label.offset_bottom = TOP_CORE_LABEL_TOP + TOP_CORE_LABEL_HEIGHT
 		_core_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	if _core_track != null:
 		_core_track.anchor_left = 0.0
 		_core_track.anchor_top = 0.0
 		_core_track.anchor_right = 1.0
 		_core_track.anchor_bottom = 0.0
-		_core_track.offset_left = 38.0 if compact else 42.0
-		_core_track.offset_top = card_height - (25.0 if compact else 27.0)
-		_core_track.offset_right = -14.0
-		_core_track.offset_bottom = card_height - 8.0
+		_core_track.offset_left = TOP_CORE_BAR_LEFT - (4.0 if compact else 0.0)
+		_core_track.offset_top = card_height - TOP_CORE_BAR_BOTTOM - TOP_CORE_BAR_HEIGHT
+		_core_track.offset_right = -TOP_CORE_BAR_RIGHT
+		_core_track.offset_bottom = card_height - TOP_CORE_BAR_BOTTOM
 	if _core_fill != null and _core_track != null:
 		_refresh_core_fill()
 
