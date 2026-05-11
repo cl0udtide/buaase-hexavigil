@@ -1756,7 +1756,7 @@ func hide_panel() -> void
 - 刷新商店：`EventBus.request_refresh_shop.emit()`
 - 选择祝福：`EventBus.blessing_chosen.emit(buff_id)`
 
-地图格点击由 `MapRoot` 统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`（未探索的可探索迷雾格自动 `request_explore`）、`MapInteractionPopup`（已探索格弹出资源/事件/建筑交互窗）、`CombatHudController` 或 `CombatSandbox`（战斗中的单位选中与部署流程）各自解释。建造请求改由 `CombatHudController` 监听 `BuildPanel.building_card_drag_started` 启动拖拽，并在释放时通过 `EventBus.request_build.emit(cell, building_id)` 提交。鼠标悬停通过 `EventBus.map_cell_hovered` 通知 `ActionPanel` 触发迷雾可探索高亮；右键 tap（5 px / 300 ms 内）通过 `EventBus.right_click_tapped` 通知 `MapInteractionPopup` 一键关闭浮层。
+地图格点击由 `MapRoot` 在左键短按释放时统一发出 `EventBus.map_cell_clicked.emit(cell)`，再由 `ActionPanel`（未探索的可探索迷雾格自动 `request_explore`）、`MapInteractionPopup`（已探索格弹出资源/事件/建筑交互窗）、`CombatHudController` 或 `CombatSandbox`（战斗中的单位选中与部署流程）各自解释。左键或右键按下后移动超过 5 px 会改为平移地图镜头，不触发格子点击或右键关闭；触摸端单指沿用鼠标模拟，双指手势由 `InputEventScreenTouch` / `InputEventScreenDrag` 直接缩放并跟随双指中心平移。建造请求改由 `CombatHudController` 监听 `BuildPanel.building_card_drag_started` 启动拖拽，并在释放时通过 `EventBus.request_build.emit(cell, building_id)` 提交。鼠标悬停通过 `EventBus.map_cell_hovered` 通知 `ActionPanel` 触发迷雾可探索高亮；右键 tap（5 px / 300 ms 内）通过 `EventBus.right_click_tapped` 通知 `MapInteractionPopup` 一键关闭浮层。
 
 作战 UI 组件本身仍只发出信号。例如 `CombatHud` 发出干员卡片、暂停、倍速、技能和撤退信号；主场景由 `CombatHudController` 调用 `UnitManager`、`MapRoot` 或修改 `SceneTree.paused`，调试场景由 `CombatSandbox` 做同样转接。
 

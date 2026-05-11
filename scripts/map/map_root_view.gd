@@ -94,10 +94,14 @@ var _random_event_manager: Node
 var _hovered_cell := Vector2i(-1, -1)
 var _fog_hover_active := false
 var _selected_cell := Vector2i(-1, -1)
+var _left_press_pos := Vector2.ZERO
+var _left_press_tracking := false
 var _right_press_pos := Vector2.ZERO
 var _right_press_time_ms := 0
 var _right_press_tracking := false
 
+const MAP_DRAG_START_DISTANCE := 5.0
+const PINCH_MIN_DISTANCE := 12.0
 const RIGHT_TAP_MAX_DISTANCE := 5.0
 const RIGHT_TAP_MAX_DURATION_MS := 300
 var _camera: Camera2D
@@ -106,6 +110,12 @@ var _zoom_scalar := 1.0
 var _camera_fit_initialized := false
 var _last_map_size := Vector2.ZERO
 var _is_dragging := false
+var _drag_button_index := 0
+var _active_touches: Dictionary = {}
+var _pinch_active := false
+var _pinch_touch_a := -1
+var _pinch_touch_b := -1
+var _suppress_emulated_mouse_until_touches_released := false
 var _debug_attack_range_cells: Array[Vector2i] = []
 var _building_effect_range_cells: Array[Vector2i] = []
 var _range_outline_effects: Dictionary = {}
@@ -162,9 +172,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	var map_manager := _get_map_manager()
 	if map_manager == null or _camera == null:
 		return
-	if event is InputEventMouseButton:
+	if event is InputEventScreenTouch:
+		_handle_screen_touch(event)
+	elif event is InputEventScreenDrag:
+		_handle_screen_drag(event)
+	elif event is InputEventMagnifyGesture:
+		_handle_magnify_gesture(event)
+	elif event is InputEventMouseButton:
+		if _suppress_emulated_mouse_until_touches_released:
+			return
 		_handle_mouse_button(event, map_manager)
 	elif event is InputEventMouseMotion:
+		if _suppress_emulated_mouse_until_touches_released:
+			return
 		_handle_mouse_motion(event)
 
 
@@ -1005,30 +1025,48 @@ func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> vo
 			if event.pressed:
 				_zoom_at_mouse(ZOOM_STEP)
 		MOUSE_BUTTON_RIGHT:
-			_is_dragging = event.pressed
 			if event.pressed:
 				_right_press_pos = event.position
 				_right_press_time_ms = Time.get_ticks_msec()
 				_right_press_tracking = true
+				_is_dragging = false
+				_drag_button_index = MOUSE_BUTTON_RIGHT
 			else:
 				if _right_press_tracking:
+					var was_dragging := _is_dragging and _drag_button_index == MOUSE_BUTTON_RIGHT
 					var distance: float = event.position.distance_to(_right_press_pos)
 					var elapsed: int = Time.get_ticks_msec() - _right_press_time_ms
-					if distance <= RIGHT_TAP_MAX_DISTANCE and elapsed <= RIGHT_TAP_MAX_DURATION_MS:
+					if not was_dragging and distance <= RIGHT_TAP_MAX_DISTANCE and elapsed <= RIGHT_TAP_MAX_DURATION_MS:
 						var event_bus = AppRefs.event_bus()
 						if event_bus != null:
 							event_bus.right_click_tapped.emit()
 				_right_press_tracking = false
+				if _drag_button_index == MOUSE_BUTTON_RIGHT:
+					_is_dragging = false
+					_drag_button_index = 0
 		MOUSE_BUTTON_LEFT:
-			if event.pressed and not _is_dragging:
-				var cell: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
-				if not map_manager.is_inside(cell):
+			if event.pressed:
+				if _is_deploy_preview_active():
 					return
-				_selected_cell = cell
-				queue_redraw()
-				var event_bus = AppRefs.event_bus()
-				if event_bus != null:
-					event_bus.map_cell_clicked.emit(cell)
+				_left_press_pos = event.position
+				_left_press_tracking = true
+				_is_dragging = false
+				_drag_button_index = MOUSE_BUTTON_LEFT
+			elif _left_press_tracking:
+				var was_dragging := _is_dragging and _drag_button_index == MOUSE_BUTTON_LEFT
+				_left_press_tracking = false
+				if _drag_button_index == MOUSE_BUTTON_LEFT:
+					_is_dragging = false
+					_drag_button_index = 0
+				if not was_dragging and event.position.distance_to(_left_press_pos) < MAP_DRAG_START_DISTANCE:
+					var cell: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
+					if not map_manager.is_inside(cell):
+						return
+					_selected_cell = cell
+					queue_redraw()
+					var event_bus = AppRefs.event_bus()
+					if event_bus != null:
+						event_bus.map_cell_clicked.emit(cell)
 
 
 func _is_pointer_over_gui() -> bool:
@@ -1040,23 +1078,148 @@ func _is_pointer_over_gui() -> bool:
 
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
-	if not _is_dragging or _camera == null:
+	if _camera == null:
 		return
-	_camera.position -= event.relative / max(_zoom_scalar, 0.001)
+	if _drag_button_index == MOUSE_BUTTON_LEFT and _left_press_tracking:
+		if _is_deploy_preview_active():
+			_left_press_tracking = false
+			_is_dragging = false
+			_drag_button_index = 0
+			return
+		_drag_camera_from_mouse_motion(event, _left_press_pos)
+	elif _drag_button_index == MOUSE_BUTTON_RIGHT and _right_press_tracking:
+		_drag_camera_from_mouse_motion(event, _right_press_pos)
+
+
+func _drag_camera_from_mouse_motion(event: InputEventMouseMotion, press_pos: Vector2) -> void:
+	_drag_camera_from_relative_motion(event.position, press_pos, event.relative)
+
+
+func _drag_camera_from_relative_motion(current_pos: Vector2, press_pos: Vector2, relative: Vector2) -> void:
+	if not _is_dragging:
+		if current_pos.distance_to(press_pos) < MAP_DRAG_START_DISTANCE:
+			return
+		_is_dragging = true
+	_camera.position -= relative / max(_zoom_scalar, 0.001)
 	_camera.position = _clamp_camera_center(_camera.position)
 
 
+func _cancel_camera_drag(button_index: int) -> void:
+	if _drag_button_index != button_index:
+		return
+	match button_index:
+		MOUSE_BUTTON_LEFT:
+			_left_press_tracking = false
+		MOUSE_BUTTON_RIGHT:
+			_right_press_tracking = false
+	_is_dragging = false
+	_drag_button_index = 0
+
+
+func _handle_screen_touch(event: InputEventScreenTouch) -> void:
+	if event.pressed:
+		_active_touches[event.index] = event.position
+		if _active_touches.size() >= 2:
+			_begin_touch_pinch()
+	else:
+		_active_touches.erase(event.index)
+		if _pinch_active and (event.index == _pinch_touch_a or event.index == _pinch_touch_b):
+			_end_touch_pinch()
+		if _active_touches.is_empty():
+			_suppress_emulated_mouse_until_touches_released = false
+
+
+func _handle_screen_drag(event: InputEventScreenDrag) -> void:
+	if not _active_touches.has(event.index):
+		return
+	if not _pinch_active:
+		_active_touches[event.index] = event.position
+		return
+	if not _is_pinch_touch(event.index) or not _active_touches.has(_pinch_touch_a) or not _active_touches.has(_pinch_touch_b):
+		_active_touches[event.index] = event.position
+		return
+	if _is_deploy_preview_active():
+		_active_touches[event.index] = event.position
+		return
+	var old_a: Vector2 = _active_touches[_pinch_touch_a]
+	var old_b: Vector2 = _active_touches[_pinch_touch_b]
+	_active_touches[event.index] = event.position
+	var new_a: Vector2 = _active_touches[_pinch_touch_a]
+	var new_b: Vector2 = _active_touches[_pinch_touch_b]
+	_zoom_from_viewport_points(old_a, old_b, new_a, new_b)
+
+
+func _handle_magnify_gesture(event: InputEventMagnifyGesture) -> void:
+	if _is_pointer_over_gui() or _is_deploy_preview_active():
+		return
+	_zoom_at_viewport_positions(float(event.factor), event.position, event.position)
+
+
+func _begin_touch_pinch() -> void:
+	if _pinch_active or _is_deploy_preview_active():
+		return
+	var touch_indexes := _active_touches.keys()
+	if touch_indexes.size() < 2:
+		return
+	_pinch_touch_a = int(touch_indexes[0])
+	_pinch_touch_b = int(touch_indexes[1])
+	_pinch_active = true
+	_suppress_emulated_mouse_until_touches_released = true
+	_cancel_camera_drag(MOUSE_BUTTON_LEFT)
+
+
+func _end_touch_pinch() -> void:
+	_pinch_active = false
+	_pinch_touch_a = -1
+	_pinch_touch_b = -1
+
+
+func _is_pinch_touch(index: int) -> bool:
+	return index == _pinch_touch_a or index == _pinch_touch_b
+
+
+func _zoom_from_viewport_points(old_a: Vector2, old_b: Vector2, new_a: Vector2, new_b: Vector2) -> void:
+	var old_distance := old_a.distance_to(old_b)
+	var new_distance := new_a.distance_to(new_b)
+	if old_distance < PINCH_MIN_DISTANCE or new_distance < PINCH_MIN_DISTANCE:
+		return
+	var before_position := (old_a + old_b) * 0.5
+	var after_position := (new_a + new_b) * 0.5
+	_zoom_at_viewport_positions(new_distance / old_distance, before_position, after_position)
+
+
+func _is_deploy_preview_active() -> bool:
+	return (
+		_deploy_preview_cell != Vector2i(-1, -1)
+		or _deploy_locked_cell != Vector2i(-1, -1)
+		or not _deploy_range_preview_cells.is_empty()
+		or not _deploy_preview_visual_key.is_empty()
+	)
+
+
 func _zoom_at_mouse(factor: float) -> void:
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var mouse_position := viewport.get_mouse_position()
+	_zoom_at_viewport_positions(factor, mouse_position, mouse_position)
+
+
+func _zoom_at_viewport_positions(factor: float, before_position: Vector2, after_position: Vector2) -> void:
 	if _camera == null:
 		return
-	var before_world := get_global_mouse_position()
+	var before_world := _viewport_to_world(before_position)
 	var min_zoom := _fit_zoom
 	var max_zoom := _fit_zoom * MAX_ZOOM_MULTIPLIER
 	_zoom_scalar = clamp(_zoom_scalar * factor, min_zoom, max_zoom)
 	_apply_camera_zoom()
-	var after_world := get_global_mouse_position()
+	var after_world := _viewport_to_world(after_position)
 	_camera.position += before_world - after_world
 	_camera.position = _clamp_camera_center(_camera.position)
+
+
+func _viewport_to_world(viewport_position: Vector2) -> Vector2:
+	return get_canvas_transform().affine_inverse() * viewport_position
 
 
 func _fit_camera_to_map(reset_view: bool = true) -> void:
