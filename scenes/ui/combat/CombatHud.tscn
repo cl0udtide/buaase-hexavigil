@@ -174,6 +174,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("11_topchip")
 
@@ -470,7 +472,7 @@ alignment = 2
 
 [node name="ResourceChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup" unique_id=143598965]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(540, 72)
+custom_minimum_size = Vector2(660, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -506,13 +508,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 4.0
 offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 9
+theme_override_constants/separation = 6
 alignment = 2
 
 [node name="ActionPointResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=1767111546]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 56)
+custom_minimum_size = Vector2(124, 60)
 layout_mode = 2
 mouse_filter = 2
 
@@ -533,10 +537,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 17
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 19
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin" unique_id=1862485233]
 layout_mode = 2
@@ -545,7 +549,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=261924926]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("32_iconap")
@@ -563,13 +567,14 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=921489748]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=701873469]
 visible = false
-custom_minimum_size = Vector2(30, 22)
+custom_minimum_size = Vector2(42, 22)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
@@ -584,13 +589,14 @@ offset_right = -4.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="WoodResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=2031638811]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 56)
+custom_minimum_size = Vector2(124, 60)
 layout_mode = 2
 mouse_filter = 2
 
@@ -610,10 +616,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 25
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 19
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin" unique_id=660242077]
 layout_mode = 2
@@ -622,7 +628,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1543004957]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("33_iconwood")
@@ -640,13 +646,14 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1868586252]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1428997117]
 visible = false
-custom_minimum_size = Vector2(30, 22)
+custom_minimum_size = Vector2(42, 22)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
@@ -661,13 +668,14 @@ offset_right = -4.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="StoneResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=946219780]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 56)
+custom_minimum_size = Vector2(124, 60)
 layout_mode = 2
 mouse_filter = 2
 
@@ -687,10 +695,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 25
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 19
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin" unique_id=1070141140]
 layout_mode = 2
@@ -699,7 +707,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=1671956047]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("34_iconstone")
@@ -717,13 +725,14 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=650064189]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=790195570]
 visible = false
-custom_minimum_size = Vector2(30, 22)
+custom_minimum_size = Vector2(42, 22)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
@@ -738,13 +747,14 @@ offset_right = -4.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="ManaResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=569599095]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 56)
+custom_minimum_size = Vector2(124, 60)
 layout_mode = 2
 mouse_filter = 2
 
@@ -764,10 +774,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 26
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 19
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin" unique_id=588509389]
 layout_mode = 2
@@ -776,7 +786,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=84525083]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("35_iconmana")
@@ -794,13 +804,14 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1667809664]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1568509827]
 visible = false
-custom_minimum_size = Vector2(30, 22)
+custom_minimum_size = Vector2(42, 22)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
@@ -815,13 +826,14 @@ offset_right = -4.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="PrestigeResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=1594135027]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 56)
+custom_minimum_size = Vector2(124, 60)
 layout_mode = 2
 mouse_filter = 2
 
@@ -841,10 +853,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin" unique_id=1789613663]
 layout_mode = 2
@@ -853,7 +865,7 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1565540578]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("36_iconprestige")
@@ -871,13 +883,14 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1015055532]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1065418526]
 visible = false
-custom_minimum_size = Vector2(30, 22)
+custom_minimum_size = Vector2(42, 22)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
@@ -892,6 +905,7 @@ offset_right = -4.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
@@ -1553,4 +1567,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2

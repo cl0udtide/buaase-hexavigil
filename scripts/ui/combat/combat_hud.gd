@@ -15,7 +15,7 @@ signal shop_unit_purchase_requested(slot_index: int)
 signal wave_route_preview_toggled(enabled: bool)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
-const RESOURCE_ORDER: Array[StringName] = [&"ap", &"wood", &"stone", &"mana", &"prestige"]
+const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone", &"mana"]
 const CORE_HP_TITLE := "核心生命"
 
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
@@ -258,7 +258,7 @@ func set_core_hp(current: int, max_value: int) -> void:
 		_core_chip.tooltip_text = tooltip_value
 		_core_track.tooltip_text = tooltip_value
 		_core_fill.tooltip_text = tooltip_value
-	_core_label.text = CORE_HP_TITLE
+	_core_label.text = _format_core_hp_label()
 	_refresh_core_fill()
 
 
@@ -303,9 +303,19 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 		icon_texture.visible = texture != null
 		icon_label.visible = texture == null
 		icon_label.text = String(data.get("icon", _resource_default_icon(resource_key)))
-		value_label.text = String(data.get("value", "--"))
+		value_label.text = "%s\n%s" % [
+			String(data.get("label", _resource_display_name(resource_key))),
+			String(data.get("value", "--"))
+		]
 		var delta_text := String(data.get("delta", ""))
 		delta_label.text = delta_text
+		var delta_sign := int(data.get("delta_sign", 0))
+		if delta_sign < 0:
+			delta_label.add_theme_color_override("font_color", GameUiStyle.DANGER)
+		elif delta_sign > 0:
+			delta_label.add_theme_color_override("font_color", GameUiStyle.SUCCESS)
+		else:
+			delta_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 		var delta_visible := not delta_text.strip_edges().is_empty()
 		delta_label.visible = delta_visible
 		if delta_badge != null:
@@ -491,6 +501,7 @@ func _collect_resource_items() -> void:
 			"delta": item_root.get_node_or_null("ItemMargin/ItemRow/DeltaBadge/DeltaLabel")
 		}
 		_resource_item_controls[resource_key] = item
+	_order_resource_item_nodes()
 
 
 func _resource_node_prefix(resource_key: StringName) -> String:
@@ -507,6 +518,35 @@ func _resource_node_prefix(resource_key: StringName) -> String:
 			return "Prestige"
 		_:
 			return "Resource"
+
+
+func _order_resource_item_nodes() -> void:
+	if _resource_items_row == null:
+		return
+	var next_index := 0
+	for resource_key in RESOURCE_ORDER:
+		var item: Dictionary = _resource_item_controls.get(resource_key, {})
+		var root := item.get("root") as Control
+		if root == null or root.get_parent() != _resource_items_row:
+			continue
+		_resource_items_row.move_child(root, next_index)
+		next_index += 1
+
+
+func _resource_display_name(resource_key: StringName) -> String:
+	match resource_key:
+		&"ap":
+			return "行动力"
+		&"prestige":
+			return "声望"
+		&"wood":
+			return "木材"
+		&"stone":
+			return "石头"
+		&"mana":
+			return "魔力矿"
+		_:
+			return String(resource_key)
 
 
 func _resource_default_icon(resource_key: StringName) -> String:
@@ -634,6 +674,14 @@ func _style_top_cards() -> void:
 			var label := item_dict.get(label_key) as Label
 			if label == null:
 				continue
+			match label_key:
+				"value":
+					label.add_theme_font_size_override("font_size", 13)
+					label.add_theme_constant_override("line_spacing", 0)
+				"delta":
+					label.add_theme_font_size_override("font_size", 12)
+				"icon":
+					label.add_theme_font_size_override("font_size", 12)
 			label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 			label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 			label.add_theme_constant_override("shadow_offset_x", 0)
@@ -797,6 +845,12 @@ func _core_title_from_text(core_text: String) -> String:
 			continue
 		return title
 	return CORE_HP_TITLE
+
+
+func _format_core_hp_label() -> String:
+	if _core_hp_max <= 0:
+		return "%s --/--" % CORE_HP_TITLE
+	return "%s %d/%d" % [CORE_HP_TITLE, _core_hp_current, _core_hp_max]
 
 
 func _set_core_progress_from_text(core_text: String) -> void:
