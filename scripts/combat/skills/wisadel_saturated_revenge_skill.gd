@@ -47,7 +47,7 @@ func after_attack(target: Node, _damage_value: int) -> void:
 		return
 	var extra_hits := int(owner_unit.cfg.get("skill_overload_extra_hits", 3))
 	var extra_damage := _get_overload_hit_damage(owner_unit.get_effective_atk())
-	var extra_damage_type := owner_unit.damage_type
+	var extra_damage_type: int = owner_unit.damage_type
 	_play_overload_gunfire_effect(target)
 	for _index in range(extra_hits):
 		if not is_instance_valid(target) or int(target.get("current_hp")) <= 0:
