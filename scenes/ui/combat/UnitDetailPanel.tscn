@@ -507,7 +507,7 @@ theme_override_styles/pressed = ExtResource("15_button_primary")
 theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
 icon = ExtResource("18_iconconfirm")
-expand_icon = false
+expand_icon = true
 text = "购买"
 
 [node name="PurchaseReasonLabel" type="Label" parent="ContentMargin/MainVBox/Actions" unique_id=809795252]
@@ -530,7 +530,7 @@ theme_override_styles/pressed = ExtResource("15_button_primary")
 theme_override_styles/hover = ExtResource("15_button_primary")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
 icon = ExtResource("20_iconskillready")
-expand_icon = false
+expand_icon = true
 text = "激活技能"
 
 [node name="RetreatButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1465338668]
@@ -546,5 +546,5 @@ theme_override_styles/pressed = ExtResource("16_button_danger")
 theme_override_styles/hover = ExtResource("16_button_danger")
 theme_override_styles/disabled = ExtResource("17_button_disabled")
 icon = ExtResource("22_iconretreat")
-expand_icon = false
+expand_icon = true
 text = "撤退"

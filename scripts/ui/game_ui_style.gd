@@ -96,6 +96,8 @@ const AMBER_SOFT := Color(0.235, 0.160, 0.060, 1.0)
 const DANGER_SOFT := Color(0.220, 0.070, 0.060, 1.0)
 const SUCCESS_SOFT := Color(0.070, 0.170, 0.105, 1.0)
 const VIOLET_SOFT := Color(0.120, 0.105, 0.190, 1.0)
+const BUTTON_ICON_MAX_WIDTH := 18
+const BUTTON_ICON_MAX_WIDTH_COMPACT := 14
 
 static func texture_box(_path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
@@ -128,6 +130,9 @@ static func center_label_text(label: Label) -> void:
 static func set_button_texture_icon(button: Button, texture: Texture2D, placement: StringName = &"left", padding: float = 8.0) -> TextureRect:
 	if button == null:
 		return null
+	var icon_max_width := _button_icon_max_width(button, placement)
+	button.add_theme_constant_override("icon_max_width", icon_max_width)
+	button.set("expand_icon", true)
 	var fitted_icon := button.get_node_or_null("FittedIcon") as TextureRect
 	if placement == &"overlay_center":
 		button.icon = null
@@ -138,6 +143,7 @@ static func set_button_texture_icon(button: Button, texture: Texture2D, placemen
 			fitted_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			fitted_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			button.add_child(fitted_icon)
+		fit_centered_icon(fitted_icon, Vector2(icon_max_width, icon_max_width))
 		fitted_icon.texture = texture
 		fitted_icon.visible = texture != null
 		return fitted_icon
@@ -145,9 +151,17 @@ static func set_button_texture_icon(button: Button, texture: Texture2D, placemen
 		fitted_icon.visible = false
 	button.icon = texture
 	button.add_theme_constant_override("h_separation", int(maxf(4.0, padding * 0.5)))
-	button.set("expand_icon", false)
 	button.set("icon_alignment", HORIZONTAL_ALIGNMENT_CENTER if placement == &"center" else HORIZONTAL_ALIGNMENT_LEFT)
 	return null
+
+
+static func _button_icon_max_width(button: Button, placement: StringName) -> int:
+	var height := button.custom_minimum_size.y
+	if height <= 0.0:
+		height = button.size.y
+	if height > 0.0:
+		return int(clampf(floorf(height * 0.58), BUTTON_ICON_MAX_WIDTH_COMPACT, 24.0))
+	return BUTTON_ICON_MAX_WIDTH_COMPACT if placement == &"center" else BUTTON_ICON_MAX_WIDTH
 
 
 static func fit_centered_icon(control: Control, icon_size: Vector2) -> void:
