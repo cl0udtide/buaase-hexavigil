@@ -46,6 +46,8 @@
 [ext_resource type="Texture2D" uid="uid://hm7kf3qhrwhq" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_speed_button"]
+
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
 anchors_preset = 15
@@ -175,6 +177,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("11_topchip")
 
@@ -389,10 +393,13 @@ layout_mode = 2
 
 [node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1931574895]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 13.0
+offset_right = -8.0
+offset_bottom = -13.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -424,7 +431,7 @@ theme_override_constants/margin_bottom = 13
 
 [node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = -16
 alignment = 1
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
@@ -433,11 +440,12 @@ custom_minimum_size = Vector2(56, 46)
 layout_mode = 2
 focus_mode = 0
 theme_override_constants/icon_max_width = 16
-theme_override_styles/normal = ExtResource("21_buttonbase")
-theme_override_styles/pressed = ExtResource("22_buttonactive")
-theme_override_styles/hover = ExtResource("22_buttonactive")
-theme_override_styles/disabled = ExtResource("23_buttondisabled")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_speed_button")
 icon = ExtResource("37_iconpause")
+flat = true
 icon_alignment = 1
 expand_icon = true
 
@@ -446,22 +454,24 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("21_buttonbase")
-theme_override_styles/pressed = ExtResource("22_buttonactive")
-theme_override_styles/hover = ExtResource("22_buttonactive")
-theme_override_styles/disabled = ExtResource("23_buttondisabled")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_speed_button")
 text = "1X"
+flat = true
 
 [node name="Speed2Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("21_buttonbase")
-theme_override_styles/pressed = ExtResource("22_buttonactive")
-theme_override_styles/hover = ExtResource("22_buttonactive")
-theme_override_styles/disabled = ExtResource("23_buttondisabled")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_speed_button")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_speed_button")
 text = "2X"
+flat = true
 
 [node name="RightResourceGroup" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow" unique_id=161627506]
 unique_name_in_owner = true
@@ -507,6 +517,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 4.0
 offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 9
 alignment = 2
@@ -564,27 +576,7 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=921489748]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=701873469]
-visible = false
-custom_minimum_size = Vector2(30, 22)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("13_resdelta")
-
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=211448428]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
+theme_override_constants/line_spacing = -3
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
@@ -641,56 +633,43 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1868586252]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/line_spacing = -3
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1428997117]
-visible = false
-custom_minimum_size = Vector2(30, 22)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("13_resdelta")
-
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1031293433]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="ProjectedDeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem"]
-visible = false
-layout_mode = 0
+[node name="ProjectedDeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem" unique_id=1500726270]
+z_index = 6
+layout_mode = 1
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -24.0
-offset_top = 2.0
-offset_right = 24.0
-offset_bottom = 24.0
+offset_left = -41.0
+offset_top = -24.0
+offset_right = 7.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(1.705372, 2.1600008)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
 
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ProjectedDeltaBadge"]
-layout_mode = 0
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ProjectedDeltaBadge" unique_id=1364748231]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
+offset_left = 5.2774267
+offset_top = -1.3888878
+offset_right = -2.7225723
+offset_bottom = -0.3888874
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "--"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
@@ -747,56 +726,43 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=650064189]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/line_spacing = -3
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=790195570]
-visible = false
-custom_minimum_size = Vector2(30, 22)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("13_resdelta")
-
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1943487582]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="ProjectedDeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem"]
-visible = false
-layout_mode = 0
+[node name="ProjectedDeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem" unique_id=676300582]
+z_index = 6
+layout_mode = 1
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -24.0
-offset_top = 2.0
-offset_right = 24.0
-offset_bottom = 24.0
+offset_left = -42.0
+offset_top = -24.0
+offset_right = 6.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(1.7224132, 2.1600008)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
 
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ProjectedDeltaBadge"]
-layout_mode = 0
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ProjectedDeltaBadge" unique_id=97016413]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
+offset_left = 5.273304
+offset_top = -1.3888878
+offset_right = -2.726696
+offset_bottom = -0.3888874
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "--"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
@@ -853,56 +819,43 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1667809664]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/line_spacing = -3
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1568509827]
-visible = false
-custom_minimum_size = Vector2(30, 22)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("13_resdelta")
-
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1189598343]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="ProjectedDeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem"]
-visible = false
-layout_mode = 0
+[node name="ProjectedDeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem" unique_id=932991451]
+z_index = 6
+layout_mode = 1
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -24.0
-offset_top = 2.0
-offset_right = 24.0
-offset_bottom = 24.0
+offset_left = -47.0
+offset_top = -24.0
+offset_right = 1.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(1.9243755, 2.1600008)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("13_resdelta")
 
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ProjectedDeltaBadge"]
-layout_mode = 0
+[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ProjectedDeltaBadge" unique_id=1653833539]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
+offset_left = 5.230045
+offset_top = -1.3888876
+offset_right = -2.7699547
+offset_bottom = -0.3888874
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 7
+text = "--"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
@@ -959,33 +912,14 @@ vertical_alignment = 1
 [node name="ValueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1015055532]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1065418526]
-visible = false
-custom_minimum_size = Vector2(30, 22)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("13_resdelta")
-
-[node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=307323838]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = -2.0
-grow_horizontal = 2
-grow_vertical = 2
+theme_override_constants/line_spacing = -3
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 0
 offset_left = 66.0
 offset_top = 96.0
@@ -1004,6 +938,7 @@ grow_vertical = 2
 
 [node name="RightColumnSlot" type="Control" parent="HudChromeLayer" unique_id=1176662936]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 0
 offset_left = 1522.0
 offset_top = 104.0
@@ -1649,4 +1584,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2

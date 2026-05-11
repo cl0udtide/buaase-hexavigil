@@ -687,9 +687,9 @@ func _make_resource_item(resource_key: StringName, icon_text: String, value_text
 
 func _format_resource_delta(delta_value: int) -> String:
 	if delta_value > 0:
-		return "↑ %d" % delta_value
+		return "↑     %d" % delta_value
 	if delta_value < 0:
-		return "↓ %d" % absi(delta_value)
+		return "↓     %d" % absi(delta_value)
 	return ""
 
 
