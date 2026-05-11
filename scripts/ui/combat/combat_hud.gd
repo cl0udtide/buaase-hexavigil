@@ -26,6 +26,10 @@ const MESSAGE_CHIP_BASE_Z := 0
 const MESSAGE_CHIP_WARNING_Z := 1
 const MESSAGE_CHIP_CONTENT_Z := 2
 const CORE_FILL_INSET := 2.0
+const RESOURCE_DELTA_GAIN_COLOR := Color(0.440, 0.650, 0.470, 1.0)
+const RESOURCE_DELTA_LOSS_COLOR := Color(0.720, 0.340, 0.310, 1.0)
+const RESOURCE_DELTA_NEUTRAL_COLOR := Color(0.850, 0.850, 0.800, 1.0)
+const RESOURCE_DELTA_OUTLINE_SIZE := 0
 const MESSAGE_WARNING_TOKENS := [
 	"失败",
 	"无法",
@@ -148,6 +152,7 @@ func _ready() -> void:
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_toggle_base.visible = true
 	_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
 	if resource_base != null:
@@ -288,7 +293,7 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 		var value_label := item.get("value") as Label
 		var delta_label := item.get("delta") as Label
 		var delta_badge := item.get("delta_badge") as Control
-		if root == null or icon_label == null or icon_texture == null or value_label == null or delta_label == null:
+		if root == null or icon_label == null or icon_texture == null or value_label == null:
 			continue
 		var data: Dictionary = resource_items.get(resource_key, {})
 		if data.is_empty():
@@ -305,19 +310,18 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 			String(data.get("label", _resource_display_name(resource_key))),
 			String(data.get("value", "--"))
 		]
-		var delta_text := String(data.get("delta", ""))
-		delta_label.text = delta_text
+		var delta_text := String(data.get("delta", "--")).strip_edges()
 		var delta_sign := int(data.get("delta_sign", 0))
-		if delta_sign < 0:
-			delta_label.add_theme_color_override("font_color", GameUiStyle.DANGER)
-		elif delta_sign > 0:
-			delta_label.add_theme_color_override("font_color", GameUiStyle.SUCCESS)
-		else:
-			delta_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-		var delta_visible := not delta_text.strip_edges().is_empty()
-		delta_label.visible = delta_visible
+		if delta_text.is_empty():
+			delta_text = "--"
+			delta_sign = 0
+		if delta_label != null:
+			delta_label.text = delta_text
+			_apply_resource_delta_label_style(delta_label, delta_sign)
+			delta_label.visible = true
 		if delta_badge != null:
-			delta_badge.visible = delta_visible
+			delta_badge.visible = true
+			delta_badge.z_index = 6
 
 
 func set_relics(relic_ids: Array[StringName]) -> void:
@@ -325,6 +329,20 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 		_relic_strip.set_relics(relic_ids)
 	if _relic_panel != null and _relic_panel.has_method("set_relics"):
 		_relic_panel.set_relics(relic_ids)
+
+
+func _apply_resource_delta_label_style(label: Label, delta_sign: int) -> void:
+	var color := RESOURCE_DELTA_NEUTRAL_COLOR
+	if delta_sign < 0:
+		color = RESOURCE_DELTA_LOSS_COLOR
+	elif delta_sign > 0:
+		color = RESOURCE_DELTA_GAIN_COLOR
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", color)
+	label.add_theme_constant_override("outline_size", RESOURCE_DELTA_OUTLINE_SIZE)
+	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	label.add_theme_constant_override("shadow_offset_x", 0)
+	label.add_theme_constant_override("shadow_offset_y", 0)
 
 
 func toggle_relic_panel() -> void:
@@ -387,10 +405,17 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	GameUiStyle.set_button_texture_icon(_pause_button, pause_texture, &"center")
 	GameUiStyle.set_button_texture_icon(_speed_1_button, null)
 	GameUiStyle.set_button_texture_icon(_speed_2_button, null)
-	_style_top_button(_pause_button, pause_selected)
+	_style_top_button(_pause_button, false)
 	_style_top_button(_speed_1_button, false)
 	_style_top_button(_speed_2_button, false)
-	call_deferred("_place_speed_active_overlay", _speed_1_button if speed_1_selected else (_speed_2_button if speed_2_selected else null))
+	var active_time_button: Button = null
+	if pause_selected:
+		active_time_button = _pause_button
+	elif speed_1_selected:
+		active_time_button = _speed_1_button
+	elif speed_2_selected:
+		active_time_button = _speed_2_button
+	call_deferred("_place_speed_active_overlay", active_time_button)
 
 
 func set_operators(operators: Array[Dictionary]) -> void:
@@ -489,10 +514,10 @@ func _collect_resource_items() -> void:
 			push_warning("%sResourceItem is missing from CombatHud scene." % _resource_node_prefix(resource_key))
 			continue
 		var projected_delta_badge := item_root.get_node_or_null("ProjectedDeltaBadge") as Control
-		var inline_delta_badge := item_root.get_node_or_null("ItemMargin/ItemRow/DeltaBadge") as Control
-		var delta_badge := projected_delta_badge if projected_delta_badge != null else inline_delta_badge
-		if projected_delta_badge != null and inline_delta_badge != null:
-			inline_delta_badge.visible = false
+		if projected_delta_badge != null:
+			projected_delta_badge.visible = true
+			projected_delta_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			projected_delta_badge.z_index = 6
 		var item := {
 			"root": item_root,
 			"base": item_root.get_node_or_null("ResourceItemBase"),
@@ -500,8 +525,8 @@ func _collect_resource_items() -> void:
 			"icon": item_root.get_node_or_null("ItemMargin/ItemRow/IconLabel"),
 			"icon_texture": item_root.get_node_or_null("ItemMargin/ItemRow/IconTexture"),
 			"value": item_root.get_node_or_null("ItemMargin/ItemRow/ValueLabel"),
-			"delta_badge": delta_badge,
-			"delta": delta_badge.get_node_or_null("DeltaLabel") if delta_badge != null else null
+			"delta_badge": projected_delta_badge,
+			"delta": projected_delta_badge.get_node_or_null("DeltaLabel") if projected_delta_badge != null else null
 		}
 		_resource_item_controls[resource_key] = item
 	_order_resource_item_nodes()
@@ -589,12 +614,10 @@ func _apply_chip_icon(chip: Control, icon_id: StringName) -> void:
 	icon.visible = true
 
 
-func _style_top_button(button: Button, selected: bool) -> void:
+func _style_top_button(button: Button, _selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
-	button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(selected))
-	button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.compact_button(false))
+	button.toggle_mode = false
+	button.set_pressed_no_signal(false)
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
@@ -614,7 +637,7 @@ func _place_speed_active_overlay(_button: Button) -> void:
 	var button_rect := _button.get_global_rect()
 	var parent_to_local := overlay_parent.get_global_transform_with_canvas().affine_inverse()
 	var local_position := parent_to_local * button_rect.position
-	var inset := Vector2(-2.0, -3.0)
+	var inset := Vector2.ZERO
 	var top_left := local_position + inset
 	var bottom_right := local_position + button_rect.size - inset
 	_speed_active_overlay.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
@@ -685,7 +708,7 @@ func _style_top_cards() -> void:
 			GameUiStyle.center_label_text(label)
 		var delta := item_dict.get("delta") as Label
 		if delta != null:
-			delta.add_theme_color_override("font_color", GameUiStyle.SUCCESS)
+			_apply_resource_delta_label_style(delta, 0)
 
 
 func _setup_message_warning_overlay() -> void:
