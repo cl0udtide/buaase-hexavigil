@@ -177,6 +177,8 @@ func _show_near_mouse() -> void:
 	visible = true
 	_fit_to_content()
 	await get_tree().process_frame
+	if not is_inside_tree():
+		return
 	_fit_to_content()
 	var viewport_size := get_viewport_rect().size
 	var desired := get_viewport().get_mouse_position() + POPUP_OFFSET

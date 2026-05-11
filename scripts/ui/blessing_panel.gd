@@ -29,6 +29,7 @@ func show_choices(choice_ids: Array[StringName]) -> void:
 			"selectable": true,
 			"choice_mode": true
 		})
+		card.set_meta("audio_cue", &"blessing_chosen")
 		card.pressed.connect(_on_choice_pressed)
 		_choice_list.add_child(card)
 

@@ -187,6 +187,7 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"cost_badge_text": str(int(cfg.get("ap_cost", 0))),
 		"selected": selected,
 		"disabled": cfg.is_empty(),
+		"audio_cue": &"ui_card_select",
 		"min_height": 108.0
 	}
 
@@ -233,6 +234,7 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"selected": slot_index == _selected_shop_slot_index,
 		"disabled": sold or unit_id == StringName() or _current_phase != GameEnums.PHASE_DAY or _current_prestige < cost,
 		"pressable_when_disabled": unit_id != StringName(),
+		"audio_cue": &"ui_card_select",
 		"min_height": 102.0
 	})
 	card.connect(&"pressed", _on_shop_card_pressed.bind(slot_index))
@@ -247,6 +249,7 @@ func _make_empty_state(text_value: String) -> Control:
 		"accent": GameUiStyle.STROKE_SOFT,
 		"title_color": GameUiStyle.TEXT_DIM,
 		"disabled": true,
+		"audio_cue": &"ui_click",
 		"min_height": 96.0
 	})
 	return card

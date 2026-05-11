@@ -111,6 +111,7 @@ func _refresh_cards() -> void:
 			"selected": buff_id == _selected_buff_id,
 			"compact": true
 		})
+		card.set_meta("audio_cue", &"ui_card_select")
 		card.pressed.connect(_on_card_pressed)
 		_card_grid.add_child(card)
 	_empty_label.visible = visible_ids.is_empty()
@@ -152,6 +153,7 @@ func _bind_filter_buttons() -> void:
 		button.focus_mode = Control.FOCUS_NONE
 		button.set_custom_minimum_size(Vector2(72.0, 32.0))
 		button.set_meta("category", filter_def.get("category", &"all"))
+		button.set_meta("audio_cue", &"ui_tab_switch")
 		_filter_bar.add_child(button)
 		var category := StringName(filter_def.get("category", &"all"))
 		button.pressed.connect(_on_filter_pressed.bind(category))

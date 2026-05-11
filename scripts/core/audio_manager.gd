@@ -7,10 +7,28 @@ const BGM_NIGHT := &"night"
 const BGM_BOSS := &"boss"
 
 const SFX_UNIT_DEPLOY := &"unit_deploy"
+const SFX_UNIT_REMOVED := &"unit_removed"
 const SFX_BUILD_PLACE := &"build_place"
+const SFX_BUILD_FAILED := &"build_failed"
 const SFX_FOG_REVEAL := &"fog_reveal"
 const SFX_EVENT_TRIGGER := &"event_trigger"
 const SFX_RESOURCE_COLLECT := &"resource_collect"
+const SFX_BLESSING_CHOSEN := &"blessing_chosen"
+const SFX_UI_CLICK := &"ui_click"
+const SFX_UI_CONFIRM := &"ui_confirm"
+const SFX_UI_CANCEL := &"ui_cancel"
+const SFX_UI_PANEL_OPEN := &"ui_panel_open"
+const SFX_UI_PANEL_CLOSE := &"ui_panel_close"
+const SFX_UI_ERROR := &"ui_error"
+const SFX_UI_TAB_SWITCH := &"ui_tab_switch"
+const SFX_UI_TRANSITION := &"ui_transition"
+const SFX_UI_REFRESH := &"ui_refresh"
+const SFX_UI_PURCHASE := &"ui_purchase"
+const SFX_UI_RELIC_OPEN := &"ui_relic_open"
+const SFX_UI_CARD_SELECT := &"ui_card_select"
+const SFX_UI_PAUSE := &"ui_pause"
+const SFX_UI_SPEED_TOGGLE := &"ui_speed_toggle"
+const SFX_UI_SLIDER := &"ui_slider"
 
 const FADE_SECONDS := 0.65
 const SFX_POOL_SIZE := 8
@@ -25,7 +43,31 @@ var bgm_paths := {
 	BGM_DAY: "res://assets/audio/bgm/day_1.ogg",
 	BGM_NIGHT: "res://assets/audio/bgm/night_1.ogg"
 }
-var sfx_paths := {}
+var sfx_paths := {
+	SFX_UNIT_DEPLOY: "res://assets/audio/sfx/unit_deploy.ogg",
+	SFX_UNIT_REMOVED: "res://assets/audio/sfx/unit_removed.ogg",
+	SFX_BUILD_PLACE: "res://assets/audio/sfx/build_place.ogg",
+	SFX_BUILD_FAILED: "res://assets/audio/sfx/ui_error.ogg",
+	SFX_FOG_REVEAL: "res://assets/audio/sfx/fog_reveal.ogg",
+	SFX_EVENT_TRIGGER: "res://assets/audio/sfx/event_trigger.ogg",
+	SFX_RESOURCE_COLLECT: "res://assets/audio/sfx/resource_collect.ogg",
+	SFX_BLESSING_CHOSEN: "res://assets/audio/sfx/blessing_chosen.ogg",
+	SFX_UI_CLICK: "res://assets/audio/sfx/ui_click.ogg",
+	SFX_UI_CONFIRM: "res://assets/audio/sfx/ui_confirm.ogg",
+	SFX_UI_CANCEL: "res://assets/audio/sfx/ui_cancel.ogg",
+	SFX_UI_PANEL_OPEN: "res://assets/audio/sfx/ui_panel_open.ogg",
+	SFX_UI_PANEL_CLOSE: "res://assets/audio/sfx/ui_panel_close.ogg",
+	SFX_UI_ERROR: "res://assets/audio/sfx/ui_error.ogg",
+	SFX_UI_TAB_SWITCH: "res://assets/audio/sfx/ui_tab_switch.ogg",
+	SFX_UI_TRANSITION: "res://assets/audio/sfx/ui_transition.ogg",
+	SFX_UI_REFRESH: "res://assets/audio/sfx/ui_refresh.ogg",
+	SFX_UI_PURCHASE: "res://assets/audio/sfx/ui_purchase.ogg",
+	SFX_UI_RELIC_OPEN: "res://assets/audio/sfx/ui_relic_open.ogg",
+	SFX_UI_CARD_SELECT: "res://assets/audio/sfx/ui_card_select.ogg",
+	SFX_UI_PAUSE: "res://assets/audio/sfx/ui_transition.ogg",
+	SFX_UI_SPEED_TOGGLE: "res://assets/audio/sfx/ui_transition.ogg",
+	SFX_UI_SLIDER: "res://assets/audio/sfx/ui_click.ogg"
+}
 
 var _bgm_player: AudioStreamPlayer
 var _sfx_players: Array[AudioStreamPlayer] = []
@@ -171,9 +213,13 @@ func _bind_events() -> void:
 	event_bus.run_ended.connect(_on_run_ended)
 	event_bus.unit_deployed.connect(_on_unit_deployed)
 	event_bus.building_placed.connect(_on_building_placed)
+	event_bus.build_action_result.connect(_on_build_action_result)
 	event_bus.fog_revealed.connect(_on_fog_revealed)
 	event_bus.random_event_triggered.connect(_on_random_event_triggered)
 	event_bus.resource_collected.connect(_on_resource_collected)
+	event_bus.unit_removed.connect(_on_unit_removed)
+	event_bus.shop_action_result.connect(_on_shop_action_result)
+	event_bus.blessing_chosen.connect(_on_blessing_chosen)
 	event_bus.audio_cue_requested.connect(_on_audio_cue_requested)
 
 
@@ -249,6 +295,11 @@ func _on_building_placed(_building_runtime_id: int, _building_id: StringName, _c
 	play_build_place_sfx()
 
 
+func _on_build_action_result(_building_id: StringName, _cell: Vector2i, result: Dictionary) -> void:
+	if not bool(result.get("ok", false)):
+		play_sfx(SFX_BUILD_FAILED)
+
+
 func _on_fog_revealed(_cells: Array[Vector2i]) -> void:
 	play_fog_reveal_sfx()
 
@@ -259,6 +310,25 @@ func _on_random_event_triggered(_event_id: StringName, _cell: Vector2i) -> void:
 
 func _on_resource_collected(_cell: Vector2i, _resource_type: StringName, _amount: int) -> void:
 	play_resource_collect_sfx()
+
+
+func _on_unit_removed(_unit_runtime_id: int, _reason: int) -> void:
+	play_sfx(SFX_UNIT_REMOVED)
+
+
+func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
+	if not bool(result.get("ok", false)):
+		play_sfx(SFX_UI_ERROR)
+		return
+	match action:
+		&"buy":
+			play_sfx(SFX_UI_PURCHASE)
+		&"refresh":
+			play_sfx(SFX_UI_REFRESH)
+
+
+func _on_blessing_chosen(_buff_id: StringName) -> void:
+	play_sfx(SFX_BLESSING_CHOSEN)
 
 
 func _on_audio_cue_requested(cue_key: StringName) -> void:
