@@ -95,16 +95,12 @@ const MESSAGE_TEXT_OVERRIDES := {
 	"WORLD_NOT_READY": "操作失败：战场节点尚未就绪"
 }
 
-const WAVE_PREVIEW_MIN_TEXT_HEIGHT := 62.0
-const WAVE_PREVIEW_LINE_HEIGHT := 19.0
-
 var _cards_by_operator_key: Dictionary = {}
 var _resource_item_controls: Dictionary = {}
 var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
 var _core_hp_current := 0
 var _core_hp_max := 0
-var _wave_preview_text_min_height := WAVE_PREVIEW_MIN_TEXT_HEIGHT
 var _message_warning_overlay: NinePatchRect
 
 @onready var _settings_button: Button = %SettingsButton
@@ -137,7 +133,7 @@ var _message_warning_overlay: NinePatchRect
 @onready var _relic_panel: Control = %RelicPanel
 @onready var _wave_preview_panel: Control = %WavePreviewPanel
 @onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
-@onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
+@onready var _wave_route_toggle: Button = %WaveRouteToggle
 @onready var _wave_preview_label: Label = %WavePreviewLabel
 @onready var _deck_panel: Control = %DeployDeck
 @onready var _deck_scroll: ScrollContainer = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
@@ -166,32 +162,18 @@ func _ready() -> void:
 	_core_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.resized.connect(_refresh_core_fill)
 	_collect_resource_items()
-	_apply_frame_margins()
 	_style_top_cards()
 	_setup_message_warning_overlay()
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_y", 0)
-	GameUiStyle.center_label_text(_wave_preview_title_label)
 	_wave_preview_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_wave_preview_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_label.add_theme_constant_override("shadow_offset_x", 0)
 	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 0)
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	_wave_route_toggle.set_custom_minimum_size(Vector2(64.0, 26.0))
-	_wave_route_toggle.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_wave_route_toggle.size_flags_vertical = Control.SIZE_SHRINK_END
 	_style_wave_route_toggle()
-	GameUiStyle.set_button_texture_icon(_wave_route_toggle, UiArtRegistry.get_catalog_icon(&"map_range"), &"left", 6.0)
-	var wave_header := _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent/WavePreviewHeader") as HBoxContainer
-	if wave_header != null:
-		wave_header.custom_minimum_size.y = 34.0
-		wave_header.clip_contents = true
-	var wave_content := _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent") as Control
-	if wave_content != null:
-		wave_content.clip_contents = true
-	_wave_preview_panel.clip_contents = true
 	_setup_deploy_deck_scroll()
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -386,7 +368,6 @@ func close_top_panel() -> bool:
 func set_wave_preview_text(text_value: String, show_panel: bool = true) -> void:
 	_wave_preview_label.text = text_value
 	_wave_preview_panel.visible = show_panel and not text_value.strip_edges().is_empty()
-	_resize_wave_preview_panel(text_value)
 
 
 func set_wave_route_preview_enabled(enabled: bool) -> void:
@@ -485,12 +466,6 @@ func clear_unit_detail() -> void:
 		_detail_panel.clear_unit()
 
 
-func _resize_wave_preview_panel(text_value: String) -> void:
-	var line_count: int = max(text_value.count("\n") + 1, 1)
-	_wave_preview_text_min_height = maxf(WAVE_PREVIEW_MIN_TEXT_HEIGHT, float(line_count) * WAVE_PREVIEW_LINE_HEIGHT)
-	_wave_preview_label.custom_minimum_size.y = _wave_preview_text_min_height
-
-
 func _style_button(button: Button, accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
 	button.add_theme_stylebox_override("normal", GameUiStyle.button(accent))
@@ -503,7 +478,6 @@ func _style_button(button: Button, accent: Color) -> void:
 
 
 func _style_wave_route_toggle() -> void:
-	GameUiStyle.center_button_text(_wave_route_toggle)
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -657,13 +631,6 @@ func _place_speed_active_overlay(_button: Button) -> void:
 	_speed_active_overlay.offset_right = bottom_right.x
 	_speed_active_overlay.offset_bottom = bottom_right.y
 	_speed_active_overlay.visible = true
-
-
-func _apply_frame_margins() -> void:
-	GameUiStyle.apply_frame_margin(_wave_preview_panel.get_node_or_null("WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
-	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
-	GameUiStyle.apply_frame_margin(_legend_panel.get_node_or_null("LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
-	GameUiStyle.apply_frame_margin(get_node_or_null("InteractionLayer/DragGhost/GhostMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
 func _setup_deploy_deck_scroll() -> void:
