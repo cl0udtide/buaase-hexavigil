@@ -4,6 +4,7 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const BossController = preload("res://scripts/enemy/boss_controller.gd")
 const EnemyMovementController = preload("res://scripts/enemy/enemy_movement_controller.gd")
 const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controller.gd")
+const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
@@ -26,6 +27,8 @@ const IDLE_MOTION_GROUND_BOB_Y := -0.8
 const IDLE_MOTION_FLYING_BOB_Y := -2.4
 const IDLE_MOTION_MIN_SECONDS := 1.7
 const IDLE_MOTION_MAX_SECONDS := 2.45
+const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
+const DEFAULT_STATUS_EFFECT_SIZE := Vector2(112.0, 112.0)
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -46,14 +49,10 @@ var _magic_vulnerability_effects: Dictionary = {}
 var _dot_effects: Dictionary = {}
 var _stun_timer := 0.0
 var _bind_timer := 0.0
-var _necrosis_accum := 0.0
-var _necrosis_burst_timer := 0.0
-var _necrosis_vulnerability := 0.0
-var _necrosis_dot_damage_per_sec := 0.0
-var _necrosis_dot_carry := 0.0
 var _shield_hp := 0
 var _max_shield_hp := 0
 var _regen_carry := 0.0
+var _regen_effect_cooldown := 0.0
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
 var _attack_lunge_tween: Tween = null
@@ -120,6 +119,7 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	_max_shield_hp = max(int(cfg.get("shield_hp", 0)), 0)
 	_shield_hp = _max_shield_hp
 	_regen_carry = 0.0
+	_regen_effect_cooldown = 0.0
 	current_cell = spawn_cell
 	facing = Vector2i.RIGHT
 	_is_dead = false
@@ -166,7 +166,9 @@ func receive_damage(value: int, damage_type: int) -> void:
 	final_damage = max(final_damage - shield_absorbed, 0)
 	current_hp = max(current_hp - final_damage, 0)
 	_update_status_view()
-	_play_hit_effect()
+	if shield_absorbed > 0:
+		_play_shield_absorb_effect()
+	_play_hit_effect(damage_type)
 	var shield_text := "，护盾吸收 %d，护盾 %d" % [shield_absorbed, _shield_hp] if shield_absorbed > 0 else ""
 	_debug_log("敌人 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d%s" % [_debug_name(), runtime_id, _damage_type_text(damage_type), value, final_damage, current_hp, max_hp, shield_text])
 	if current_hp == 0 and not _is_dead:
@@ -180,6 +182,7 @@ func receive_damage(value: int, damage_type: int) -> void:
 
 
 func apply_defeat_effects() -> void:
+	_play_defeat_effect()
 	_apply_death_area_damage()
 	_spawn_death_enemies()
 
@@ -187,7 +190,10 @@ func apply_defeat_effects() -> void:
 func apply_push(direction: Vector2i, tiles: int) -> bool:
 	if _is_dead:
 		return false
-	return _movement_controller.apply_push(direction, tiles) if _movement_controller != null else false
+	var pushed: bool = _movement_controller.apply_push(direction, tiles) if _movement_controller != null else false
+	if pushed:
+		_play_push_pull_effect(direction)
+	return pushed
 
 
 func apply_relocate_to_cell(cell: Vector2i) -> bool:
@@ -201,77 +207,133 @@ func apply_relocate_to_cell(cell: Vector2i) -> bool:
 		return false
 	if not map_manager.is_walkable(cell):
 		return false
+	var old_position := global_position
+	var new_position: Vector2 = map_manager.cell_to_world(cell)
 	current_cell = cell
-	global_position = map_manager.cell_to_world(cell)
+	global_position = new_position
 	clear_blocked()
 	recalc_path()
+	_play_directional_streak_effect((old_position + new_position) * 0.5, new_position - old_position)
 	_debug_log("敌人 %s#%d 被牵引回格子 %s" % [_debug_name(), runtime_id, current_cell])
 	return true
 
 
 func apply_stun(duration: float) -> void:
+	var was_active := _stun_timer > 0.0
 	_stun_timer = max(_stun_timer, duration)
+	if not was_active:
+		play_follow_effect(
+			"res://assets/effects/auras/stun_star_small_strip.png",
+			duration,
+			8,
+			8,
+			10.0,
+			Vector2(84.0, 84.0),
+			true,
+			Vector2(0.0, -38.0),
+			26
+		)
 
 
 func apply_bind(duration: float) -> void:
+	var was_active := _bind_timer > 0.0
 	_bind_timer = max(_bind_timer, duration)
+	if not was_active:
+		play_follow_effect(
+			"res://assets/effects/common/slow_bind_snare_strip.png",
+			duration,
+			6,
+			6,
+			12.0,
+			Vector2(104.0, 80.0),
+			true,
+			Vector2.ZERO,
+			23
+		)
 
 
 func apply_move_speed_multiplier(effect_key: StringName, multiplier: float, duration: float) -> void:
 	if duration <= 0.0:
 		return
+	var was_active := _move_speed_effects.has(effect_key)
 	_move_speed_effects[effect_key] = {
 		"value": clamp(multiplier, 0.0, 1.0),
 		"remaining": duration
 	}
+	if not was_active and multiplier < 1.0:
+		play_follow_effect(
+			"res://assets/effects/common/slow_bind_snare_strip.png",
+			duration,
+			6,
+			6,
+			12.0,
+			Vector2(96.0, 72.0),
+			true,
+			Vector2.ZERO,
+			22
+		)
 	_refresh_status_multipliers()
 
 
 func apply_defense_shred(effect_key: StringName, value: int, duration: float) -> void:
+	var was_active := _defense_shred_effects.has(effect_key)
 	_apply_number_status(_defense_shred_effects, effect_key, value, duration)
+	if not was_active:
+		play_follow_effect(
+			"res://assets/effects/common/armor_break_mark_strip.png",
+			duration,
+			6,
+			6,
+			12.0,
+			Vector2(92.0, 92.0),
+			true
+		)
 
 
 func apply_resistance_shred(effect_key: StringName, value: int, duration: float) -> void:
+	var was_active := _resistance_shred_effects.has(effect_key)
 	_apply_number_status(_resistance_shred_effects, effect_key, value, duration)
+	if not was_active:
+		play_follow_effect(
+			"res://assets/effects/common/resistance_shred_mark_strip.png",
+			duration,
+			6,
+			6,
+			12.0,
+			Vector2(92.0, 92.0),
+			true
+		)
 
 
 func apply_physical_vulnerability(effect_key: StringName, multiplier: float, duration: float) -> void:
+	var was_active := _physical_vulnerability_effects.has(effect_key)
 	_apply_multiplier_status(_physical_vulnerability_effects, effect_key, multiplier, duration)
+	if not was_active:
+		_play_fragile_effect(duration)
 
 
 func apply_magic_vulnerability(effect_key: StringName, multiplier: float, duration: float) -> void:
+	var was_active := _magic_vulnerability_effects.has(effect_key)
 	_apply_multiplier_status(_magic_vulnerability_effects, effect_key, multiplier, duration)
+	if not was_active:
+		_play_fragile_effect(duration)
 
 
-func apply_dot(effect_key: StringName, damage_per_sec: float, damage_type: int, duration: float) -> void:
+func apply_dot(effect_key: StringName, damage_per_sec: float, damage_type: int, duration: float, tick_interval: float = 1.0) -> void:
 	if damage_per_sec <= 0.0 or duration <= 0.0:
 		return
+	var was_active := _dot_effects.has(effect_key)
+	var interval: float = max(tick_interval, 0.1)
 	_dot_effects[effect_key] = {
 		"damage_per_sec": damage_per_sec,
 		"damage_type": damage_type,
 		"remaining": duration,
+		"tick_interval": interval,
+		"tick_timer": interval,
 		"carry": 0.0
 	}
-
-
-func apply_necrosis(effect_key: StringName, amount: float, burst_duration: float, vulnerability: float, damage_per_sec: float) -> bool:
-	if amount <= 0.0 or _necrosis_burst_timer > 0.0:
-		return false
-	_necrosis_accum += amount
-	var threshold := float(cfg.get("necrosis_threshold", 100.0))
-	if _necrosis_accum < threshold:
-		return false
-	_necrosis_accum = 0.0
-	_necrosis_burst_timer = max(burst_duration, 0.1)
-	_necrosis_vulnerability = max(vulnerability, 0.0)
-	_necrosis_dot_damage_per_sec = max(damage_per_sec, 0.0)
-	_necrosis_dot_carry = 0.0
-	_debug_log("敌人 %s#%d 触发凋亡虚弱：%s，持续 %.1f 秒" % [_debug_name(), runtime_id, String(effect_key), _necrosis_burst_timer])
-	return true
-
-
-func is_necrosis_bursting() -> bool:
-	return _necrosis_burst_timer > 0.0
+	if not was_active:
+		_play_dot_effect(damage_type, duration)
 
 
 func get_runtime_id() -> int:
@@ -360,9 +422,17 @@ func _update_status_view() -> void:
 		_status_view.set_shield(_shield_hp, _max_shield_hp)
 
 
-func _play_hit_effect() -> void:
-	if _status_view != null and _status_view.has_method("play_hit_effect"):
-		_status_view.play_hit_effect()
+func _play_hit_effect(damage_type_value: int = GameEnums.DAMAGE_PHYSICAL) -> void:
+	spawn_one_shot_effect({
+		"texture_path": _default_impact_texture_path(damage_type_value),
+		"follow_target": self,
+		"local_position": VISUAL_OFFSET,
+		"hframes": 6,
+		"frame_count": 6,
+		"fps": 18.0,
+		"size": DEFAULT_IMPACT_SIZE,
+		"z_index": 24
+	})
 
 
 func _refresh_fog_visibility() -> void:
@@ -388,6 +458,171 @@ func get_unit_manager() -> Node:
 
 func get_building_manager() -> Node:
 	return get_node_or_null("../../../Managers/BuildingManager")
+
+
+func _get_effect_root() -> Node:
+	return get_node_or_null("../../EffectRoot")
+
+
+func spawn_one_shot_effect(payload: Dictionary) -> Node:
+	var effect_root := _get_effect_root()
+	var effect_parent: Node = effect_root if effect_root != null else self
+	var effect := OneShotEffect.new()
+	effect_parent.add_child(effect)
+	effect.setup(payload)
+	return effect
+
+
+func play_follow_effect(
+	texture_path: String,
+	duration: float,
+	hframes: int = 6,
+	frame_count: int = 6,
+	fps: float = 18.0,
+	size: Vector2 = DEFAULT_STATUS_EFFECT_SIZE,
+	loop: bool = false,
+	local_position: Vector2 = VISUAL_OFFSET,
+	z_index_value: int = 24
+) -> void:
+	spawn_one_shot_effect({
+		"texture_path": texture_path,
+		"follow_target": self,
+		"local_position": local_position,
+		"hframes": hframes,
+		"frame_count": frame_count,
+		"fps": fps,
+		"duration": duration,
+		"size": size,
+		"loop": loop,
+		"z_index": z_index_value
+	})
+
+
+func spawn_world_effect(
+	texture_path: String,
+	position_value: Vector2,
+	duration: float,
+	hframes: int = 6,
+	frame_count: int = 6,
+	fps: float = 18.0,
+	size: Vector2 = DEFAULT_STATUS_EFFECT_SIZE,
+	rotation_value: float = 0.0,
+	loop: bool = false,
+	z_index_value: int = 24
+) -> void:
+	spawn_one_shot_effect({
+		"texture_path": texture_path,
+		"position": position_value,
+		"rotation": rotation_value,
+		"hframes": hframes,
+		"frame_count": frame_count,
+		"fps": fps,
+		"duration": duration,
+		"size": size,
+		"loop": loop,
+		"z_index": z_index_value
+	})
+
+
+func _play_fragile_effect(duration: float) -> void:
+	play_follow_effect(
+		"res://assets/effects/auras/debuff_fragile_aura_strip.png",
+		duration,
+		8,
+		8,
+		10.0,
+		Vector2(112.0, 112.0),
+		true,
+		VISUAL_OFFSET,
+		23
+	)
+
+
+func _play_dot_effect(damage_type_value: int, duration: float) -> void:
+	var texture_path := "res://assets/effects/common/psychic_dot_aura_strip.png"
+	if damage_type_value == GameEnums.DAMAGE_PHYSICAL:
+		texture_path = "res://assets/effects/common/burn_dot_small_strip.png"
+	play_follow_effect(
+		texture_path,
+		duration,
+		6,
+		6,
+		10.0,
+		Vector2(96.0, 96.0),
+		true,
+		VISUAL_OFFSET,
+		22
+	)
+
+
+func _play_push_pull_effect(direction: Vector2i) -> void:
+	var direction_vector := Vector2(direction)
+	if direction_vector.length_squared() <= 0.001:
+		return
+	_play_directional_streak_effect(global_position, direction_vector)
+
+
+func _play_directional_streak_effect(position_value: Vector2, direction_vector: Vector2) -> void:
+	if direction_vector.length_squared() <= 0.001:
+		return
+	spawn_world_effect(
+		"res://assets/effects/common/push_pull_streak_strip.png",
+		position_value,
+		0.32,
+		6,
+		6,
+		18.0,
+		Vector2(150.0, 72.0),
+		direction_vector.angle(),
+		false,
+		25
+	)
+
+
+func _play_shield_absorb_effect() -> void:
+	var texture_path := "res://assets/effects/auras/shield_absorb_aura_strip.png"
+	if enemy_id == &"shieldguard":
+		texture_path = "res://assets/effects/enemies/shieldguard_shield_absorb_strip.png"
+	play_follow_effect(
+		texture_path,
+		0.45,
+		6 if enemy_id == &"shieldguard" else 8,
+		6 if enemy_id == &"shieldguard" else 8,
+		18.0,
+		Vector2(116.0, 116.0),
+		false,
+		VISUAL_OFFSET,
+		25
+	)
+
+
+func _play_defeat_effect() -> void:
+	if cfg.has("death_area_damage"):
+		spawn_world_effect(
+			"res://assets/effects/enemies/originium_slug_death_burst_strip.png",
+			global_position,
+			0.42,
+			6,
+			6,
+			16.0,
+			Vector2(144.0, 144.0),
+			0.0,
+			false,
+			25
+		)
+	elif cfg.has("death_spawn"):
+		spawn_world_effect(
+			"res://assets/effects/enemies/originium_slug_split_puff_strip.png",
+			global_position,
+			0.5,
+			6,
+			6,
+			14.0,
+			Vector2(144.0, 112.0),
+			0.0,
+			false,
+			25
+		)
 
 
 func _get_blocker() -> Node:
@@ -622,11 +857,6 @@ func _clear_temporary_status() -> void:
 	_dot_effects.clear()
 	_stun_timer = 0.0
 	_bind_timer = 0.0
-	_necrosis_accum = 0.0
-	_necrosis_burst_timer = 0.0
-	_necrosis_vulnerability = 0.0
-	_necrosis_dot_damage_per_sec = 0.0
-	_necrosis_dot_carry = 0.0
 	_refresh_status_multipliers()
 
 
@@ -639,7 +869,6 @@ func _tick_status_effects(delta: float) -> void:
 	_tick_status_dict(_physical_vulnerability_effects, delta)
 	_tick_status_dict(_magic_vulnerability_effects, delta)
 	_tick_dot_effects(delta)
-	_tick_necrosis_burst(delta)
 	_refresh_status_multipliers()
 
 
@@ -657,37 +886,25 @@ func _tick_dot_effects(delta: float) -> void:
 	for effect_key in _dot_effects.keys().duplicate():
 		var entry: Dictionary = _dot_effects[effect_key]
 		entry["remaining"] = float(entry.get("remaining", 0.0)) - delta
-		entry["carry"] = float(entry.get("carry", 0.0)) + float(entry.get("damage_per_sec", 0.0)) * delta
-		var damage_value := int(floor(float(entry.get("carry", 0.0))))
-		if damage_value > 0:
-			entry["carry"] = float(entry.get("carry", 0.0)) - float(damage_value)
-			receive_damage(damage_value, int(entry.get("damage_type", GameEnums.DAMAGE_MAGIC)))
-			if _is_dead:
-				return
+		entry["tick_timer"] = float(entry.get("tick_timer", 1.0)) - delta
+		var tick_interval: float = max(float(entry.get("tick_interval", 1.0)), 0.1)
+		while float(entry.get("tick_timer", 0.0)) <= 0.0 and float(entry.get("remaining", 0.0)) > 0.0:
+			entry["tick_timer"] = float(entry.get("tick_timer", 0.0)) + tick_interval
+			entry["carry"] = float(entry.get("carry", 0.0)) + float(entry.get("damage_per_sec", 0.0)) * tick_interval
+			var damage_value := int(floor(float(entry.get("carry", 0.0))))
+			if damage_value > 0:
+				entry["carry"] = float(entry.get("carry", 0.0)) - float(damage_value)
+				receive_damage(damage_value, int(entry.get("damage_type", GameEnums.DAMAGE_MAGIC)))
+				if _is_dead:
+					return
 		if float(entry.get("remaining", 0.0)) <= 0.0:
 			_dot_effects.erase(effect_key)
 		else:
 			_dot_effects[effect_key] = entry
 
 
-func _tick_necrosis_burst(delta: float) -> void:
-	if _necrosis_burst_timer <= 0.0:
-		return
-	_necrosis_burst_timer = max(_necrosis_burst_timer - delta, 0.0)
-	_necrosis_dot_carry += _necrosis_dot_damage_per_sec * delta
-	var damage_value := int(floor(_necrosis_dot_carry))
-	if damage_value > 0:
-		_necrosis_dot_carry -= float(damage_value)
-		receive_damage(damage_value, GameEnums.DAMAGE_MAGIC)
-		if _is_dead:
-			return
-	if _necrosis_burst_timer <= 0.0:
-		_necrosis_vulnerability = 0.0
-		_necrosis_dot_damage_per_sec = 0.0
-		_necrosis_dot_carry = 0.0
-
-
 func _tick_regeneration(delta: float) -> void:
+	_regen_effect_cooldown = max(_regen_effect_cooldown - delta, 0.0)
 	var regen_per_sec: float = max(float(cfg.get("regen_per_sec", 0.0)), 0.0)
 	if regen_per_sec <= 0.0 or current_hp <= 0 or current_hp >= max_hp:
 		return
@@ -698,6 +915,19 @@ func _tick_regeneration(delta: float) -> void:
 	_regen_carry -= float(heal_value)
 	current_hp = min(current_hp + heal_value, max_hp)
 	_update_status_view()
+	if _regen_effect_cooldown <= 0.0:
+		_regen_effect_cooldown = 0.8
+		play_follow_effect(
+			"res://assets/effects/common/enemy_regen_tick_strip.png",
+			0.42,
+			6,
+			6,
+			14.0,
+			Vector2(92.0, 92.0),
+			false,
+			VISUAL_OFFSET,
+			23
+		)
 
 
 func _absorb_damage_with_shield(damage_value: int) -> int:
@@ -756,6 +986,7 @@ func _spawn_death_enemies() -> void:
 				_debug_log("敌人 %s#%d 死亡分裂跳过 %s：周围没有合法生成格" % [_debug_name(), runtime_id, String(spawn_enemy_id)])
 				continue
 			enemy_manager.spawn_enemy(spawn_enemy_id, spawn_cell)
+			_play_death_spawn_effect(spawn_cell)
 			spawned_count += 1
 		if spawned_count > 0:
 			_debug_log("敌人 %s#%d 死亡分裂，生成 %d 个 %s" % [_debug_name(), runtime_id, spawned_count, String(spawn_enemy_id)])
@@ -806,6 +1037,24 @@ func _can_spawn_death_enemy_at(map_manager: Node, cell: Vector2i) -> bool:
 	if map_manager.has_method("is_walkable") and not map_manager.is_walkable(cell):
 		return false
 	return true
+
+
+func _play_death_spawn_effect(spawn_cell: Vector2i) -> void:
+	var map_manager := get_map_manager()
+	if map_manager == null or not map_manager.has_method("cell_to_world"):
+		return
+	spawn_world_effect(
+		"res://assets/effects/common/enemy_death_spawn_puff_strip.png",
+		map_manager.cell_to_world(spawn_cell),
+		0.42,
+		6,
+		6,
+		14.0,
+		Vector2(96.0, 80.0),
+		0.0,
+		false,
+		24
+	)
 
 
 func _damage_building(building: Node, damage_value: int, damage_type_value: int) -> void:
@@ -869,7 +1118,7 @@ func _sum_number_status(status_dict: Dictionary) -> int:
 
 
 func _get_vulnerability_multiplier(damage_type_value: int) -> float:
-	var multiplier := 1.0 + _necrosis_vulnerability if _necrosis_burst_timer > 0.0 else 1.0
+	var multiplier := 1.0
 	var status_dict := _physical_vulnerability_effects if damage_type_value == GameEnums.DAMAGE_PHYSICAL else _magic_vulnerability_effects
 	if damage_type_value != GameEnums.DAMAGE_PHYSICAL and damage_type_value != GameEnums.DAMAGE_MAGIC:
 		return multiplier
@@ -887,6 +1136,16 @@ func _debug_log(message: String) -> void:
 
 func _debug_name() -> String:
 	return String(cfg.get("name", enemy_id))
+
+
+func _default_impact_texture_path(damage_type_value: int) -> String:
+	match damage_type_value:
+		GameEnums.DAMAGE_MAGIC:
+			return "res://assets/effects/common/impact_arts_small_strip.png"
+		GameEnums.DAMAGE_TRUE:
+			return "res://assets/effects/common/impact_true_damage_small_strip.png"
+		_:
+			return "res://assets/effects/common/impact_physical_small_strip.png"
 
 
 func _damage_type_text(type_value: int) -> String:
