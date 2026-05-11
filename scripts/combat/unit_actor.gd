@@ -103,6 +103,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	_cleanup_skill_behavior()
 	clear_all_skill_range_outlines()
 
 
@@ -771,6 +772,11 @@ func _recover_sp(delta: float) -> void:
 
 func _is_skill_active() -> bool:
 	return _skill_behavior != null and _skill_behavior.has_method("is_active") and bool(_skill_behavior.is_active())
+
+
+func _cleanup_skill_behavior() -> void:
+	if _skill_behavior != null and _skill_behavior.has_method("cleanup"):
+		_skill_behavior.cleanup()
 
 
 func _try_auto_cast_skill() -> void:

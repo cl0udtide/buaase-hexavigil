@@ -100,7 +100,7 @@ func _apply_position(payload: Dictionary) -> void:
 func _sync_follow_position() -> void:
 	if _follow_target == null:
 		return
-	if not is_instance_valid(_follow_target):
+	if not is_instance_valid(_follow_target) or _follow_target.is_queued_for_deletion() or not _follow_target.is_inside_tree():
 		queue_free()
 		return
 	global_position = _follow_target.global_position + _follow_offset
