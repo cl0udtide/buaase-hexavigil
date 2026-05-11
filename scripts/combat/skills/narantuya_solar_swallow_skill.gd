@@ -16,11 +16,27 @@ func _on_skill_end() -> void:
 	owner_unit.attack_multiplier = _base_attack_multiplier
 
 
+func get_attack_projectile_payloads(target: Node, damage_value: int) -> Array:
+	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
+		return []
+	return [{
+		"damage": damage_value,
+		"damage_type": owner_unit.damage_type,
+		"texture_path": "res://assets/effects/projectiles/narantuya_return_projectile.png",
+		"visual_length": 76.0,
+		"visual_height": 48.0,
+		"speed": float(owner_unit.cfg.get("projectile_speed", 520.0)),
+		"hit_radius": float(owner_unit.cfg.get("projectile_hit_radius", 8.0)),
+		"trigger_after_attack": true
+	}]
+
+
 func after_attack(target: Node, damage_value: int) -> void:
 	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
 		return
 	if target.has_method("apply_move_speed_multiplier"):
 		target.apply_move_speed_multiplier(&"narantuya_stop", float(owner_unit.cfg.get("skill_slow_multiplier", 0.2)), float(owner_unit.cfg.get("skill_slow_duration", 1.0)))
+	_play_return_path_effect(target)
 	var return_damage: int = max(int(round(float(damage_value) * float(owner_unit.cfg.get("skill_return_damage_multiplier", 0.75)))), 1)
 	var hit_count := 0
 	for enemy in _collect_return_path_targets(target):
@@ -48,6 +64,30 @@ func _collect_return_path_targets(target: Node) -> Array:
 			if cell.x >= min(start.x, end.x) and cell.x <= max(start.x, end.x) and abs(cell.y - start.y) <= 1:
 				result.append(enemy)
 		else:
-			if cell.y >= min(start.y, end.y) and cell.y <= max(start.y, end.y) and abs(cell.x - start.x) <= 1:
-				result.append(enemy)
-	return result
+				if cell.y >= min(start.y, end.y) and cell.y <= max(start.y, end.y) and abs(cell.x - start.x) <= 1:
+					result.append(enemy)
+		return result
+
+
+func _play_return_path_effect(target: Node) -> void:
+	if owner_unit == null or not owner_unit.has_method("spawn_world_effect"):
+		return
+	if not (owner_unit is Node2D) or not (target is Node2D):
+		return
+	var start_position := (target as Node2D).global_position
+	var end_position := (owner_unit as Node2D).global_position
+	var delta := end_position - start_position
+	if delta.length_squared() <= 0.001:
+		return
+	owner_unit.spawn_world_effect(
+		"res://assets/effects/operators/narantuya_return_path_spark_strip.png",
+		(start_position + end_position) * 0.5,
+		0.34,
+		6,
+		6,
+		18.0,
+		Vector2(max(delta.length(), 96.0), 60.0),
+		delta.angle(),
+		false,
+		25
+	)

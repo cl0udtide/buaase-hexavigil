@@ -24,6 +24,7 @@ func tick(delta: float) -> void:
 		return
 	active_timer = max(active_timer - delta, 0.0)
 	if active_timer == 0.0:
+		_play_skill_end_effect()
 		_on_skill_end()
 
 
@@ -42,6 +43,8 @@ func cast() -> bool:
 	_infinite_active = bool(owner_unit.cfg.get("skill_infinite_duration", false))
 	active_timer = 1.0 if _infinite_active else get_duration()
 	_on_skill_start()
+	if active_timer > 0.0:
+		_play_skill_cast_effect()
 	return true
 
 
@@ -50,6 +53,7 @@ func end_skill() -> void:
 		return
 	active_timer = 0.0
 	_infinite_active = false
+	_play_skill_end_effect()
 	_on_skill_end()
 
 
@@ -120,6 +124,38 @@ func _on_skill_start() -> void:
 func _on_skill_end() -> void:
 	_infinite_active = false
 	pass
+
+
+func _play_skill_cast_effect() -> void:
+	if owner_unit == null or not owner_unit.has_method("play_follow_effect"):
+		return
+	owner_unit.play_follow_effect(
+		"res://assets/effects/common/skill_cast_flash_strip.png",
+		0.32,
+		6,
+		6,
+		18.0,
+		Vector2(108.0, 108.0),
+		false,
+		Vector2(0.0, -8.0),
+		25
+	)
+
+
+func _play_skill_end_effect() -> void:
+	if owner_unit == null or not owner_unit.has_method("play_follow_effect"):
+		return
+	owner_unit.play_follow_effect(
+		"res://assets/effects/common/skill_end_fade_strip.png",
+		0.34,
+		6,
+		6,
+		16.0,
+		Vector2(104.0, 104.0),
+		false,
+		Vector2(0.0, -8.0),
+		24
+	)
 
 
 func _debug_log(message: String) -> void:
@@ -200,6 +236,55 @@ func _allies_in_radius(center_cell: Vector2i, radius: int) -> Array:
 	return allies
 
 
+func _cells_in_radius(center_cell: Vector2i, radius: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if radius < 0:
+		return cells
+	var map_manager: Node = owner_unit.get_map_manager() if owner_unit != null and owner_unit.has_method("get_map_manager") else null
+	var radius_sq := radius * radius
+	for y in range(center_cell.y - radius, center_cell.y + radius + 1):
+		for x in range(center_cell.x - radius, center_cell.x + radius + 1):
+			var cell := Vector2i(x, y)
+			if cell.distance_squared_to(center_cell) > radius_sq:
+				continue
+			if map_manager != null and map_manager.has_method("is_inside") and not map_manager.is_inside(cell):
+				continue
+			cells.append(cell)
+	return cells
+
+
+func _cells_from_range_pattern(pattern: Array[Vector2i]) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if owner_unit == null:
+		return cells
+	var map_manager: Node = owner_unit.get_map_manager() if owner_unit.has_method("get_map_manager") else null
+	for offset: Vector2i in pattern:
+		var cell: Vector2i = owner_unit.current_cell + _rotate_offset(offset, owner_unit.facing)
+		if map_manager != null and map_manager.has_method("is_inside") and not map_manager.is_inside(cell):
+			continue
+		if not cells.has(cell):
+			cells.append(cell)
+	return cells
+
+
+func _show_current_attack_range_outline(outline_key: StringName = &"expanded_attack_range") -> void:
+	if owner_unit == null or not owner_unit.has_method("show_skill_range_outline"):
+		return
+	owner_unit.show_skill_range_outline(outline_key, _cells_from_range_pattern(owner_unit.range_pattern), {
+		"style": &"skill",
+		"duration": get_duration(),
+		"draw_nodes": true,
+		"edge_length": 74.0,
+		"edge_thickness": 26.0,
+		"corner_size": 44.0
+	})
+
+
+func _clear_current_attack_range_outline(outline_key: StringName = &"expanded_attack_range") -> void:
+	if owner_unit != null and owner_unit.has_method("clear_skill_range_outline"):
+		owner_unit.clear_skill_range_outline(outline_key)
+
+
 func _nearest_damaged_allies(center_cell: Vector2i, radius: int, limit: int) -> Array:
 	var candidates := _allies_in_radius(center_cell, radius)
 	var result: Array = []
@@ -230,3 +315,14 @@ func _normalize_direction(direction: Vector2i) -> Vector2i:
 	if abs(direction.x) >= abs(direction.y):
 		return Vector2i.RIGHT if direction.x >= 0 else Vector2i.LEFT
 	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
+
+
+func _rotate_offset(offset: Vector2i, direction: Vector2i) -> Vector2i:
+	var normalized := _normalize_direction(direction)
+	if normalized == Vector2i.LEFT:
+		return Vector2i(-offset.x, -offset.y)
+	if normalized == Vector2i.UP:
+		return Vector2i(offset.y, -offset.x)
+	if normalized == Vector2i.DOWN:
+		return Vector2i(-offset.y, offset.x)
+	return offset

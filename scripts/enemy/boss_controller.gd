@@ -1,5 +1,7 @@
 extends Node
 
+const CELL_SIZE := 64.0
+
 var _owner_actor: Node = null
 var _initial_cfg: Dictionary = {}
 var _phases: Array[Dictionary] = []
@@ -75,6 +77,8 @@ func apply_phase_enter_effects() -> void:
 	if radius < 0 or damage <= 0:
 		_pending_phase_cfg.clear()
 		return
+	_play_phase_enter_flash_effect()
+	_play_phase_enter_area_effect(radius)
 	var damage_type: int = _parse_damage_type(String(area_cfg.get("damage_type", _owner_actor.cfg.get("damage_type", "physical"))))
 	var unit_manager: Node = _owner_actor.get_unit_manager()
 	var building_manager: Node = _owner_actor.get_building_manager()
@@ -117,6 +121,7 @@ func _start_phase_transition(next_phase_cfg: Dictionary) -> void:
 	if _owner_actor != null and is_instance_valid(_owner_actor):
 		if _owner_actor.has_method("clear_blocked"):
 			_owner_actor.clear_blocked()
+	_play_phase_transition_effect()
 	_debug_log("敌人 %s#%d 第%d阶段血量耗尽，进入 %.1f 秒无敌转阶段" % [_debug_name(), _runtime_id(), _boss_phase - 1, _phase_transition_timer])
 
 
@@ -136,6 +141,61 @@ func _get_phase_cfg(phase: int) -> Dictionary:
 
 func _compare_phase_cfg(a: Dictionary, b: Dictionary) -> bool:
 	return int(a.get("phase", 0)) < int(b.get("phase", 0))
+
+
+func _play_phase_transition_effect() -> void:
+	if _owner_actor == null or not is_instance_valid(_owner_actor) or not _owner_actor.has_method("play_follow_effect"):
+		return
+	_owner_actor.play_follow_effect(
+		"res://assets/effects/enemies/boss_phase_transition_strip.png",
+		max(_phase_transition_timer, 0.35),
+		6,
+		6,
+		10.0,
+		Vector2(148.0, 148.0),
+		true,
+		Vector2(0.0, -8.0),
+		26
+	)
+
+
+func _play_phase_enter_area_effect(radius: int) -> void:
+	if _owner_actor == null or not is_instance_valid(_owner_actor) or not _owner_actor.has_method("spawn_world_effect"):
+		return
+	var texture_path := "res://assets/effects/enemies/boss_phase_enter_area_burst_strip.png"
+	var frame_count := 6
+	var effect_size := Vector2.ONE * float(max(radius * 2 + 1, 1)) * CELL_SIZE
+	if StringName(_owner_actor.get("enemy_id")) == &"patriot":
+		texture_path = "res://assets/effects/enemies/patriot_destroyer_shockwave_strip.png"
+		effect_size = Vector2.ONE * float(max(radius * 2 + 1, 1)) * CELL_SIZE * 1.1
+	_owner_actor.spawn_world_effect(
+		texture_path,
+		_owner_actor.global_position,
+		0.46,
+		frame_count,
+		frame_count,
+		14.0,
+		effect_size,
+		0.0,
+		false,
+		25
+	)
+
+
+func _play_phase_enter_flash_effect() -> void:
+	if _owner_actor == null or not is_instance_valid(_owner_actor) or not _owner_actor.has_method("play_follow_effect"):
+		return
+	_owner_actor.play_follow_effect(
+		"res://assets/effects/enemies/boss_rage_cast_flash_strip.png",
+		0.46,
+		6,
+		6,
+		16.0,
+		Vector2(146.0, 146.0),
+		false,
+		Vector2(0.0, -8.0),
+		26
+	)
 
 
 func _get_owner_cfg() -> Dictionary:

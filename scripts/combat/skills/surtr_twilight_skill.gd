@@ -27,6 +27,19 @@ func _on_skill_start() -> void:
 	owner_unit.attack_multiplier = _base_attack_multiplier * float(owner_unit.cfg.get("skill_atk_multiplier", 2.6))
 	owner_unit.damage_type = owner_unit.parse_damage_type(String(owner_unit.cfg.get("skill_damage_type", "magic")))
 	owner_unit.range_pattern = owner_unit.parse_range_pattern(owner_unit.cfg.get("skill_range_pattern", owner_unit.cfg.get("range_pattern", [])))
+	_show_current_attack_range_outline()
+	if owner_unit.has_method("play_follow_effect"):
+		owner_unit.play_follow_effect(
+			"res://assets/effects/auras/surtr_twilight_aura_strip.png",
+			get_duration(),
+			8,
+			8,
+			12.0,
+			Vector2(128.0, 128.0),
+			true,
+			Vector2.ZERO,
+			23
+		)
 	_debug_log("技能启动：%s#%d 黄昏，法伤决战并持续流失生命" % [owner_unit.unit_id, owner_unit.get_runtime_id()])
 
 
@@ -36,6 +49,7 @@ func _on_skill_end() -> void:
 	owner_unit.attack_multiplier = _base_attack_multiplier
 	owner_unit.range_pattern = _base_range_pattern.duplicate()
 	owner_unit.damage_type = _base_damage_type
+	_clear_current_attack_range_outline()
 
 
 func get_attack_targets_override() -> Array:
@@ -49,3 +63,20 @@ func get_attack_targets_override() -> Array:
 			break
 		result.append(target)
 	return result
+
+
+func after_attack(target: Node, _damage_value: int) -> void:
+	if owner_unit == null or not is_active() or target == null or not is_instance_valid(target):
+		return
+	if owner_unit.has_method("spawn_one_shot_effect"):
+		owner_unit.spawn_one_shot_effect({
+			"texture_path": "res://assets/effects/operators/surtr_twilight_hit_flare_strip.png",
+			"follow_target": target,
+			"local_position": Vector2(0.0, -8.0),
+			"hframes": 6,
+			"frame_count": 6,
+			"fps": 18.0,
+			"duration": 0.34,
+			"size": Vector2(112.0, 112.0),
+			"z_index": 25
+		})

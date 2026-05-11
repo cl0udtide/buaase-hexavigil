@@ -74,6 +74,10 @@ var _current_drag_facing := Vector2i.RIGHT
 var _cooldown_message_operator_key := StringName()
 var _last_painted_cell := INVALID_CELL
 var _combat_hud: Control
+var _sandbox_quick_bar: Control
+var _debug_toggle_button: Button
+var _start_all_button: Button
+var _stop_spawns_button: Button
 var _debug_drawer_panel: Control
 var _debug_drawer_content: Control
 
@@ -136,10 +140,12 @@ func _ready() -> void:
 		data_repo.load_all()
 	_load_presets_from_disk()
 	_build_editor_ui()
+	_build_sandbox_quick_controls()
 	_bind_combat_hud()
 	_populate_static_options()
 	_connect_events()
 	_apply_preset_by_index(0)
+	_set_debug_drawer_open(true)
 	set_process(true)
 
 
@@ -165,6 +171,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_deploy_flow("已取消")
 		elif _debug_drawer_open and _selected_tool != TOOL_SELECT:
 			_select_editor_tool(TOOL_SELECT, "已返回选择工具")
+		elif _debug_drawer_open:
+			_set_debug_drawer_open(false)
 		return
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -209,6 +217,8 @@ func _bind_combat_hud() -> void:
 		return
 	if _combat_hud.has_signal("operator_card_pressed"):
 		_combat_hud.connect(&"operator_card_pressed", Callable(self, "_on_operator_card_pressed"))
+	if _combat_hud.has_signal("operator_card_drag_started"):
+		_combat_hud.connect(&"operator_card_drag_started", Callable(self, "_on_operator_card_drag_started"))
 	if _combat_hud.has_signal("pause_pressed"):
 		_combat_hud.connect(&"pause_pressed", Callable(self, "_on_pause_pressed"))
 	if _combat_hud.has_signal("speed_1_pressed"):
@@ -240,10 +250,60 @@ func _set_debug_drawer_open(open: bool) -> void:
 		_debug_drawer_panel.offset_bottom = -18.0
 	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
 		_combat_hud.set_debug_drawer_open(open)
+	_sync_sandbox_quick_controls()
 
 
 func _on_debug_drawer_toggle_pressed() -> void:
 	_set_debug_drawer_open(not _debug_drawer_open)
+
+
+func _build_sandbox_quick_controls() -> void:
+	var ui := get_node_or_null("UI")
+	if ui == null or _sandbox_quick_bar != null:
+		return
+	var bar := PanelContainer.new()
+	bar.name = "SandboxQuickControls"
+	bar.z_index = 120
+	bar.mouse_filter = Control.MOUSE_FILTER_STOP
+	bar.anchor_left = 1.0
+	bar.anchor_right = 1.0
+	bar.offset_left = -382.0
+	bar.offset_top = 18.0
+	bar.offset_right = -18.0
+	bar.offset_bottom = 64.0
+	bar.add_theme_stylebox_override("panel", _make_panel_style(Color(0.045, 0.055, 0.07, 0.96), DEBUG_ACCENT_DIM, 8, 1))
+	ui.add_child(bar)
+	_sandbox_quick_bar = bar
+
+	var margin := _make_margin_container(8, 6, 8, 6)
+	bar.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	margin.add_child(row)
+
+	_debug_toggle_button = _make_button("沙盒面板", _on_debug_drawer_toggle_pressed)
+	_debug_toggle_button.custom_minimum_size = Vector2(112.0, 34.0)
+	row.add_child(_debug_toggle_button)
+
+	_start_all_button = _make_button("全部出怪", _on_start_all_spawns_pressed)
+	_start_all_button.custom_minimum_size = Vector2(112.0, 34.0)
+	row.add_child(_start_all_button)
+
+	_stop_spawns_button = _make_button("停止出怪", _on_stop_spawns_pressed)
+	_stop_spawns_button.custom_minimum_size = Vector2(112.0, 34.0)
+	row.add_child(_stop_spawns_button)
+	_sync_sandbox_quick_controls()
+
+
+func _sync_sandbox_quick_controls() -> void:
+	if _debug_toggle_button != null:
+		_debug_toggle_button.text = "隐藏面板" if _debug_drawer_open else "打开面板"
+		_apply_button_style(_debug_toggle_button, _debug_drawer_open)
+	if _start_all_button != null:
+		_apply_button_style(_start_all_button, _running_spawn_queues.size() > 0)
+	if _stop_spawns_button != null:
+		_stop_spawns_button.disabled = _running_spawn_queues.is_empty()
+		_apply_button_style(_stop_spawns_button, false)
 
 
 func _on_pause_pressed() -> void:
@@ -302,20 +362,41 @@ func _refresh_operator_card(operator_key: StringName) -> void:
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
 	var state := _get_operator_state(operator_key)
-	if state == &"ready":
-		_begin_operator_drag(operator_key)
-	elif state == &"deployed":
+	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		_select_deployed_unit(unit)
-	else:
+		return
+	_selected_operator_key = operator_key
+	_select_operator_item(operator_key)
+	_refresh_operator_list()
+	if state == &"cooldown":
 		_show_message("干员正在再部署冷却中", operator_key)
+	else:
+		_show_message("拖拽 %s 到可部署格开始部署" % _get_operator_display_name(operator_key))
+
+
+func _on_operator_card_drag_started(operator_key: StringName) -> void:
+	var state := _get_operator_state(operator_key)
+	if state == &"deployed":
+		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
+		_select_deployed_unit(unit)
+		return
+	if state != &"ready":
+		_selected_operator_key = operator_key
+		_select_operator_item(operator_key)
+		_refresh_operator_list()
+		_show_message("干员正在再部署冷却中", operator_key)
+		return
+	_begin_operator_drag(operator_key)
 
 
 func _begin_operator_drag(operator_key: StringName) -> void:
 	_cancel_deploy_flow("")
+	_clear_selected_unit_selection()
 	_deploy_drag_state = DRAG_CARD
 	_drag_operator_key = operator_key
 	_selected_operator_key = operator_key
+	_select_operator_item(operator_key)
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
 	_current_drag_facing = Vector2i.RIGHT
@@ -1092,6 +1173,7 @@ func _clear_projectiles() -> void:
 
 
 func _tick_spawn_queues(delta: float) -> void:
+	var queues_changed := false
 	for raw_key in _running_spawn_queues.keys().duplicate():
 		var spawn_key := StringName(raw_key)
 		var state: Dictionary = _running_spawn_queues[raw_key]
@@ -1102,6 +1184,7 @@ func _tick_spawn_queues(delta: float) -> void:
 		var index := int(state.get("index", 0))
 		if index >= items.size():
 			_running_spawn_queues.erase(raw_key)
+			queues_changed = true
 			append_combat_debug("出怪点 %s 队列完成" % spawn_key)
 			continue
 		var item: Dictionary = items[index]
@@ -1109,10 +1192,13 @@ func _tick_spawn_queues(delta: float) -> void:
 		index += 1
 		if index >= items.size():
 			_running_spawn_queues.erase(raw_key)
+			queues_changed = true
 			append_combat_debug("出怪点 %s 队列完成" % spawn_key)
 		else:
 			state["index"] = index
 			state["timer"] = float((items[index] as Dictionary).get("delay", 0.0))
+	if queues_changed:
+		_refresh_editor_controls()
 
 
 func _spawn_enemy_item(spawn_key: StringName, item: Dictionary) -> void:
@@ -1631,6 +1717,7 @@ func _on_start_selected_spawn_pressed() -> void:
 		return
 	if _start_spawn_queue(_selected_spawn_key):
 		_refresh_editor_controls()
+	_sync_sandbox_quick_controls()
 
 
 func _on_start_all_spawns_pressed() -> void:
@@ -1640,6 +1727,7 @@ func _on_start_all_spawns_pressed() -> void:
 			started += 1
 	_refresh_editor_controls()
 	_show_message("已启动 %d 个出怪队列" % started)
+	_sync_sandbox_quick_controls()
 
 
 func _on_stop_spawns_pressed() -> void:
@@ -1647,6 +1735,7 @@ func _on_stop_spawns_pressed() -> void:
 	_refresh_editor_controls()
 	_show_message("已停止全部出怪队列")
 	append_combat_debug("已停止全部出怪队列")
+	_sync_sandbox_quick_controls()
 
 
 func _on_cast_skill_pressed() -> void:
@@ -1760,6 +1849,7 @@ func _refresh_editor_controls() -> void:
 	_refresh_status()
 	_refresh_path_warning()
 	_rebuild_deploy_deck()
+	_sync_sandbox_quick_controls()
 
 
 func _refresh_status() -> void:

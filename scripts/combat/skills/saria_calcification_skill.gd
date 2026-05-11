@@ -24,7 +24,23 @@ func tick(delta: float) -> void:
 
 func _on_skill_start() -> void:
 	_tick_timer = 0.0
+	var radius := int(owner_unit.cfg.get("skill_radius", 2))
+	if owner_unit.has_method("show_skill_range_outline"):
+		owner_unit.show_skill_range_outline(&"saria_calcification", _cells_in_radius(owner_unit.current_cell, radius), {
+			"style": &"saria_calcification",
+			"duration": get_duration(),
+			"width": 2.5,
+			"halo_width": 7.0,
+			"pulse_amount": 0.2,
+			"pulse_speed": 2.8,
+			"draw_nodes": false
+		})
 	_debug_log("技能启动：%s#%d 钙质化，范围治疗并施加减速和法术易伤" % [
 		owner_unit.unit_id,
 		owner_unit.get_runtime_id()
 	])
+
+
+func _on_skill_end() -> void:
+	if owner_unit != null and owner_unit.has_method("clear_skill_range_outline"):
+		owner_unit.clear_skill_range_outline(&"saria_calcification")

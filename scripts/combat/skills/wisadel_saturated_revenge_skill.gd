@@ -47,6 +47,7 @@ func after_attack(target: Node, _damage_value: int) -> void:
 		return
 	var extra_hits := int(owner_unit.cfg.get("skill_overload_extra_hits", 3))
 	var extra_damage := _get_overload_hit_damage(owner_unit.get_effective_atk())
+	_play_overload_gunfire_effect(target)
 	for _index in range(extra_hits):
 		target.receive_damage(extra_damage, owner_unit.damage_type)
 
@@ -57,3 +58,19 @@ func _is_overloaded() -> bool:
 
 func _get_overload_hit_damage(base_damage: int) -> int:
 	return max(int(round(float(base_damage) * float(owner_unit.cfg.get("skill_overload_hit_multiplier", 0.65)))), 1)
+
+
+func _play_overload_gunfire_effect(target: Node) -> void:
+	if target == null or not is_instance_valid(target) or not target.has_method("play_follow_effect"):
+		return
+	target.play_follow_effect(
+		"res://assets/effects/operators/wisadel_overload_gunfire_strip.png",
+		0.34,
+		6,
+		6,
+		18.0,
+		Vector2(116.0, 84.0),
+		false,
+		Vector2(0.0, -8.0),
+		25
+	)

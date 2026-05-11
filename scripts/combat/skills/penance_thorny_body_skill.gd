@@ -15,6 +15,17 @@ func _on_skill_start() -> void:
 	owner_unit.attack_multiplier = _base_attack_multiplier * float(owner_unit.cfg.get("skill_atk_multiplier", 1.55))
 	owner_unit.defense = max(int(round(float(_base_defense) * float(owner_unit.cfg.get("skill_def_multiplier", 1.35)))), 0)
 	owner_unit.block_count = _base_block_count + int(owner_unit.cfg.get("skill_block_bonus", 1))
+	owner_unit.play_follow_effect(
+		"res://assets/effects/auras/barrier_guard_loop_strip.png",
+		get_duration(),
+		8,
+		8,
+		10.0,
+		Vector2(118.0, 118.0),
+		true,
+		Vector2(0.0, -8.0),
+		22
+	)
 	_debug_log("技能启动：%s#%d 披荆斩棘，屏障 %d 并受击法术反击" % [
 		owner_unit.unit_id,
 		owner_unit.get_runtime_id(),
@@ -46,3 +57,20 @@ func after_receive_damage(source: Node, final_damage: int) -> void:
 		return
 	var counter_damage: int = max(int(round(float(owner_unit.get_effective_atk()) * float(owner_unit.cfg.get("skill_counter_atk_multiplier", 0.9)))) + int(round(float(final_damage) * float(owner_unit.cfg.get("skill_counter_damage_taken_multiplier", 0.45)))), 1)
 	source.receive_damage(counter_damage, GameEnums.DAMAGE_MAGIC)
+	_play_counter_effect(source)
+
+
+func _play_counter_effect(target: Node) -> void:
+	if target == null or not is_instance_valid(target) or not target.has_method("play_follow_effect"):
+		return
+	target.play_follow_effect(
+		"res://assets/effects/auras/counter_thorn_spark_strip.png",
+		0.32,
+		8,
+		8,
+		20.0,
+		Vector2(108.0, 108.0),
+		false,
+		Vector2(0.0, -8.0),
+		25
+	)
