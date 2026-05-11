@@ -60,6 +60,8 @@ const FRAME_SPEED_TOGGLE := UiFrameSpec.SPEED_TOGGLE
 const FRAME_SPEED_TOGGLE_ACTIVE := UiFrameSpec.SPEED_TOGGLE_ACTIVE
 const FRAME_SCROLL_TRACK := UiFrameSpec.SCROLL_TRACK
 const FRAME_SCROLL_THUMB := UiFrameSpec.SCROLL_THUMB
+const FRAME_SCROLL_TRACK_HORIZONTAL := UiFrameSpec.SCROLL_TRACK_HORIZONTAL
+const FRAME_SCROLL_THUMB_HORIZONTAL := UiFrameSpec.SCROLL_THUMB_HORIZONTAL
 const FRAME_SLIDER_TRACK := UiFrameSpec.SLIDER_TRACK
 const FRAME_SLIDER_FILL := UiFrameSpec.SLIDER_FILL
 const FRAME_SLIDER_HANDLE := UiFrameSpec.SLIDER_HANDLE
@@ -526,12 +528,20 @@ static func scroll_track() -> StyleBox:
 	return frame_box(UiFrameSpec.SCROLL_TRACK, BG_DARK, STROKE_SOFT, false)
 
 
+static func scroll_track_horizontal() -> StyleBox:
+	return frame_box(UiFrameSpec.SCROLL_TRACK_HORIZONTAL, BG_DARK, STROKE_SOFT, false)
+
+
 static func tooltip() -> StyleBox:
 	return frame_box(UiFrameSpec.TOOLTIP, BG_GLASS, STROKE_SOFT)
 
 
 static func scroll_thumb() -> StyleBox:
 	return frame_box(UiFrameSpec.SCROLL_THUMB, BG_CARD_HOVER, ACCENT, false)
+
+
+static func scroll_thumb_horizontal() -> StyleBox:
+	return frame_box(UiFrameSpec.SCROLL_THUMB_HORIZONTAL, BG_CARD_HOVER, ACCENT, false)
 
 
 static func slider_track() -> StyleBox:
@@ -558,10 +568,12 @@ static func apply_scroll_style(scroll: ScrollContainer) -> void:
 
 
 static func _apply_scroll_bar_style(scroll_bar: ScrollBar) -> void:
-	scroll_bar.add_theme_stylebox_override("scroll", scroll_track())
-	scroll_bar.add_theme_stylebox_override("grabber", scroll_thumb())
-	scroll_bar.add_theme_stylebox_override("grabber_highlight", scroll_thumb())
-	scroll_bar.add_theme_stylebox_override("grabber_pressed", scroll_thumb())
+	var track := scroll_track_horizontal() if scroll_bar is HScrollBar else scroll_track()
+	var thumb := scroll_thumb_horizontal() if scroll_bar is HScrollBar else scroll_thumb()
+	scroll_bar.add_theme_stylebox_override("scroll", track)
+	scroll_bar.add_theme_stylebox_override("grabber", thumb)
+	scroll_bar.add_theme_stylebox_override("grabber_highlight", thumb)
+	scroll_bar.add_theme_stylebox_override("grabber_pressed", thumb)
 
 
 static func apply_slider_style(slider: Slider) -> void:

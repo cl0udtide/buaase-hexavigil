@@ -13,9 +13,10 @@
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres" id="11_cooldownselected"]
 
 [node name="OperatorCard" type="Control" unique_id=1219481180]
-custom_minimum_size = Vector2(164, 160)
+custom_minimum_size = Vector2(164, 184)
 layout_mode = 3
 anchors_preset = 0
+size_flags_horizontal = 0
 size_flags_vertical = 3
 script = ExtResource("1_hry6b")
 
@@ -113,7 +114,7 @@ vertical_alignment = 1
 
 [node name="PortraitStack" type="Control" parent="CardContent/VBox" unique_id=2130632873]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 
 [node name="PortraitBackplate" type="Panel" parent="CardContent/VBox/PortraitStack" unique_id=548983614]
@@ -195,7 +196,7 @@ theme_override_constants/separation = 2
 
 [node name="HpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1064524550]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 18)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_statrow")
@@ -217,7 +218,7 @@ text_overrun_behavior = 3
 
 [node name="SpStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=1072089532]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 18)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_statrow")
@@ -239,7 +240,7 @@ text_overrun_behavior = 3
 
 [node name="CdStatRow" type="Panel" parent="CardContent/VBox/StatRows" unique_id=43464145]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 18)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_statrow")
