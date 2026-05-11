@@ -48,6 +48,11 @@ func _notification(what: int) -> void:
 		_clear_building_range_preview()
 
 
+func _process(_delta: float) -> void:
+	if visible:
+		_update_position_for_current_cell()
+
+
 func _bind_buttons() -> void:
 	_trigger_event_button.pressed.connect(_on_trigger_event_pressed)
 	_collect_button.pressed.connect(_on_collect_pressed)
@@ -79,7 +84,7 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 	if not _refresh_content():
 		hide()
 		return
-	_show_near_mouse()
+	_show_for_current_cell()
 
 
 func _refresh_content() -> bool:
@@ -173,18 +178,33 @@ func _make_title(data: CellData, building: Node) -> String:
 	return "地图对象"
 
 
-func _show_near_mouse() -> void:
+func _show_for_current_cell() -> void:
 	visible = true
 	_fit_to_content()
 	await get_tree().process_frame
-	if not is_inside_tree():
+	if not is_inside_tree() or not visible:
 		return
 	_fit_to_content()
+	_update_position_for_current_cell()
+
+
+func _update_position_for_current_cell() -> void:
 	var viewport_size := get_viewport_rect().size
-	var desired := get_viewport().get_mouse_position() + POPUP_OFFSET
+	var desired := _get_current_cell_screen_position() + POPUP_OFFSET
 	desired.x = clamp(desired.x, 8.0, max(8.0, viewport_size.x - size.x - 8.0))
 	desired.y = clamp(desired.y, 8.0, max(8.0, viewport_size.y - size.y - 8.0))
 	position = desired
+
+
+func _get_current_cell_screen_position() -> Vector2:
+	var map_manager := _get_map_manager()
+	var map_root := _get_map_root()
+	if map_manager == null or map_root == null or not map_manager.has_method("cell_to_world"):
+		return get_viewport().get_mouse_position()
+	if not map_manager.has_method("is_inside") or not map_manager.is_inside(_current_cell):
+		return get_viewport().get_mouse_position()
+	var cell_world_position: Vector2 = map_manager.cell_to_world(_current_cell)
+	return map_root.get_global_transform_with_canvas() * map_root.to_local(cell_world_position)
 
 
 func _fit_to_content() -> void:
@@ -253,8 +273,13 @@ func _on_toggle_pressed() -> void:
 
 
 func _refresh_or_hide() -> void:
-	if visible and not _refresh_content():
+	if not visible:
+		return
+	if not _refresh_content():
 		hide()
+		return
+	_fit_to_content()
+	_update_position_for_current_cell()
 
 
 func _on_phase_changed(_old_phase: int, new_phase: int) -> void:
@@ -392,6 +417,10 @@ func _is_idle_action_mode() -> bool:
 
 func _get_map_manager() -> Node:
 	return get_node_or_null("../../../Managers/MapManager")
+
+
+func _get_map_root() -> Node2D:
+	return get_node_or_null("../../../World/MapRoot") as Node2D
 
 
 func _get_day_manager() -> Node:
