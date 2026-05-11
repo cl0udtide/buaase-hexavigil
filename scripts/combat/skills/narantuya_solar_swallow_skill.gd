@@ -64,9 +64,9 @@ func _collect_return_path_targets(target: Node) -> Array:
 			if cell.x >= min(start.x, end.x) and cell.x <= max(start.x, end.x) and abs(cell.y - start.y) <= 1:
 				result.append(enemy)
 		else:
-				if cell.y >= min(start.y, end.y) and cell.y <= max(start.y, end.y) and abs(cell.x - start.x) <= 1:
-					result.append(enemy)
-		return result
+			if cell.y >= min(start.y, end.y) and cell.y <= max(start.y, end.y) and abs(cell.x - start.x) <= 1:
+				result.append(enemy)
+	return result
 
 
 func _play_return_path_effect(target: Node) -> void:
