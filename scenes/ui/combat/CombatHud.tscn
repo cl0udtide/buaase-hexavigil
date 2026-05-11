@@ -1260,11 +1260,15 @@ vertical_alignment = 1
 
 [node name="RelicPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619765]
 unique_name_in_owner = true
-anchors_preset = 0
-offset_left = 650.0
-offset_top = 330.0
-offset_right = 1270.0
-offset_bottom = 750.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -210.0
+offset_right = 310.0
+offset_bottom = 210.0
 mouse_filter = 2
 
 [node name="RelicPanel" type="Control" parent="PopupLayer/RelicPanelSlot" unique_id=1252642806 instance=ExtResource("7_nkwv8")]
