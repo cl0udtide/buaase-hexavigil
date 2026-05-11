@@ -133,7 +133,6 @@ var _message_warning_overlay: NinePatchRect
 @onready var _relic_strip: Control = %RelicStrip
 @onready var _relic_panel: Control = %RelicPanel
 @onready var _wave_preview_panel: Control = %WavePreviewPanel
-@onready var _wave_preview_base: Panel = %WavePreviewBase
 @onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
 @onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
 @onready var _wave_preview_label: Label = %WavePreviewLabel
@@ -142,7 +141,6 @@ var _message_warning_overlay: NinePatchRect
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
 @onready var _detail_panel: Control = %UnitDetailPanel
 @onready var _legend_panel: Control = %LegendPanel
-@onready var _legend_base: Panel = %LegendBase
 @onready var _drag_ghost: Control = %DragGhost
 @onready var _drag_ghost_base: Panel = %DragGhostBase
 @onready var _drag_ghost_label: Label = %DragGhostLabel
@@ -171,7 +169,6 @@ func _ready() -> void:
 	_apply_frame_margins()
 	_style_top_cards()
 	_setup_message_warning_overlay()
-	_wave_preview_base.add_theme_stylebox_override("panel", GameUiStyle.wave_preview_panel())
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
@@ -185,7 +182,7 @@ func _ready() -> void:
 	_wave_route_toggle.set_custom_minimum_size(Vector2(64.0, 26.0))
 	_wave_route_toggle.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_wave_route_toggle.size_flags_vertical = Control.SIZE_SHRINK_END
-	_style_button(_wave_route_toggle, GameUiStyle.STROKE_SOFT)
+	_style_wave_route_toggle()
 	GameUiStyle.set_button_texture_icon(_wave_route_toggle, UiArtRegistry.get_catalog_icon(&"map_range"), Vector2(14.0, 14.0), &"left", 6.0)
 	var wave_header := _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent/WavePreviewHeader") as HBoxContainer
 	if wave_header != null:
@@ -197,7 +194,6 @@ func _ready() -> void:
 	_wave_preview_panel.clip_contents = true
 	_deploy_rail_base.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
 	GameUiStyle.apply_scroll_style(_deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer)
-	_legend_base.add_theme_stylebox_override("panel", GameUiStyle.legend_panel())
 	_style_legend_panel()
 	_speed_active_overlay.add_theme_stylebox_override("panel", GameUiStyle.speed_toggle_active())
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -471,6 +467,13 @@ func _style_button(button: Button, accent: Color) -> void:
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED)
 
 
+func _style_wave_route_toggle() -> void:
+	GameUiStyle.center_button_text(_wave_route_toggle)
+	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_wave_route_toggle.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	_wave_route_toggle.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
+
+
 func _collect_resource_items() -> void:
 	if _resource_chip == null:
 		return
@@ -593,9 +596,7 @@ func _apply_frame_margins() -> void:
 		_apply_margin_constants(_top_content, TOP_CONTENT_INSETS)
 	if _time_controls != null:
 		_apply_margin_constants(_time_controls.get_node_or_null("TimeMargin") as MarginContainer, SPEED_TOGGLE_CONTENT_INSETS)
-	GameUiStyle.apply_frame_margin(_wave_preview_panel.get_node_or_null("WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
-	GameUiStyle.apply_frame_margin(_legend_panel.get_node_or_null("LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("InteractionLayer/DragGhost/GhostMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
@@ -770,16 +771,21 @@ func _style_legend_panel() -> void:
 
 
 func _apply_legend_icon(row_name: String, icon_id: StringName) -> void:
-	var row := _legend_panel.get_node_or_null("LegendMargin/LegendVBox/LegendRows/%s" % row_name) as HBoxContainer
+	var row := _legend_panel.get_node_or_null("LegendMargin/LegendVBox/LegendRows/%s" % row_name) as Control
 	if row == null:
+		return
+	var content := row.get_node_or_null("RowContent") as HBoxContainer
+	if content == null and row is HBoxContainer:
+		content = row as HBoxContainer
+	if content == null:
 		return
 	var texture := UiArtRegistry.get_catalog_icon(icon_id)
 	if texture == null:
 		return
-	var swatch := row.get_node_or_null("Swatch") as CanvasItem
+	var swatch := content.get_node_or_null("Swatch") as CanvasItem
 	if swatch != null:
 		swatch.visible = false
-	var icon := row.get_node_or_null("IconTexture") as TextureRect
+	var icon := content.get_node_or_null("IconTexture") as TextureRect
 	if icon == null:
 		icon = TextureRect.new()
 		icon.name = "IconTexture"
@@ -787,8 +793,8 @@ func _apply_legend_icon(row_name: String, icon_id: StringName) -> void:
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(icon)
-		row.move_child(icon, 0)
+		content.add_child(icon)
+		content.move_child(icon, 0)
 	icon.texture = texture
 	icon.visible = true
 

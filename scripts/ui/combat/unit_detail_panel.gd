@@ -13,39 +13,26 @@ signal cast_skill_requested
 signal retreat_requested
 signal purchase_requested(slot_index: int)
 
-@onready var _panel_base: Panel = %PanelBase
 @onready var _title_label: Label = %TitleLabel
 @onready var _level_label: Label = %LevelLabel
-@onready var _damage_pill: Panel = %DamagePill
-@onready var _facing_pill: Panel = %FacingPill
 @onready var _damage_label: Label = %DamageLabel
 @onready var _facing_label: Label = %FacingLabel
-@onready var _header_strip: Panel = %HeaderStrip
-@onready var _vitals_base: Panel = %VitalsSectionBase
-@onready var _portrait_backplate: Panel = %PortraitBackplate
 @onready var _portrait_texture: TextureRect = %PortraitTexture
-@onready var _portrait_frame: Panel = %PortraitFrame
 @onready var _portrait_label: Label = %PortraitLabel
 @onready var _hp_value_label: Label = %HpValueLabel
 @onready var _hp_bar: Control = %HpBar
-@onready var _hp_track: Panel = %HpTrack
 @onready var _hp_fill: Panel = %HpFill
 @onready var _sp_value_label: Label = %SpValueLabel
 @onready var _sp_bar: Control = %SpBar
-@onready var _sp_track: Panel = %SpTrack
 @onready var _sp_fill: Panel = %SpFill
-@onready var _stats_base: Panel = %StatsSectionBase
 @onready var _atk_stat_label: Label = %AtkStatLabel
 @onready var _def_stat_label: Label = %DefStatLabel
 @onready var _res_stat_label: Label = %ResStatLabel
 @onready var _block_stat_label: Label = %BlockStatLabel
 @onready var _aspd_stat_label: Label = %AspdStatLabel
 @onready var _skill_section: Control = %SkillSection
-@onready var _skill_base: Panel = %SkillSectionBase
 @onready var _skill_header_row: Control = get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow") as Control
-@onready var _skill_icon_backplate: Panel = %SkillIconBackplate
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
-@onready var _skill_icon_frame: Panel = %SkillIconFrame
 @onready var _skill_icon_label: Label = %SkillIconLabel
 @onready var _skill_title_label: Label = %SkillTitleLabel
 @onready var _skill_status_label: Label = %SkillStatusLabel
@@ -66,26 +53,15 @@ var _detail_scroll: ScrollContainer
 
 func _ready() -> void:
 	AppTheme.apply(self)
-	_panel_base.add_theme_stylebox_override("panel", GameUiStyle.right_detail_sidebar())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RIGHT_DETAIL_SIDEBAR, Vector4(2.0, -4.0, 2.0, 2.0))
 	var main_vbox := get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
 	if main_vbox != null:
 		main_vbox.add_theme_constant_override("separation", 12)
-	_header_strip.add_theme_stylebox_override("panel", GameUiStyle.unit_header_strip())
-	_damage_pill.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
-	_facing_pill.add_theme_stylebox_override("panel", GameUiStyle.compact_panel(GameUiStyle.STROKE_SOFT, GameUiStyle.BG_CARD, false))
-	for section_base in [_vitals_base, _stats_base, _skill_base]:
-		section_base.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/VitalsSection/VitalsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/StatsSection/StatsMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(2.0, 2.0, 2.0, 2.0))
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin/MainVBox/SkillSection/SkillMargin") as MarginContainer, GameUiStyle.FRAME_DETAIL_SECTION, Vector4(4.0, 4.0, 4.0, 4.0))
 	if _skill_section != null:
 		_skill_section.set_custom_minimum_size(Vector2(0.0, SKILL_SECTION_MIN_HEIGHT))
 		_skill_section.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_skill_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_skill_scroll.add_theme_stylebox_override("panel", GameUiStyle.skill_desc_box())
 	GameUiStyle.apply_scroll_style(_skill_scroll)
 	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_skill_scroll.resized.connect(_refresh_skill_layout)
@@ -95,11 +71,7 @@ func _ready() -> void:
 	_portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_skill_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_skill_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	GameUiStyle.fit_centered_icon(_skill_icon_texture, Vector2(38.0, 38.0))
-	_portrait_backplate.add_theme_stylebox_override("panel", GameUiStyle.unit_portrait_backplate())
-	_portrait_frame.add_theme_stylebox_override("panel", GameUiStyle.unit_portrait_frame())
-	_skill_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.skill_icon_backplate())
-	_skill_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.skill_icon_frame())
+	GameUiStyle.fit_centered_icon(_skill_icon_texture, Vector2(48.0, 48.0))
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_level_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
 	_damage_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -120,10 +92,6 @@ func _ready() -> void:
 	_skill_label.add_theme_constant_override("line_spacing", 3)
 	_portrait_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_hp_track.add_theme_stylebox_override("panel", GameUiStyle.progress_background())
-	_hp_fill.add_theme_stylebox_override("panel", GameUiStyle.progress_fill(GameUiStyle.DANGER))
-	_sp_track.add_theme_stylebox_override("panel", GameUiStyle.progress_background())
-	_sp_fill.add_theme_stylebox_override("panel", GameUiStyle.progress_fill(Color(0.18, 0.72, 0.95, 0.95)))
 	_hp_bar.resized.connect(_refresh_progress_fills)
 	_sp_bar.resized.connect(_refresh_progress_fills)
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
@@ -415,13 +383,8 @@ func _update_fill(bar: Control, fill: Control, ratio: float) -> void:
 	fill.offset_bottom = 0.0
 
 
-func _style_action_button(button: Button, accent: Color) -> void:
+func _style_action_button(button: Button, _accent: Color) -> void:
 	GameUiStyle.center_button_text(button)
-	var normal_style := GameUiStyle.skill_button_primary() if accent == GameUiStyle.ACCENT else GameUiStyle.secondary_button()
-	button.add_theme_stylebox_override("normal", normal_style)
-	button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.AMBER))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER, 0.42))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.button(GameUiStyle.STROKE_SOFT, 0.10))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
@@ -456,8 +419,11 @@ func _ensure_icon_row_for_label(label: Label, icon_id: StringName) -> void:
 		return
 	var row := HBoxContainer.new()
 	row.name = "%sRow" % label.name
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 6)
+	if parent is PanelContainer:
+		row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var insert_index := label.get_index()
 	parent.remove_child(label)
 	parent.add_child(row)
