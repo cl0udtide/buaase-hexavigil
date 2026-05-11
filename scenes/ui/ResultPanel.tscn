@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dvwiq3vkovrcv"]
 
 [ext_resource type="Script" uid="uid://cjiqlc28bsyh8" path="res://scripts/ui/result_panel.gd" id="1_8p5o2"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_result_panel_base.tres" id="2_result_panel"]
 
 [node name="ResultPanel" type="Control" unique_id=1556218185]
 custom_minimum_size = Vector2(520, 260)
@@ -23,13 +24,11 @@ grow_vertical = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(520, 260)
 layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_result_panel")
 
 [node name="ContentMargin" type="MarginContainer" parent="CenterContainer/ResultCard"]
 layout_mode = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 24
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/ResultCard/ContentMargin"]
 layout_mode = 2
