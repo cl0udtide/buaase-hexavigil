@@ -2,7 +2,7 @@ class_name AppTheme
 extends RefCounted
 
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-const FONT_CN := preload("res://assets/fonts/SourceHanSansSC-Normal.otf")
+const FONT_CN := preload("res://assets/fonts/SourceHanSansSC-Bold.otf")
 
 const SIZE_BODY := 16
 const SIZE_BUTTON := 16
