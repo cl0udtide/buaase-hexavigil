@@ -133,7 +133,6 @@ var _message_warning_overlay: NinePatchRect
 @onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
 @onready var _wave_preview_label: Label = %WavePreviewLabel
 @onready var _deck_panel: Control = %DeployDeck
-@onready var _deploy_rail_base: Panel = %DeployRailBase
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
 @onready var _detail_panel: Control = %UnitDetailPanel
 @onready var _legend_panel: Control = %LegendPanel
@@ -184,7 +183,6 @@ func _ready() -> void:
 	if wave_content != null:
 		wave_content.clip_contents = true
 	_wave_preview_panel.clip_contents = true
-	_deploy_rail_base.add_theme_stylebox_override("panel", GameUiStyle.deck_panel())
 	GameUiStyle.apply_scroll_style(_deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer)
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -634,6 +632,7 @@ func _apply_frame_margins() -> void:
 		_apply_margin_constants(_time_controls.get_node_or_null("TimeMargin") as MarginContainer, SPEED_TOGGLE_CONTENT_INSETS)
 	GameUiStyle.apply_frame_margin(_wave_preview_panel.get_node_or_null("WavePreviewMargin") as MarginContainer, GameUiStyle.FRAME_CARD, Vector4(2.0, 0.0, 2.0, 0.0))
 	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
+	GameUiStyle.apply_frame_margin(_legend_panel.get_node_or_null("LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("InteractionLayer/DragGhost/GhostMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
 
 
