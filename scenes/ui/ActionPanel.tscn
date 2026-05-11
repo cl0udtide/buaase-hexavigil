@@ -1,96 +1,69 @@
-[gd_scene load_steps=6 format=3 uid="uid://ea07qr350arq"]
+[gd_scene format=3 uid="uid://ea07qr350arq"]
 
 [ext_resource type="Script" uid="uid://d04mapcqqp3c0" path="res://scripts/ui/action_panel.gd" id="1_xpfpg"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_action_panel_base.tres" id="2_action_panel"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_action_button_base.tres" id="3_action_button"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="4_button_primary"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="5_button_disabled"]
+[ext_resource type="Texture2D" uid="uid://crcftpqnt88jv" path="res://assets/ui/generated/icon_phase_night.png" id="2_phase_night"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_action_button_base.tres" id="3_action_button"]
+[ext_resource type="StyleBox" uid="uid://dbo4buqebt4fl" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="4_button_primary"]
+[ext_resource type="StyleBox" uid="uid://cgd8d0dv2dush" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="5_button_disabled"]
 
-[node name="ActionPanel" type="PanelContainer" unique_id=921141590]
+[node name="ActionPanel" type="Control" unique_id=921141590]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1602.0
+offset_bottom = -1004.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xpfpg")
+
+[node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000101]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_xpfpg")
-theme_override_styles/panel = ExtResource("2_action_panel")
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000101]
+[node name="CenterContainer" type="CenterContainer" parent="ContentMargin" unique_id=165330221]
 layout_mode = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin" unique_id=255313322]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="ModeLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1780032100]
+[node name="StartNightButton" type="Button" parent="ContentMargin/CenterContainer" unique_id=875692889]
 unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "待机"
-text_overrun_behavior = 3
-
-[node name="ActionButtonFlow" type="HBoxContainer" parent="ContentMargin/VBoxContainer" unique_id=836670440]
-layout_mode = 2
-theme_override_constants/separation = 6
-alignment = 1
-
-[node name="StartNightButton" type="Button" parent="ContentMargin/VBoxContainer/ActionButtonFlow" unique_id=875692889]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 36)
+custom_minimum_size = Vector2(318, 76)
 layout_mode = 2
 focus_mode = 0
-text = "夜晚"
 theme_override_styles/normal = ExtResource("3_action_button")
-theme_override_styles/hover = ExtResource("4_button_primary")
 theme_override_styles/pressed = ExtResource("4_button_primary")
+theme_override_styles/hover = ExtResource("4_button_primary")
 theme_override_styles/disabled = ExtResource("5_button_disabled")
 
-[node name="BuildingActionFlow" type="HFlowContainer" parent="ContentMargin/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 4
+[node name="Content" type="CenterContainer" parent="ContentMargin/CenterContainer/StartNightButton" unique_id=1419929600]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="RepairBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 36)
+[node name="Row" type="HBoxContainer" parent="ContentMargin/CenterContainer/StartNightButton/Content" unique_id=304717659]
 layout_mode = 2
-focus_mode = 0
-text = "修复"
-theme_override_styles/normal = ExtResource("3_action_button")
-theme_override_styles/hover = ExtResource("4_button_primary")
-theme_override_styles/pressed = ExtResource("4_button_primary")
-theme_override_styles/disabled = ExtResource("5_button_disabled")
+mouse_filter = 2
+theme_override_constants/separation = 10
 
-[node name="DemolishBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 36)
+[node name="Icon" type="TextureRect" parent="ContentMargin/CenterContainer/StartNightButton/Content/Row" unique_id=1719938186]
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
-focus_mode = 0
-text = "拆除"
-theme_override_styles/normal = ExtResource("3_action_button")
-theme_override_styles/hover = ExtResource("4_button_primary")
-theme_override_styles/pressed = ExtResource("4_button_primary")
-theme_override_styles/disabled = ExtResource("5_button_disabled")
+mouse_filter = 2
+texture = ExtResource("2_phase_night")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="ToggleBuildingButton" type="Button" parent="ContentMargin/VBoxContainer/BuildingActionFlow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 36)
+[node name="Text" type="Label" parent="ContentMargin/CenterContainer/StartNightButton/Content/Row" unique_id=2132586819]
 layout_mode = 2
-focus_mode = 0
-text = "开关"
-theme_override_styles/normal = ExtResource("3_action_button")
-theme_override_styles/hover = ExtResource("4_button_primary")
-theme_override_styles/pressed = ExtResource("4_button_primary")
-theme_override_styles/disabled = ExtResource("5_button_disabled")
-
-[node name="BuildingInfoLabel" type="Label" parent="ContentMargin/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "选择建筑查看耐久"
-autowrap_mode = 2
+text = "开始夜晚"
