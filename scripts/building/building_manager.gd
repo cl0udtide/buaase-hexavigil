@@ -48,7 +48,7 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var event_bus = AppRefs.event_bus()
 	if data_repo == null or run_state == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
 	var material_costs := BuildValidator.get_building_material_costs(cfg)
 	var check := _validator.can_place_building(cell, building_id, material_costs)
@@ -73,11 +73,11 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	if scene == null:
 		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
-		return ActionResult.err(&"SCENE_MISSING", "Building scene is missing")
+		return ActionResult.err(&"SCENE_MISSING", "建造失败：建筑场景缺失")
 	if _building_root == null:
 		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
-		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot is missing")
+		return ActionResult.err(&"WORLD_NOT_READY", "操作失败：建筑根节点不可用")
 
 	var actor: Node = scene.instantiate()
 	_building_root.add_child(actor)
@@ -108,15 +108,15 @@ func try_place_building_debug(cell: Vector2i, building_id: StringName) -> Dictio
 	var data_repo = AppRefs.data_repo()
 	var event_bus = AppRefs.event_bus()
 	if data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "App refs are unavailable")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 	var cfg: Dictionary = data_repo.get_building_cfg(building_id)
 	if cfg.is_empty():
-		return ActionResult.err(&"BUILDING_CONFIG_MISSING", "Building config is missing")
+		return ActionResult.err(&"BUILDING_CONFIG_MISSING", "建造失败：找不到建筑配置")
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
-		return ActionResult.err(&"SCENE_MISSING", "Building scene is missing")
+		return ActionResult.err(&"SCENE_MISSING", "建造失败：建筑场景缺失")
 	if _building_root == null:
-		return ActionResult.err(&"WORLD_NOT_READY", "BuildingRoot is missing")
+		return ActionResult.err(&"WORLD_NOT_READY", "操作失败：建筑根节点不可用")
 
 	var actor: Node = scene.instantiate()
 	_building_root.add_child(actor)
@@ -159,12 +159,12 @@ func try_repair_building(building_runtime_id: int) -> Dictionary:
 		return check
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor == null:
-		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
+		return ActionResult.err(&"BUILDING_NOT_FOUND", "操作失败：找不到目标建筑")
 	if not _is_building_destroyed(actor):
 		return ActionResult.err(&"BUILDING_NOT_DESTROYED", "只有完全损毁的建筑需要手动修复")
 	var run_state = AppRefs.run_state()
 	if run_state == null:
-		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
+		return ActionResult.err(&"RUN_STATE_MISSING", "操作失败：运行状态不可用")
 	var repair_cost := _get_destroyed_repair_cost(actor)
 	var spend_result: Dictionary = run_state.spend_materials(
 		int(repair_cost.get("wood", 0)),
@@ -193,12 +193,12 @@ func try_repair_building(building_runtime_id: int) -> Dictionary:
 func try_demolish_building(building_runtime_id: int) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	if run_state == null:
-		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
+		return ActionResult.err(&"RUN_STATE_MISSING", "操作失败：运行状态不可用")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以拆除建筑")
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor == null:
-		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
+		return ActionResult.err(&"BUILDING_NOT_FOUND", "操作失败：找不到目标建筑")
 	var building_id: StringName = actor.building_id
 	var cell: Vector2i = actor.get_current_cell()
 	remove_building(building_runtime_id)
@@ -209,16 +209,16 @@ func try_demolish_building(building_runtime_id: int) -> Dictionary:
 func try_toggle_building(building_runtime_id: int) -> Dictionary:
 	var actor := get_building_by_runtime_id(building_runtime_id)
 	if actor == null:
-		return ActionResult.err(&"BUILDING_NOT_FOUND", "Building instance was not found")
+		return ActionResult.err(&"BUILDING_NOT_FOUND", "操作失败：找不到目标建筑")
 	if not actor.has_method("can_toggle_enabled") or not actor.can_toggle_enabled():
-		return ActionResult.err(&"BUILDING_NOT_TOGGLEABLE", "This building cannot be toggled")
+		return ActionResult.err(&"BUILDING_NOT_TOGGLEABLE", "无法切换：该建筑不支持开关")
 	if _is_building_destroyed(actor):
 		return ActionResult.err(&"BUILDING_DESTROYED", "损毁建筑不能切换开关")
 	var run_state = AppRefs.run_state()
 	if run_state == null:
-		return ActionResult.err(&"RUN_STATE_MISSING", "RunState is unavailable")
+		return ActionResult.err(&"RUN_STATE_MISSING", "操作失败：运行状态不可用")
 	if run_state.phase != GameEnums.PHASE_DAY:
-		return ActionResult.err(&"INVALID_PHASE", "Buildings can only be toggled during the day")
+		return ActionResult.err(&"INVALID_PHASE", "无法切换：只有白天可以切换建筑")
 	var enabled: bool = actor.toggle_enabled()
 	_emit_building_state_changed(actor, enabled)
 	return ActionResult.ok({"runtime_id": building_runtime_id, "enabled": enabled})
@@ -309,22 +309,22 @@ func get_building_by_runtime_id(building_runtime_id: int) -> Node:
 
 func _can_place_building_debug(cell: Vector2i) -> Dictionary:
 	if _map_manager == null:
-		return ActionResult.err(&"MAP_MANAGER_MISSING", "Map manager is unavailable")
+		return ActionResult.err(&"MAP_MANAGER_MISSING", "操作失败：地图管理器不可用")
 	if not _map_manager.is_inside(cell):
-		return ActionResult.err(&"CELL_OUT_OF_BOUNDS", "Cell is outside the map")
+		return ActionResult.err(&"CELL_OUT_OF_BOUNDS", "无法建造：目标格不在地图内")
 	var data: CellData = _map_manager.get_cell_data(cell)
 	if data == null:
-		return ActionResult.err(&"CELL_MISSING", "Cell data is missing")
+		return ActionResult.err(&"CELL_MISSING", "操作失败：目标格数据不可用")
 	if data.is_core:
-		return ActionResult.err(&"CELL_IS_CORE", "Cannot place a building on the core")
+		return ActionResult.err(&"CELL_IS_CORE", "无法建造：不能建在核心上")
 	if data.spawn_key != StringName():
-		return ActionResult.err(&"CELL_IS_SPAWN", "Cannot place a building on a spawn point")
+		return ActionResult.err(&"CELL_IS_SPAWN", "无法建造：不能建在出怪点上")
 	if data.is_terrain_blocking() or not data.walkable:
-		return ActionResult.err(&"CELL_BLOCKED", "Cannot place a building on non-buildable terrain")
+		return ActionResult.err(&"CELL_BLOCKED", "无法建造：目标地形不可建造")
 	if data.unit_runtime_id >= 0:
-		return ActionResult.err(&"CELL_HAS_UNIT", "Cannot place a building on a deployed unit")
+		return ActionResult.err(&"CELL_HAS_UNIT", "无法建造：目标格已有单位")
 	if data.building_runtime_id >= 0 or data.occupied:
-		return ActionResult.err(&"CELL_HAS_BUILDING", "Cell already has a building")
+		return ActionResult.err(&"CELL_HAS_BUILDING", "无法建造：目标格已有建筑")
 	return ActionResult.ok()
 
 

@@ -29,7 +29,7 @@ func refresh_shop() -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以刷新商店")
 	var spend_result: Dictionary = run_state.spend_prestige(_get_refresh_cost())
@@ -37,7 +37,7 @@ func refresh_shop() -> Dictionary:
 		return spend_result
 	_roll_shop_stock()
 	_emit_stock_changed()
-	return ActionResult.ok({"stock": get_current_stock()}, "SHOP_REFRESHED")
+	return ActionResult.ok({"stock": get_current_stock()}, "商店已刷新")
 
 
 func get_current_stock() -> Array[Dictionary]:
@@ -59,22 +59,22 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null:
-		return ActionResult.err(&"APP_REFS_MISSING", "APP_REFS_MISSING")
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
 	if run_state.phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以购买干员")
 	if slot_index < 0 or slot_index >= _stock_slots.size():
-		return ActionResult.err(&"SHOP_SLOT_INVALID", "SHOP_SLOT_INVALID")
+		return ActionResult.err(&"SHOP_SLOT_INVALID", "购买失败：商店槽位无效")
 
 	var slot: Dictionary = _stock_slots[slot_index]
 	if bool(slot.get("sold", false)):
 		return ActionResult.err(&"SHOP_SLOT_SOLD", "该槽位已购买")
 	var unit_id := StringName(slot.get("unit_id", ""))
 	if unit_id == StringName():
-		return ActionResult.err(&"SHOP_SLOT_EMPTY", "SHOP_SLOT_EMPTY")
+		return ActionResult.err(&"SHOP_SLOT_EMPTY", "购买失败：商店槽位为空")
 
 	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
 	if cfg.is_empty():
-		return ActionResult.err(&"UNIT_NOT_FOUND", "UNIT_NOT_FOUND")
+		return ActionResult.err(&"UNIT_NOT_FOUND", "购买失败：找不到单位配置")
 	var spend_result: Dictionary = run_state.spend_prestige(_get_unit_purchase_cost(cfg))
 	if not spend_result.get("ok", false):
 		return spend_result
@@ -88,7 +88,7 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 		"unit_id": unit_id,
 		"operator": operator_info,
 		"stock": get_current_stock()
-	}, "璐拱鎴愬姛")
+	}, "购买成功")
 
 
 func _roll_shop_stock() -> void:
