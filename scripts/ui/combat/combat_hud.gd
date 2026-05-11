@@ -26,6 +26,9 @@ const MESSAGE_CHIP_BASE_Z := 0
 const MESSAGE_CHIP_WARNING_Z := 1
 const MESSAGE_CHIP_CONTENT_Z := 2
 const CORE_FILL_INSET := 2.0
+const DEPLOY_SCROLLBAR_THICKNESS := 26.0
+const DEPLOY_SCROLLBAR_MIN_GRAB := 64
+const DEPLOY_SCROLLBAR_STEP := 48
 const RESOURCE_DELTA_GAIN_COLOR := Color(0.440, 0.650, 0.470, 1.0)
 const RESOURCE_DELTA_LOSS_COLOR := Color(0.720, 0.340, 0.310, 1.0)
 const RESOURCE_DELTA_NEUTRAL_COLOR := Color(0.850, 0.850, 0.800, 1.0)
@@ -137,6 +140,7 @@ var _message_warning_overlay: NinePatchRect
 @onready var _wave_route_toggle: CheckBox = %WaveRouteToggle
 @onready var _wave_preview_label: Label = %WavePreviewLabel
 @onready var _deck_panel: Control = %DeployDeck
+@onready var _deck_scroll: ScrollContainer = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
 @onready var _detail_panel: Control = %UnitDetailPanel
 @onready var _legend_panel: Control = %LegendPanel
@@ -188,7 +192,7 @@ func _ready() -> void:
 	if wave_content != null:
 		wave_content.clip_contents = true
 	_wave_preview_panel.clip_contents = true
-	GameUiStyle.apply_scroll_style(_deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer)
+	_setup_deploy_deck_scroll()
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
@@ -422,15 +426,22 @@ func set_operators(operators: Array[Dictionary]) -> void:
 	for child in _deck_container.get_children():
 		child.queue_free()
 	_cards_by_operator_key.clear()
+	_deck_container.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_deck_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_deck_container.custom_minimum_size = Vector2.ZERO
 	for operator_info in operators:
 		var operator_key := StringName((operator_info as Dictionary).get("key", ""))
 		var card = OPERATOR_CARD_SCENE.instantiate()
+		card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		card.setup(operator_key, operator_info)
 		card.operator_card_pressed.connect(func(key: StringName) -> void: operator_card_pressed.emit(key))
 		if card.has_signal("operator_card_drag_started"):
 			card.connect(&"operator_card_drag_started", func(key: StringName) -> void: operator_card_drag_started.emit(key))
 		_deck_container.add_child(card)
 		_cards_by_operator_key[operator_key] = card
+	if _deck_scroll != null:
+		_deck_scroll.scroll_horizontal = 0
+	call_deferred("_refresh_deploy_deck_scroll_content")
 
 
 func set_operator_card(operator_key: StringName, text_value: String, state: StringName) -> void:
@@ -657,6 +668,55 @@ func _apply_frame_margins() -> void:
 	GameUiStyle.apply_frame_margin(_deck_panel.get_node_or_null("DeckMargin") as MarginContainer, GameUiStyle.FRAME_DECK_PANEL)
 	GameUiStyle.apply_frame_margin(_legend_panel.get_node_or_null("LegendMargin") as MarginContainer, GameUiStyle.FRAME_LEGEND_PANEL)
 	GameUiStyle.apply_frame_margin(get_node_or_null("InteractionLayer/DragGhost/GhostMargin") as MarginContainer, GameUiStyle.FRAME_CARD)
+
+
+func _setup_deploy_deck_scroll() -> void:
+	_deck_scroll = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
+	if _deck_scroll == null:
+		push_warning("Deploy deck ScrollContainer is missing; expected DeployDeck/DeckMargin/ScrollContainer.")
+		return
+	_deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_deck_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_deck_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	_deck_scroll.clip_contents = true
+	_deck_scroll.scroll_horizontal_custom_step = DEPLOY_SCROLLBAR_STEP
+	GameUiStyle.apply_scroll_style(_deck_scroll)
+	if not _deck_scroll.resized.is_connected(_refresh_deploy_deck_scroll_content):
+		_deck_scroll.resized.connect(_refresh_deploy_deck_scroll_content)
+	var horizontal_bar := _deck_scroll.get_h_scroll_bar()
+	if horizontal_bar != null:
+		horizontal_bar.custom_minimum_size.y = DEPLOY_SCROLLBAR_THICKNESS
+		horizontal_bar.add_theme_constant_override("scroll_width", int(DEPLOY_SCROLLBAR_THICKNESS))
+		horizontal_bar.add_theme_constant_override("minimum_grab_thickness", DEPLOY_SCROLLBAR_MIN_GRAB)
+		horizontal_bar.mouse_filter = Control.MOUSE_FILTER_STOP
+	var vertical_bar := _deck_scroll.get_v_scroll_bar()
+	if vertical_bar != null:
+		vertical_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refresh_deploy_deck_scroll_content()
+
+
+func _refresh_deploy_deck_scroll_content() -> void:
+	if _deck_container == null:
+		return
+	var card_width := 0.0
+	var card_height := 0.0
+	var visible_card_count := 0
+	for child in _deck_container.get_children():
+		var card := child as Control
+		if card == null or not card.visible:
+			continue
+		var minimum := card.get_combined_minimum_size()
+		if minimum == Vector2.ZERO:
+			minimum = card.custom_minimum_size
+		card_width += maxf(minimum.x, card.custom_minimum_size.x)
+		card_height = maxf(card_height, maxf(minimum.y, card.custom_minimum_size.y))
+		visible_card_count += 1
+	var separation := float(_deck_container.get_theme_constant("separation"))
+	if visible_card_count > 1:
+		card_width += separation * float(visible_card_count - 1)
+	_deck_container.custom_minimum_size = Vector2(card_width, card_height)
+	_deck_container.size.x = card_width
+	_deck_container.size.y = maxf(_deck_container.size.y, card_height)
 
 
 func _style_top_cards() -> void:
