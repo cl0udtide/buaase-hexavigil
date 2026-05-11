@@ -1,6 +1,6 @@
 [gd_resource type="StyleBoxTexture" load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/bar_progress_track.png" id="1_texture"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_resource_delta_badge.png" id="1_texture"]
 
 [resource]
 texture = ExtResource("1_texture")
@@ -8,8 +8,8 @@ texture_margin_left = 8.0
 texture_margin_top = 6.0
 texture_margin_right = 8.0
 texture_margin_bottom = 6.0
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
+content_margin_left = 5.0
+content_margin_top = 3.0
+content_margin_right = 5.0
+content_margin_bottom = 3.0
 draw_center = true

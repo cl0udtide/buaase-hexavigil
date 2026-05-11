@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/combat/combat_hud.gd" id="1_ril48"]
 [ext_resource type="Script" path="res://scripts/ui/audio_settings_button.gd" id="2_fvafi"]
@@ -15,6 +15,38 @@
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_legend_row_base.tres" id="13_legend_row"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="14_button_primary"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="15_button_disabled"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_top_status_bar_base.tres" id="10_topbar"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="11_topchip"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_resource_item_base.tres" id="12_resitem"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="13_resdelta"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_speed_toggle_base.tres" id="14_speedbase"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_speed_toggle_active_overlay.tres" id="15_speedactive"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_settings_button_base.tres" id="16_settingsbutton"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_settings_panel_base.tres" id="17_settingspanel"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_settings_row_base.tres" id="18_settingsrow"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/bar_progress_track.tres" id="19_coretrack"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="20_corefill"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_base.tres" id="21_buttonbase"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="22_buttonactive"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="23_buttondisabled"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_slider_track.tres" id="24_slidertrack"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_slider_fill.tres" id="25_sliderfill"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_slider_handle.png" id="26_sliderhandle"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_settings_gear.png" id="27_iconsettings"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_phase_day.png" id="28_iconphase"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_core_hp.png" id="29_iconcore"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_deploy_limit.png" id="30_icondeploy"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_enemy_queue.png" id="31_iconenemy"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_action_points.png" id="32_iconap"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_wood.png" id="33_iconwood"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_stone.png" id="34_iconstone"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_mana.png" id="35_iconmana"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_prestige.png" id="36_iconprestige"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_pause.png" id="37_iconpause"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_close.png" id="38_iconclose"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_volume_master.png" id="39_iconmaster"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_volume_music.png" id="40_iconmusic"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
 
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
@@ -54,17 +86,26 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 0
+theme_override_styles/normal = ExtResource("16_settingsbutton")
+theme_override_styles/hover = ExtResource("22_buttonactive")
+theme_override_styles/pressed = ExtResource("22_buttonactive")
+theme_override_styles/disabled = ExtResource("23_buttondisabled")
+icon = ExtResource("27_iconsettings")
+icon_alignment = 1
+expand_icon = false
 script = ExtResource("2_fvafi")
 panel_path = NodePath("../../../PopupLayer/SettingsPanelSlot/AudioSettingsPanel")
 auto_toggle_panel = false
 
 [node name="GearIcon" type="Label" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=1732485762]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 20
 text = "⚙"
 horizontal_alignment = 1
@@ -90,13 +131,13 @@ mouse_filter = 2
 
 [node name="TopBarBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar" unique_id=375891098]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("10_topbar")
 
 [node name="TopContent" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar" unique_id=545916971]
 layout_mode = 0
@@ -104,6 +145,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 8
 
 [node name="TopContentRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent" unique_id=218542850]
 unique_name_in_owner = true
@@ -128,15 +174,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("11_topchip")
 
 [node name="QueueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/StageChip" unique_id=1070513286]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 42.0
+offset_left = 50.0
 offset_top = 10.0
-offset_right = -16.0
+offset_right = -18.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -151,11 +199,12 @@ text_overrun_behavior = 3
 layout_mode = 0
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 10.0
+offset_left = 16.0
 offset_top = -14.0
-offset_right = 38.0
+offset_right = 40.0
 offset_bottom = 14.0
 mouse_filter = 2
+texture = ExtResource("28_iconphase")
 expand_mode = 1
 stretch_mode = 5
 
@@ -170,14 +219,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("11_topchip")
 
 [node name="CoreLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=2005078692]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
-offset_left = 42.0
+offset_left = 50.0
 offset_top = 9.0
-offset_right = -16.0
+offset_right = -18.0
 offset_bottom = 33.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -191,30 +242,33 @@ text_overrun_behavior = 3
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
-offset_left = 44.0
+offset_left = 50.0
 offset_top = 42.0
-offset_right = -16.0
+offset_right = -18.0
 offset_bottom = 60.0
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("19_coretrack")
 
 [node name="CoreFill" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=482287457]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 44.0
+offset_left = 50.0
 offset_top = 42.0
-offset_right = 44.0
+offset_right = 50.0
 offset_bottom = 60.0
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("20_corefill")
 
 [node name="ChipIconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=371790689]
 layout_mode = 0
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 10.0
+offset_left = 16.0
 offset_top = -14.0
-offset_right = 38.0
+offset_right = 40.0
 offset_bottom = 14.0
 mouse_filter = 2
+texture = ExtResource("29_iconcore")
 expand_mode = 1
 stretch_mode = 5
 
@@ -229,15 +283,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("11_topchip")
 
 [node name="DeployLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/DeployChip" unique_id=893896498]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 42.0
+offset_left = 50.0
 offset_top = 10.0
-offset_right = -16.0
+offset_right = -18.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -252,11 +308,12 @@ text_overrun_behavior = 3
 layout_mode = 0
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 10.0
+offset_left = 16.0
 offset_top = -14.0
-offset_right = 38.0
+offset_right = 40.0
 offset_bottom = 14.0
 mouse_filter = 2
+texture = ExtResource("30_icondeploy")
 expand_mode = 1
 stretch_mode = 5
 
@@ -271,13 +328,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("11_topchip")
 
 [node name="MessageLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/MessageChip" unique_id=1694205662]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 42.0
+offset_left = 50.0
 offset_top = 10.0
 offset_right = -18.0
 offset_bottom = -10.0
@@ -293,11 +352,12 @@ text_overrun_behavior = 3
 layout_mode = 0
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 10.0
+offset_left = 16.0
 offset_top = -14.0
-offset_right = 38.0
+offset_right = 40.0
 offset_bottom = 14.0
 mouse_filter = 2
+texture = ExtResource("31_iconenemy")
 expand_mode = 1
 stretch_mode = 5
 
@@ -314,13 +374,13 @@ layout_mode = 2
 
 [node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1931574895]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("14_speedbase")
 
 [node name="SpeedActiveOverlay" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=85741853]
 unique_name_in_owner = true
@@ -330,6 +390,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("15_speedactive")
+modulate = Color(1, 1, 1, 0.72)
 
 [node name="TimeMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1207861169]
 layout_mode = 0
@@ -337,6 +400,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 13
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 13
 
 [node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
@@ -348,6 +416,12 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 46)
 layout_mode = 2
 focus_mode = 0
+theme_override_styles/normal = ExtResource("21_buttonbase")
+theme_override_styles/hover = ExtResource("22_buttonactive")
+theme_override_styles/pressed = ExtResource("22_buttonactive")
+theme_override_styles/disabled = ExtResource("23_buttondisabled")
+icon = ExtResource("37_iconpause")
+icon_alignment = 1
 text = "暂停"
 
 [node name="Speed1Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
@@ -355,6 +429,10 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
+theme_override_styles/normal = ExtResource("21_buttonbase")
+theme_override_styles/hover = ExtResource("22_buttonactive")
+theme_override_styles/pressed = ExtResource("22_buttonactive")
+theme_override_styles/disabled = ExtResource("23_buttondisabled")
 text = "1X"
 
 [node name="Speed2Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
@@ -362,6 +440,10 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(68, 46)
 layout_mode = 2
 focus_mode = 0
+theme_override_styles/normal = ExtResource("21_buttonbase")
+theme_override_styles/hover = ExtResource("22_buttonactive")
+theme_override_styles/pressed = ExtResource("22_buttonactive")
+theme_override_styles/disabled = ExtResource("23_buttondisabled")
 text = "2X"
 
 [node name="RightResourceGroup" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow" unique_id=161627506]
@@ -373,7 +455,7 @@ alignment = 2
 
 [node name="ResourceChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup" unique_id=143598965]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(470, 72)
+custom_minimum_size = Vector2(540, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip" unique_id=1247586543]
@@ -415,7 +497,7 @@ alignment = 2
 
 [node name="ActionPointResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=1767111546]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 56)
+custom_minimum_size = Vector2(96, 56)
 layout_mode = 2
 mouse_filter = 2
 
@@ -426,6 +508,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("12_resitem")
 
 [node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem" unique_id=1525859688]
 layout_mode = 0
@@ -446,14 +529,15 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=261924926]
-visible = false
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 mouse_filter = 2
+texture = ExtResource("32_iconap")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=491002511]
+visible = false
 custom_minimum_size = Vector2(26, 0)
 layout_mode = 2
 text = "AP"
@@ -469,14 +553,19 @@ text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow" unique_id=701873469]
 visible = false
-custom_minimum_size = Vector2(32, 22)
+custom_minimum_size = Vector2(30, 22)
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_resdelta")
 
 [node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=211448428]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
@@ -485,7 +574,7 @@ text_overrun_behavior = 3
 
 [node name="WoodResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=2031638811]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 56)
+custom_minimum_size = Vector2(96, 56)
 layout_mode = 2
 mouse_filter = 2
 
@@ -496,6 +585,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("12_resitem")
 
 [node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem" unique_id=1236382566]
 layout_mode = 0
@@ -516,14 +606,15 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1543004957]
-visible = false
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 mouse_filter = 2
+texture = ExtResource("33_iconwood")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=867250537]
+visible = false
 custom_minimum_size = Vector2(26, 0)
 layout_mode = 2
 text = "W"
@@ -539,14 +630,19 @@ text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow" unique_id=1428997117]
 visible = false
-custom_minimum_size = Vector2(32, 22)
+custom_minimum_size = Vector2(30, 22)
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_resdelta")
 
 [node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1031293433]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
@@ -555,7 +651,7 @@ text_overrun_behavior = 3
 
 [node name="StoneResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=946219780]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 56)
+custom_minimum_size = Vector2(96, 56)
 layout_mode = 2
 mouse_filter = 2
 
@@ -566,6 +662,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("12_resitem")
 
 [node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem" unique_id=1280841138]
 layout_mode = 0
@@ -586,14 +683,15 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=1671956047]
-visible = false
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 mouse_filter = 2
+texture = ExtResource("34_iconstone")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=1419226041]
+visible = false
 custom_minimum_size = Vector2(26, 0)
 layout_mode = 2
 text = "S"
@@ -609,14 +707,19 @@ text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow" unique_id=790195570]
 visible = false
-custom_minimum_size = Vector2(32, 22)
+custom_minimum_size = Vector2(30, 22)
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_resdelta")
 
 [node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1943487582]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
@@ -625,7 +728,7 @@ text_overrun_behavior = 3
 
 [node name="ManaResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=569599095]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 56)
+custom_minimum_size = Vector2(96, 56)
 layout_mode = 2
 mouse_filter = 2
 
@@ -636,6 +739,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("12_resitem")
 
 [node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem" unique_id=707922083]
 layout_mode = 0
@@ -656,14 +760,15 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=84525083]
-visible = false
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 mouse_filter = 2
+texture = ExtResource("35_iconmana")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=477963794]
+visible = false
 custom_minimum_size = Vector2(26, 0)
 layout_mode = 2
 text = "M"
@@ -679,14 +784,19 @@ text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow" unique_id=1568509827]
 visible = false
-custom_minimum_size = Vector2(32, 22)
+custom_minimum_size = Vector2(30, 22)
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_resdelta")
 
 [node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=1189598343]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
@@ -695,7 +805,7 @@ text_overrun_behavior = 3
 
 [node name="PrestigeResourceItem" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow" unique_id=1594135027]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 56)
+custom_minimum_size = Vector2(96, 56)
 layout_mode = 2
 mouse_filter = 2
 
@@ -706,6 +816,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("12_resitem")
 
 [node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem" unique_id=986607795]
 layout_mode = 0
@@ -726,14 +837,15 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="IconTexture" type="TextureRect" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1565540578]
-visible = false
-custom_minimum_size = Vector2(26, 26)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 mouse_filter = 2
+texture = ExtResource("36_iconprestige")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="IconLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=195775893]
+visible = false
 custom_minimum_size = Vector2(26, 0)
 layout_mode = 2
 text = "P"
@@ -749,14 +861,19 @@ text_overrun_behavior = 3
 
 [node name="DeltaBadge" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow" unique_id=1065418526]
 visible = false
-custom_minimum_size = Vector2(32, 22)
+custom_minimum_size = Vector2(30, 22)
 layout_mode = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("13_resdelta")
 
 [node name="DeltaLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin/ItemRow/DeltaBadge" unique_id=307323838]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
@@ -1137,6 +1254,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("17_settingspanel")
 
 [node name="ContentMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel" unique_id=1365737163]
 layout_mode = 0
@@ -1144,6 +1263,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
 [node name="MainVBox" type="VBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin" unique_id=1912505798]
 layout_mode = 2
@@ -1166,6 +1290,12 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
 focus_mode = 0
+theme_override_styles/normal = ExtResource("21_buttonbase")
+theme_override_styles/hover = ExtResource("22_buttonactive")
+theme_override_styles/pressed = ExtResource("22_buttonactive")
+theme_override_styles/disabled = ExtResource("23_buttondisabled")
+icon = ExtResource("38_iconclose")
+icon_alignment = 1
 text = "×"
 
 [node name="MasterRow" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=572802256]
@@ -1179,6 +1309,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("18_settingsrow")
 
 [node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow" unique_id=326530263]
 layout_mode = 0
@@ -1186,6 +1318,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
 [node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin" unique_id=1595461419]
 layout_mode = 2
@@ -1198,6 +1335,14 @@ text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="IconTexture" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent/VolumeIcon"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("39_iconmaster")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="MasterLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=394814768]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
@@ -1209,6 +1354,12 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_icons/grabber = ExtResource("26_sliderhandle")
+theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
+theme_override_icons/grabber_pressed = ExtResource("26_sliderhandle")
+theme_override_styles/slider = ExtResource("24_slidertrack")
+theme_override_styles/grabber_area = ExtResource("25_sliderfill")
+theme_override_styles/grabber_area_highlight = ExtResource("25_sliderfill")
 
 [node name="MasterValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MasterRow/RowMargin/RowContent" unique_id=2048464643]
 unique_name_in_owner = true
@@ -1228,6 +1379,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("18_settingsrow")
 
 [node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow" unique_id=1700025736]
 layout_mode = 0
@@ -1235,6 +1388,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
 [node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin" unique_id=1740202446]
 layout_mode = 2
@@ -1247,6 +1405,14 @@ text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="IconTexture" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent/VolumeIcon"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("40_iconmusic")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="MusicLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=550238741]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
@@ -1258,6 +1424,12 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_icons/grabber = ExtResource("26_sliderhandle")
+theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
+theme_override_icons/grabber_pressed = ExtResource("26_sliderhandle")
+theme_override_styles/slider = ExtResource("24_slidertrack")
+theme_override_styles/grabber_area = ExtResource("25_sliderfill")
+theme_override_styles/grabber_area_highlight = ExtResource("25_sliderfill")
 
 [node name="MusicValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/MusicRow/RowMargin/RowContent" unique_id=1973106036]
 unique_name_in_owner = true
@@ -1277,6 +1449,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("18_settingsrow")
 
 [node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow" unique_id=1772377279]
 layout_mode = 0
@@ -1284,6 +1458,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
 [node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin" unique_id=1000262509]
 layout_mode = 2
@@ -1296,6 +1475,14 @@ text = "♪"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="IconTexture" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent/VolumeIcon"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("41_iconsfx")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="SfxLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1098896980]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
@@ -1307,6 +1494,12 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_icons/grabber = ExtResource("26_sliderhandle")
+theme_override_icons/grabber_highlight = ExtResource("26_sliderhandle")
+theme_override_icons/grabber_pressed = ExtResource("26_sliderhandle")
+theme_override_styles/slider = ExtResource("24_slidertrack")
+theme_override_styles/grabber_area = ExtResource("25_sliderfill")
+theme_override_styles/grabber_area_highlight = ExtResource("25_sliderfill")
 
 [node name="SfxValueLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/SfxRow/RowMargin/RowContent" unique_id=1134437594]
 unique_name_in_owner = true
