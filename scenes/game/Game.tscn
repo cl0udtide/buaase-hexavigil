@@ -153,15 +153,6 @@ mouse_filter = 2
 [node name="ActionPanel" parent="UI/ScreenLayout/ActionPanelSlot" unique_id=921141590 instance=ExtResource("21_ipajp")]
 z_index = 25
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_right = 0.0
-offset_left = 160.0
-offset_top = -42.0
-offset_right = 160.0
-offset_bottom = -42.0
-grow_horizontal = 1
-grow_vertical = 0
 
 [node name="CombatHudSlot" type="Control" parent="UI/ScreenLayout" unique_id=659321930]
 unique_name_in_owner = true
@@ -183,7 +174,6 @@ offset_bottom = 1080.0
 mouse_filter = 2
 
 [node name="MapInteractionPopup" type="PanelContainer" parent="UI/FloatingLayer" unique_id=651466715]
-visible = false
 z_index = 60
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 0
@@ -195,13 +185,13 @@ script = ExtResource("37_map_popup")
 [node name="ContentMargin" type="MarginContainer" parent="UI/FloatingLayer/MapInteractionPopup" unique_id=1059353633]
 layout_mode = 2
 theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 16
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin" unique_id=977823971]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 16
 
 [node name="TitleLabel" type="Label" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer" unique_id=1730941729]
 unique_name_in_owner = true
@@ -214,7 +204,7 @@ text_overrun_behavior = 3
 [node name="EventSection" type="VBoxContainer" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer" unique_id=1192540817]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = -2
 
 [node name="EventInfoLabel" type="Label" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/EventSection" unique_id=1325118264]
 unique_name_in_owner = true
@@ -248,7 +238,7 @@ stretch_mode = 5
 [node name="ResourceSection" type="VBoxContainer" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer" unique_id=1675556465]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = -2
 
 [node name="ResourceInfoLabel" type="Label" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/ResourceSection" unique_id=1969470520]
 unique_name_in_owner = true
@@ -282,7 +272,7 @@ stretch_mode = 5
 [node name="BuildingSection" type="VBoxContainer" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer" unique_id=1604736364]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = -2
 
 [node name="BuildingInfoLabel" type="Label" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection" unique_id=1563437963]
 unique_name_in_owner = true
