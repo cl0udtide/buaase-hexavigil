@@ -28,6 +28,7 @@ const SFX_UI_RELIC_OPEN := &"ui_relic_open"
 const SFX_UI_CARD_SELECT := &"ui_card_select"
 const SFX_UI_PAUSE := &"ui_pause"
 const SFX_UI_SPEED_TOGGLE := &"ui_speed_toggle"
+const SFX_UI_BULLET_TIME := &"ui_bullet_time"
 const SFX_UI_SLIDER := &"ui_slider"
 
 const FADE_SECONDS := 0.65
@@ -66,6 +67,7 @@ var sfx_paths := {
 	SFX_UI_CARD_SELECT: "res://assets/audio/sfx/ui_card_select.ogg",
 	SFX_UI_PAUSE: "res://assets/audio/sfx/ui_transition.ogg",
 	SFX_UI_SPEED_TOGGLE: "res://assets/audio/sfx/ui_transition.ogg",
+	SFX_UI_BULLET_TIME: "res://assets/audio/sfx/ui_transition.ogg",
 	SFX_UI_SLIDER: "res://assets/audio/sfx/ui_click.ogg"
 }
 
@@ -133,7 +135,8 @@ func play_sfx(sfx_key: StringName) -> void:
 	if stream == null:
 		push_warning("Missing SFX stream for key: %s" % sfx_key)
 		return
-	play_sfx_stream(stream)
+	var pitch_scale := 0.74 if sfx_key == SFX_UI_BULLET_TIME else 1.0
+	play_sfx_stream(stream, pitch_scale)
 
 
 func play_unit_deploy_sfx() -> void:
@@ -156,13 +159,14 @@ func play_resource_collect_sfx() -> void:
 	play_sfx(SFX_RESOURCE_COLLECT)
 
 
-func play_sfx_stream(stream: AudioStream) -> void:
+func play_sfx_stream(stream: AudioStream, pitch_scale: float = 1.0) -> void:
 	if stream == null or _sfx_players.is_empty():
 		return
 	var player := _sfx_players[_sfx_cursor]
 	_sfx_cursor = (_sfx_cursor + 1) % _sfx_players.size()
 	player.stop()
 	player.stream = stream
+	player.pitch_scale = pitch_scale
 	player.volume_db = _linear_to_db(master_volume * sfx_volume)
 	player.play()
 

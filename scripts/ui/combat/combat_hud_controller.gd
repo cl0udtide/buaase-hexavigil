@@ -9,6 +9,7 @@ const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const DRAG_BUILDING := &"drag_building"
 const INVALID_CELL := Vector2i(-9999, -9999)
+const BULLET_TIME_SCALE := 0.2
 const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
 const ROUTE_LABEL_ALPHABET := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const RESOURCE_DISPLAY_NAMES := {
@@ -43,6 +44,9 @@ var _latest_wave_routes: Array[Dictionary] = []
 var _latest_wave_preview_text := ""
 var _wave_route_revision := 0
 var _wave_preview_refresh_queued := false
+var _normal_time_scale := 1.0
+var _bullet_time_active := false
+var _bullet_time_suspended := false
 
 @export_node_path("Control") var combat_hud_path: NodePath = ^"../ScreenLayout/CombatHudSlot/CombatHud"
 @export_node_path("Control") var action_panel_path: NodePath = ^"../ScreenLayout/ActionPanelSlot/ActionPanel"
@@ -78,6 +82,7 @@ func _process(_delta: float) -> void:
 	_refresh_wave_preview()
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
+	_sync_bullet_time_from_selection()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -86,6 +91,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _combat_hud != null and _combat_hud.has_method("close_top_panel") and _combat_hud.close_top_panel():
 				return
 			_cancel_deploy_flow("已取消")
+			if _has_active_tactical_selection():
+				_clear_detail_selection()
 			return
 		if event.keycode == KEY_R:
 			if _combat_hud != null and _combat_hud.has_method("toggle_relic_panel"):
@@ -96,6 +103,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed and _deploy_drag_state != DRAG_NONE:
 			_cancel_deploy_flow("已取消")
+			return
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed and _deploy_drag_state == DRAG_NONE and _has_active_tactical_selection():
+			_clear_detail_selection()
 			return
 		if _deploy_drag_state == DRAG_LOCKED and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			if _get_mouse_cell() == _locked_deploy_cell:
@@ -123,6 +133,7 @@ func _configure_pause_boundaries() -> void:
 
 
 func _exit_tree() -> void:
+	_exit_bullet_time(false)
 	if get_tree() != null:
 		get_tree().paused = false
 	Engine.time_scale = 1.0
@@ -191,6 +202,7 @@ func _bootstrap_hud() -> void:
 		_on_buffs_changed(run_state.get_all_buffs())
 	_refresh_top_hud()
 	_refresh_time_controls()
+	_refresh_bullet_time_feedback()
 	_show_message("拖拽底部干员卡开始部署")
 	_force_wave_preview_refresh()
 
@@ -233,6 +245,8 @@ func _on_buffs_changed(buff_ids: Array[StringName]) -> void:
 
 func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 	_cancel_deploy_flow("")
+	_bullet_time_suspended = false
+	_exit_bullet_time(false)
 	if _new_phase != GameEnums.PHASE_NIGHT:
 		get_tree().paused = false
 		Engine.time_scale = 1.0
@@ -255,6 +269,9 @@ func _on_night_started(_day: int) -> void:
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
 	var state := _get_operator_state(operator_key)
+	if _deploy_drag_state == DRAG_NONE and operator_key == _selected_operator_key:
+		_clear_detail_selection()
+		return
 	if state == &"deployed":
 		var deployed_unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if deployed_unit != null:
@@ -291,6 +308,7 @@ func _begin_operator_drag(operator_key: StringName) -> void:
 	_drag_operator_key = operator_key
 	_selected_operator_key = operator_key
 	_deploy_drag_state = DRAG_CARD
+	_bullet_time_suspended = false
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
 	if _action_panel != null and _action_panel.has_method("clear_mode"):
@@ -298,6 +316,7 @@ func _begin_operator_drag(operator_key: StringName) -> void:
 	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
 		_combat_hud.show_drag_ghost(_format_operator_drag_text(operator_key))
 	_show_message("拖拽到可部署格后松手锁定落点")
+	_sync_bullet_time_from_selection()
 
 
 func _update_deploy_drag() -> void:
@@ -359,11 +378,8 @@ func _confirm_locked_deploy() -> void:
 		return
 	var result: Dictionary = _unit_manager.try_deploy_operator(_drag_operator_key, _locked_deploy_cell, _current_drag_facing)
 	if result.get("ok", false):
-		var runtime_id := int(result.get("payload", {}).get("runtime_id", -1))
-		var unit = _unit_manager.get_unit_by_runtime_id(runtime_id) if _unit_manager.has_method("get_unit_by_runtime_id") else null
 		_cancel_deploy_flow("")
-		if unit != null:
-			_select_unit(unit)
+		_clear_detail_selection()
 		_show_message("部署完成")
 	else:
 		_cancel_deploy_flow(String(result.get("message", "部署失败")), true)
@@ -399,9 +415,12 @@ func _on_building_card_drag_started(building_id: StringName) -> void:
 		return
 	if building_id == StringName():
 		return
+	_clear_detail_selection()
 	_cancel_deploy_flow("")
 	_drag_building_id = building_id
 	_deploy_drag_state = DRAG_BUILDING
+	_bullet_time_suspended = true
+	_exit_bullet_time()
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
 	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
@@ -516,14 +535,20 @@ func _select_unit(unit: Node) -> void:
 	_clear_shop_preview_selection()
 	_selected_unit_runtime_id = int(unit.get_runtime_id()) if unit.has_method("get_runtime_id") else -1
 	_selected_operator_key = StringName(unit.operator_key) if unit.get("operator_key") != null else StringName()
+	_bullet_time_suspended = false
 	_refresh_attack_range_preview()
 	_refresh_detail_panel()
+	_sync_bullet_time_from_selection()
 	_show_message("已选中 %s#%d" % [_get_unit_display_name(unit), _selected_unit_runtime_id])
 
 
 func _clear_selected_unit() -> void:
 	_selected_unit_runtime_id = -1
+	_selected_operator_key = StringName()
 	_clear_attack_range_preview()
+	if _combat_hud != null and _combat_hud.has_method("clear_unit_detail"):
+		_combat_hud.clear_unit_detail()
+	_sync_bullet_time_from_selection()
 
 
 func _refresh_detail_panel() -> void:
@@ -548,9 +573,11 @@ func _show_operator_preview(operator_key: StringName) -> void:
 	_cancel_deploy_flow("")
 	_selected_unit_runtime_id = -1
 	_selected_operator_key = operator_key
+	_bullet_time_suspended = false
 	_clear_shop_preview_selection()
 	_clear_attack_range_preview()
 	_refresh_detail_panel()
+	_sync_bullet_time_from_selection()
 
 
 func _refresh_owned_operator_preview() -> void:
@@ -603,12 +630,14 @@ func _clear_detail_selection() -> void:
 	_clear_attack_range_preview()
 	if _combat_hud != null and _combat_hud.has_method("clear_unit_detail"):
 		_combat_hud.clear_unit_detail()
+	_sync_bullet_time_from_selection()
 
 
 func _on_shop_unit_preview_requested(slot_index: int, unit_id: StringName, price: int, can_purchase: bool, disabled_reason: String) -> void:
 	_cancel_deploy_flow("")
 	_selected_unit_runtime_id = -1
 	_selected_operator_key = StringName()
+	_bullet_time_suspended = true
 	_selected_shop_slot_index = slot_index
 	_selected_shop_unit_id = unit_id
 	_selected_shop_price = price
@@ -616,6 +645,7 @@ func _on_shop_unit_preview_requested(slot_index: int, unit_id: StringName, price
 	_selected_shop_disabled_reason = disabled_reason
 	_clear_attack_range_preview()
 	_refresh_detail_panel()
+	_sync_bullet_time_from_selection()
 
 
 func _on_shop_unit_purchase_requested(slot_index: int) -> void:
@@ -645,8 +675,9 @@ func _on_cast_skill_pressed() -> void:
 		_show_message("未选中单位")
 		return
 	var result: Dictionary = _unit_manager.try_cast_skill(unit.get_runtime_id())
+	if result.get("ok", false):
+		_clear_detail_selection()
 	_show_result_message(result, "技能已释放", "技能释放失败")
-	_refresh_detail_panel()
 
 
 func _on_retreat_pressed() -> void:
@@ -709,9 +740,76 @@ func _on_operator_redeploy_completed(operator_key: StringName) -> void:
 		_show_message("%s 已可部署" % _get_operator_display_name(operator_key))
 
 
+func _sync_bullet_time_from_selection() -> void:
+	if _should_use_bullet_time():
+		_enter_bullet_time()
+	else:
+		_exit_bullet_time()
+
+
+func _should_use_bullet_time() -> bool:
+	if _bullet_time_suspended:
+		return false
+	if get_tree() == null or get_tree().paused:
+		return false
+	if not _can_deploy_now():
+		return false
+	if _deploy_drag_state == DRAG_CARD or _deploy_drag_state == DRAG_LOCKED or _deploy_drag_state == DRAG_FACING:
+		return true
+	if _selected_unit_runtime_id >= 0:
+		return true
+	return _selected_operator_key != StringName() and _selected_shop_slot_index < 0
+
+
+func _has_active_tactical_selection() -> bool:
+	return _bullet_time_active or _selected_unit_runtime_id >= 0 or (_selected_operator_key != StringName() and _selected_shop_slot_index < 0)
+
+
+func _enter_bullet_time() -> void:
+	var changed := false
+	var just_activated := false
+	if not _bullet_time_active:
+		if not is_equal_approx(Engine.time_scale, BULLET_TIME_SCALE) and Engine.time_scale > 0.0:
+			_normal_time_scale = Engine.time_scale
+		_bullet_time_active = true
+		changed = true
+		just_activated = true
+	if not is_equal_approx(Engine.time_scale, BULLET_TIME_SCALE):
+		Engine.time_scale = BULLET_TIME_SCALE
+		changed = true
+	if changed:
+		if just_activated:
+			_play_bullet_time_cue()
+		_refresh_bullet_time_feedback()
+		_refresh_time_controls()
+
+
+func _exit_bullet_time(restore_normal_speed := true) -> void:
+	if not _bullet_time_active:
+		return
+	_bullet_time_active = false
+	if restore_normal_speed:
+		Engine.time_scale = _normal_time_scale
+	_refresh_bullet_time_feedback()
+
+
+func _refresh_bullet_time_feedback() -> void:
+	if _combat_hud != null and _combat_hud.has_method("set_bullet_time_feedback"):
+		_combat_hud.set_bullet_time_feedback(_bullet_time_active, BULLET_TIME_SCALE)
+
+
+func _play_bullet_time_cue() -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.audio_cue_requested.emit(&"ui_bullet_time")
+
+
 func _on_pause_pressed() -> void:
 	if not _are_time_controls_enabled():
 		return
+	_bullet_time_suspended = true
+	_clear_detail_selection()
+	_exit_bullet_time()
 	get_tree().paused = true
 	_refresh_time_controls()
 
@@ -719,16 +817,24 @@ func _on_pause_pressed() -> void:
 func _on_speed_1_pressed() -> void:
 	if not _are_time_controls_enabled():
 		return
+	_bullet_time_suspended = true
+	_clear_detail_selection()
+	_exit_bullet_time(false)
 	get_tree().paused = false
 	Engine.time_scale = 1.0
+	_normal_time_scale = 1.0
 	_refresh_time_controls()
 
 
 func _on_speed_2_pressed() -> void:
 	if not _are_time_controls_enabled():
 		return
+	_bullet_time_suspended = true
+	_clear_detail_selection()
+	_exit_bullet_time(false)
 	get_tree().paused = false
 	Engine.time_scale = 2.0
+	_normal_time_scale = 2.0
 	_refresh_time_controls()
 
 
@@ -1245,6 +1351,7 @@ func _get_selected_unit() -> Node:
 	var unit = _unit_manager.get_unit_by_runtime_id(_selected_unit_runtime_id) if _unit_manager.has_method("get_unit_by_runtime_id") else null
 	if unit == null or not is_instance_valid(unit):
 		_selected_unit_runtime_id = -1
+		_selected_operator_key = StringName()
 		_clear_attack_range_preview()
 		return null
 	return unit

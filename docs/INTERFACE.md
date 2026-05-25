@@ -1543,6 +1543,7 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 func show_message(text_value: String) -> void
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void
 func set_time_controls(paused: bool, speed: float) -> void
+func set_bullet_time_feedback(active: bool, scale: float = 0.2) -> void
 func set_operators(operators: Array[Dictionary]) -> void
 func set_operator_card(operator_key: StringName, text_value: String, state: StringName) -> void
 func show_drag_ghost(text_value: String) -> void
@@ -1560,6 +1561,8 @@ func clear_unit_detail() -> void
   行为：刷新顶部资源文本和 tooltip。
 - `set_time_controls(paused, speed)`
   行为：刷新暂停按钮和 1x/2x 倍速按钮状态；实际暂停和倍速由承载场景处理。
+- `set_bullet_time_feedback(active, scale = 0.2)`
+  行为：切换选中/部署操作时的子弹时间画面反馈；不显示说明文字，实际时间缩放由承载场景处理。
 - `set_operators(operators)`
   行为：根据干员槽位列表实例化底部 `OperatorCard`。
 - `set_operator_card(operator_key, text_value, state)`
@@ -1591,6 +1594,7 @@ func clear_unit_detail() -> void
 - 接收 `CombatHud` 信号。
 - 从 `RunState` 同步干员槽位和顶部状态。
 - 执行底部干员卡拖拽、落点锁定、二段朝向选择和部署确认。
+- 选中待部署干员、拖拽部署或点选场上干员时临时进入 `0.2x` 子弹时间，并同步显示右侧详情；再次点击同一干员卡或点击其他未处理区域时退出并清空详情，切换商店/建造、暂停或手动切换倍速时也恢复。
 - 点击已部署单位时显示详情和攻击范围。
 - 点击空地图格时取消选中并清除攻击范围。
 - 转接技能、撤退、暂停和 1x/2x。

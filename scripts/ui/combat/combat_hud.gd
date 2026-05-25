@@ -19,6 +19,7 @@ const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone"
 const CORE_HP_TITLE := "核心生命"
 
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
+const BULLET_TIME_OVERLAY_ALPHA := 1.0
 const MESSAGE_WARNING_OVERLAY_ALPHA := 0.92
 const MESSAGE_WARNING_OVERLAY_FRAME := &"frame_button_danger_overlay"
 const MESSAGE_WARNING_OVERLAY_PATCH_MARGIN := 18
@@ -102,6 +103,7 @@ var _core_hp_ratio := 0.0
 var _core_hp_current := 0
 var _core_hp_max := 0
 var _message_warning_overlay: NinePatchRect
+var _bullet_time_feedback_tween: Tween
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
@@ -116,6 +118,7 @@ var _message_warning_overlay: NinePatchRect
 @onready var _time_controls: Control = %TimeControls
 @onready var _speed_toggle_base: Panel = %SpeedToggleBase
 @onready var _speed_active_overlay: Panel = %SpeedActiveOverlay
+@onready var _bullet_time_overlay: Control = %BulletTimeOverlay
 @onready var _resource_chip: Control = %ResourceChip
 @onready var _resource_items_row: HBoxContainer = %ResourceItemsRow
 @onready var _core_label: Label = %CoreLabel
@@ -178,6 +181,9 @@ func _ready() -> void:
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
+	_bullet_time_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bullet_time_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	_bullet_time_overlay.visible = false
 	_wave_preview_panel.z_index = 18
 	_deck_panel.z_index = 12
 	_legend_panel.z_index = 14
@@ -401,6 +407,23 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	elif speed_2_selected:
 		active_time_button = _speed_2_button
 	call_deferred("_place_speed_active_overlay", active_time_button)
+
+
+func set_bullet_time_feedback(active: bool, _scale: float = 0.2) -> void:
+	if _bullet_time_overlay == null:
+		return
+	if _bullet_time_feedback_tween != null:
+		_bullet_time_feedback_tween.kill()
+	if active:
+		_bullet_time_overlay.visible = true
+		_bullet_time_overlay.modulate = Color(1.0, 1.0, 1.0, BULLET_TIME_OVERLAY_ALPHA)
+		return
+	_bullet_time_feedback_tween = create_tween()
+	_bullet_time_feedback_tween.tween_property(_bullet_time_overlay, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.12)
+	_bullet_time_feedback_tween.tween_callback(func() -> void:
+		if _bullet_time_overlay != null:
+			_bullet_time_overlay.visible = false
+	)
 
 
 func set_operators(operators: Array[Dictionary]) -> void:
@@ -640,7 +663,7 @@ func _setup_deploy_deck_scroll() -> void:
 		return
 	_deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_deck_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_deck_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	_deck_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	_deck_scroll.clip_contents = true
 	_deck_scroll.scroll_horizontal_custom_step = DEPLOY_SCROLLBAR_STEP
 	GameUiStyle.apply_scroll_style(_deck_scroll)

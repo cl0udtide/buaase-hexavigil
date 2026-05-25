@@ -67,6 +67,71 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="BulletTimeOverlay" type="Control" parent="HudChromeLayer"]
+unique_name_in_owner = true
+visible = false
+z_index = -6
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BulletTimeTint" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.025, 0.105, 0.135, 0.22)
+
+[node name="BulletTimeTopBand" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 7.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.28, 0.86, 1, 0.62)
+
+[node name="BulletTimeBottomBand" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -7.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.28, 0.86, 1, 0.62)
+
+[node name="BulletTimeLeftEdge" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay"]
+layout_mode = 1
+anchors_preset = 13
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_right = 14.0
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.18, 0.74, 0.96, 0.24)
+
+[node name="BulletTimeRightEdge" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay"]
+layout_mode = 1
+anchors_preset = 14
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -14.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.18, 0.74, 0.96, 0.24)
+
 [node name="SettingsButtonSlot" type="Control" parent="HudChromeLayer" unique_id=275257616]
 unique_name_in_owner = true
 anchors_preset = 0
