@@ -22,6 +22,7 @@ const DRAG_CARD := &"drag_card"
 const DRAG_LOCKED := &"locked"
 const DRAG_FACING := &"facing"
 const INVALID_CELL := Vector2i(-9999, -9999)
+const BULLET_TIME_SCALE := 0.2
 const TOOL_SELECT := &"select"
 const TOOL_BLOCK := &"block"
 const TOOL_ERASE := &"erase"
@@ -72,6 +73,9 @@ var _locked_deploy_cell := INVALID_CELL
 var _current_drag_cell := INVALID_CELL
 var _current_drag_cell_valid := false
 var _current_drag_facing := Vector2i.RIGHT
+var _normal_time_scale := 1.0
+var _bullet_time_active := false
+var _bullet_time_suspended := false
 var _cooldown_message_operator_key := StringName()
 var _last_painted_cell := INVALID_CELL
 var _combat_hud: Control
@@ -164,12 +168,15 @@ func _process(delta: float) -> void:
 		_refresh_skill_info(_get_selected_unit())
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
+	_sync_bullet_time_from_selection()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		if _deploy_drag_state != DRAG_NONE:
 			_cancel_deploy_flow("已取消")
+		elif _has_active_tactical_selection():
+			_clear_operator_selection()
 		elif _debug_drawer_open and _selected_tool != TOOL_SELECT:
 			_select_editor_tool(TOOL_SELECT, "已返回选择工具")
 		elif _debug_drawer_open:
@@ -183,6 +190,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 			return
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed and _deploy_drag_state == DRAG_NONE and _has_active_tactical_selection():
+			_clear_operator_selection()
+			return
 		if _deploy_drag_state == DRAG_LOCKED and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			if _get_mouse_cell() == _locked_deploy_cell:
 				_deploy_drag_state = DRAG_FACING
@@ -191,6 +201,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 
 func _exit_tree() -> void:
+	_exit_bullet_time(false)
 	if get_tree() != null:
 		get_tree().paused = false
 	Engine.time_scale = 1.0
@@ -308,25 +319,98 @@ func _sync_sandbox_quick_controls() -> void:
 
 
 func _on_pause_pressed() -> void:
+	_bullet_time_suspended = true
+	_clear_operator_selection()
+	_exit_bullet_time()
 	get_tree().paused = true
 	_refresh_time_controls()
 
 
 func _on_speed_1_pressed() -> void:
+	_bullet_time_suspended = true
+	_clear_operator_selection()
+	_exit_bullet_time(false)
 	get_tree().paused = false
 	Engine.time_scale = 1.0
+	_normal_time_scale = 1.0
 	_refresh_time_controls()
 
 
 func _on_speed_2_pressed() -> void:
+	_bullet_time_suspended = true
+	_clear_operator_selection()
+	_exit_bullet_time(false)
 	get_tree().paused = false
 	Engine.time_scale = 2.0
+	_normal_time_scale = 2.0
 	_refresh_time_controls()
 
 
 func _refresh_time_controls() -> void:
 	if _combat_hud != null and _combat_hud.has_method("set_time_controls"):
 		_combat_hud.set_time_controls(get_tree().paused, Engine.time_scale)
+
+
+func _sync_bullet_time_from_selection() -> void:
+	if _should_use_bullet_time():
+		_enter_bullet_time()
+	else:
+		_exit_bullet_time()
+
+
+func _should_use_bullet_time() -> bool:
+	if _bullet_time_suspended:
+		return false
+	if get_tree() == null or get_tree().paused:
+		return false
+	if _deploy_drag_state == DRAG_CARD or _deploy_drag_state == DRAG_LOCKED or _deploy_drag_state == DRAG_FACING:
+		return true
+	if _selected_unit_runtime_id >= 0:
+		return true
+	return _selected_operator_key != StringName() and _selected_tool == TOOL_SELECT
+
+
+func _has_active_tactical_selection() -> bool:
+	return _bullet_time_active or _selected_unit_runtime_id >= 0 or (_selected_operator_key != StringName() and _selected_tool == TOOL_SELECT)
+
+
+func _enter_bullet_time() -> void:
+	var changed := false
+	var just_activated := false
+	if not _bullet_time_active:
+		if not is_equal_approx(Engine.time_scale, BULLET_TIME_SCALE) and Engine.time_scale > 0.0:
+			_normal_time_scale = Engine.time_scale
+		_bullet_time_active = true
+		changed = true
+		just_activated = true
+	if not is_equal_approx(Engine.time_scale, BULLET_TIME_SCALE):
+		Engine.time_scale = BULLET_TIME_SCALE
+		changed = true
+	if changed:
+		if just_activated:
+			_play_bullet_time_cue()
+		_refresh_bullet_time_feedback()
+		_refresh_time_controls()
+
+
+func _exit_bullet_time(restore_normal_speed := true) -> void:
+	if not _bullet_time_active:
+		return
+	_bullet_time_active = false
+	if restore_normal_speed:
+		Engine.time_scale = _normal_time_scale
+	_refresh_bullet_time_feedback()
+
+
+func _refresh_bullet_time_feedback() -> void:
+	if _combat_hud != null and _combat_hud.has_method("set_bullet_time_feedback"):
+		_combat_hud.set_bullet_time_feedback(_bullet_time_active, BULLET_TIME_SCALE)
+
+
+func _play_bullet_time_cue() -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.audio_cue_requested.emit(&"ui_bullet_time")
 
 
 func _refresh_top_hud() -> void:
@@ -363,13 +447,18 @@ func _refresh_operator_card(operator_key: StringName) -> void:
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
 	var state := _get_operator_state(operator_key)
+	if _deploy_drag_state == DRAG_NONE and operator_key == _selected_operator_key:
+		_clear_operator_selection()
+		return
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		_select_deployed_unit(unit)
 		return
 	_selected_operator_key = operator_key
+	_bullet_time_suspended = false
 	_select_operator_item(operator_key)
 	_refresh_operator_list()
+	_sync_bullet_time_from_selection()
 	if state == &"cooldown":
 		_show_message("干员正在再部署冷却中", operator_key)
 	else:
@@ -397,6 +486,7 @@ func _begin_operator_drag(operator_key: StringName) -> void:
 	_deploy_drag_state = DRAG_CARD
 	_drag_operator_key = operator_key
 	_selected_operator_key = operator_key
+	_bullet_time_suspended = false
 	_select_operator_item(operator_key)
 	_current_drag_cell = INVALID_CELL
 	_current_drag_cell_valid = false
@@ -404,6 +494,7 @@ func _begin_operator_drag(operator_key: StringName) -> void:
 	if _combat_hud != null and _combat_hud.has_method("show_drag_ghost"):
 		_combat_hud.show_drag_ghost(_format_operator_drag_text(operator_key))
 	_show_message("拖拽干员卡到可部署格")
+	_sync_bullet_time_from_selection()
 
 
 func _update_deploy_drag() -> void:
@@ -462,15 +553,12 @@ func _confirm_locked_deploy() -> void:
 		_cancel_deploy_flow("部署失败：单位管理器不可用", true)
 		return
 	var result: Dictionary = _unit_manager.try_deploy_operator(_drag_operator_key, _locked_deploy_cell, _current_drag_facing)
-	var payload: Dictionary = result.get("payload", {})
-	var runtime_id := int(payload.get("runtime_id", -1))
-	var unit = _unit_manager.get_unit_by_runtime_id(runtime_id) if runtime_id >= 0 and _unit_manager.has_method("get_unit_by_runtime_id") else null
 	_clear_deploy_preview()
 	_deploy_drag_state = DRAG_NONE
 	_drag_operator_key = StringName()
 	_locked_deploy_cell = INVALID_CELL
 	if result.get("ok", false):
-		_select_deployed_unit(unit)
+		_clear_operator_selection()
 	_show_result_message(result, "部署完成", "部署失败")
 
 
@@ -529,7 +617,7 @@ func _handle_map_cell_selection(cell: Vector2i) -> void:
 	if existing_unit != null:
 		_select_deployed_unit(existing_unit)
 		return
-	_clear_selected_unit_selection()
+	_clear_operator_selection()
 
 
 func _select_deployed_unit(unit: Node) -> void:
@@ -537,15 +625,28 @@ func _select_deployed_unit(unit: Node) -> void:
 		return
 	_selected_unit_runtime_id = unit.get_runtime_id() if unit.has_method("get_runtime_id") else -1
 	_selected_operator_key = StringName(unit.operator_key) if unit.get("operator_key") != null else StringName()
+	_bullet_time_suspended = false
 	_refresh_attack_range_preview()
 	_refresh_detail_panel()
+	_sync_bullet_time_from_selection()
 	_show_message("已选中 %s" % _get_unit_display_name_for_ui(unit))
 
 
 func _clear_selected_unit_selection() -> void:
 	_selected_unit_runtime_id = -1
+	_selected_operator_key = StringName()
 	_clear_attack_range_preview()
 	_refresh_detail_panel()
+	_sync_bullet_time_from_selection()
+
+
+func _clear_operator_selection() -> void:
+	_selected_operator_key = StringName()
+	_selected_unit_runtime_id = -1
+	_clear_attack_range_preview()
+	_refresh_detail_panel()
+	_refresh_operator_list()
+	_sync_bullet_time_from_selection()
 
 
 func _clear_unit_selection_if_click_misses_unit(cell: Vector2i) -> void:
@@ -554,7 +655,7 @@ func _clear_unit_selection_if_click_misses_unit(cell: Vector2i) -> void:
 	var clicked_unit = _unit_manager.get_unit_by_cell(cell)
 	if clicked_unit != null and is_instance_valid(clicked_unit) and clicked_unit.has_method("get_runtime_id") and int(clicked_unit.get_runtime_id()) == _selected_unit_runtime_id:
 		return
-	_clear_selected_unit_selection()
+	_clear_operator_selection()
 
 
 func _refresh_detail_panel() -> void:
@@ -1114,9 +1215,12 @@ func _populate_static_options() -> void:
 
 func _reset_sandbox() -> void:
 	_cancel_deploy_flow("")
+	_bullet_time_suspended = true
+	_exit_bullet_time(false)
 	_clear_debug_log()
 	get_tree().paused = false
 	Engine.time_scale = 1.0
+	_normal_time_scale = 1.0
 	_running_spawn_queues.clear()
 	_selected_operator_key = _get_first_operator_key()
 	_selected_unit_runtime_id = -1
@@ -1748,6 +1852,8 @@ func _on_cast_skill_pressed() -> void:
 	if unit == null or _unit_manager == null:
 		return
 	var result: Dictionary = _unit_manager.try_cast_skill(unit.get_runtime_id())
+	if result.get("ok", false):
+		_clear_operator_selection()
 	_show_result_message(result, "技能已释放", "技能释放失败")
 
 
@@ -1778,10 +1884,12 @@ func _on_operator_item_selected(index: int) -> void:
 		return
 	var operator_info: Dictionary = _operator_defs[index]
 	_selected_operator_key = StringName(operator_info.get("key", ""))
+	_bullet_time_suspended = false
 	var deployed_unit = _unit_manager.get_unit_by_operator_key(_selected_operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 	_selected_unit_runtime_id = deployed_unit.get_runtime_id() if deployed_unit != null else -1
 	_refresh_attack_range_preview()
 	_refresh_operator_list()
+	_sync_bullet_time_from_selection()
 	_show_message("已选择干员槽位：%s" % _format_operator_label(operator_info))
 
 
