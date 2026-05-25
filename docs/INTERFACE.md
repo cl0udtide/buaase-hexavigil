@@ -284,11 +284,13 @@ func add_materials(wood: int, stone: int, mana: int) -> void
 func spend_materials(wood: int, stone: int, mana: int) -> Dictionary
 func damage_core(value: int) -> void
 func heal_core(value: int) -> void
-func add_owned_operator(unit_id: StringName, display_name: String = "") -> Dictionary
-func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, display_name: String = "") -> Dictionary
+func add_owned_operator(unit_id: StringName, display_name: String = "", star: int = 1) -> Dictionary
+func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, display_name: String = "", star: int = 1) -> Dictionary
 func get_owned_operator(operator_key: StringName) -> Dictionary
 func get_owned_operators() -> Array[Dictionary]
 func has_owned_operator(operator_key: StringName) -> bool
+func sell_owned_operator(operator_key: StringName) -> Dictionary
+func auto_merge_operators_for_unit(unit_id: StringName, before_merge: Callable = Callable()) -> Dictionary
 func add_owned_unit(unit_id: StringName) -> void
 func has_owned_unit(unit_id: StringName) -> bool
 func set_deploy_limit(value: int) -> void
@@ -344,14 +346,14 @@ func change_deployed_count(delta: int) -> void
   输入：`value: int`。
   行为：恢复核心生命。
   返回：无。
-- `add_owned_operator(unit_id, display_name = "")`
-  输入：单位 ID 与可选显示名。
+- `add_owned_operator(unit_id, display_name = "", star = 1)`
+  输入：单位 ID、可选显示名与可选星级。
   行为：生成唯一 `operator_key`，新增一个干员实例槽位；同一 `unit_id` 可以新增多个槽位。
-  返回：槽位字典，至少包含 `key`、`unit_id`、`name`。
-- `add_owned_operator_with_key(operator_key, unit_id, display_name = "")`
-  输入：外部指定的槽位 key、单位 ID 与可选显示名。
+  返回：槽位字典，至少包含 `key`、`unit_id`、`name`、`star`。
+- `add_owned_operator_with_key(operator_key, unit_id, display_name = "", star = 1)`
+  输入：外部指定的槽位 key、单位 ID、可选显示名与可选星级。
   行为：用于调试 preset 或存档恢复，按指定 key 写入干员槽位；如果 key 已存在则拒绝或覆盖失败。
-  返回：槽位字典，至少包含 `key`、`unit_id`、`name`。
+  返回：槽位字典，至少包含 `key`、`unit_id`、`name`、`star`。
 - `get_owned_operator(operator_key)`
   输入：干员槽位 key。
   行为：读取指定槽位。
@@ -364,6 +366,15 @@ func change_deployed_count(delta: int) -> void
   输入：干员槽位 key。
   行为：检查是否拥有该槽位。
   返回：`bool`。
+- `sell_owned_operator(operator_key)`
+  输入：干员槽位 key。
+  行为：仅白天可调用；移除该干员槽位并固定返还 1 声望，不随星级变化。
+  成功结果：返回 `ActionResult(ok = true)`，payload 中包含 `operator_key` 和 `refund_prestige = 1`。
+  失败结果：返回 `ActionResult(ok = false)`，槽位和声望不变。
+- `auto_merge_operators_for_unit(unit_id, before_merge = Callable())`
+  输入：单位 ID 与可选合成前回调。
+  行为：按同名同星三合一规则自动合成，保留最早槽位并提升星级；回调用于让 `UnitManager` 在合成前撤回参与槽位。
+  返回：`ActionResult(ok = true)`，payload 中包含 `merge_events`。
 - `add_owned_unit(unit_id)`
   输入：`unit_id: StringName`。
   行为：兼容旧调用，内部应转为新增一个干员实例槽位。
@@ -875,8 +886,8 @@ func try_buy_unit(unit_id: StringName) -> Dictionary
   返回：`Array[Dictionary]`。
 - `try_buy_shop_slot(slot_index)`
   输入：`slot_index: int`。
-  行为：尝试购买指定商店槽位中的干员。
-  成功结果：返回 `ActionResult(ok = true)`，扣除声望、新增一个绑定该 `unit_id` 的干员实例槽位，并将商店槽位标记为已购买。
+  行为：尝试购买指定商店槽位中的干员，购买成功后对该 `unit_id` 执行同名同星自动合成。
+  成功结果：返回 `ActionResult(ok = true)`，扣除声望、新增一个绑定该 `unit_id` 的 1 星干员实例槽位，并将商店槽位标记为已购买；payload 中可包含 `merge_events`。
   失败结果：返回 `ActionResult(ok = false)`，购买不生效。
 - `try_buy_unit(unit_id)`
   输入：`unit_id: StringName`。
@@ -896,6 +907,7 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 func try_deploy_unit(unit_id: StringName, cell: Vector2i, facing: Vector2i) -> Dictionary
 func try_retreat_unit(unit_runtime_id: int) -> Dictionary
 func try_cast_skill(unit_runtime_id: int) -> Dictionary
+func try_sell_operator(operator_key: StringName) -> Dictionary
 func get_unit_by_runtime_id(unit_runtime_id: int) -> Node
 func get_unit_by_operator_key(operator_key: StringName) -> Node
 func get_operator_key_by_runtime_id(unit_runtime_id: int) -> StringName
@@ -905,6 +917,7 @@ func is_operator_deployed(operator_key: StringName) -> bool
 func is_operator_redeploying(operator_key: StringName) -> bool
 func get_operator_redeploy_remaining(operator_key: StringName) -> float
 func get_operator_status(operator_key: StringName) -> StringName
+func withdraw_operators_for_merge(operator_keys: Array[StringName]) -> Dictionary
 func is_unit_redeploying(unit_id: StringName) -> bool
 func get_redeploy_remaining(unit_id: StringName) -> float
 func tick_redeploy(delta: float) -> void
@@ -939,6 +952,11 @@ func clear_all_units() -> void
   行为：尝试释放单位技能。
   成功结果：返回 `ActionResult(ok = true)`，技能已执行。
   失败结果：返回 `ActionResult(ok = false)`，技能不执行。
+- `try_sell_operator(operator_key)`
+  输入：干员槽位 key。
+  行为：检查白天阶段、拥有状态、未部署且未处于再部署冷却后，委托 `RunState.sell_owned_operator()` 移除槽位。
+  成功结果：返回 `ActionResult(ok = true)`，固定获得 1 声望。
+  失败结果：返回 `ActionResult(ok = false)`，槽位和声望不变。
 - `get_unit_by_runtime_id(unit_runtime_id)`
   输入：单位运行时 ID。
   行为：按运行时 ID 查找单位实例。
@@ -975,6 +993,10 @@ func clear_all_units() -> void
   输入：干员槽位 key。
   行为：读取槽位部署状态。
   返回：`ready`、`deployed` 或 `cooldown`。
+- `withdraw_operators_for_merge(operator_keys)`
+  输入：参与合成的干员槽位 key 列表。
+  行为：将其中已经部署在场的槽位移出战场，释放地图占用并减少部署数量；不触发再部署冷却。
+  返回：`ActionResult(ok = true)`。
 - `is_unit_redeploying(unit_id)`
   输入：单位 ID。
   行为：兼容旧调用；检查是否存在任一绑定该 `unit_id` 的槽位仍在冷却。
@@ -989,7 +1011,7 @@ func clear_all_units() -> void
   返回：无。
 - `remove_unit(unit_runtime_id, reason)`
   输入：单位运行时 ID 与离场原因。
-  行为：移除指定单位；撤退和死亡原因会让对应槽位进入再部署冷却，调试清场等脚本原因不进入冷却。
+  行为：移除指定单位；撤退和死亡原因会让对应槽位进入再部署冷却，调试清场、自动合成撤回等脚本原因不进入冷却。
   返回：无。
 - `clear_all_units()`
   输入：无。

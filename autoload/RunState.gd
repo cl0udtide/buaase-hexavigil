@@ -1,12 +1,14 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 
 const DEFAULT_ACTION_POINTS := 30
 const DEFAULT_INITIAL_PRESTIGE := 8
 const DEFAULT_CORE_HP := 10
 const DEFAULT_DEPLOY_LIMIT := 4
 const DEPLOY_LIMIT_INCREASE_DAYS := 2
+const OPERATOR_SELL_PRESTIGE := 1
 
 var phase: int = GameEnums.PHASE_MENU
 var day: int = 0
@@ -120,11 +122,11 @@ func heal_core(value: int) -> void:
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 
 
-func add_owned_operator(unit_id: StringName, display_name: String = "") -> Dictionary:
-	return add_owned_operator_with_key(_make_next_operator_key(), unit_id, display_name)
+func add_owned_operator(unit_id: StringName, display_name: String = "", star: int = OperatorProgression.DEFAULT_STAR) -> Dictionary:
+	return add_owned_operator_with_key(_make_next_operator_key(), unit_id, display_name, star)
 
 
-func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, display_name: String = "") -> Dictionary:
+func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, display_name: String = "", star: int = OperatorProgression.DEFAULT_STAR) -> Dictionary:
 	if unit_id == StringName():
 		return {}
 	if operator_key == StringName():
@@ -137,26 +139,27 @@ func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, 
 	var operator := {
 		"key": operator_key,
 		"unit_id": unit_id,
-		"name": normalized_name
+		"name": normalized_name,
+		"star": OperatorProgression.normalize_star(star)
 	}
 	owned_operators.append(operator)
 	_sync_next_operator_serial(operator_key)
 	_refresh_owned_units_view()
 	_emit_owned_roster()
-	return operator.duplicate(true)
+	return _normalized_operator_dict(operator)
 
 
 func get_owned_operator(operator_key: StringName) -> Dictionary:
 	for operator in owned_operators:
 		if StringName((operator as Dictionary).get("key", "")) == operator_key:
-			return (operator as Dictionary).duplicate(true)
+			return _normalized_operator_dict(operator as Dictionary)
 	return {}
 
 
 func get_owned_operators() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for operator in owned_operators:
-		result.append((operator as Dictionary).duplicate(true))
+		result.append(_normalized_operator_dict(operator as Dictionary))
 	return result
 
 
@@ -175,6 +178,63 @@ func remove_owned_operator(operator_key: StringName) -> bool:
 			_emit_owned_roster()
 			return true
 	return false
+
+
+func sell_owned_operator(operator_key: StringName) -> Dictionary:
+	if phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以出售干员")
+	if not has_owned_operator(operator_key):
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "出售失败：未拥有该干员")
+	var operator_info := get_owned_operator(operator_key)
+	var display_name := String(operator_info.get("name", operator_key))
+	if not _remove_owned_operator_no_emit(operator_key):
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "出售失败：未拥有该干员")
+	_refresh_owned_units_view()
+	add_prestige(OPERATOR_SELL_PRESTIGE)
+	_emit_owned_roster()
+	return ActionResult.ok({
+		"operator_key": operator_key,
+		"refund_prestige": OPERATOR_SELL_PRESTIGE
+	}, "已出售 %s，获得 %d 声望" % [display_name, OPERATOR_SELL_PRESTIGE])
+
+
+func auto_merge_operators_for_unit(unit_id: StringName, before_merge: Callable = Callable()) -> Dictionary:
+	var merge_events: Array[Dictionary] = []
+	var changed := false
+	var merged_this_pass := true
+	while merged_this_pass:
+		merged_this_pass = false
+		for star in range(OperatorProgression.MIN_STAR, OperatorProgression.MAX_STAR):
+			while true:
+				var group := _get_merge_group(unit_id, star)
+				if group.size() < 3:
+					break
+				var participant_keys: Array[StringName] = []
+				for operator in group:
+					participant_keys.append(StringName((operator as Dictionary).get("key", "")))
+				if before_merge.is_valid():
+					before_merge.call(participant_keys)
+				var kept_key := participant_keys[0]
+				var consumed_keys: Array[StringName] = []
+				for index in range(1, participant_keys.size()):
+					consumed_keys.append(participant_keys[index])
+				_set_owned_operator_star_no_emit(kept_key, star + 1)
+				for consumed_key in consumed_keys:
+					_remove_owned_operator_no_emit(consumed_key)
+				merge_events.append({
+					"unit_id": unit_id,
+					"from_star": star,
+					"to_star": star + 1,
+					"kept_key": kept_key,
+					"consumed_keys": consumed_keys,
+					"participant_keys": participant_keys
+				})
+				changed = true
+				merged_this_pass = true
+	if changed:
+		_refresh_owned_units_view()
+		_emit_owned_roster()
+	return ActionResult.ok({"merge_events": merge_events})
 
 
 func get_owned_unit_ids() -> Array[StringName]:
@@ -335,10 +395,49 @@ func _emit_owned_roster() -> void:
 	EventBus.owned_units_changed.emit(owned_units.duplicate())
 
 
+func _normalized_operator_dict(operator: Dictionary) -> Dictionary:
+	var normalized := operator.duplicate(true)
+	normalized["star"] = OperatorProgression.normalize_star(normalized.get("star", OperatorProgression.DEFAULT_STAR))
+	return normalized
+
+
 func _refresh_owned_units_view() -> void:
 	owned_units.clear()
 	for operator in owned_operators:
 		owned_units.append(StringName((operator as Dictionary).get("unit_id", "")))
+
+
+func _get_merge_group(unit_id: StringName, star: int) -> Array[Dictionary]:
+	var group: Array[Dictionary] = []
+	for operator in owned_operators:
+		var operator_dict := operator as Dictionary
+		if StringName(operator_dict.get("unit_id", "")) != unit_id:
+			continue
+		if OperatorProgression.normalize_star(operator_dict.get("star", OperatorProgression.DEFAULT_STAR)) != star:
+			continue
+		group.append(operator_dict)
+		if group.size() >= 3:
+			break
+	return group
+
+
+func _set_owned_operator_star_no_emit(operator_key: StringName, star: int) -> bool:
+	for index in range(owned_operators.size()):
+		var operator_dict := owned_operators[index] as Dictionary
+		if StringName(operator_dict.get("key", "")) != operator_key:
+			continue
+		operator_dict["star"] = OperatorProgression.normalize_star(star)
+		owned_operators[index] = operator_dict
+		return true
+	return false
+
+
+func _remove_owned_operator_no_emit(operator_key: StringName) -> bool:
+	for index in range(owned_operators.size()):
+		if StringName((owned_operators[index] as Dictionary).get("key", "")) == operator_key:
+			owned_operators.remove_at(index)
+			return true
+	return false
 
 
 func _make_next_operator_key() -> StringName:

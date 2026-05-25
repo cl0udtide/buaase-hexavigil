@@ -12,6 +12,8 @@ const TIER_WEIGHTS := [
 
 var _stock_slots: Array[Dictionary] = []
 
+@onready var _unit_manager: Node = get_node_or_null("../UnitManager")
+
 
 func _ready() -> void:
 	var event_bus = AppRefs.event_bus()
@@ -80,15 +82,18 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 		return spend_result
 
 	var operator_info: Dictionary = run_state.add_owned_operator(unit_id)
+	var merge_result := _auto_merge_after_purchase(run_state, unit_id)
 	slot["sold"] = true
 	_stock_slots[slot_index] = slot
 	_emit_stock_changed()
+	var merge_events: Array = merge_result.get("payload", {}).get("merge_events", [])
 	return ActionResult.ok({
 		"slot_index": slot_index,
 		"unit_id": unit_id,
 		"operator": operator_info,
+		"merge_events": merge_events,
 		"stock": get_current_stock()
-	}, "购买成功")
+	}, "购买成功，已自动合成" if not merge_events.is_empty() else "购买成功")
 
 
 func _roll_shop_stock() -> void:
@@ -156,6 +161,15 @@ func _get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		cost += int(round(float(run_state.get_buff_effect_total_for_unit(&"shop_unit_cost_add", unit_cfg))))
 	return max(cost, 0)
+
+
+func _auto_merge_after_purchase(run_state: Node, unit_id: StringName) -> Dictionary:
+	if run_state == null or not run_state.has_method("auto_merge_operators_for_unit"):
+		return ActionResult.ok({"merge_events": []})
+	var before_merge := Callable()
+	if _unit_manager != null and _unit_manager.has_method("withdraw_operators_for_merge"):
+		before_merge = Callable(_unit_manager, "withdraw_operators_for_merge")
+	return run_state.auto_merge_operators_for_unit(unit_id, before_merge)
 
 
 func _emit_stock_changed() -> void:
