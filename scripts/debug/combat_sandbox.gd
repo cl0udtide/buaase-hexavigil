@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 
 const SPAWN_POINT_SCENE := preload("res://scenes/world/SpawnPoint.tscn")
 const PRESET_PATH := "res://data/debug/combat_sandbox_presets.json"
@@ -618,8 +619,10 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var operator_key := StringName(operator_info.get("key", ""))
 	var data_repo = AppRefs.data_repo()
 	var unit_id := StringName(operator_info.get("unit_id", ""))
-	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
-	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
+	var base_cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	var cfg := OperatorProgression.make_effective_unit_cfg(base_cfg, star)
+	var name := "%s %s" % [str(operator_info.get("name", cfg.get("name", operator_key))), OperatorProgression.format_star_label(star)]
 	var class_text := _class_label(str(cfg.get("class", "")))
 	var cost_text := str(cfg.get("cost_prestige", "--"))
 	var hp_text := "HP %d" % int(cfg.get("max_hp", 0))
@@ -642,7 +645,8 @@ func _format_operator_drag_text(operator_key: StringName) -> String:
 	var operator_info := _get_operator_info(operator_key)
 	if operator_info.is_empty():
 		return String(operator_key)
-	return "%s\n%s" % [String(operator_info.get("name", operator_key)), String(operator_info.get("unit_id", ""))]
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	return "%s %s\n%s" % [String(operator_info.get("name", operator_key)), OperatorProgression.format_star_label(star), String(operator_info.get("unit_id", ""))]
 
 
 func _get_operator_state(operator_key: StringName) -> StringName:
@@ -1136,7 +1140,8 @@ func _reset_sandbox() -> void:
 			run_state.add_owned_operator_with_key(
 				StringName(operator_dict.get("key", "")),
 				StringName(operator_dict.get("unit_id", "")),
-				String(operator_dict.get("name", ""))
+				String(operator_dict.get("name", "")),
+				OperatorProgression.normalize_star(operator_dict.get("star", OperatorProgression.DEFAULT_STAR))
 			)
 	_apply_debug_map_from_state()
 	append_combat_debug("沙盒已重置")
@@ -2086,7 +2091,8 @@ func _create_all_operator_defs() -> Array[Dictionary]:
 		result.append({
 			"key": String(unit_id),
 			"unit_id": String(unit_id),
-			"name": String(cfg.get("name", unit_id))
+			"name": String(cfg.get("name", unit_id)),
+			"star": OperatorProgression.DEFAULT_STAR
 		})
 	return result
 
@@ -2417,7 +2423,8 @@ func _format_operator_list_item(operator_info: Dictionary) -> String:
 
 
 func _format_operator_label(operator_info: Dictionary) -> String:
-	return "%s(%s)" % [String(operator_info.get("name", operator_info.get("key", ""))), String(operator_info.get("key", ""))]
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	return "%s %s(%s)" % [String(operator_info.get("name", operator_info.get("key", ""))), OperatorProgression.format_star_label(star), String(operator_info.get("key", ""))]
 
 
 func _populate_enemy_options() -> void:

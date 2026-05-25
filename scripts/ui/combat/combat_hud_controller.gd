@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 const DRAG_NONE := &"none"
@@ -146,6 +147,8 @@ func _bind_combat_hud() -> void:
 		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
 	if _combat_hud.has_signal("retreat_requested"):
 		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
+	if _combat_hud.has_signal("operator_sell_requested"):
+		_combat_hud.connect(&"operator_sell_requested", Callable(self, "_on_operator_sell_requested"))
 	if _combat_hud.has_signal("wave_route_preview_toggled"):
 		_combat_hud.connect(&"wave_route_preview_toggled", Callable(self, "_on_wave_route_preview_toggled"))
 	if _combat_hud.has_signal("shop_unit_purchase_requested"):
@@ -566,11 +569,12 @@ func _refresh_owned_operator_preview() -> void:
 			_refresh_detail_panel()
 		return
 	var unit_id := StringName(operator_info.get("unit_id", ""))
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var status_text := ""
 	if state == &"cooldown" and _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining"):
 		status_text = "%.1fs" % float(_unit_manager.get_operator_redeploy_remaining(_selected_operator_key))
 	if _combat_hud.has_method("show_operator_preview"):
-		_combat_hud.show_operator_preview(operator_info, _get_unit_cfg(unit_id), state, status_text)
+		_combat_hud.show_operator_preview(operator_info, _get_effective_unit_cfg(unit_id, star), state, status_text)
 
 
 func _refresh_shop_unit_preview() -> void:
@@ -581,7 +585,7 @@ func _refresh_shop_unit_preview() -> void:
 		_combat_hud.show_shop_unit_preview(
 			_selected_shop_slot_index,
 			_selected_shop_unit_id,
-			_get_unit_cfg(_selected_shop_unit_id),
+			_get_effective_unit_cfg(_selected_shop_unit_id, OperatorProgression.DEFAULT_STAR),
 			_selected_shop_price,
 			_selected_shop_can_purchase,
 			_selected_shop_disabled_reason
@@ -658,6 +662,16 @@ func _on_retreat_pressed() -> void:
 	if result.get("ok", false):
 		_clear_selected_unit()
 	_show_result_message(result, "已撤退", "撤退失败")
+
+
+func _on_operator_sell_requested(operator_key: StringName) -> void:
+	if _unit_manager == null or not _unit_manager.has_method("try_sell_operator"):
+		_show_message("出售失败：单位管理器不可用", StringName(), true)
+		return
+	var result: Dictionary = _unit_manager.try_sell_operator(operator_key)
+	if result.get("ok", false):
+		_clear_detail_selection()
+	_show_result_message(result, "已出售", "出售失败")
 
 
 func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
@@ -1096,8 +1110,9 @@ func _update_operator_cards() -> void:
 func _format_operator_card_text(operator_info: Dictionary, state: StringName) -> String:
 	var operator_key := StringName(operator_info.get("key", ""))
 	var unit_id := StringName(operator_info.get("unit_id", ""))
-	var cfg := _get_unit_cfg(unit_id)
-	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	var cfg := _get_effective_unit_cfg(unit_id, star)
+	var name := "%s %s" % [str(operator_info.get("name", cfg.get("name", operator_key))), OperatorProgression.format_star_label(star)]
 	var class_text := UiDisplayText.class_label(str(cfg.get("class", "")))
 	var hp_text := "HP %d" % int(cfg.get("max_hp", 0))
 	var sp_text := "SP 0/%d" % int(cfg.get("sp_max", 0))
@@ -1138,7 +1153,8 @@ func _format_operator_drag_text(operator_key: StringName) -> String:
 	var operator_info := _get_operator_info(operator_key)
 	if operator_info.is_empty():
 		return String(operator_key)
-	return "%s\n%s" % [String(operator_info.get("name", operator_key)), String(operator_info.get("unit_id", ""))]
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	return "%s %s\n%s" % [String(operator_info.get("name", operator_key)), OperatorProgression.format_star_label(star), String(operator_info.get("unit_id", ""))]
 
 
 func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:
@@ -1289,6 +1305,10 @@ func _get_unit_cfg(unit_id: StringName) -> Dictionary:
 	if data_repo == null:
 		return {}
 	return data_repo.get_unit_cfg(unit_id)
+
+
+func _get_effective_unit_cfg(unit_id: StringName, star: int) -> Dictionary:
+	return OperatorProgression.make_effective_unit_cfg(_get_unit_cfg(unit_id), star)
 
 
 func _get_unit_display_name(unit: Node) -> String:

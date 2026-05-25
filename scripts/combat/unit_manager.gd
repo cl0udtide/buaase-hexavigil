@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 
 signal operator_redeploy_completed(operator_key: StringName)
 
@@ -67,11 +68,13 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 		return ActionResult.err(&"SCENE_MISSING", "单位场景尚未创建")
 	if _unit_root == null:
 		return ActionResult.err(&"WORLD_NOT_READY", "操作失败：战场节点尚未就绪")
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	var effective_cfg := OperatorProgression.make_effective_unit_cfg(cfg, star)
 	var actor: Node = scene.instantiate()
 	_unit_root.add_child(actor)
 	actor.runtime_id = _next_runtime_id
 	if actor.has_method("setup_from_cfg"):
-		actor.setup_from_cfg(unit_id, cfg, cell, facing, operator_key, String(operator_info.get("name", "")))
+		actor.setup_from_cfg(unit_id, effective_cfg, cell, facing, operator_key, String(operator_info.get("name", "")))
 	_units_by_runtime_id[_next_runtime_id] = actor
 	_runtime_by_operator_key[operator_key] = _next_runtime_id
 	_operator_key_by_runtime_id[_next_runtime_id] = operator_key
@@ -83,7 +86,7 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 		event_bus.unit_deployed.emit(_next_runtime_id, operator_key, unit_id, cell)
 	_debug_log("部署干员 %s#%d 到格子 %s，朝向 %s" % [String(operator_info.get("name", cfg.get("name", unit_id))), _next_runtime_id, cell, _direction_text(facing)])
 	_next_runtime_id += 1
-	return ActionResult.ok({"runtime_id": _next_runtime_id - 1, "operator_key": operator_key, "unit_id": unit_id})
+	return ActionResult.ok({"runtime_id": _next_runtime_id - 1, "operator_key": operator_key, "unit_id": unit_id, "star": star})
 
 
 func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dictionary:
@@ -144,6 +147,23 @@ func try_cast_skill(unit_runtime_id: int) -> Dictionary:
 	return ActionResult.ok()
 
 
+func try_sell_operator(operator_key: StringName) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "操作失败：运行状态不可用")
+	if int(run_state.phase) != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以出售干员")
+	if not run_state.has_owned_operator(operator_key):
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "出售失败：未拥有该干员")
+	if is_operator_deployed(operator_key):
+		return ActionResult.err(&"OPERATOR_DEPLOYED", "出售失败：请先撤回已部署干员")
+	if is_operator_redeploying(operator_key):
+		return ActionResult.err(&"OPERATOR_COOLDOWN", "出售失败：干员正在再部署冷却中")
+	if not run_state.has_method("sell_owned_operator"):
+		return ActionResult.err(&"SELL_UNAVAILABLE", "出售失败：运行状态不支持出售")
+	return run_state.sell_owned_operator(operator_key)
+
+
 func get_unit_by_runtime_id(unit_runtime_id: int) -> Node:
 	return _units_by_runtime_id.get(unit_runtime_id)
 
@@ -186,6 +206,19 @@ func get_operator_status(operator_key: StringName) -> StringName:
 	if is_operator_redeploying(operator_key):
 		return &"cooldown"
 	return &"ready"
+
+
+func withdraw_operators_for_merge(operator_keys: Array[StringName]) -> Dictionary:
+	var withdrawn: Array[StringName] = []
+	for operator_key in operator_keys:
+		if not _runtime_by_operator_key.has(operator_key):
+			continue
+		var runtime_id := int(_runtime_by_operator_key.get(operator_key, -1))
+		if runtime_id < 0:
+			continue
+		remove_unit(runtime_id, GameEnums.UNIT_REMOVE_MERGE)
+		withdrawn.append(operator_key)
+	return ActionResult.ok({"withdrawn_operator_keys": withdrawn})
 
 
 func tick_redeploy(delta: float) -> void:
@@ -233,7 +266,7 @@ func remove_unit(unit_runtime_id: int, reason: int) -> void:
 		run_state.change_deployed_count(-deploy_slot_cost)
 	if event_bus != null:
 		event_bus.unit_removed.emit(unit_runtime_id, reason)
-	_debug_log("鍗曚綅绂诲満 %s#%d锛屽師鍥狅細%s" % [_get_unit_display_name(unit), unit_runtime_id, _remove_reason_text(reason)])
+	_debug_log("单位离场 %s#%d，原因：%s" % [_get_unit_display_name(unit), unit_runtime_id, _remove_reason_text(reason)])
 	unit.queue_free()
 
 
@@ -266,6 +299,8 @@ func _remove_reason_text(reason: int) -> String:
 			return "死亡"
 		GameEnums.UNIT_REMOVE_SCRIPTED:
 			return "调试清场"
+		GameEnums.UNIT_REMOVE_MERGE:
+			return "合成"
 		_:
 			return "未知"
 

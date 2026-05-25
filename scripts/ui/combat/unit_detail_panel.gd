@@ -2,12 +2,14 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 signal cast_skill_requested
 signal retreat_requested
 signal purchase_requested(slot_index: int)
+signal sell_requested(operator_key: StringName)
 
 @onready var _title_label: Label = %TitleLabel
 @onready var _level_label: Label = %LevelLabel
@@ -33,6 +35,8 @@ signal purchase_requested(slot_index: int)
 @onready var _skill_label: Label = %SkillLabel
 @onready var _purchase_button: Button = %PurchaseButton
 @onready var _purchase_button_icon: TextureRect = %PurchaseButtonIcon
+@onready var _sell_button: Button = %SellButton
+@onready var _sell_button_icon: TextureRect = %SellButtonIcon
 @onready var _cast_button: Button = %CastSkillButton
 @onready var _cast_button_icon: TextureRect = %CastSkillButtonIcon
 @onready var _retreat_button: Button = %RetreatButton
@@ -42,6 +46,7 @@ var _last_skill_scroll_key := ""
 var _hp_ratio := 0.0
 var _sp_ratio := 0.0
 var _shop_slot_index := -1
+var _preview_operator_key := StringName()
 
 
 func _ready() -> void:
@@ -76,10 +81,12 @@ func _ready() -> void:
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
 	_style_action_button(_retreat_button, GameUiStyle.STROKE_SOFT)
 	_style_action_button(_purchase_button, GameUiStyle.AMBER)
+	_style_action_button(_sell_button, GameUiStyle.STROKE_SOFT)
 	_ensure_stat_icon_rows()
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
 	_purchase_button.pressed.connect(_on_purchase_pressed)
+	_sell_button.pressed.connect(_on_sell_pressed)
 	clear_unit()
 	call_deferred("_refresh_skill_text_scroll_size")
 
@@ -90,12 +97,14 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 		return
 	visible = true
 	_shop_slot_index = -1
+	_preview_operator_key = StringName()
 	_set_action_mode(&"deployed", false, "")
 	var sp_max := float(unit.cfg.get("sp_max", 0.0))
 	_title_label.text = display_name
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(unit.cfg), _icon_text(unit.cfg, "◆"))
 	_apply_texture_or_text(_skill_icon_texture, _skill_icon_label, _skill_icon_texture_from_cfg(unit.cfg), _icon_text(unit.cfg, "◇"))
-	_level_label.text = "#%d" % int(unit.get_runtime_id())
+	var star := OperatorProgression.normalize_star(unit.cfg.get("operator_star", OperatorProgression.DEFAULT_STAR))
+	_level_label.text = "%s #%d" % [OperatorProgression.format_star_label(star), int(unit.get_runtime_id())]
 	_set_progress(_hp_bar, _hp_fill, float(unit.current_hp), max(float(unit.max_hp), 1.0))
 	_hp_bar.tooltip_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
 	_hp_value_label.text = "生命 %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
@@ -143,17 +152,22 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 
 func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
 	_shop_slot_index = -1
+	_preview_operator_key = StringName(operator_info.get("key", ""))
 	var display_name := String(operator_info.get("name", unit_cfg.get("name", operator_info.get("unit_id", ""))))
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var skill_status_text := status_text.strip_edges()
 	if skill_status_text.is_empty():
 		skill_status_text = "冷却" if state == &"cooldown" else "Preview"
-	_show_cfg_preview(display_name, unit_cfg, "#--", skill_status_text)
-	_set_action_mode(&"preview", false, "")
+	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(star), skill_status_text)
+	var can_sell := state == &"ready"
+	var sell_reason := "" if can_sell else "该干员当前不能出售"
+	_set_action_mode(&"preview", false, "", 0, can_sell, sell_reason)
 
 
 func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
+	_preview_operator_key = StringName()
 	var display_name := UiDisplayText.config_name(unit_cfg, unit_id)
-	_show_cfg_preview(display_name, unit_cfg, "#%d" % (slot_index + 1), "Available" if can_purchase else "Locked")
+	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(OperatorProgression.DEFAULT_STAR), "Available" if can_purchase else "Locked")
 	_shop_slot_index = slot_index
 	var reason := disabled_reason
 	if can_purchase:
@@ -164,6 +178,7 @@ func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dict
 func clear_unit() -> void:
 	visible = false
 	_shop_slot_index = -1
+	_preview_operator_key = StringName()
 	_last_skill_scroll_key = ""
 	_title_label.text = "未选中"
 	_level_label.text = "#--"
@@ -223,24 +238,31 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_refresh_action_icons()
 
 
-func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, price: int = 0) -> void:
+func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, price: int = 0, can_sell: bool = false, sell_reason: String = "") -> void:
 	var is_shop := mode == &"shop"
 	var is_deployed := mode == &"deployed"
+	var is_preview := mode == &"preview"
 	_purchase_button.visible = is_shop
 	_purchase_button.disabled = not can_purchase
 	_purchase_button.tooltip_text = reason if is_shop and not reason.strip_edges().is_empty() else ""
 	_purchase_button.text = "购买 %d 声望" % price if is_shop and price > 0 else "购买"
+	_sell_button.visible = is_preview
+	_sell_button.disabled = not can_sell
+	_sell_button.tooltip_text = sell_reason if is_preview and not sell_reason.strip_edges().is_empty() else ""
+	_sell_button.text = "出售 1 声望"
 	_cast_button.visible = is_deployed or mode == &"empty"
 	_retreat_button.visible = is_deployed or mode == &"empty"
-	if mode == &"preview":
-		_cast_button.visible = false
-		_retreat_button.visible = false
 	_refresh_action_icons()
 
 
 func _on_purchase_pressed() -> void:
 	if _shop_slot_index >= 0:
 		purchase_requested.emit(_shop_slot_index)
+
+
+func _on_sell_pressed() -> void:
+	if _preview_operator_key != StringName():
+		sell_requested.emit(_preview_operator_key)
 
 
 func _refresh_skill_text_scroll_size() -> void:
@@ -302,6 +324,7 @@ func _refresh_action_icons() -> void:
 	_set_button_icon(_cast_button, _cast_button_icon, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"))
 	_set_button_icon(_retreat_button, _retreat_button_icon, UiArtRegistry.get_catalog_icon(&"combat_retreat"))
 	_set_button_icon(_purchase_button, _purchase_button_icon, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"))
+	_set_button_icon(_sell_button, _sell_button_icon, UiArtRegistry.get_catalog_icon(&"button_cancel"))
 
 
 func _set_button_icon(button: Button, icon_rect: TextureRect, texture: Texture2D) -> void:

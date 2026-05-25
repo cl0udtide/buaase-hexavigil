@@ -11,6 +11,7 @@ signal speed_1_pressed
 signal speed_2_pressed
 signal cast_skill_requested
 signal retreat_requested
+signal operator_sell_requested(operator_key: StringName)
 signal shop_unit_purchase_requested(slot_index: int)
 signal wave_route_preview_toggled(enabled: bool)
 
@@ -193,6 +194,8 @@ func _ready() -> void:
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
 		_detail_panel.retreat_requested.connect(func() -> void: retreat_requested.emit())
+	if _detail_panel.has_signal("sell_requested"):
+		_detail_panel.sell_requested.connect(func(operator_key: StringName) -> void: operator_sell_requested.emit(operator_key))
 	if _detail_panel.has_signal("purchase_requested"):
 		_detail_panel.purchase_requested.connect(func(slot_index: int) -> void: shop_unit_purchase_requested.emit(slot_index))
 	_style_top_button(_pause_button, false)
