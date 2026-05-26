@@ -284,7 +284,6 @@ def burndown_events(
     end_date: dt.date,
     initial_batch_date: dt.date,
     as_of_date: dt.date,
-    target_total: int,
 ) -> tuple[list[tuple[dt.datetime, int, str]], int]:
     start = dt.datetime.combine(start_date, dt.time.min, tzinfo=dt.timezone.utc)
     end = dt.datetime.combine(end_date, dt.time.max, tzinfo=dt.timezone.utc)
@@ -310,10 +309,6 @@ def burndown_events(
     initial_delta = sum(delta for when, delta, _ in events if when == start)
     events = [event for event in events if event[0] != start]
     current = max(0, initial_delta)
-    if current == 0 and any(issue.created_at.date() <= initial_batch_date for issue in issues):
-        current = target_total
-    if current == 0:
-        current = target_total
     return events, current
 
 
@@ -389,7 +384,6 @@ def plot_burndown(
     end_date: dt.date,
     initial_batch_date: dt.date,
     as_of_date: dt.date,
-    target_total: int,
     milestone_title: str,
 ) -> None:
     try:
@@ -400,7 +394,7 @@ def plot_burndown(
     load_font()
     output.parent.mkdir(parents=True, exist_ok=True)
     as_of_date = min(max(as_of_date, start_date), end_date)
-    events, initial_total = burndown_events(issues, start_date, end_date, initial_batch_date, as_of_date, target_total)
+    events, initial_total = burndown_events(issues, start_date, end_date, initial_batch_date, as_of_date)
     actual_x, actual_y, tick_positions, tick_labels = actual_points(
         events,
         initial_total,
@@ -478,7 +472,6 @@ def main() -> int:
     parser.add_argument("--start-date", default="2026-05-25")
     parser.add_argument("--end-date", default="2026-06-08")
     parser.add_argument("--initial-batch-date", default="2026-05-26")
-    parser.add_argument("--target-total", type=int, default=100)
     parser.add_argument(
         "--as-of-date",
         default=dt.datetime.now(dt.timezone.utc).date().isoformat(),
@@ -522,7 +515,6 @@ def main() -> int:
             parse_date(args.end_date),
             parse_date(args.initial_batch_date),
             as_of_date,
-            args.target_total,
             str(milestone["title"]),
         )
         refresh_latest_copy(dated_output, Path(args.newest_output))
