@@ -439,7 +439,7 @@ def plot_burndown(
     starts, widths, _, _, _ = density_axis(events, start_date, end_date)
     ideal_end_x = starts[end_date] + widths[end_date]
     ideal_x = [actual_x[0], ideal_end_x]
-    ideal_y = [target_total, 0]
+    ideal_y = [initial_total, 0]
 
     fig, ax = plt.subplots(figsize=(14, 6.4), dpi=160)
     fig.patch.set_facecolor("#fbfbf8")
@@ -461,7 +461,7 @@ def plot_burndown(
     ax.set_ylabel("Estimate Points", fontsize=11)
     ax.set_xlabel("Date", fontsize=11)
     ax.set_xlim(actual_x[0], actual_x[-1])
-    upper = max([target_total] + actual_y)
+    upper = max([initial_total] + actual_y)
     ax.set_ylim(0, math.ceil((upper + 10) / 10) * 10)
     ax.grid(axis="y", color="#d7d9d2", linewidth=0.8)
     ax.grid(axis="x", color="#eceee7", linewidth=0.6)
