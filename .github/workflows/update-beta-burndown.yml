@@ -68,7 +68,7 @@ jobs:
         working-directory: beta-burndown
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python beta_burndown.py --sync --force-estimates --as-of-date ${{ steps.asof.outputs.as_of_date }}
+        run: python beta_burndown.py --sync --as-of-date ${{ steps.asof.outputs.as_of_date }}
 
       - name: Commit and push chart updates
         if: steps.window.outputs.active == 'true' || github.event_name == 'workflow_dispatch'
