@@ -6,6 +6,8 @@
 
 由于 `Beta` milestone 下的大量 issue 在 2026-05-26 才集中创建，脚本会把 2026-05-26 及之前创建的 Beta issue 视作 2026-05-25 已存在的初始工作量。这样燃尽图会从 2026-05-25 正确反映整批 Beta 工作，而不是把这些 issue 误判成第二天突然新增。
 
+Beta 不再像 Alpha 那样把首批 issue 归一到固定 100 points。图中的理想线会直接从首日实际总估点出发，因此只要 issue 上已有 `estimate:N`，首日总量和 ideal 起点就会与当前真实估点保持一致。
+
 每次生成时会同时写出两类图片：
 
 - `burndowns/YYYY-MM-DD.png`：按生成日期归档，便于保留每天快照
@@ -36,5 +38,5 @@
 
 ```powershell
 python -m pip install --target .local\python-packages -r requirements-alpha-burndown.txt
-python beta_burndown.py --sync --force-estimates --as-of-date 2026-05-26
+python beta_burndown.py --sync --as-of-date 2026-05-26
 ```

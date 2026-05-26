@@ -188,31 +188,6 @@ def post_initial_estimate(issue: Issue) -> int:
     return 3
 
 
-def normalized_initial_estimates(issues: list[Issue], total: int) -> dict[int, int]:
-    if not issues:
-        return {}
-    weights = {issue.number: heuristic_weight(issue) for issue in issues}
-    weight_total = sum(weights.values())
-    exact = {number: weights[number] * total / weight_total for number in weights}
-    estimates = {number: max(1, int(math.floor(value))) for number, value in exact.items()}
-    delta = total - sum(estimates.values())
-    order = sorted(weights, key=lambda number: exact[number] - math.floor(exact[number]), reverse=True)
-    while delta > 0:
-        for number in order:
-            if delta == 0:
-                break
-            estimates[number] += 1
-            delta -= 1
-    while delta < 0:
-        for number in reversed(order):
-            if delta == 0:
-                break
-            if estimates[number] > 1:
-                estimates[number] -= 1
-                delta += 1
-    return estimates
-
-
 def find_milestone(client: GitHubClient, title: str) -> dict[str, Any]:
     milestones = client.paged("/milestones", {"state": "all"})
     lowered = title.lower()
@@ -248,23 +223,20 @@ def sync_milestone_issues(
     issues: list[Issue],
     milestone_number: int,
     initial_batch_date: dt.date,
-    target_total: int,
     force_estimates: bool,
     label_description: str,
 ) -> list[Issue]:
     milestone_issues = [
         issue
         for issue in issues
-        if issue.milestone_number == milestone_number or issue.created_at.date() <= initial_batch_date
+        if issue.milestone_number == milestone_number
     ]
-    initial_issues = [issue for issue in milestone_issues if issue.created_at.date() <= initial_batch_date]
-    normalized = normalized_initial_estimates(initial_issues, target_total)
 
     updated: list[Issue] = []
     for issue in milestone_issues:
         current_estimate = issue_estimate(issue)
         if force_estimates or current_estimate is None:
-            estimate = normalized.get(issue.number, post_initial_estimate(issue))
+            estimate = post_initial_estimate(issue)
         else:
             estimate = current_estimate
 
@@ -532,7 +504,6 @@ def main() -> int:
                 issues,
                 milestone_number,
                 parse_date(args.initial_batch_date),
-                args.target_total,
                 args.force_estimates,
                 "Story-point estimate for Beta burndown charts",
             )
