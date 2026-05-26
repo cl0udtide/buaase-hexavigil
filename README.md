@@ -10,6 +10,10 @@
   `data/` 目录下各 JSON 配置表的结构、字段定义和引用关系。
 - [UI_SYSTEM.md](docs/UI_SYSTEM.md)
   作战 HUD 目标风格、UI 分层规范、场景与脚本职责边界、后续重构清单。
+- [UI_ASSET_GENERATION_PROMPTS.md](docs/UI_ASSET_GENERATION_PROMPTS.md)
+  UI 资产生图提示词、源图命名、裁剪顺序与纠偏提示。
+- [UI_ASSET_REMEDIATION_GUIDE.md](docs/UI_ASSET_REMEDIATION_GUIDE.md)
+  UI 残边、青绿色廉价感、边框拉伸和安全区问题的集中对策。
 
 ## Git 协作规范
 
