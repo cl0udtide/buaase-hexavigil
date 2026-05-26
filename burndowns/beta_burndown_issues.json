@@ -1,0 +1,386 @@
+[
+  {
+    "number": 167,
+    "title": "实现干员自动合成进阶与出售",
+    "state": "closed",
+    "created_at": "2026-05-25T07:39:38+00:00",
+    "closed_at": "2026-05-25T07:51:05+00:00",
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 169,
+    "title": "实现干员操作子弹时间",
+    "state": "open",
+    "created_at": "2026-05-25T08:38:17+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 172,
+    "title": "Beta: 增加新手引导与通用剧情对话框架",
+    "state": "open",
+    "created_at": "2026-05-26T15:20:16+00:00",
+    "closed_at": null,
+    "estimate": 13,
+    "labels": [
+      "enhancement",
+      "estimate:13"
+    ]
+  },
+  {
+    "number": 173,
+    "title": "Beta: 将随机事件重构为地图悬浮气泡与大事件面板",
+    "state": "open",
+    "created_at": "2026-05-26T15:20:22+00:00",
+    "closed_at": null,
+    "estimate": 10,
+    "labels": [
+      "enhancement",
+      "estimate:10"
+    ]
+  },
+  {
+    "number": 174,
+    "title": "Beta: 实现干员阵营 tag 与盟约/阵营 Buff",
+    "state": "open",
+    "created_at": "2026-05-26T15:20:28+00:00",
+    "closed_at": null,
+    "estimate": 12,
+    "labels": [
+      "enhancement",
+      "estimate:12"
+    ]
+  },
+  {
+    "number": 175,
+    "title": "Beta: 扩充遗物内容与构筑策略空间",
+    "state": "open",
+    "created_at": "2026-05-26T15:20:32+00:00",
+    "closed_at": null,
+    "estimate": 8,
+    "labels": [
+      "enhancement",
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 176,
+    "title": "Beta: 增加更具策略深度的怪物与 Boss",
+    "state": "open",
+    "created_at": "2026-05-26T15:20:36+00:00",
+    "closed_at": null,
+    "estimate": 10,
+    "labels": [
+      "enhancement",
+      "estimate:10"
+    ]
+  },
+  {
+    "number": 177,
+    "title": "Beta: 设计并实现更好的夜晚关卡机制",
+    "state": "open",
+    "created_at": "2026-05-26T15:20:39+00:00",
+    "closed_at": null,
+    "estimate": 9,
+    "labels": [
+      "enhancement",
+      "estimate:9"
+    ]
+  },
+  {
+    "number": 178,
+    "title": "Beta: 实现可体验或跳过的新手教程",
+    "state": "open",
+    "created_at": "2026-05-26T15:23:17+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 179,
+    "title": "Beta: 引入剧情与 NPC 对话并完善游戏运行逻辑",
+    "state": "open",
+    "created_at": "2026-05-26T15:23:51+00:00",
+    "closed_at": null,
+    "estimate": 8,
+    "labels": [
+      "enhancement",
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 180,
+    "title": "[Beta美工] Beta 视觉规范、色板、资产验收图例",
+    "state": "open",
+    "created_at": "2026-05-26T15:29:53+00:00",
+    "closed_at": null,
+    "estimate": 2,
+    "labels": [
+      "enhancement",
+      "estimate:2"
+    ]
+  },
+  {
+    "number": 181,
+    "title": "[Beta美工] 通用控件、按钮、滚动条、Tooltip 重制与清理",
+    "state": "open",
+    "created_at": "2026-05-26T15:29:56+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 182,
+    "title": "[Beta美工] 顶部 HUD、资源项、速度按钮、设置面板素材重制",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:01+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 183,
+    "title": "[Beta美工] 左侧建筑/商店、ActionPanel 素材重制",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:05+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 184,
+    "title": "[Beta美工] 底部部署栏、干员卡、右侧详情栏素材重制",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:09+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 185,
+    "title": "[Beta美工] 弹窗、事件、对话、结算面板素材重制",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:13+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 186,
+    "title": "[Beta美工] 补齐 .tres StyleBoxTexture 与九宫格安全区",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:16+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 187,
+    "title": "[Beta美工] 顶部 HUD 与设置面板场景精修",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:20+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 188,
+    "title": "[Beta美工] 建筑/商店与 ActionPanel 场景精修",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:24+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 189,
+    "title": "[Beta美工] 部署栏、干员卡与右侧详情栏场景精修",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:28+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 190,
+    "title": "[Beta美工] 事件、对话、地图弹窗与设置弹窗精修",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:33+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 191,
+    "title": "[Beta美工] 遗物图标清理、稀有度视觉、遗物卡素材",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:36+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 192,
+    "title": "[Beta美工] RelicStrip、RelicPanel、BlessingPanel 视觉接入",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:41+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 193,
+    "title": "[Beta美工] 主菜单背景、标题、按钮、页面构图重做",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:44+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 194,
+    "title": "[Beta美工] 胜利/失败结算界面与统计行重做",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:49+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 195,
+    "title": "[Beta美工] 通用战斗反馈特效补齐",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:55+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 196,
+    "title": "[Beta美工] 范围描边、危险预警、Boss/AOE 特效补齐",
+    "state": "open",
+    "created_at": "2026-05-26T15:30:58+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 197,
+    "title": "[Beta美工] 重点干员技能个性化特效补齐",
+    "state": "open",
+    "created_at": "2026-05-26T15:31:03+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 198,
+    "title": "[Beta美工] 昼夜环境调色与转场控制",
+    "state": "open",
+    "created_at": "2026-05-26T15:31:08+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 199,
+    "title": "[Beta美工] 核心、建筑、资源点局部光源与轻量粒子",
+    "state": "open",
+    "created_at": "2026-05-26T15:31:11+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 200,
+    "title": "[Beta美工] 重点资产法线/假阴影试点",
+    "state": "open",
+    "created_at": "2026-05-26T15:31:16+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 201,
+    "title": "[Beta美工] 全 UI 目视 QA、截图对比、残边扫描、验收记录",
+    "state": "open",
+    "created_at": "2026-05-26T15:31:19+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  }
+]
