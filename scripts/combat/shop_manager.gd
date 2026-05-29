@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 
 const REFRESH_COST := 2
 const SHOP_SLOT_COUNT := 5
@@ -13,6 +14,7 @@ const TIER_WEIGHTS := [
 var _stock_slots: Array[Dictionary] = []
 
 @onready var _unit_manager: Node = get_node_or_null("../UnitManager")
+@onready var _covenant_manager: Node = get_node_or_null("../CovenantManager")
 
 
 func _ready() -> void:
@@ -57,6 +59,28 @@ func get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
 	return _get_unit_purchase_cost(unit_cfg)
 
 
+func grant_unit(unit_id: StringName, star: int = OperatorProgression.DEFAULT_STAR, display_name: String = "") -> Dictionary:
+	var run_state = AppRefs.run_state()
+	var data_repo = AppRefs.data_repo()
+	if run_state == null or data_repo == null:
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
+	if unit_id == StringName():
+		return ActionResult.err(&"UNIT_NOT_FOUND", "添加失败：未选择干员")
+	var cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
+	if cfg.is_empty():
+		return ActionResult.err(&"UNIT_NOT_FOUND", "添加失败：找不到单位配置")
+	var operator_info: Dictionary = run_state.add_owned_operator(unit_id, display_name, OperatorProgression.normalize_star(star))
+	if operator_info.is_empty():
+		return ActionResult.err(&"OPERATOR_ADD_FAILED", "添加失败：无法创建干员槽位")
+	var merge_result := _auto_merge_after_purchase(run_state, unit_id)
+	var merge_events: Array = merge_result.get("payload", {}).get("merge_events", [])
+	return ActionResult.ok({
+		"unit_id": unit_id,
+		"operator": operator_info,
+		"merge_events": merge_events
+	}, "已加入待部署区，已自动合成" if not merge_events.is_empty() else "已加入待部署区")
+
+
 func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
@@ -81,12 +105,15 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	if not spend_result.get("ok", false):
 		return spend_result
 
-	var operator_info: Dictionary = run_state.add_owned_operator(unit_id)
-	var merge_result := _auto_merge_after_purchase(run_state, unit_id)
+	var grant_result := grant_unit(unit_id)
+	if not bool(grant_result.get("ok", false)):
+		return grant_result
 	slot["sold"] = true
 	_stock_slots[slot_index] = slot
 	_emit_stock_changed()
-	var merge_events: Array = merge_result.get("payload", {}).get("merge_events", [])
+	var grant_payload: Dictionary = grant_result.get("payload", {})
+	var operator_info: Dictionary = grant_payload.get("operator", {})
+	var merge_events: Array = grant_payload.get("merge_events", [])
 	return ActionResult.ok({
 		"slot_index": slot_index,
 		"unit_id": unit_id,
@@ -148,6 +175,9 @@ func _get_unit_ids_by_cost(cost: int) -> Array[StringName]:
 
 
 func _get_refresh_cost() -> int:
+	# 远见 2 人：商店买空后刷新不消耗声望。
+	if _foresight_tier() >= CovenantDefs.TIER_PAIR and _is_shop_bought_out():
+		return 0
 	var run_state = AppRefs.run_state()
 	var cost := REFRESH_COST
 	if run_state != null and run_state.has_method("get_buff_effect_total"):
@@ -160,7 +190,27 @@ func _get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
 	var cost := int(unit_cfg.get("cost_prestige", 0))
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		cost += int(round(float(run_state.get_buff_effect_total_for_unit(&"shop_unit_cost_add", unit_cfg))))
+	# 远见 3 人：所有商店干员购买价格 -1。
+	if _foresight_tier() >= CovenantDefs.TIER_TRIO:
+		cost += CovenantDefs.foresight_purchase_cost_delta()
 	return max(cost, 0)
+
+
+func _foresight_tier() -> int:
+	if _covenant_manager != null and _covenant_manager.has_method("get_foresight_tier"):
+		return int(_covenant_manager.get_foresight_tier())
+	return 0
+
+
+# 商店是否已买空（没有任何可购买的槽位）。
+func _is_shop_bought_out() -> bool:
+	if _stock_slots.is_empty():
+		return false
+	for slot in _stock_slots:
+		var s := slot as Dictionary
+		if not bool(s.get("sold", false)) and StringName(s.get("unit_id", "")) != StringName():
+			return false
+	return true
 
 
 func _auto_merge_after_purchase(run_state: Node, unit_id: StringName) -> Dictionary:

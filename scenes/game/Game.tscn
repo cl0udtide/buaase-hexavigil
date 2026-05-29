@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://dm6o4hh0s7ggg" path="res://scripts/map/path_service.gd" id="11_bwtwt"]
 [ext_resource type="Script" uid="uid://k6lc73sxl2ih" path="res://scripts/building/building_manager.gd" id="12_lud4c"]
 [ext_resource type="Script" uid="uid://cc016a467mua7" path="res://scripts/combat/unit_manager.gd" id="13_7yt5j"]
+[ext_resource type="Script" path="res://scripts/combat/covenant_manager.gd" id="20_covenant"]
 [ext_resource type="Script" uid="uid://cs22auyteruj8" path="res://scripts/combat/shop_manager.gd" id="14_t8xai"]
 [ext_resource type="Script" uid="uid://dyhqvn50d47t" path="res://scripts/enemy/enemy_manager.gd" id="15_pcat8"]
 [ext_resource type="Script" uid="uid://cc14pdc43f5qy" path="res://scripts/enemy/wave_manager.gd" id="16_icn4d"]
@@ -89,6 +90,9 @@ script = ExtResource("12_lud4c")
 
 [node name="UnitManager" type="Node" parent="Managers" unique_id=1390342846]
 script = ExtResource("13_7yt5j")
+
+[node name="CovenantManager" type="Node" parent="Managers" unique_id=2087654321]
+script = ExtResource("20_covenant")
 
 [node name="ShopManager" type="Node" parent="Managers" unique_id=1820135016]
 script = ExtResource("14_t8xai")

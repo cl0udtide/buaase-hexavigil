@@ -180,7 +180,7 @@ func remove_owned_operator(operator_key: StringName) -> bool:
 	return false
 
 
-func sell_owned_operator(operator_key: StringName) -> Dictionary:
+func sell_owned_operator(operator_key: StringName, refund_override: int = -1) -> Dictionary:
 	if phase != GameEnums.PHASE_DAY:
 		return ActionResult.err(&"INVALID_PHASE", "只有白天可以出售干员")
 	if not has_owned_operator(operator_key):
@@ -189,13 +189,15 @@ func sell_owned_operator(operator_key: StringName) -> Dictionary:
 	var display_name := String(operator_info.get("name", operator_key))
 	if not _remove_owned_operator_no_emit(operator_key):
 		return ActionResult.err(&"OPERATOR_NOT_OWNED", "出售失败：未拥有该干员")
+	# refund_override 由调用方按盟约（远见）等规则计算；<0 表示用默认出售价。
+	var refund := refund_override if refund_override >= 0 else OPERATOR_SELL_PRESTIGE
 	_refresh_owned_units_view()
-	add_prestige(OPERATOR_SELL_PRESTIGE)
+	add_prestige(refund)
 	_emit_owned_roster()
 	return ActionResult.ok({
 		"operator_key": operator_key,
-		"refund_prestige": OPERATOR_SELL_PRESTIGE
-	}, "已出售 %s，获得 %d 声望" % [display_name, OPERATOR_SELL_PRESTIGE])
+		"refund_prestige": refund
+	}, "已出售 %s，获得 %d 声望" % [display_name, refund])
 
 
 func auto_merge_operators_for_unit(unit_id: StringName, before_merge: Callable = Callable()) -> Dictionary:

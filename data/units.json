@@ -1,6 +1,7 @@
 ﻿[
     {
         "id":  "guard_t1",
+        "covenants":  ["不屈"],
         "name":  "斯卡蒂",
         "visual_key":  "skadi",
         "class":  "guard",
@@ -40,6 +41,7 @@
     },
     {
         "id":  "guard_01",
+        "covenants":  ["萨尔贡"],
         "name":  "煌",
         "visual_key":  "blaze",
         "class":  "guard",
@@ -79,6 +81,7 @@
     },
     {
         "id":  "guard_t3",
+        "covenants":  ["迅捷", "远见"],
         "name":  "银灰",
         "visual_key":  "silverash",
         "class":  "guard",
@@ -276,6 +279,7 @@
     },
     {
         "id":  "sniper_t2",
+        "covenants":  ["精准"],
         "name":  "能天使",
         "visual_key":  "exusiai",
         "class":  "sniper",
@@ -360,6 +364,7 @@
     },
     {
         "id":  "archer_basic",
+        "covenants":  ["精准", "不屈"],
         "name":  "菲亚梅塔",
         "visual_key":  "fiammetta",
         "class":  "sniper",
@@ -525,6 +530,7 @@
     },
     {
         "id":  "caster_t1",
+        "covenants":  ["精准"],
         "name":  "刻俄柏",
         "visual_key":  "ceobe",
         "class":  "caster",
@@ -606,6 +612,7 @@
     },
     {
         "id":  "caster_t2",
+        "covenants":  ["萨尔贡"],
         "name":  "艾雅法拉",
         "visual_key":  "eyjafjalla",
         "class":  "caster",
@@ -690,6 +697,7 @@
     },
     {
         "id":  "caster_t3",
+        "covenants":  ["远见"],
         "name":  "异客",
         "visual_key":  "passenger",
         "class":  "caster",
@@ -776,6 +784,7 @@
     },
     {
         "id":  "defender_t1",
+        "covenants":  ["坚守"],
         "name":  "森蚺",
         "visual_key":  "eunectes",
         "class":  "defender",
@@ -811,6 +820,7 @@
     },
     {
         "id":  "defender_t2",
+        "covenants":  ["不屈"],
         "name":  "年",
         "visual_key":  "nian",
         "class":  "defender",
@@ -848,6 +858,7 @@
     },
     {
         "id":  "defender_t3",
+        "covenants":  ["坚守"],
         "name":  "星熊",
         "visual_key":  "hoshiguma",
         "class":  "defender",
@@ -886,6 +897,7 @@
     },
     {
         "id":  "mountain",
+        "covenants":  ["不屈"],
         "name":  "山",
         "visual_key":  "mountain",
         "class":  "guard",
@@ -930,6 +942,7 @@
     },
     {
         "id":  "zuo_le",
+        "covenants":  ["突袭"],
         "name":  "左乐",
         "visual_key":  "zuo_le",
         "class":  "guard",
@@ -973,6 +986,7 @@
     },
     {
         "id":  "degenbrecher",
+        "covenants":  ["突袭"],
         "name":  "锏",
         "visual_key":  "degenbrecher",
         "class":  "guard",
@@ -1017,6 +1031,7 @@
     },
     {
         "id":  "surtr",
+        "covenants":  ["突袭", "萨尔贡"],
         "name":  "史尔特尔",
         "visual_key":  "surtr",
         "class":  "guard",
@@ -1177,6 +1192,7 @@
     },
     {
         "id":  "ray",
+        "covenants":  ["迅捷"],
         "name":  "莱伊",
         "visual_key":  "ray",
         "class":  "sniper",
@@ -1325,6 +1341,7 @@
     },
     {
         "id":  "typhon",
+        "covenants":  ["突袭"],
         "name":  "提丰",
         "visual_key":  "typhon",
         "class":  "sniper",
@@ -1414,6 +1431,7 @@
     },
     {
         "id":  "wisadel",
+        "covenants":  ["精准"],
         "name":  "维什戴尔",
         "visual_key":  "wisadel",
         "class":  "sniper",
@@ -1502,6 +1520,7 @@
     },
     {
         "id":  "ifrit",
+        "covenants":  ["萨尔贡"],
         "name":  "伊芙利特",
         "visual_key":  "ifrit",
         "class":  "caster",
@@ -1615,6 +1634,7 @@
     },
     {
         "id":  "nymph",
+        "covenants":  ["迅捷"],
         "name":  "妮芙",
         "visual_key":  "nymph",
         "class":  "caster",
@@ -1701,6 +1721,7 @@
     },
     {
         "id":  "goldenglow",
+        "covenants":  ["迅捷"],
         "name":  "澄闪",
         "visual_key":  "goldenglow",
         "class":  "caster",
@@ -1788,6 +1809,7 @@
     },
     {
         "id":  "logos",
+        "covenants":  ["精准", "远见"],
         "name":  "逻各斯",
         "visual_key":  "logos",
         "class":  "caster",
@@ -1872,6 +1894,7 @@
     },
     {
         "id":  "saria",
+        "covenants":  ["远见"],
         "name":  "塞雷娅",
         "visual_key":  "saria",
         "class":  "defender",
@@ -1913,6 +1936,7 @@
     },
     {
         "id":  "penance",
+        "covenants":  ["坚守"],
         "name":  "斥罪",
         "visual_key":  "penance",
         "class":  "defender",
@@ -1953,6 +1977,7 @@
     },
     {
         "id":  "jessica_alter",
+        "covenants":  ["不屈"],
         "name":  "涤火杰西卡",
         "visual_key":  "jessica_the_liberated",
         "class":  "defender",
@@ -2027,6 +2052,7 @@
     },
     {
         "id":  "shu",
+        "covenants":  ["坚守"],
         "name":  "黍",
         "visual_key":  "shu",
         "class":  "defender",

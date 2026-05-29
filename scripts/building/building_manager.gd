@@ -521,10 +521,11 @@ func _apply_unit_aura_effects(units: Array, attack_speed_adds: Dictionary, attac
 			continue
 		var unit_runtime_id: int = int(unit.get_runtime_id())
 		active_runtime_ids[unit_runtime_id] = true
-		if unit.has_method("set_external_attack_speed_add"):
-			unit.set_external_attack_speed_add(float(attack_speed_adds.get(unit_runtime_id, 0.0)))
-		if unit.has_method("set_external_attack_bonus"):
-			unit.set_external_attack_bonus(int(attack_bonuses.get(unit_runtime_id, 0)))
+		if unit.has_method("set_modifier_channel"):
+			unit.set_modifier_channel(&"aura", {
+				"aspd_add": float(attack_speed_adds.get(unit_runtime_id, 0.0)),
+				"atk_flat": float(attack_bonuses.get(unit_runtime_id, 0)),
+			})
 		var total_heal: float = float(_unit_heal_remainders.get(unit_runtime_id, 0.0)) + float(heal_amounts.get(unit_runtime_id, 0.0))
 		var heal_value: int = int(floor(total_heal))
 		_unit_heal_remainders[unit_runtime_id] = total_heal - float(heal_value)

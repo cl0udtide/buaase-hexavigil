@@ -112,6 +112,7 @@ var _bullet_time_feedback_tween: Tween
 @onready var _top_bar_base: Panel = %TopBarBase
 @onready var _top_content: MarginContainer = _top_bar.get_node_or_null("TopContent") as MarginContainer
 @onready var _top_content_row: HBoxContainer = _top_bar.get_node_or_null("TopContent/TopContentRow") as HBoxContainer
+var _covenant_row: HBoxContainer = null
 @onready var _stage_chip: Control = %StageChip
 @onready var _core_chip: Control = %CoreChip
 @onready var _deploy_chip: Control = %DeployChip
@@ -324,6 +325,81 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 		_relic_strip.set_relics(relic_ids)
 	if _relic_panel != null and _relic_panel.has_method("set_relics"):
 		_relic_panel.set_relics(relic_ids)
+
+
+# 刷新盟约横条。entries 来自 EventBus.covenants_changed（仅含人数≥1 的盟约）。
+# 横条单独成行，置于顶栏下方，不挤占原有顶栏排版。
+func update_covenants(entries: Array) -> void:
+	_ensure_covenant_row()
+	if _covenant_row == null:
+		return
+	for child in _covenant_row.get_children():
+		child.queue_free()
+	for entry in entries:
+		if typeof(entry) == TYPE_DICTIONARY:
+			_covenant_row.add_child(_build_covenant_chip(entry))
+
+
+func _ensure_covenant_row() -> void:
+	if _covenant_row != null and is_instance_valid(_covenant_row):
+		return
+	# 独立定位条：紧贴顶栏下方，与 TopHudSlot 左边缘对齐。
+	var slot := Control.new()
+	slot.name = "CovenantSlot"
+	slot.position = Vector2(66, 96)
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(slot)
+	_covenant_row = HBoxContainer.new()
+	_covenant_row.name = "CovenantRow"
+	_covenant_row.add_theme_constant_override("separation", 8)
+	slot.add_child(_covenant_row)
+
+
+func _build_covenant_chip(entry: Dictionary) -> Control:
+	var tier := int(entry.get("tier", 0))
+	var count := int(entry.get("count", 0))
+	var layers := int(entry.get("layers", 0))
+	var cov_name := String(entry.get("name", ""))
+	var active := tier >= CovenantDefs.TIER_PAIR
+	var trio := tier >= CovenantDefs.TIER_TRIO
+
+	# 复用顶栏状态 chip 的样式：激活态用 AMBER 描边高亮。
+	var chip := PanelContainer.new()
+	chip.add_theme_stylebox_override("panel", GameUiStyle.hud_cell(active))
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_top", 5)
+	margin.add_theme_constant_override("margin_bottom", 5)
+	chip.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 0)
+	margin.add_child(vbox)
+
+	var mark := "③" if trio else ("②" if active else "")
+	var name_label := Label.new()
+	name_label.text = cov_name + ((" " + mark) if mark != "" else "")
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.add_theme_font_size_override("font_size", 14)
+	name_label.add_theme_color_override("font_color", GameUiStyle.AMBER if active else GameUiStyle.TEXT_INVERTED_DIM)
+	vbox.add_child(name_label)
+
+	var info_label := Label.new()
+	info_label.text = "%d人 · %d层" % [count, layers]
+	info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_label.add_theme_font_size_override("font_size", 11)
+	info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if active else GameUiStyle.TEXT_MUTED)
+	vbox.add_child(info_label)
+
+	var lines: Array = CovenantDefs.describe(StringName(entry.get("id", "")), layers)
+	var tip := "%s（%d人激活）" % [cov_name, tier] if active else "%s（未激活，需 %d 人）" % [cov_name, CovenantDefs.TIER_PAIR]
+	if not lines.is_empty():
+		tip += "\n" + "\n".join(lines)
+	chip.tooltip_text = tip
+	return chip
 
 
 func _apply_resource_delta_label_style(label: Label, delta_sign: int) -> void:
