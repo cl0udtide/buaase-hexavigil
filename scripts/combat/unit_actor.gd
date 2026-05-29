@@ -543,8 +543,21 @@ func _try_steadfast_pool(value: int, damage_type_value: int, source: Node) -> bo
 	var steadfast: Array = covenant_manager.get_steadfast_units()
 	if steadfast.is_empty():
 		return false
-	var share := int(round(float(value) / float(steadfast.size())))
+	var recipients: Array = []
 	for su in steadfast:
+		if su != null and is_instance_valid(su) and su.has_method("receive_damage"):
+			recipients.append(su)
+	if recipients.is_empty():
+		return false
+	var total_damage: int = maxi(value, 0)
+	var recipient_count: int = recipients.size()
+	var base_share: int = int(floor(float(total_damage) / float(recipient_count)))
+	var remainder: int = total_damage - base_share * recipient_count
+	for index in range(recipient_count):
+		var share: int = base_share + (1 if index < remainder else 0)
+		if share <= 0:
+			continue
+		var su = recipients[index]
 		if su != null and is_instance_valid(su) and su.has_method("receive_damage"):
 			su.receive_damage(share, damage_type_value, source, true)
 	return true

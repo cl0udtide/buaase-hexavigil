@@ -77,8 +77,8 @@ func _on_unit_skill_cast(unit_runtime_id: int, _unit_id: StringName) -> void:
 	var unit := _get_unit(unit_runtime_id)
 	if unit == null or not _has_tag(_unit_covenants(unit), CovenantDefs.ID_SARGON):
 		return
-	var cap := CovenantDefs.sargon_max_stacks(_layers(CovenantDefs.ID_SARGON))
-	var new_stacks := min(_sargon_stacks + 1, cap)
+	var cap: int = CovenantDefs.sargon_max_stacks(_layers(CovenantDefs.ID_SARGON))
+	var new_stacks: int = mini(_sargon_stacks + 1, cap)
 	if new_stacks == _sargon_stacks:
 		return
 	_sargon_stacks = new_stacks
