@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/debug/combat_sandbox.gd" id="1_sandbox"]
 [ext_resource type="PackedScene" path="res://scenes/world/MapRoot.tscn" id="2_map"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/enemy/enemy_manager.gd" id="8_enemy_manager"]
 [ext_resource type="PackedScene" path="res://scenes/ui/combat/CombatHud.tscn" id="9_combat_hud"]
 [ext_resource type="Script" path="res://scripts/building/building_manager.gd" id="10_building_manager"]
+[ext_resource type="Script" path="res://scripts/combat/covenant_manager.gd" id="11_covenant"]
+[ext_resource type="Script" path="res://scripts/combat/shop_manager.gd" id="12_shop_manager"]
 
 [node name="CombatSandbox" type="Node"]
 script = ExtResource("1_sandbox")
@@ -47,6 +49,12 @@ script = ExtResource("10_building_manager")
 [node name="UnitManager" type="Node" parent="Managers"]
 script = ExtResource("7_unit_manager")
 
+[node name="ShopManager" type="Node" parent="Managers"]
+script = ExtResource("12_shop_manager")
+
+[node name="CovenantManager" type="Node" parent="Managers"]
+script = ExtResource("11_covenant")
+
 [node name="EnemyManager" type="Node" parent="Managers"]
 script = ExtResource("8_enemy_manager")
 
@@ -55,6 +63,8 @@ script = ExtResource("8_enemy_manager")
 [node name="CombatHud" parent="UI" instance=ExtResource("9_combat_hud")]
 
 [node name="Panel" type="PanelContainer" parent="UI"]
+z_index = 260
+z_as_relative = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0

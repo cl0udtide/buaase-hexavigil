@@ -77,6 +77,13 @@ signal unit_deployed(unit_runtime_id: int, operator_key: StringName, unit_id: St
 @warning_ignore("unused_signal")
 signal unit_removed(unit_runtime_id: int, reason: int)
 @warning_ignore("unused_signal")
+# 盟约状态变化：entries 为按展示顺序排列、人数≥1 的盟约条目数组
+# （每项含 id / name / count / layers / tier）。
+signal covenants_changed(entries: Array)
+@warning_ignore("unused_signal")
+# 干员释放技能（手动或自动）。供盟约等机制监听。
+signal unit_skill_cast(unit_runtime_id: int, unit_id: StringName)
+@warning_ignore("unused_signal")
 signal enemy_spawned(enemy_runtime_id: int, enemy_id: StringName, cell: Vector2i)
 @warning_ignore("unused_signal")
 signal enemy_died(enemy_runtime_id: int, enemy_id: StringName)

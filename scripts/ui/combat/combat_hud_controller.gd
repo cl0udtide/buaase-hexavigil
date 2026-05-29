@@ -187,6 +187,7 @@ func _connect_events() -> void:
 		event_bus.night_started.connect(_on_night_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
+		event_bus.covenants_changed.connect(_on_covenants_changed)
 		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
 		event_bus.path_grid_changed.connect(_on_path_grid_changed)
 		event_bus.building_placed.connect(_on_building_changed)
@@ -244,6 +245,11 @@ func _on_buffs_changed(buff_ids: Array[StringName]) -> void:
 	if _combat_hud != null and _combat_hud.has_method("set_relics"):
 		_combat_hud.set_relics(buff_ids)
 	_refresh_top_hud()
+
+
+func _on_covenants_changed(entries: Array) -> void:
+	if _combat_hud != null and _combat_hud.has_method("update_covenants"):
+		_combat_hud.update_covenants(entries)
 
 
 func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:

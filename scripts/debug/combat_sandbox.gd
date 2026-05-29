@@ -7,6 +7,8 @@ const OperatorProgression = preload("res://scripts/combat/operator_progression.g
 const SPAWN_POINT_SCENE := preload("res://scenes/world/SpawnPoint.tscn")
 const PRESET_PATH := "res://data/debug/combat_sandbox_presets.json"
 const PRESET_DIR := "res://data/debug"
+const DEBUG_DRAWER_Z_INDEX := 260
+const SANDBOX_QUICK_BAR_Z_INDEX := 280
 const SANDBOX_WIDTH := 12
 const SANDBOX_HEIGHT := 7
 const SANDBOX_CORE := Vector2i(10, 3)
@@ -98,6 +100,7 @@ var _path_warning_label: Label
 var _operator_list: ItemList
 var _operator_name_edit: LineEdit
 var _unit_option: OptionButton
+var _operator_star_spin: SpinBox
 var _facing_option: OptionButton
 var _spawn_option: OptionButton
 var _enemy_option: OptionButton
@@ -130,6 +133,7 @@ var _log_text: TextEdit
 @onready var _path_service: Node = get_node_or_null("Managers/PathService")
 @onready var _building_manager: Node = get_node_or_null("Managers/BuildingManager")
 @onready var _unit_manager: Node = get_node_or_null("Managers/UnitManager")
+@onready var _shop_manager: Node = get_node_or_null("Managers/ShopManager")
 @onready var _enemy_manager: Node = get_node_or_null("Managers/EnemyManager")
 @onready var _map_root: Node = get_node_or_null("World/MapRoot")
 @onready var _spawn_root: Node = get_node_or_null("World/SpawnRoot")
@@ -243,6 +247,9 @@ func _bind_combat_hud() -> void:
 		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
 	if _combat_hud.has_signal("retreat_requested"):
 		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null and _combat_hud.has_method("update_covenants"):
+		event_bus.covenants_changed.connect(func(entries: Array) -> void: _combat_hud.update_covenants(entries))
 	_refresh_top_hud()
 	_rebuild_deploy_deck()
 	_refresh_detail_panel()
@@ -252,6 +259,8 @@ func _set_debug_drawer_open(open: bool) -> void:
 	_debug_drawer_open = open
 	if _debug_drawer_panel != null:
 		_debug_drawer_panel.visible = open
+		_debug_drawer_panel.z_index = DEBUG_DRAWER_Z_INDEX
+		_debug_drawer_panel.z_as_relative = false
 		_debug_drawer_panel.anchor_left = 1.0
 		_debug_drawer_panel.anchor_top = 0.0
 		_debug_drawer_panel.anchor_right = 1.0
@@ -260,6 +269,9 @@ func _set_debug_drawer_open(open: bool) -> void:
 		_debug_drawer_panel.offset_top = 82.0
 		_debug_drawer_panel.offset_right = -18.0
 		_debug_drawer_panel.offset_bottom = -18.0
+		var ui := get_node_or_null("UI")
+		if ui != null:
+			ui.move_child(_debug_drawer_panel, ui.get_child_count() - 1)
 	if _combat_hud != null and _combat_hud.has_method("set_debug_drawer_open"):
 		_combat_hud.set_debug_drawer_open(open)
 	_sync_sandbox_quick_controls()
@@ -275,7 +287,8 @@ func _build_sandbox_quick_controls() -> void:
 		return
 	var bar := PanelContainer.new()
 	bar.name = "SandboxQuickControls"
-	bar.z_index = 120
+	bar.z_index = SANDBOX_QUICK_BAR_Z_INDEX
+	bar.z_as_relative = false
 	bar.mouse_filter = Control.MOUSE_FILTER_STOP
 	bar.anchor_left = 1.0
 	bar.anchor_right = 1.0
@@ -916,6 +929,7 @@ func _build_editor_ui_v2() -> void:
 	var right := _make_scroll_panel(main_row, Vector2(450, 0))
 
 	_build_map_tab(_make_section(left, "地图与建筑"))
+	_build_operator_tab(_make_section(left, "干员模板"))
 	_build_preset_tab(_make_section(left, "预设"))
 
 	_build_queue_tab(_make_section(right, "出怪点与敌人队列"))
@@ -1000,6 +1014,30 @@ func _add_tool_button(row: Control, tool: StringName, text: String) -> void:
 	_apply_button_style(button, false)
 	row.add_child(button)
 	_tool_buttons[tool] = button
+
+
+func _build_operator_tab(tab: VBoxContainer) -> void:
+	var add_row := _make_row(tab)
+	add_row.add_child(_make_label("干员", 54.0))
+	_unit_option = _make_option(add_row)
+	add_row.add_child(_make_button("加入待部署区", _on_add_operator_pressed))
+
+	var star_row := _make_row(tab)
+	star_row.add_child(_make_label("星级", 54.0))
+	_operator_star_spin = _make_spin(
+		float(OperatorProgression.MIN_STAR),
+		float(OperatorProgression.MAX_STAR),
+		1.0,
+		float(OperatorProgression.DEFAULT_STAR)
+	)
+	star_row.add_child(_operator_star_spin)
+
+	_operator_list = ItemList.new()
+	_operator_list.custom_minimum_size = Vector2(0, 150)
+	_operator_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_operator_list.item_selected.connect(_on_operator_item_selected)
+	_style_item_list(_operator_list)
+	tab.add_child(_operator_list)
 
 
 func _build_combat_tab(tab: VBoxContainer) -> void:
@@ -1200,6 +1238,7 @@ func _connect_events() -> void:
 		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
+		event_bus.owned_operators_changed.connect(_on_owned_operators_changed)
 	if _unit_manager != null and _unit_manager.has_signal("operator_redeploy_completed"):
 		_unit_manager.connect(&"operator_redeploy_completed", Callable(self, "_on_operator_redeploy_completed"))
 
@@ -1222,7 +1261,8 @@ func _reset_sandbox() -> void:
 	Engine.time_scale = 1.0
 	_normal_time_scale = 1.0
 	_running_spawn_queues.clear()
-	_selected_operator_key = _get_first_operator_key()
+	_operator_defs.clear()
+	_selected_operator_key = StringName()
 	_selected_unit_runtime_id = -1
 	_selected_tool = TOOL_SELECT
 	_pending_spawn_action = SPAWN_ACTION_NONE
@@ -1239,14 +1279,8 @@ func _reset_sandbox() -> void:
 		run_state.set_phase(GameEnums.PHASE_DAY)
 		run_state.set_deploy_limit(99)
 		run_state.reset_action_points(999)
-		for operator_info in _operator_defs:
-			var operator_dict := operator_info as Dictionary
-			run_state.add_owned_operator_with_key(
-				StringName(operator_dict.get("key", "")),
-				StringName(operator_dict.get("unit_id", "")),
-				String(operator_dict.get("name", "")),
-				OperatorProgression.normalize_star(operator_dict.get("star", OperatorProgression.DEFAULT_STAR))
-			)
+		run_state.add_prestige(999)
+		_sync_operator_defs_from_run_state()
 	_apply_debug_map_from_state()
 	append_combat_debug("沙盒已重置")
 	_refresh_editor_controls()
@@ -1894,11 +1928,33 @@ func _on_operator_item_selected(index: int) -> void:
 
 
 func _on_add_operator_pressed() -> void:
-	_show_message("战斗沙盒部署区固定包含全部干员")
+	var unit_id := _get_selected_unit_id()
+	if unit_id == StringName():
+		_show_message("先选择要加入的干员", StringName(), true)
+		return
+	var star := OperatorProgression.DEFAULT_STAR
+	if _operator_star_spin != null:
+		star = OperatorProgression.normalize_star(int(_operator_star_spin.value))
+	var result := _grant_debug_operator(unit_id, star)
+	if bool(result.get("ok", false)):
+		var payload: Dictionary = result.get("payload", {})
+		var operator_info: Dictionary = payload.get("operator", {})
+		var selected_operator_key := StringName(operator_info.get("key", ""))
+		var merge_events: Array = payload.get("merge_events", [])
+		if not merge_events.is_empty():
+			var latest_merge: Dictionary = merge_events.back()
+			selected_operator_key = StringName(latest_merge.get("kept_key", selected_operator_key))
+		if selected_operator_key == StringName() or _get_operator_info(selected_operator_key).is_empty():
+			selected_operator_key = _get_first_operator_key()
+		_selected_operator_key = selected_operator_key
+		_select_operator_item(_selected_operator_key)
+		_refresh_operator_list()
+		_rebuild_deploy_deck()
+	_show_result_message(result, "已加入待部署区", "添加干员失败")
 
 
 func _on_delete_operator_pressed() -> void:
-	_show_message("战斗沙盒部署区固定包含全部干员")
+	_show_message("需要移除时可以直接重置沙盒")
 
 
 func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
@@ -1924,6 +1980,31 @@ func _on_operator_redeploy_completed(operator_key: StringName) -> void:
 	_update_operator_card_states()
 	if _cooldown_message_operator_key == operator_key:
 		_show_message("%s 已可部署" % _get_operator_display_name(operator_key))
+
+
+func _on_owned_operators_changed(operators: Array[Dictionary]) -> void:
+	_operator_defs.clear()
+	for operator_info in operators:
+		_operator_defs.append((operator_info as Dictionary).duplicate(true))
+	if _selected_operator_key != StringName() and _get_operator_info(_selected_operator_key).is_empty():
+		_selected_operator_key = _get_first_operator_key()
+	_refresh_operator_list()
+	_rebuild_deploy_deck()
+	_refresh_status()
+
+
+func _sync_operator_defs_from_run_state() -> void:
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_owned_operators"):
+		_on_owned_operators_changed(run_state.get_owned_operators())
+	else:
+		_on_owned_operators_changed([])
+
+
+func _grant_debug_operator(unit_id: StringName, star: int) -> Dictionary:
+	if _shop_manager == null or not _shop_manager.has_method("grant_unit"):
+		return ActionResult.err(&"SHOP_MANAGER_MISSING", "添加失败：商店管理器不可用")
+	return _shop_manager.grant_unit(unit_id, star)
 
 
 func _start_spawn_queue(spawn_key: StringName, show_feedback: bool = true) -> bool:
@@ -1976,7 +2057,7 @@ func _refresh_status() -> void:
 	var selected_unit := _get_selected_unit()
 	if selected_unit != null:
 		selected_text = "%s 生命 %d/%d 技力 %.0f/%.0f" % [
-			_get_operator_display_name(StringName(selected_unit.operator_key)),
+			_get_unit_display_name_for_ui(selected_unit),
 			selected_unit.current_hp,
 			selected_unit.max_hp,
 			selected_unit.sp,
@@ -2142,7 +2223,7 @@ func _apply_preset_by_index(index: int) -> void:
 	var preset: Dictionary = _presets[index]
 	_current_preset_id = String(preset.get("id", "default"))
 	_current_preset_name = String(preset.get("name", "默认调试预设"))
-	_operator_defs = _create_all_operator_defs()
+	_operator_defs.clear()
 	_parse_map_state(preset.get("map", {}))
 	_spawn_defs = _parse_spawn_defs(preset.get("spawns", []))
 	_spawn_queues = _parse_spawn_queues(preset.get("queues", {}))
@@ -2497,6 +2578,7 @@ func _populate_unit_options() -> void:
 func _refresh_operator_list() -> void:
 	if _operator_list == null:
 		return
+	var was_refreshing := _refreshing_editor_ui
 	_refreshing_editor_ui = true
 	var previous_selected := _selected_operator_key
 	_operator_list.clear()
@@ -2506,7 +2588,7 @@ func _refresh_operator_list() -> void:
 		_operator_list.add_item(_format_operator_list_item(operator_info))
 		if operator_key == previous_selected:
 			_operator_list.select(index)
-	_refreshing_editor_ui = false
+	_refreshing_editor_ui = was_refreshing
 
 
 func _select_operator_item(operator_key: StringName) -> void:
@@ -2595,6 +2677,12 @@ func _get_selected_operator_key() -> StringName:
 		if index >= 0 and index < _operator_defs.size():
 			return StringName((_operator_defs[index] as Dictionary).get("key", ""))
 	return StringName()
+
+
+func _get_selected_unit_id() -> StringName:
+	if _unit_option == null or _unit_option.selected < 0 or _unit_option.selected >= _unit_ids.size():
+		return StringName()
+	return _unit_ids[_unit_option.selected]
 
 
 func _get_first_operator_key() -> StringName:

@@ -161,7 +161,24 @@ func try_sell_operator(operator_key: StringName) -> Dictionary:
 		return ActionResult.err(&"OPERATOR_COOLDOWN", "出售失败：干员正在再部署冷却中")
 	if not run_state.has_method("sell_owned_operator"):
 		return ActionResult.err(&"SELL_UNAVAILABLE", "出售失败：运行状态不支持出售")
-	return run_state.sell_owned_operator(operator_key)
+	return run_state.sell_owned_operator(operator_key, _foresight_sell_refund(run_state, operator_key))
+
+
+# 远见 3 人且层数达标时，出售价改为基础价折半；否则返回 -1 用默认出售价。
+func _foresight_sell_refund(run_state, operator_key: StringName) -> int:
+	var covenant_manager := get_node_or_null("../CovenantManager")
+	if covenant_manager == null or not covenant_manager.has_method("get_foresight_tier"):
+		return -1
+	if int(covenant_manager.get_foresight_tier()) < CovenantDefs.TIER_TRIO:
+		return -1
+	if int(covenant_manager.get_foresight_layers()) < CovenantDefs.foresight_sell_discount_min_layers():
+		return -1
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return -1
+	var operator_info: Dictionary = run_state.get_owned_operator(operator_key)
+	var cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator_info.get("unit_id", "")))
+	return CovenantDefs.foresight_sell_value(int(cfg.get("cost_prestige", 0)))
 
 
 func get_unit_by_runtime_id(unit_runtime_id: int) -> Node:
@@ -317,9 +334,7 @@ func _start_operator_redeploy(unit: Node, operator_key: StringName) -> void:
 	var run_state = AppRefs.run_state()
 	if run_state != null and int(run_state.phase) == GameEnums.PHASE_DAY:
 		return
-	var redeploy_sec := float(unit.cfg.get("redeploy_sec", 0.0))
-	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
-		redeploy_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_redeploy_percent", unit.cfg))
+	var redeploy_sec := float(unit.get_effective_redeploy_sec()) if unit.has_method("get_effective_redeploy_sec") else float(unit.cfg.get("redeploy_sec", 0.0))
 	if redeploy_sec <= 0.0:
 		return
 	_redeploy_timers[operator_key] = redeploy_sec

@@ -78,8 +78,11 @@ var block_count := 0
 var attack_interval := 1.0
 var attack_speed := 100.0
 var attack_multiplier := 1.0
-var _external_attack_speed_add := 0.0
-var _external_attack_bonus := 0
+# 不含盟约/光环加成的基础最大生命；max_hp 为含加成的实时上限。
+var _base_max_hp := 1
+# 统一外部修正层：按来源通道（&"aura" / &"covenant"）整组存放修正，
+# effective getter 汇总各通道。详见 set_modifier_channel。
+var _mod_channels: Dictionary = {}
 var damage_type := GameEnums.DAMAGE_PHYSICAL
 var target_type: StringName = TARGET_TYPE_GROUND
 var range_pattern: Array[Vector2i] = []
@@ -132,6 +135,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		max_hp = max(int(round(float(max_hp) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_hp_percent", cfg))))), 1)
+	_base_max_hp = max_hp
 	current_hp = max_hp
 	atk = int(cfg.get("atk", 1))
 	defense = int(cfg.get("def", 0))
@@ -145,8 +149,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 		resistance = max(int(round(float(resistance) + float(run_state.get_buff_effect_total_for_unit(&"unit_res_add", cfg)))), 0)
 		block_count = max(block_count + int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_block_add", cfg)))), 0)
 	attack_multiplier = 1.0
-	_external_attack_speed_add = 0.0
-	_external_attack_bonus = 0
+	_mod_channels.clear()
 	_damage_reduction_effects.clear()
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
 	target_type = parse_target_type(String(cfg.get("target_type", "ground")))
@@ -177,12 +180,16 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	_update_status_view()
 
 
-func receive_damage(value: int, damage_type_value: int, source: Node = null) -> void:
+func receive_damage(value: int, damage_type_value: int, source: Node = null, pooled: bool = false) -> void:
+	# 坚守 3 人：把“理想伤害”均摊给所有坚守干员，各自用自身防御/法抗结算。
+	# pooled=true 表示这是均摊后的份额，跳过再均摊以避免递归。
+	if not pooled and _try_steadfast_pool(value, damage_type_value, source):
+		return
 	var final_damage := value
 	if damage_type_value == GameEnums.DAMAGE_PHYSICAL:
-		final_damage = CombatMath.calc_physical_damage(value, defense)
+		final_damage = CombatMath.calc_physical_damage(value, get_effective_defense())
 	elif damage_type_value == GameEnums.DAMAGE_MAGIC:
-		final_damage = CombatMath.calc_magic_damage(value, resistance)
+		final_damage = CombatMath.calc_magic_damage(value, get_effective_resistance())
 	final_damage = max(int(round(float(final_damage) * _get_damage_reduction_multiplier())), 0)
 	if _skill_behavior != null and _skill_behavior.has_method("modify_final_incoming_damage"):
 		final_damage = max(int(_skill_behavior.modify_final_incoming_damage(final_damage, value, damage_type_value, source)), 0)
@@ -193,12 +200,8 @@ func receive_damage(value: int, damage_type_value: int, source: Node = null) -> 
 	_debug_log("单位 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type_value), value, final_damage, current_hp, max_hp])
 	if final_damage > 0 and current_hp < hp_before and _skill_behavior != null and _skill_behavior.has_method("after_receive_damage"):
 		_skill_behavior.after_receive_damage(source, final_damage)
-	if current_hp == 0 and not _is_dead:
-		_is_dead = true
-		_debug_log("单位 %s#%d 死亡" % [_debug_name(), runtime_id])
-		var unit_manager := get_unit_manager()
-		if unit_manager != null and unit_manager.has_method("remove_unit"):
-			unit_manager.remove_unit(runtime_id, GameEnums.UNIT_REMOVE_DEAD)
+	if current_hp == 0:
+		_die()
 
 
 func receive_heal(value: int, source: Node = null) -> void:
@@ -223,12 +226,26 @@ func lose_hp(value: int, allow_death: bool = false) -> void:
 	current_hp = current_hp - final_value if allow_death else max(current_hp - final_value, 1)
 	current_hp = max(current_hp, 0)
 	_update_status_view()
-	if current_hp == 0 and not _is_dead:
-		_is_dead = true
-		_debug_log("单位 %s#%d 因生命流失死亡" % [_debug_name(), runtime_id])
-		var unit_manager := get_unit_manager()
-		if unit_manager != null and unit_manager.has_method("remove_unit"):
-			unit_manager.remove_unit(runtime_id, GameEnums.UNIT_REMOVE_DEAD)
+	if current_hp == 0:
+		_die()
+
+
+# 收敛的死亡入口：先判定不屈复活，否则正式移除。
+func _die() -> void:
+	if _is_dead:
+		return
+	var revive_chance := get_effective_revive_chance()
+	if revive_chance > 0.0 and randf() < revive_chance:
+		current_hp = max_hp
+		_update_status_view()
+		_play_heal_effect()
+		_debug_log("单位 %s#%d 触发不屈，原地满血复活" % [_debug_name(), runtime_id])
+		return
+	_is_dead = true
+	_debug_log("单位 %s#%d 死亡" % [_debug_name(), runtime_id])
+	var unit_manager := get_unit_manager()
+	if unit_manager != null and unit_manager.has_method("remove_unit"):
+		unit_manager.remove_unit(runtime_id, GameEnums.UNIT_REMOVE_DEAD)
 
 
 func apply_damage_reduction(effect_key: StringName, multiplier: float, duration: float) -> void:
@@ -276,6 +293,9 @@ func cast_skill() -> void:
 		cast_ok = true
 	if cast_ok:
 		_debug_log("单位 %s#%d 释放技能：%s" % [_debug_name(), runtime_id, skill_name])
+		var event_bus = AppRefs.event_bus()
+		if event_bus != null:
+			event_bus.unit_skill_cast.emit(runtime_id, unit_id)
 
 
 func get_skill_name() -> String:
@@ -402,7 +422,9 @@ func get_effective_atk() -> int:
 		buff_multiplier += float(run_state.get_buff_effect_total(&"unit_atk_percent"))
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		buff_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_atk_percent", cfg))
-	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + _external_attack_bonus, 1)
+	buff_multiplier += _sum_modifier(&"atk_percent")
+	var atk_flat := int(round(_sum_modifier(&"atk_flat")))
+	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + atk_flat, 1)
 
 
 func get_effective_attack_speed() -> float:
@@ -410,19 +432,84 @@ func get_effective_attack_speed() -> float:
 	var relic_add := 0.0
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		relic_add += float(run_state.get_buff_effect_total_for_unit(&"unit_attack_speed_add", cfg))
-	return CombatMath.clamp_attack_speed(attack_speed + relic_add + _external_attack_speed_add)
+	return CombatMath.clamp_attack_speed(attack_speed + relic_add + _sum_modifier(&"aspd_add"))
+
+
+func get_effective_defense() -> int:
+	return max(defense + int(round(_sum_modifier(&"def_flat"))), 0)
+
+
+func get_effective_resistance() -> int:
+	return max(resistance + int(round(_sum_modifier(&"res_flat"))), 0)
+
+
+# 攻击时无视目标防御/法抗的比例（精准 3 人），上限 95%。
+func get_effective_defense_ignore() -> float:
+	return clampf(_sum_modifier(&"defense_ignore"), 0.0, 0.95)
+
+
+# 每秒 SP 回复：基础（含技能覆盖）×(1+遗物%) + 盟约 flat 加值。
+func get_effective_sp_recover_per_sec() -> float:
+	var recover_per_sec := float(cfg.get("sp_recover_per_sec", 0.0))
+	if _skill_behavior != null and _skill_behavior.has_method("get_sp_recover_per_sec"):
+		recover_per_sec = float(_skill_behavior.get_sp_recover_per_sec())
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		recover_per_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_sp_recover_percent", cfg))
+	return recover_per_sec + _sum_modifier(&"sp_recover_add")
+
+
+# 再部署时间：基础 ×(1+遗物%) ×(1 − 盟约减免)，最低 0。
+func get_effective_redeploy_sec() -> float:
+	var redeploy_sec := float(cfg.get("redeploy_sec", 0.0))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		redeploy_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_redeploy_percent", cfg))
+	var reduction := clampf(_sum_modifier(&"redeploy_reduction"), 0.0, 0.9)
+	return max(redeploy_sec * (1.0 - reduction), 0.0)
+
+
+# 不屈：被击倒时原地满血复活的概率（0 表示不触发）。
+func get_effective_revive_chance() -> float:
+	return clampf(_sum_modifier(&"revive_chance"), 0.0, 1.0)
+
+
+# 汇总所有来源通道中某个修正键的数值。
+func _sum_modifier(key: StringName) -> float:
+	var total := 0.0
+	for source in _mod_channels:
+		total += float((_mod_channels[source] as Dictionary).get(key, 0.0))
+	return total
 
 
 func get_effective_attack_interval() -> float:
 	return CombatMath.calc_attack_interval(attack_interval, get_effective_attack_speed())
 
 
-func set_external_attack_speed_add(value: float) -> void:
-	_external_attack_speed_add = value
+# 整组替换某来源通道的修正贡献。mods 为修正键→数值字典；传空字典即清除该来源。
+# 支持的键：atk_percent / atk_flat / aspd_add / def_flat / res_flat /
+#           hp_percent / sp_recover_add / redeploy_reduction / defense_ignore / revive_chance
+func set_modifier_channel(source: StringName, mods: Dictionary) -> void:
+	var old_hp_percent := _sum_modifier(&"hp_percent")
+	if mods.is_empty():
+		_mod_channels.erase(source)
+	else:
+		_mod_channels[source] = mods.duplicate(true)
+	if not is_equal_approx(_sum_modifier(&"hp_percent"), old_hp_percent):
+		_recompute_max_hp()
 
 
-func set_external_attack_bonus(value: int) -> void:
-	_external_attack_bonus = max(value, 0)
+# hp% 变化时重算最大生命：上升则当前血同步 +Δ，下降则仅 clamp 到新上限。
+func _recompute_max_hp() -> void:
+	var new_max := maxi(int(round(float(_base_max_hp) * (1.0 + _sum_modifier(&"hp_percent")))), 1)
+	if new_max == max_hp:
+		return
+	var delta := new_max - max_hp
+	max_hp = new_max
+	if delta > 0 and not _is_dead:
+		current_hp += delta
+	current_hp = mini(current_hp, max_hp)
+	_update_status_view()
 
 
 func get_map_manager() -> Node:
@@ -437,8 +524,30 @@ func get_unit_manager() -> Node:
 	return get_node_or_null("../../../Managers/UnitManager")
 
 
+func get_covenant_manager() -> Node:
+	return get_node_or_null("../../../Managers/CovenantManager")
+
+
 func get_enemy_manager() -> Node:
 	return get_node_or_null("../../../Managers/EnemyManager")
+
+
+# 坚守 3 人均摊：把理想伤害平均分给所有存活坚守干员（各自结算自身减伤）。
+# 返回 true 表示已转移，调用方不再对自身结算。
+func _try_steadfast_pool(value: int, damage_type_value: int, source: Node) -> bool:
+	var covenant_manager := get_covenant_manager()
+	if covenant_manager == null or not covenant_manager.has_method("is_steadfast_pool_active"):
+		return false
+	if not covenant_manager.is_steadfast_pool_active():
+		return false
+	var steadfast: Array = covenant_manager.get_steadfast_units()
+	if steadfast.is_empty():
+		return false
+	var share := int(round(float(value) / float(steadfast.size())))
+	for su in steadfast:
+		if su != null and is_instance_valid(su) and su.has_method("receive_damage"):
+			su.receive_damage(share, damage_type_value, source, true)
+	return true
 
 
 func get_projectile_root() -> Node:
@@ -760,20 +869,13 @@ func _normalize_visual_direction(direction: Vector2i) -> Vector2i:
 
 
 func _recover_sp(delta: float) -> void:
-	var recover_per_sec := float(cfg.get("sp_recover_per_sec", 0.0))
 	var sp_max := float(cfg.get("sp_max", 0.0))
-	if _skill_behavior != null:
-		if _skill_behavior.has_method("get_sp_recover_per_sec"):
-			recover_per_sec = float(_skill_behavior.get_sp_recover_per_sec())
-		if _skill_behavior.has_method("get_sp_max"):
-			sp_max = float(_skill_behavior.get_sp_max())
+	if _skill_behavior != null and _skill_behavior.has_method("get_sp_max"):
+		sp_max = float(_skill_behavior.get_sp_max())
 	if _is_skill_active():
 		sp = min(sp, sp_max)
 		return
-	var run_state = AppRefs.run_state()
-	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
-		recover_per_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_sp_recover_percent", cfg))
-	sp = min(sp + recover_per_sec * delta, sp_max)
+	sp = min(sp + get_effective_sp_recover_per_sec() * delta, sp_max)
 
 
 func _is_skill_active() -> bool:
@@ -873,6 +975,7 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 	var damage_value := get_effective_atk()
 	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
+	var defense_ignore := get_effective_defense_ignore()
 	_debug_log("单位 %s#%d 攻击敌人 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, target.enemy_id, target.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	if _uses_projectile_attack():
 		var launched_count := 0
@@ -884,6 +987,8 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 				projectile_payload["damage_type"] = damage_type
 			if not projectile_payload.has("trigger_after_attack"):
 				projectile_payload["trigger_after_attack"] = true
+			if not projectile_payload.has("defense_ignore"):
+				projectile_payload["defense_ignore"] = defense_ignore
 			var projectile := launch_projectile(target, projectile_payload)
 			if projectile != null:
 				launched_count += 1
@@ -891,16 +996,16 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 			if gain_sp_on_attack:
 				gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
 			return
-	_resolve_attack_hit(target, damage_value, damage_type, true)
+	_resolve_attack_hit(target, damage_value, damage_type, true, defense_ignore)
 	if gain_sp_on_attack:
 		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
 
 
-func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true) -> void:
+func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true, defense_ignore: float = 0.0) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	if target.has_method("receive_damage"):
-		target.receive_damage(damage_value, damage_type_value)
+		target.receive_damage(damage_value, damage_type_value, defense_ignore)
 	if trigger_after_attack and _skill_behavior != null and _skill_behavior.has_method("after_attack"):
 		_skill_behavior.after_attack(target, damage_value)
 
@@ -912,7 +1017,8 @@ func _on_projectile_hit(_projectile: Node, target: Node, projectile_payload: Dic
 		target,
 		int(projectile_payload.get("damage", get_effective_atk())),
 		int(projectile_payload.get("damage_type", damage_type)),
-		bool(projectile_payload.get("trigger_after_attack", true))
+		bool(projectile_payload.get("trigger_after_attack", true)),
+		float(projectile_payload.get("defense_ignore", 0.0))
 	)
 
 
