@@ -51,7 +51,7 @@ func try_explore(cell: Vector2i) -> Dictionary:
 	return ActionResult.ok({"ap_cost": EXPLORE_AP_COST})
 
 
-func try_trigger_event(cell: Vector2i) -> Dictionary:
+func try_trigger_event(cell: Vector2i, choice_id: StringName = StringName()) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
@@ -74,7 +74,7 @@ func try_trigger_event(cell: Vector2i) -> Dictionary:
 
 	var result: Dictionary
 	if _random_event_manager.has_method("apply_event_for_cell"):
-		result = _random_event_manager.apply_event_for_cell(cell)
+		result = _random_event_manager.apply_event_for_cell(cell, choice_id)
 	elif _random_event_manager.has_method("roll_event_for_cell") and _random_event_manager.has_method("apply_event"):
 		var event_id: StringName = _random_event_manager.roll_event_for_cell(cell)
 		if event_id == StringName():

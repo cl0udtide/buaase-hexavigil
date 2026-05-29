@@ -34,6 +34,13 @@ func has_event_at_cell(cell: Vector2i) -> bool:
 	return get_event_id_at_cell(cell) != StringName()
 
 
+func get_event_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for raw_cell in _events_by_cell.keys():
+		cells.append(raw_cell as Vector2i)
+	return cells
+
+
 func mark_event_triggered(cell: Vector2i) -> void:
 	_events_by_cell.erase(cell)
 	_refresh_map()
@@ -58,21 +65,37 @@ func apply_event(event_id: StringName) -> Dictionary:
 	if run_state == null:
 		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
 	var payload: Dictionary = cfg.get("payload", {})
+	var effect_payload := payload.duplicate(true)
 	run_state.add_materials(int(payload.get("wood", 0)), int(payload.get("stone", 0)), int(payload.get("mana", 0)))
 	run_state.add_prestige(int(payload.get("prestige", 0)))
-	return ActionResult.ok({"event_id": event_id})
+	return ActionResult.ok({
+		"event_id": event_id,
+		"effect_type": StringName(cfg.get("effect_type", "")),
+		"effect_payload": effect_payload,
+	})
 
 
-func apply_event_for_cell(cell: Vector2i) -> Dictionary:
+func apply_event_for_cell(cell: Vector2i, choice_id: StringName = StringName()) -> Dictionary:
 	var event_id := roll_event_for_cell(cell)
 	if event_id == StringName():
 		return ActionResult.err(&"NO_EVENT", "该格子没有可触发事件")
-	var result := apply_event(event_id)
+	var triggered_event_id := event_id
+	if choice_id != StringName():
+		var choice_result := _resolve_choice_event_id(event_id, choice_id)
+		if not choice_result.get("ok", false):
+			return choice_result
+		triggered_event_id = StringName(choice_result.get("payload", {}).get("event_id", event_id))
+	var result := apply_event(triggered_event_id)
 	if result.get("ok", false):
+		var payload: Dictionary = result.get("payload", {})
+		payload["source_event_id"] = event_id
+		if choice_id != StringName():
+			payload["choice_id"] = choice_id
+		result["payload"] = payload
 		mark_event_triggered(cell)
 		var event_bus = AppRefs.event_bus()
 		if event_bus != null:
-			event_bus.random_event_triggered.emit(event_id, cell)
+			event_bus.random_event_triggered.emit(triggered_event_id, cell)
 	return result
 
 
@@ -94,3 +117,23 @@ func _parse_cell(raw_cell: Variant) -> Vector2i:
 	if raw_cell is Dictionary:
 		return Vector2i(int(raw_cell.get("x", -1)), int(raw_cell.get("y", -1)))
 	return Vector2i(-1, -1)
+
+
+func _resolve_choice_event_id(event_id: StringName, choice_id: StringName) -> Dictionary:
+	var cfg := get_event_cfg(event_id)
+	if cfg.is_empty():
+		return ActionResult.err(&"EVENT_NOT_FOUND", "找不到事件配置")
+	var raw_choices: Variant = cfg.get("choices", [])
+	if typeof(raw_choices) != TYPE_ARRAY:
+		return ActionResult.err(&"CHOICE_NOT_FOUND", "该事件没有可选分支")
+	for raw_choice in raw_choices:
+		if typeof(raw_choice) != TYPE_DICTIONARY:
+			continue
+		var choice := raw_choice as Dictionary
+		if StringName(choice.get("id", "")) != choice_id:
+			continue
+		var target_event_id := StringName(choice.get("event_id", choice.get("trigger_event_id", event_id)))
+		if target_event_id == StringName():
+			target_event_id = event_id
+		return ActionResult.ok({"event_id": target_event_id})
+	return ActionResult.err(&"CHOICE_NOT_FOUND", "找不到事件选项")
