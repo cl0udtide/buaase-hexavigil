@@ -196,6 +196,7 @@
     },
     {
         "id":  "sniper_t1",
+        "covenants":  ["精准"],
         "name":  "鸿雪",
         "visual_key":  "pozyomka",
         "class":  "sniper",
@@ -1106,6 +1107,7 @@
     },
     {
         "id":  "narantuya",
+        "covenants":  ["萨尔贡"],
         "name":  "娜仁图亚",
         "visual_key":  "narantuya",
         "class":  "sniper",

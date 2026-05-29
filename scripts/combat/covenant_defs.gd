@@ -123,7 +123,7 @@ static func describe(covenant_id: StringName, layer: int) -> Array:
 		ID_STEADFAST:
 			return [
 				"2人：坚守干员生命 +%d%%" % int(round(steadfast_hp_percent(layer) * 100.0)),
-				"3人：受到伤害由所有坚守干员均摊（开发中）",
+				"3人：场上所有干员受到伤害时，由所有坚守干员均摊",
 			]
 		ID_SWIFT:
 			return [
