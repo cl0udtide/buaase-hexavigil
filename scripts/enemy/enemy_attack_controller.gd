@@ -25,7 +25,8 @@ func reset_attack_timer() -> void:
 
 
 func set_attack_cooldown_from_cfg() -> void:
-	_attack_timer = max(float(_owner_actor.cfg.get("attack_interval", 1.0)), 0.05)
+	var base_interval := float(_owner_actor.cfg.get("attack_interval", 1.0))
+	_attack_timer = CombatMath.calc_attack_interval(base_interval, _owner_actor.get_effective_attack_speed())
 
 
 func get_attack_range_tiles() -> int:

@@ -45,9 +45,9 @@ static func class_label(class_key: String) -> String:
 
 static func tier_label(cost_prestige: int) -> String:
 	match cost_prestige:
-		1:
+		2:
 			return "一阶"
-		3:
+		4:
 			return "二阶"
 		7:
 			return "三阶"
@@ -57,9 +57,9 @@ static func tier_label(cost_prestige: int) -> String:
 
 static func tier_color(cost_prestige: int) -> Color:
 	match cost_prestige:
-		1:
+		2:
 			return Color(0.090, 0.610, 0.360)
-		3:
+		4:
 			return Color(0.145, 0.388, 0.920)
 		7:
 			return Color(0.915, 0.520, 0.075)
@@ -254,7 +254,7 @@ static func _relic_has_risk(cfg: Dictionary) -> bool:
 			return true
 		if effect_type.contains("redeploy") and value > 0.0:
 			return true
-		if effect_type.contains("attack_interval") and value > 0.0:
+		if effect_type == "unit_attack_speed_add" and value < 0.0:
 			return true
 		if effect_type in ["unit_atk_percent", "unit_hp_percent", "unit_def_percent", "unit_block_add", "unit_deploy_slot_cost_add"] and value < 0.0:
 			return true
@@ -273,8 +273,8 @@ static func _relic_effect_type_label(effect_type: String) -> String:
 			return "阻挡"
 		"unit_redeploy_percent":
 			return "再部署"
-		"unit_attack_interval_percent":
-			return "攻击间隔"
+		"unit_attack_speed_add":
+			return "攻速"
 		"unit_sp_recover_percent":
 			return "SP回复"
 		"unit_deploy_slot_cost_add":

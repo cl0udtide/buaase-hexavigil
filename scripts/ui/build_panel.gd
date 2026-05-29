@@ -317,8 +317,8 @@ func _format_effect_text(cfg: Dictionary) -> String:
 			return "%s内友军持续回复 %d 生命/秒" % [range_text, int(effect_value)]
 		&"slow":
 			return "%s内敌人移速降低 %.0f%%" % [range_text, effect_value * 100.0]
-		&"attack_interval_reduce":
-			return "%s内友军攻击间隔降低 %.0f%%" % [range_text, effect_value * 100.0]
+		&"attack_speed_add":
+			return "%s内友军攻速 +%d" % [range_text, int(effect_value)]
 		&"attack_bonus_flat":
 			return "%s内友军攻击 +%d，夜晚开启时消耗 %d 魔力矿" % [
 				range_text,

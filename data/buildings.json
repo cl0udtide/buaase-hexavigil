@@ -114,7 +114,7 @@
   {
     "id": "inspiring_monolith",
     "name": "鼓舞石碑",
-    "desc": "一定范围内的友军攻击间隔降低 10%",
+    "desc": "一定范围内的友军攻速 +10",
     "sort_order": 130,
     "icon_text": "速",
     "building_type": "aura",
@@ -128,8 +128,8 @@
     "blocks_path": false,
     "effect_radius": 2,
     "effect_shape": "trimmed_square",
-    "effect_type": "attack_interval_reduce",
-    "effect_value": 0.1,
+    "effect_type": "attack_speed_add",
+    "effect_value": 10,
     "place_rule": "plain_only",
     "scene_key": "building_actor",
     "icon_path": "res://assets/ui/generated/icon_building_inspiring_monolith.png"

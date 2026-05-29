@@ -76,8 +76,9 @@ var defense := 0
 var resistance := 0
 var block_count := 0
 var attack_interval := 1.0
+var attack_speed := 100.0
 var attack_multiplier := 1.0
-var _external_attack_interval_multiplier := 1.0
+var _external_attack_speed_add := 0.0
 var _external_attack_bonus := 0
 var damage_type := GameEnums.DAMAGE_PHYSICAL
 var target_type: StringName = TARGET_TYPE_GROUND
@@ -137,13 +138,14 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	resistance = int(cfg.get("res", 0))
 	block_count = int(cfg.get("block", 0))
 	attack_interval = max(float(cfg.get("attack_interval", 1.0)), 0.05)
+	attack_speed = float(cfg.get("attack_speed", 100.0))
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		atk = max(int(round(float(atk) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_base_atk_percent", cfg))))), 1)
 		defense = max(int(round(float(defense) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", cfg))))), 0)
 		resistance = max(int(round(float(resistance) + float(run_state.get_buff_effect_total_for_unit(&"unit_res_add", cfg)))), 0)
 		block_count = max(block_count + int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_block_add", cfg)))), 0)
 	attack_multiplier = 1.0
-	_external_attack_interval_multiplier = 1.0
+	_external_attack_speed_add = 0.0
 	_external_attack_bonus = 0
 	_damage_reduction_effects.clear()
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
@@ -403,16 +405,20 @@ func get_effective_atk() -> int:
 	return max(int(round(float(atk) * buff_multiplier * attack_multiplier)) + _external_attack_bonus, 1)
 
 
-func get_effective_attack_interval() -> float:
+func get_effective_attack_speed() -> float:
 	var run_state = AppRefs.run_state()
-	var relic_multiplier := 1.0
+	var relic_add := 0.0
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
-		relic_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_attack_interval_percent", cfg))
-	return max(attack_interval * relic_multiplier * _external_attack_interval_multiplier, 0.05)
+		relic_add += float(run_state.get_buff_effect_total_for_unit(&"unit_attack_speed_add", cfg))
+	return CombatMath.clamp_attack_speed(attack_speed + relic_add + _external_attack_speed_add)
 
 
-func set_external_attack_interval_multiplier(value: float) -> void:
-	_external_attack_interval_multiplier = max(value, 0.1)
+func get_effective_attack_interval() -> float:
+	return CombatMath.calc_attack_interval(attack_interval, get_effective_attack_speed())
+
+
+func set_external_attack_speed_add(value: float) -> void:
+	_external_attack_speed_add = value
 
 
 func set_external_attack_bonus(value: int) -> void:

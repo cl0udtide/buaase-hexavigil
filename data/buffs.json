@@ -130,9 +130,9 @@
     {
         "id":  "relic_recurve_string",
         "name":  "复合弓弦",
-        "desc":  "狙击攻击间隔 -12%。",
-        "effect_type":  "unit_attack_interval_percent",
-        "effect_value":  -0.12,
+        "desc":  "狙击攻速 +15。",
+        "effect_type":  "unit_attack_speed_add",
+        "effect_value":  15,
         "class_filter":  "sniper",
         "rarity":  2,
         "icon_path":  "res://assets/ui/generated/icon_relic_recurve_string.png"
@@ -179,7 +179,7 @@
     {
         "id":  "relic_overclocked_core",
         "name":  "过载法芯",
-        "desc":  "术士攻击力 +32%，术士攻击间隔 +15%。",
+        "desc":  "术士攻击力 +32%，术士攻速 -15。",
         "rarity":  3,
         "effects":  [
                         {
@@ -188,8 +188,8 @@
                             "class_filter":  "caster"
                         },
                         {
-                            "effect_type":  "unit_attack_interval_percent",
-                            "effect_value":  0.15,
+                            "effect_type":  "unit_attack_speed_add",
+                            "effect_value":  -15,
                             "class_filter":  "caster"
                         }
                     ],
@@ -243,13 +243,13 @@
                             "effect_type":  "unit_deploy_slot_cost_add",
                             "effect_value":  -1,
                             "class_filter":  "defender",
-                            "max_cost_prestige":  1
+                            "max_cost_prestige":  2
                         },
                         {
                             "effect_type":  "unit_atk_percent",
                             "effect_value":  -0.20,
                             "class_filter":  "defender",
-                            "max_cost_prestige":  1
+                            "max_cost_prestige":  2
                         }
                     ],
         "icon_path":  "res://assets/ui/generated/icon_relic_compressed_bulwark.png"
@@ -260,7 +260,7 @@
         "desc":  "一阶单位购买价格 -1，最低为 0。",
         "effect_type":  "shop_unit_cost_add",
         "effect_value":  -1,
-        "max_cost_prestige":  1,
+        "max_cost_prestige":  2,
         "rarity":  1,
         "icon_path":  "res://assets/ui/generated/icon_relic_travel_pack.png"
     },

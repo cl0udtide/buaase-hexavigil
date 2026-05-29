@@ -115,7 +115,7 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	_def_stat_label.text = "防御 %d" % int(unit.defense)
 	_res_stat_label.text = "法抗 %d" % int(unit.resistance)
 	_block_stat_label.text = "阻挡 %d" % int(unit.block_count)
-	_aspd_stat_label.text = "攻速 %.2fs" % float(unit.attack_interval)
+	_aspd_stat_label.text = "攻速 %d" % int(round(unit.get_effective_attack_speed()))
 	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
 	var status_lines := PackedStringArray()
 	var active_state := "ready"
@@ -228,7 +228,7 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_def_stat_label.text = "防御 %d" % int(cfg.get("def", 0))
 	_res_stat_label.text = "法抗 %d" % int(cfg.get("res", 0))
 	_block_stat_label.text = "阻挡 %d" % int(cfg.get("block", 0))
-	_aspd_stat_label.text = "攻速 %.2fs" % float(cfg.get("attack_interval", 0.0))
+	_aspd_stat_label.text = "攻速 %d" % int(round(float(cfg.get("attack_speed", 100.0))))
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
 	_skill_status_label.text = skill_status_text
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
