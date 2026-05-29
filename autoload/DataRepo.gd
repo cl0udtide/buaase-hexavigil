@@ -131,6 +131,9 @@ func get_all_buff_ids() -> Array[StringName]:
 func get_all_event_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for event_id in _tables["events"].keys():
+		var cfg: Dictionary = _tables["events"].get(event_id, {})
+		if bool(cfg.get("hidden_in_map_pool", false)):
+			continue
 		ids.append(StringName(event_id))
 	return ids
 

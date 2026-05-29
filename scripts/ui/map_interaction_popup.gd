@@ -100,14 +100,13 @@ func _refresh_content() -> bool:
 	if data == null:
 		return false
 	var building := _get_building_by_cell(_current_cell)
-	var has_event := _has_event_at_cell(_current_cell)
 	var has_resource := data.resource_type != StringName()
 	var has_building := building != null
-	if not has_event and not has_resource and not has_building:
+	if not has_resource and not has_building:
 		_clear_building_range_preview()
 		return false
 	_title_label.text = _make_title(data, building)
-	_refresh_event_section(_current_cell)
+	_event_section.visible = false
 	_refresh_resource_section(data)
 	_refresh_building_section(building)
 	_refresh_building_range_preview(building)

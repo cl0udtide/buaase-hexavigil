@@ -376,10 +376,10 @@ mouse_filter = 2
 [node name="EventPanelSlot" type="Control" parent="UI/ModalLayer" unique_id=324765779]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 690.0
-offset_top = 410.0
-offset_right = 1230.0
-offset_bottom = 670.0
+offset_left = 500.0
+offset_top = 220.0
+offset_right = 1420.0
+offset_bottom = 820.0
 mouse_filter = 2
 
 [node name="EventPanel" parent="UI/ModalLayer/EventPanelSlot" unique_id=239470582 instance=ExtResource("29_rpato")]

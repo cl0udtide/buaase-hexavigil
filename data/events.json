@@ -2,19 +2,61 @@
   {
     "id": "event_abandoned_cart",
     "name": "废弃货车",
-    "desc": "获得 2 木材，但失去 1 声望。",
+    "desc": "一辆被遗弃的补给车半陷在泥地里，车厢仍有可回收的木材。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 0,
+      "prestige": 0
+    },
+    "choices": [
+      {
+        "id": "salvage",
+        "text": "拆下还能用的木板",
+        "kind": "primary",
+        "event_id": "event_abandoned_cart_salvage",
+        "effect_desc": "获得 2 木材，但失去 1 声望。"
+      },
+      {
+        "id": "mark_safe",
+        "text": "整理现场并留下路标",
+        "kind": "secondary",
+        "event_id": "event_abandoned_cart_mark_safe",
+        "effect_desc": "获得 1 声望，不获得材料。"
+      }
+    ]
+  },
+  {
+    "id": "event_abandoned_cart_salvage",
+    "name": "废弃货车",
+    "desc": "你们快速拆下可用木料，粗暴的处理方式引起了附近幸存者的不满。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 2,
       "stone": 0,
       "mana": 0,
       "prestige": -1
-    }
+    },
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_abandoned_cart_mark_safe",
+    "name": "废弃货车",
+    "desc": "队伍清理道路并留下标记，后来者因此避开了危险路段。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 0,
+      "prestige": 1
+    },
+    "hidden_in_map_pool": true
   },
   {
     "id": "event_hidden_cache",
     "name": "隐蔽储藏箱",
-    "desc": "获得 1 木材和 1 石材。",
+    "desc": "你们撬开藏在碎石下的储藏箱，里面的基础物资仍然完好。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 1,
@@ -26,7 +68,7 @@
   {
     "id": "event_mana_spring",
     "name": "微光魔力泉",
-    "desc": "获得 2 魔力。",
+    "desc": "短暂喷涌的魔力泉在迷雾中亮起，采集装置迅速收束了残留能量。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 0,
@@ -38,19 +80,61 @@
   {
     "id": "event_old_banner",
     "name": "旧战旗",
-    "desc": "士气受到鼓舞，获得 2 声望。",
+    "desc": "破旧战旗仍插在高地上，队伍可以选择如何处理这份象征。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 0,
+      "prestige": 0
+    },
+    "choices": [
+      {
+        "id": "raise_banner",
+        "text": "重新竖起战旗",
+        "kind": "primary",
+        "event_id": "event_old_banner_raise",
+        "effect_desc": "获得 2 声望。"
+      },
+      {
+        "id": "recover_fittings",
+        "text": "回收旗杆金属件",
+        "kind": "secondary",
+        "event_id": "event_old_banner_recover",
+        "effect_desc": "获得 1 石材。"
+      }
+    ]
+  },
+  {
+    "id": "event_old_banner_raise",
+    "name": "旧战旗",
+    "desc": "战旗重新迎风展开，士气受到鼓舞。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 0,
       "stone": 0,
       "mana": 0,
       "prestige": 2
-    }
+    },
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_old_banner_recover",
+    "name": "旧战旗",
+    "desc": "队伍谨慎拆下旗杆上还能使用的金属件。",
+    "effect_type": "material_and_prestige",
+    "payload": {
+      "wood": 0,
+      "stone": 1,
+      "mana": 0,
+      "prestige": 0
+    },
+    "hidden_in_map_pool": true
   },
   {
     "id": "event_ruined_watchtower",
     "name": "坍塌瞭望塔",
-    "desc": "回收塔材，获得 2 石材。",
+    "desc": "坍塌的瞭望塔中仍有大量可用塔材，队伍完成了快速回收。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 0,
@@ -62,7 +146,7 @@
   {
     "id": "event_lost_patrol",
     "name": "迷路巡逻队",
-    "desc": "救回巡逻队，获得 1 木材和 1 声望。",
+    "desc": "一支巡逻队在雾中迷失方向，救援小队带他们回到了安全路线。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 1,
@@ -74,7 +158,7 @@
   {
     "id": "event_fog_relic",
     "name": "雾中古物",
-    "desc": "回收古物，获得 1 魔力和 1 声望。",
+    "desc": "雾中显露出一件古旧装置，内部还残留着微弱能量。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 0,
@@ -86,7 +170,7 @@
   {
     "id": "event_broken_tools",
     "name": "破损工具箱",
-    "desc": "修好工具，获得 1 木材和 1 石材。",
+    "desc": "修好的工具立刻派上了用场，周边材料也被一并回收。",
     "effect_type": "material_and_prestige",
     "payload": {
       "wood": 1,

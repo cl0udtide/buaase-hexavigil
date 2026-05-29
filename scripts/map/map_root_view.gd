@@ -13,7 +13,6 @@ const TILE_SPAWN: Texture2D = preload("res://assets/map/CommandMap/tile_spawn.pn
 const TILE_RESOURCE_WOOD: Texture2D = preload("res://assets/map/CommandMap/tile_resource_wood.png")
 const TILE_RESOURCE_STONE: Texture2D = preload("res://assets/map/CommandMap/tile_resource_stone.png")
 const TILE_RESOURCE_MANA: Texture2D = preload("res://assets/map/CommandMap/tile_resource_mana.png")
-const TILE_EVENT: Texture2D = preload("res://assets/map/CommandMap/tile_event.png")
 const OVERLAY_MAP_HOVER: Texture2D = preload("res://assets/map/CommandMap/overlay_map_hover.png")
 const OVERLAY_MAP_SELECTED: Texture2D = preload("res://assets/map/CommandMap/overlay_map_selected.png")
 const OVERLAY_ATTACK_RANGE: Texture2D = preload("res://assets/map/CommandMap/overlay_attack_range.png")
@@ -68,6 +67,14 @@ const ROUTE_LABEL_BADGE_BG := Color(0.015, 0.032, 0.048, 0.90)
 const ROUTE_LABEL_BADGE_RADIUS := 13.0
 const ROUTE_LABEL_GROUP_OFFSET_STEP := 30.0
 const ROUTE_LABEL_GROUP_BACK_OFFSET := 7.0
+const EVENT_BUBBLE_FILL := Color(0.075, 0.165, 0.205, 0.96)
+const EVENT_BUBBLE_BORDER := Color(0.970, 0.680, 0.245, 0.96)
+const EVENT_BUBBLE_HOVER_FILL := Color(0.110, 0.235, 0.280, 0.98)
+const EVENT_BUBBLE_HOVER_BORDER := Color(1.000, 0.845, 0.360, 1.0)
+const EVENT_BUBBLE_TEXT := Color(0.945, 0.980, 1.000, 1.0)
+const EVENT_BUBBLE_RADIUS := 18.0
+const EVENT_BUBBLE_HIT_RADIUS := 25.0
+const EVENT_BUBBLE_FLOAT_OFFSET := Vector2(0.0, -25.0)
 const COLOR_HIDDEN := Color(0.10, 0.12, 0.16, 0.95)
 const COLOR_PLAIN := Color(0.25, 0.44, 0.26, 1.0)
 const COLOR_BLOCKED := Color(0.33, 0.34, 0.38, 1.0)
@@ -77,7 +84,6 @@ const COLOR_SPAWN := Color(0.82, 0.30, 0.26, 1.0)
 const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
 const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
 const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
-const COLOR_EVENT := Color(0.72, 0.48, 0.88, 1.0)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
@@ -128,6 +134,7 @@ var _deploy_range_preview_cells: Array[Vector2i] = []
 var _deploy_preview_visual_key := ""
 var _deploy_preview_texture: Texture2D = null
 var _wave_route_previews: Array[Dictionary] = []
+var _hovered_event_cell := Vector2i(-1, -1)
 
 
 func _ready() -> void:
@@ -152,7 +159,13 @@ func _process(delta: float) -> void:
 	var map_manager := _get_map_manager()
 	if map_manager == null:
 		return
+	if _has_visible_event_bubbles(map_manager):
+		queue_redraw()
 	var hovered: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
+	var hovered_event := _get_event_bubble_cell_at_world(get_global_mouse_position(), map_manager)
+	if hovered_event != _hovered_event_cell:
+		_hovered_event_cell = hovered_event
+		queue_redraw()
 	if map_manager.is_inside(hovered) and hovered != _hovered_cell:
 		_hovered_cell = hovered
 		queue_redraw()
@@ -228,6 +241,7 @@ func _draw() -> void:
 	_draw_range_outlines(map_manager)
 	_draw_wave_route_previews(map_manager)
 	_draw_deploy_visual_preview(map_manager)
+	_draw_event_bubbles(map_manager)
 	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
 		_draw_deploy_direction_arrow(map_manager)
 
@@ -902,6 +916,78 @@ func _draw_route_label_badge(center: Vector2, color: Color, label_text: String) 
 	)
 
 
+func _draw_event_bubbles(map_manager: Node) -> void:
+	if map_manager == null:
+		return
+	for cell in _get_visible_event_cells(map_manager):
+		var center := _event_bubble_center(map_manager, cell)
+		var hovered := cell == _hovered_event_cell
+		var pulse := 0.5 + sin(_range_outline_time * 4.0 + float(cell.x + cell.y) * 0.25) * 0.5
+		var radius := EVENT_BUBBLE_RADIUS + (3.0 if hovered else pulse * 2.0)
+		var fill := EVENT_BUBBLE_HOVER_FILL if hovered else EVENT_BUBBLE_FILL
+		var border := EVENT_BUBBLE_HOVER_BORDER if hovered else EVENT_BUBBLE_BORDER
+		draw_line(map_manager.cell_to_world(cell), center + Vector2(0.0, radius), Color(border.r, border.g, border.b, 0.34), 2.0, true)
+		draw_circle(center, radius + 7.0, Color(border.r, border.g, border.b, 0.14 + pulse * 0.08))
+		draw_circle(center, radius, fill)
+		draw_arc(center, radius, 0.0, TAU, 36, border, 3.0, true)
+		draw_circle(center + Vector2(-radius * 0.28, -radius * 0.28), radius * 0.22, Color(1.0, 1.0, 1.0, 0.18))
+		draw_string(
+			ThemeDB.fallback_font,
+			center + Vector2(-radius, radius * 0.38),
+			"!",
+			HORIZONTAL_ALIGNMENT_CENTER,
+			radius * 2.0,
+			22 if hovered else 20,
+			EVENT_BUBBLE_TEXT
+		)
+
+
+func _get_visible_event_cells(map_manager: Node) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if map_manager == null:
+		return cells
+	var event_cells: Array = map_manager.get_all_cells()
+	if _random_event_manager == null:
+		_random_event_manager = get_node_or_null("../../Managers/RandomEventManager")
+	if _random_event_manager != null and _random_event_manager.has_method("get_event_cells"):
+		event_cells = _random_event_manager.get_event_cells()
+	for raw_cell in event_cells:
+		var cell: Vector2i = raw_cell
+		if not map_manager.is_discovered(cell):
+			continue
+		if _has_event_at_cell(cell):
+			cells.append(cell)
+	return cells
+
+
+func _has_visible_event_bubbles(map_manager: Node) -> bool:
+	if map_manager == null:
+		return false
+	var event_cells: Array = map_manager.get_all_cells()
+	if _random_event_manager == null:
+		_random_event_manager = get_node_or_null("../../Managers/RandomEventManager")
+	if _random_event_manager != null and _random_event_manager.has_method("get_event_cells"):
+		event_cells = _random_event_manager.get_event_cells()
+	for raw_cell in event_cells:
+		var cell: Vector2i = raw_cell
+		if map_manager.is_discovered(cell) and _has_event_at_cell(cell):
+			return true
+	return false
+
+
+func _get_event_bubble_cell_at_world(world_position: Vector2, map_manager: Node) -> Vector2i:
+	if map_manager == null:
+		return Vector2i(-1, -1)
+	for cell in _get_visible_event_cells(map_manager):
+		if world_position.distance_to(_event_bubble_center(map_manager, cell)) <= EVENT_BUBBLE_HIT_RADIUS:
+			return cell
+	return Vector2i(-1, -1)
+
+
+func _event_bubble_center(map_manager: Node, cell: Vector2i) -> Vector2:
+	return map_manager.cell_to_world(cell) + EVENT_BUBBLE_FLOAT_OFFSET
+
+
 func _get_route_color(route: Dictionary, index: int) -> Color:
 	if not bool(route.get("ok", false)):
 		return ROUTE_WARNING_COLOR
@@ -943,8 +1029,6 @@ func _get_cell_color(data) -> Color:
 		return COLOR_RESOURCE_STONE
 	if data.resource_type == &"mana":
 		return COLOR_RESOURCE_MANA
-	if _has_event_at_cell(data.cell):
-		return COLOR_EVENT
 	return COLOR_PLAIN
 
 
@@ -975,8 +1059,6 @@ func _get_cell_texture(data) -> Texture2D:
 		return TILE_RESOURCE_STONE
 	if data.resource_type == &"mana":
 		return TILE_RESOURCE_MANA
-	if _has_event_at_cell(data.cell):
-		return TILE_EVENT
 	if _uses_alternate_plain(data.cell):
 		return TILE_PLAIN_ALT
 	return TILE_PLAIN
@@ -1059,6 +1141,14 @@ func _handle_mouse_button(event: InputEventMouseButton, map_manager: Node) -> vo
 					_is_dragging = false
 					_drag_button_index = 0
 				if not was_dragging and event.position.distance_to(_left_press_pos) < MAP_DRAG_START_DISTANCE:
+					var event_cell := _get_event_bubble_cell_at_world(get_global_mouse_position(), map_manager)
+					if event_cell.x >= 0:
+						_selected_cell = event_cell
+						queue_redraw()
+						var event_bus = AppRefs.event_bus()
+						if event_bus != null:
+							event_bus.request_open_event_panel.emit(event_cell)
+						return
 					var cell: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
 					if not map_manager.is_inside(cell):
 						return
