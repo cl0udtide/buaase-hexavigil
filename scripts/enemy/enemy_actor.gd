@@ -42,6 +42,7 @@ var _movement_controller: Node = null
 var _attack_controller: Node = null
 var _boss_controller: Node = null
 var _move_speed_effects: Dictionary = {}
+var _external_attack_speed_add := 0.0
 var _defense_shred_effects: Dictionary = {}
 var _resistance_shred_effects: Dictionary = {}
 var _physical_vulnerability_effects: Dictionary = {}
@@ -385,6 +386,14 @@ func get_effective_move_speed() -> float:
 func set_external_move_speed_multiplier(value: float) -> void:
 	if _movement_controller != null:
 		_movement_controller.set_external_move_speed_multiplier(value)
+
+
+func get_effective_attack_speed() -> float:
+	return CombatMath.clamp_attack_speed(float(cfg.get("attack_speed", 100.0)) + _external_attack_speed_add)
+
+
+func set_external_attack_speed_add(value: float) -> void:
+	_external_attack_speed_add = value
 
 
 func set_facing(direction: Vector2i) -> void:

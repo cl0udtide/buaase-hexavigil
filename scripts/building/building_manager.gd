@@ -441,7 +441,7 @@ func _get_income_value(cfg: Dictionary, base_value: int, material: StringName) -
 func _apply_aura_effects(delta: float) -> void:
 	var units: Array = _get_deployed_units()
 	var enemies: Array = _get_alive_enemies()
-	var unit_interval_multipliers: Dictionary = {}
+	var unit_attack_speed_adds: Dictionary = {}
 	var unit_attack_bonuses: Dictionary = {}
 	var unit_heal_amounts: Dictionary = {}
 	var enemy_speed_multipliers: Dictionary = {}
@@ -451,7 +451,7 @@ func _apply_aura_effects(delta: float) -> void:
 		if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
 			continue
 		var unit_runtime_id: int = int(unit.get_runtime_id())
-		unit_interval_multipliers[unit_runtime_id] = 1.0
+		unit_attack_speed_adds[unit_runtime_id] = 0.0
 		unit_attack_bonuses[unit_runtime_id] = 0
 		unit_heal_amounts[unit_runtime_id] = 0.0
 
@@ -492,15 +492,14 @@ func _apply_aura_effects(delta: float) -> void:
 						continue
 					var enemy_runtime_id: int = int(enemy.get_runtime_id())
 					enemy_speed_multipliers[enemy_runtime_id] = min(float(enemy_speed_multipliers.get(enemy_runtime_id, 1.0)), slow_multiplier)
-			&"attack_interval_reduce":
-				var attack_interval_multiplier: float = max(1.0 - effect_value, 0.1)
+			&"attack_speed_add":
 				for unit in units:
 					if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
 						continue
 					if not _is_target_within_building_range(building_cell, unit.get_current_cell(), effect_radius, actor_cfg):
 						continue
 					var unit_runtime_id: int = int(unit.get_runtime_id())
-					unit_interval_multipliers[unit_runtime_id] = min(float(unit_interval_multipliers.get(unit_runtime_id, 1.0)), attack_interval_multiplier)
+					unit_attack_speed_adds[unit_runtime_id] = float(unit_attack_speed_adds.get(unit_runtime_id, 0.0)) + effect_value
 			&"attack_bonus_flat":
 				for unit in units:
 					if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
@@ -511,19 +510,19 @@ func _apply_aura_effects(delta: float) -> void:
 					unit_attack_bonuses[unit_runtime_id] = int(unit_attack_bonuses.get(unit_runtime_id, 0)) + int(effect_value)
 
 	_clear_inactive_building_aura_outlines(active_aura_outline_ids)
-	_apply_unit_aura_effects(units, unit_interval_multipliers, unit_attack_bonuses, unit_heal_amounts)
+	_apply_unit_aura_effects(units, unit_attack_speed_adds, unit_attack_bonuses, unit_heal_amounts)
 	_apply_enemy_aura_effects(enemies, enemy_speed_multipliers)
 
 
-func _apply_unit_aura_effects(units: Array, interval_multipliers: Dictionary, attack_bonuses: Dictionary, heal_amounts: Dictionary) -> void:
+func _apply_unit_aura_effects(units: Array, attack_speed_adds: Dictionary, attack_bonuses: Dictionary, heal_amounts: Dictionary) -> void:
 	var active_runtime_ids: Dictionary = {}
 	for unit in units:
 		if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
 			continue
 		var unit_runtime_id: int = int(unit.get_runtime_id())
 		active_runtime_ids[unit_runtime_id] = true
-		if unit.has_method("set_external_attack_interval_multiplier"):
-			unit.set_external_attack_interval_multiplier(float(interval_multipliers.get(unit_runtime_id, 1.0)))
+		if unit.has_method("set_external_attack_speed_add"):
+			unit.set_external_attack_speed_add(float(attack_speed_adds.get(unit_runtime_id, 0.0)))
 		if unit.has_method("set_external_attack_bonus"):
 			unit.set_external_attack_bonus(int(attack_bonuses.get(unit_runtime_id, 0)))
 		var total_heal: float = float(_unit_heal_remainders.get(unit_runtime_id, 0.0)) + float(heal_amounts.get(unit_runtime_id, 0.0))

@@ -5,8 +5,8 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const REFRESH_COST := 2
 const SHOP_SLOT_COUNT := 5
 const TIER_WEIGHTS := [
-	{"cost": 1, "weight": 60.0},
-	{"cost": 3, "weight": 30.0},
+	{"cost": 2, "weight": 60.0},
+	{"cost": 4, "weight": 30.0},
 	{"cost": 7, "weight": 10.0}
 ]
 
