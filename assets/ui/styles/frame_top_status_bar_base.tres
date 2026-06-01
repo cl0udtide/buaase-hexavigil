@@ -4,9 +4,9 @@
 
 [resource]
 texture = ExtResource("1_texture")
-texture_margin_left = 18.0
+texture_margin_left = 170.0
 texture_margin_top = 18.0
-texture_margin_right = 18.0
+texture_margin_right = 170.0
 texture_margin_bottom = 18.0
 content_margin_left = 24.0
 content_margin_top = 8.0
