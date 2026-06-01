@@ -159,11 +159,11 @@ static func relic_matches_category(cfg: Dictionary, category: StringName) -> boo
 		return true
 	match category:
 		&"unit":
-			return _relic_has_effect_prefix(cfg, "unit_") or _relic_has_filter(cfg, "class_filter") or _relic_has_filter(cfg, "damage_type_filter")
+			return _relic_has_any_effect_prefix(cfg, ["unit_", "enemy_", "formation_"]) or _relic_has_target_effect_prefix(cfg, "unit_") or _relic_has_filter(cfg, "class_filter") or _relic_has_filter(cfg, "damage_type_filter")
 		&"building":
 			return _relic_has_effect_prefix(cfg, "building_") or _relic_has_filter(cfg, "building_type_filter")
 		&"economy":
-			return _relic_has_any_effect_prefix(cfg, ["shop_", "kill_", "building_income", "building_material_cost"]) or _relic_has_filter(cfg, "material_filter")
+			return _relic_has_any_effect_prefix(cfg, ["shop_", "kill_", "prestige_", "building_income", "building_material_cost"]) or _relic_has_filter(cfg, "material_filter")
 		&"core":
 			return _relic_has_any_effect_prefix(cfg, ["core_", "deploy_limit"])
 		&"risk":
@@ -233,6 +233,13 @@ static func _relic_has_effect_prefix(cfg: Dictionary, prefix: String) -> bool:
 static func _relic_has_any_effect_prefix(cfg: Dictionary, prefixes: Array[String]) -> bool:
 	for prefix in prefixes:
 		if _relic_has_effect_prefix(cfg, prefix):
+			return true
+	return false
+
+
+static func _relic_has_target_effect_prefix(cfg: Dictionary, prefix: String) -> bool:
+	for effect in _get_relic_effect_entries(cfg):
+		if String(effect.get("target_effect_type", "")).begins_with(prefix):
 			return true
 	return false
 

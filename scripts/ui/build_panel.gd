@@ -196,7 +196,7 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"fallback_icon_key": &"",
 		"source_cfg": cfg,
 		"state": "已选择" if selected else "",
-		"cost_badge_text": str(int(cfg.get("ap_cost", 0))),
+		"cost_badge_text": str(BuildValidator.get_building_ap_cost(cfg)),
 		"selected": selected,
 		"disabled": disabled,
 		"draggable": not disabled,
@@ -214,7 +214,7 @@ func _build_card_lack_reason(cfg: Dictionary) -> String:
 	if run_state == null:
 		return ""
 	var missing: PackedStringArray = []
-	var ap_cost := int(cfg.get("ap_cost", 0))
+	var ap_cost := BuildValidator.get_building_ap_cost(cfg)
 	if int(run_state.action_points) < ap_cost:
 		missing.append("行动力 %d/%d" % [int(run_state.action_points), ap_cost])
 	var costs := BuildValidator.get_building_material_costs(cfg)
@@ -287,9 +287,9 @@ func _format_building_cost(cfg: Dictionary) -> String:
 	if cfg.is_empty():
 		return "配置未加载"
 	return "木 %d   石 %d   魔 %d" % [
-		int(cfg.get("cost_wood", 0)),
-		int(cfg.get("cost_stone", 0)),
-		int(cfg.get("cost_mana", 0))
+		BuildValidator.get_building_material_cost(cfg, &"wood"),
+		BuildValidator.get_building_material_cost(cfg, &"stone"),
+		BuildValidator.get_building_material_cost(cfg, &"mana")
 	]
 
 

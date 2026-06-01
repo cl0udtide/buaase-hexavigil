@@ -111,14 +111,35 @@ func spend_materials(cost_wood: int, cost_stone: int, cost_mana: int) -> Diction
 
 
 func damage_core(value: int) -> void:
-	core_hp = max(core_hp - value, 0)
+	var damage: int = maxi(value, 0)
+	var previous_hp := core_hp
+	core_hp = max(core_hp - damage, 0)
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
+	var actual_damage := previous_hp - core_hp
+	if actual_damage > 0:
+		EventBus.core_damaged.emit(actual_damage, core_hp, core_hp_max)
 	if core_hp == 0:
 		EventBus.core_destroyed.emit()
 
 
 func heal_core(value: int) -> void:
 	core_hp = min(core_hp + value, core_hp_max)
+	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
+
+
+func heal_core_full() -> void:
+	core_hp = core_hp_max
+	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
+
+
+func set_core_hp_to_one() -> void:
+	core_hp = min(1, core_hp_max)
+	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
+
+
+func set_core_max_hp_to_one() -> void:
+	core_hp_max = 1
+	core_hp = 1
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 
 
@@ -287,6 +308,8 @@ func get_buff_effect_total(effect_type: StringName) -> float:
 	for buff_id in buffs:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
 		for effect in _get_buff_effect_entries(cfg):
+			if not _buff_effect_is_active(effect):
+				continue
 			if _buff_effect_has_filters(effect):
 				continue
 			if StringName(effect.get("effect_type", "")) == effect_type:
@@ -300,7 +323,7 @@ func get_buff_effect_total_for_unit(effect_type: StringName, unit_cfg: Dictionar
 		"damage_type": StringName(unit_cfg.get("damage_type", "")),
 		"cost_prestige": int(unit_cfg.get("cost_prestige", 0))
 	}
-	return _get_filtered_buff_effect_total(effect_type, tags)
+	return _get_filtered_buff_effect_total(effect_type, tags) + _get_dynamic_unit_buff_effect_total(effect_type, tags)
 
 
 func get_buff_effect_total_for_building(effect_type: StringName, building_cfg: Dictionary) -> float:
@@ -315,7 +338,57 @@ func get_buff_effect_total_for_material(effect_type: StringName, material: Strin
 	return _get_filtered_buff_effect_total(effect_type, {"material": material})
 
 
+func get_buff_effect_total_for_enemy(effect_type: StringName, enemy_cfg: Dictionary) -> float:
+	var tags: Dictionary = {
+		"enemy_id": StringName(enemy_cfg.get("id", "")),
+		"damage_type": StringName(enemy_cfg.get("damage_type", ""))
+	}
+	return _get_filtered_buff_effect_total(effect_type, tags)
+
+
+func get_enemy_damage_taken_percent(damage_type: int, enemy_cfg: Dictionary) -> float:
+	var tags: Dictionary = {
+		"enemy_id": StringName(enemy_cfg.get("id", "")),
+		"damage_type": _damage_type_key(damage_type)
+	}
+	return _get_filtered_buff_effect_total(&"enemy_damage_taken_percent", tags)
+
+
+func get_buff_effect_entries_for_unit(effect_type: StringName, unit_cfg: Dictionary) -> Array[Dictionary]:
+	var tags: Dictionary = {
+		"class": StringName(unit_cfg.get("class", "")),
+		"damage_type": StringName(unit_cfg.get("damage_type", "")),
+		"cost_prestige": int(unit_cfg.get("cost_prestige", 0))
+	}
+	return _get_filtered_buff_effect_entries(effect_type, tags)
+
+
 func _get_filtered_buff_effect_total(effect_type: StringName, tags: Dictionary) -> float:
+	var total := 0.0
+	for effect in _get_filtered_buff_effect_entries(effect_type, tags):
+		total += float(effect.get("effect_value", 0.0))
+	return total
+
+
+func _get_filtered_buff_effect_entries(effect_type: StringName, tags: Dictionary) -> Array[Dictionary]:
+	var data_repo = AppRefs.data_repo()
+	var result: Array[Dictionary] = []
+	if data_repo == null:
+		return result
+	for buff_id in buffs:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		for effect in _get_buff_effect_entries(cfg):
+			if StringName(effect.get("effect_type", "")) != effect_type:
+				continue
+			if not _buff_effect_is_active(effect):
+				continue
+			if not _buff_matches_tags(effect, tags):
+				continue
+			result.append(effect)
+	return result
+
+
+func _get_dynamic_unit_buff_effect_total(effect_type: StringName, tags: Dictionary) -> float:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
 		return 0.0
@@ -323,11 +396,41 @@ func _get_filtered_buff_effect_total(effect_type: StringName, tags: Dictionary) 
 	for buff_id in buffs:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
 		for effect in _get_buff_effect_entries(cfg):
-			if StringName(effect.get("effect_type", "")) != effect_type:
+			if not _buff_effect_is_active(effect):
 				continue
-			if not _buff_matches_tags(effect, tags):
-				continue
-			total += float(effect.get("effect_value", 0.0))
+			match StringName(effect.get("effect_type", "")):
+				&"prestige_chunk_effect":
+					if StringName(effect.get("target_effect_type", "")) != effect_type:
+						continue
+					if not _buff_matches_tags(effect, tags):
+						continue
+					var chunk_size: int = maxi(int(effect.get("chunk_size", 1)), 1)
+					var max_layers: int = maxi(int(effect.get("max_layers", 0)), 0)
+					var layers := int(floor(float(max(prestige, 0)) / float(chunk_size)))
+					if max_layers > 0:
+						layers = min(layers, max_layers)
+					total += float(effect.get("effect_value", 0.0)) * float(max(layers, 0))
+				&"formation_class_count_effect":
+					if StringName(effect.get("target_effect_type", "")) != effect_type:
+						continue
+					if not _buff_matches_tags(effect, tags):
+						continue
+					var source_class := StringName(effect.get("source_class", effect.get("class_filter", "")))
+					var layers: int = _count_owned_operators_by_class(source_class)
+					var max_layers: int = maxi(int(effect.get("max_layers", 0)), 0)
+					if max_layers > 0:
+						layers = min(layers, max_layers)
+					total += float(effect.get("effect_value", 0.0)) * float(max(layers, 0))
+				&"formation_distinct_class_effect":
+					if StringName(effect.get("target_effect_type", "")) != effect_type:
+						continue
+					if not _buff_matches_tags(effect, tags):
+						continue
+					var layers: int = _count_distinct_owned_operator_classes()
+					var max_layers: int = maxi(int(effect.get("max_layers", 0)), 0)
+					if max_layers > 0:
+						layers = min(layers, max_layers)
+					total += float(effect.get("effect_value", 0.0)) * float(max(layers, 0))
 	return total
 
 
@@ -337,7 +440,7 @@ func _get_buff_effect_entries(cfg: Dictionary) -> Array[Dictionary]:
 		for raw_effect in cfg.get("effects", []):
 			if typeof(raw_effect) == TYPE_DICTIONARY:
 				var effect := (raw_effect as Dictionary).duplicate(true)
-				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "max_cost_prestige", "min_cost_prestige"]:
+				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "max_cost_prestige", "min_cost_prestige", "condition"]:
 					if not effect.has(key) and cfg.has(key):
 						effect[key] = cfg[key]
 				result.append(effect)
@@ -347,12 +450,11 @@ func _get_buff_effect_entries(cfg: Dictionary) -> Array[Dictionary]:
 
 
 func _buff_matches_tags(effect: Dictionary, tags: Dictionary) -> bool:
-	for key in ["class", "damage_type", "building_type", "material"]:
+	for key in ["class", "damage_type", "building_type", "material", "enemy_id"]:
 		var filter_key := "%s_filter" % key
 		if not effect.has(filter_key):
 			continue
-		var expected := StringName(effect.get(filter_key, ""))
-		if expected != StringName() and expected != StringName(tags.get(key, "")):
+		if not _filter_matches(effect.get(filter_key), tags.get(key, "")):
 			return false
 	if effect.has("max_cost_prestige") and int(tags.get("cost_prestige", 999)) > int(effect.get("max_cost_prestige", 999)):
 		return false
@@ -362,10 +464,91 @@ func _buff_matches_tags(effect: Dictionary, tags: Dictionary) -> bool:
 
 
 func _buff_effect_has_filters(effect: Dictionary) -> bool:
-	for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "max_cost_prestige", "min_cost_prestige"]:
+	for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "enemy_id_filter", "max_cost_prestige", "min_cost_prestige"]:
 		if effect.has(key):
 			return true
 	return false
+
+
+func _filter_matches(raw_filter: Variant, tag_value: Variant) -> bool:
+	var tag := StringName(tag_value)
+	if typeof(raw_filter) == TYPE_ARRAY:
+		for expected in raw_filter:
+			if StringName(expected) == tag:
+				return true
+		return false
+	var expected := StringName(raw_filter)
+	return expected == StringName() or expected == tag
+
+
+func _buff_effect_is_active(effect: Dictionary) -> bool:
+	if not effect.has("condition"):
+		return true
+	var condition: Variant = effect.get("condition")
+	if typeof(condition) == TYPE_ARRAY:
+		for entry in condition:
+			if typeof(entry) != TYPE_DICTIONARY or not _condition_matches(entry as Dictionary):
+				return false
+		return true
+	if typeof(condition) == TYPE_DICTIONARY:
+		return _condition_matches(condition as Dictionary)
+	var condition_type := StringName(condition)
+	if condition_type == StringName():
+		return true
+	return _condition_matches({"type": condition_type})
+
+
+func _condition_matches(condition: Dictionary) -> bool:
+	match StringName(condition.get("type", "")):
+		&"core_hp_equals":
+			return core_hp == int(condition.get("value", 0))
+		&"core_hp_full":
+			return core_hp > 0 and core_hp == core_hp_max
+		&"core_hp_at_most":
+			return core_hp <= int(condition.get("value", 0))
+		&"core_hp_at_least":
+			return core_hp >= int(condition.get("value", 0))
+		_:
+			return true
+
+
+func _count_owned_operators_by_class(class_key: StringName) -> int:
+	if class_key == StringName():
+		return 0
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return 0
+	var count := 0
+	for operator in owned_operators:
+		var operator_dict := operator as Dictionary
+		var cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator_dict.get("unit_id", "")))
+		if StringName(cfg.get("class", "")) == class_key:
+			count += 1
+	return count
+
+
+func _count_distinct_owned_operator_classes() -> int:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return 0
+	var classes: Dictionary = {}
+	for operator in owned_operators:
+		var operator_dict := operator as Dictionary
+		var cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator_dict.get("unit_id", "")))
+		var class_key := StringName(cfg.get("class", ""))
+		if class_key != StringName():
+			classes[class_key] = true
+	return classes.size()
+
+
+func _damage_type_key(damage_type: int) -> StringName:
+	match damage_type:
+		GameEnums.DAMAGE_MAGIC:
+			return &"magic"
+		GameEnums.DAMAGE_TRUE:
+			return &"true"
+		_:
+			return &"physical"
 
 
 func _emit_all_state() -> void:
