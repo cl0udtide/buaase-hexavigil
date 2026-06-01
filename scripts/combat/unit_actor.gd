@@ -92,6 +92,8 @@ var _blocked_enemy_ids: Array[int] = []
 var _current_target_runtime_id := -1
 var _is_dead := false
 var _damage_reduction_effects: Dictionary = {}
+var _timed_modifier_effects: Dictionary = {}
+var _relic_sp_periodic_timers: Dictionary = {}
 var _registered_range_outline_ids: Array[StringName] = []
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
@@ -118,7 +120,9 @@ func _process(delta: float) -> void:
 	if _skill_behavior != null and _skill_behavior.has_method("tick"):
 		_skill_behavior.tick(delta)
 	_tick_damage_reduction_effects(delta)
+	_tick_timed_modifier_effects(delta)
 	_recover_sp(delta)
+	_tick_periodic_relic_sp(delta)
 	_try_auto_cast_skill()
 	_refresh_blocking()
 	_tick_attack(delta)
@@ -131,11 +135,9 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	cfg = new_cfg.duplicate(true)
 	current_cell = spawn_cell
 	facing = new_facing
-	max_hp = int(cfg.get("max_hp", 1))
+	_base_max_hp = int(cfg.get("max_hp", 1))
 	var run_state = AppRefs.run_state()
-	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
-		max_hp = max(int(round(float(max_hp) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_hp_percent", cfg))))), 1)
-	_base_max_hp = max_hp
+	max_hp = _calculate_effective_max_hp()
 	current_hp = max_hp
 	atk = int(cfg.get("atk", 1))
 	defense = int(cfg.get("def", 0))
@@ -145,16 +147,16 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	attack_speed = float(cfg.get("attack_speed", 100.0))
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		atk = max(int(round(float(atk) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_base_atk_percent", cfg))))), 1)
-		defense = max(int(round(float(defense) * (1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", cfg))))), 0)
-		resistance = max(int(round(float(resistance) + float(run_state.get_buff_effect_total_for_unit(&"unit_res_add", cfg)))), 0)
 		block_count = max(block_count + int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_block_add", cfg)))), 0)
 	attack_multiplier = 1.0
 	_mod_channels.clear()
 	_damage_reduction_effects.clear()
+	_timed_modifier_effects.clear()
+	_relic_sp_periodic_timers.clear()
 	damage_type = parse_damage_type(String(cfg.get("damage_type", "physical")))
 	target_type = parse_target_type(String(cfg.get("target_type", "ground")))
 	range_pattern = parse_range_pattern(cfg.get("range_pattern", []))
-	sp = clamp(float(cfg.get("sp_initial", cfg.get("initial_sp", 0.0))), 0.0, float(cfg.get("sp_max", 0.0)))
+	sp = clamp(_get_initial_sp_value(), 0.0, float(cfg.get("sp_max", 0.0)))
 	_attack_timer = attack_interval
 	_blocked_enemy_ids.clear()
 	_current_target_runtime_id = -1
@@ -177,6 +179,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 		_skill_behavior.setup(self)
 	if _skill_behavior != null and _skill_behavior.has_method("on_deployed"):
 		_skill_behavior.on_deployed()
+	_apply_on_deploy_relic_effects()
 	_update_status_view()
 
 
@@ -200,6 +203,8 @@ func receive_damage(value: int, damage_type_value: int, source: Node = null, poo
 	_debug_log("单位 %s#%d 受到%s伤害：原始 %d，结算 %d，HP %d/%d" % [_debug_name(), runtime_id, _damage_type_text(damage_type_value), value, final_damage, current_hp, max_hp])
 	if final_damage > 0 and current_hp < hp_before and _skill_behavior != null and _skill_behavior.has_method("after_receive_damage"):
 		_skill_behavior.after_receive_damage(source, final_damage)
+	if final_damage > 0 and current_hp < hp_before:
+		gain_sp(_get_relic_sp_on_hit_add())
 	if current_hp == 0:
 		_die()
 
@@ -418,8 +423,6 @@ func release_all_blocked_enemies() -> void:
 func get_effective_atk() -> int:
 	var run_state = AppRefs.run_state()
 	var buff_multiplier := 1.0
-	if run_state != null and run_state.has_method("get_buff_effect_total"):
-		buff_multiplier += float(run_state.get_buff_effect_total(&"unit_atk_percent"))
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		buff_multiplier += float(run_state.get_buff_effect_total_for_unit(&"unit_atk_percent", cfg))
 	buff_multiplier += _sum_modifier(&"atk_percent")
@@ -432,15 +435,24 @@ func get_effective_attack_speed() -> float:
 	var relic_add := 0.0
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		relic_add += float(run_state.get_buff_effect_total_for_unit(&"unit_attack_speed_add", cfg))
-	return CombatMath.clamp_attack_speed(attack_speed + relic_add + _sum_modifier(&"aspd_add"))
+	relic_add += _get_low_hp_relic_attack_speed_add()
+	return CombatMath.clamp_attack_speed(attack_speed + relic_add + _sum_modifier(&"aspd_add") + _sum_timed_modifier(&"aspd_add"))
 
 
 func get_effective_defense() -> int:
-	return max(defense + int(round(_sum_modifier(&"def_flat"))), 0)
+	var run_state = AppRefs.run_state()
+	var defense_value := float(defense)
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		defense_value *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", cfg))
+	return max(int(round(defense_value)) + int(round(_sum_modifier(&"def_flat"))) + int(round(_sum_timed_modifier(&"def_flat"))), 0)
 
 
 func get_effective_resistance() -> int:
-	return max(resistance + int(round(_sum_modifier(&"res_flat"))), 0)
+	var run_state = AppRefs.run_state()
+	var relic_add := 0.0
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		relic_add += float(run_state.get_buff_effect_total_for_unit(&"unit_res_add", cfg))
+	return max(resistance + int(round(relic_add)) + int(round(_sum_modifier(&"res_flat"))) + int(round(_sum_timed_modifier(&"res_flat"))), 0)
 
 
 # 攻击时无视目标防御/法抗的比例（精准 3 人），上限 95%。
@@ -456,6 +468,7 @@ func get_effective_sp_recover_per_sec() -> float:
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
 		recover_per_sec *= 1.0 + float(run_state.get_buff_effect_total_for_unit(&"unit_sp_recover_percent", cfg))
+		recover_per_sec += float(run_state.get_buff_effect_total_for_unit(&"unit_sp_recover_flat_add", cfg))
 	return recover_per_sec + _sum_modifier(&"sp_recover_add")
 
 
@@ -482,6 +495,13 @@ func _sum_modifier(key: StringName) -> float:
 	return total
 
 
+func _sum_timed_modifier(key: StringName) -> float:
+	var total := 0.0
+	for entry_variant in _timed_modifier_effects.values():
+		total += float((entry_variant as Dictionary).get(key, 0.0))
+	return total
+
+
 func get_effective_attack_interval() -> float:
 	return CombatMath.calc_attack_interval(attack_interval, get_effective_attack_speed())
 
@@ -499,9 +519,34 @@ func set_modifier_channel(source: StringName, mods: Dictionary) -> void:
 		_recompute_max_hp()
 
 
+func _apply_timed_modifier(effect_key: StringName, mods: Dictionary, duration: float) -> void:
+	if duration <= 0.0 or mods.is_empty():
+		return
+	var payload := mods.duplicate(true)
+	payload["remaining"] = duration
+	_timed_modifier_effects[effect_key] = payload
+	if mods.has("hp_percent"):
+		_recompute_max_hp()
+
+
+func _tick_timed_modifier_effects(delta: float) -> void:
+	var hp_changed := false
+	for effect_key in _timed_modifier_effects.keys().duplicate():
+		var entry: Dictionary = _timed_modifier_effects[effect_key]
+		entry["remaining"] = float(entry.get("remaining", 0.0)) - delta
+		if float(entry.get("remaining", 0.0)) <= 0.0:
+			if entry.has("hp_percent"):
+				hp_changed = true
+			_timed_modifier_effects.erase(effect_key)
+		else:
+			_timed_modifier_effects[effect_key] = entry
+	if hp_changed:
+		_recompute_max_hp()
+
+
 # hp% 变化时重算最大生命：上升则当前血同步 +Δ，下降则仅 clamp 到新上限。
 func _recompute_max_hp() -> void:
-	var new_max := maxi(int(round(float(_base_max_hp) * (1.0 + _sum_modifier(&"hp_percent")))), 1)
+	var new_max := _calculate_effective_max_hp()
 	if new_max == max_hp:
 		return
 	var delta := new_max - max_hp
@@ -509,6 +554,19 @@ func _recompute_max_hp() -> void:
 	if delta > 0 and not _is_dead:
 		current_hp += delta
 	current_hp = mini(current_hp, max_hp)
+	_update_status_view()
+
+
+func _calculate_effective_max_hp() -> int:
+	var run_state = AppRefs.run_state()
+	var hp_percent := _sum_modifier(&"hp_percent") + _sum_timed_modifier(&"hp_percent")
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		hp_percent += float(run_state.get_buff_effect_total_for_unit(&"unit_hp_percent", cfg))
+	return maxi(int(round(float(_base_max_hp) * (1.0 + hp_percent))), 1)
+
+
+func refresh_relic_effects() -> void:
+	_recompute_max_hp()
 	_update_status_view()
 
 
@@ -881,6 +939,58 @@ func _normalize_visual_direction(direction: Vector2i) -> Vector2i:
 	return Vector2i.DOWN if direction.y >= 0 else Vector2i.UP
 
 
+func _get_initial_sp_value() -> float:
+	var value := float(cfg.get("sp_initial", cfg.get("initial_sp", 0.0)))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_unit"):
+		value += float(run_state.get_buff_effect_total_for_unit(&"unit_initial_sp_add", cfg))
+	return value
+
+
+func _apply_on_deploy_relic_effects() -> void:
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_entries_for_unit"):
+		return
+	var index := 0
+	for effect in run_state.get_buff_effect_entries_for_unit(&"unit_on_deploy_aspd_add_duration", cfg):
+		var aspd := float(effect.get("effect_value", 0.0))
+		var duration := float(effect.get("duration", 0.0))
+		if aspd == 0.0 or duration <= 0.0:
+			continue
+		_apply_timed_modifier(StringName("relic_on_deploy_aspd_%d" % index), {"aspd_add": aspd}, duration)
+		index += 1
+
+
+func _get_relic_sp_on_attack_add() -> int:
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_total_for_unit"):
+		return 0
+	return int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_sp_on_attack_add", cfg))))
+
+
+func _get_relic_sp_on_hit_add() -> int:
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_total_for_unit"):
+		return 0
+	return int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_sp_on_hit_add", cfg))))
+
+
+func _get_low_hp_relic_attack_speed_add() -> float:
+	if max_hp <= 0:
+		return 0.0
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_entries_for_unit"):
+		return 0.0
+	var hp_ratio := clampf(float(current_hp) / float(max_hp), 0.0, 1.0)
+	var total := 0.0
+	for effect in run_state.get_buff_effect_entries_for_unit(&"unit_low_hp_aspd_add", cfg):
+		var threshold := clampf(float(effect.get("threshold", 0.3)), 0.01, 1.0)
+		var max_add := float(effect.get("effect_value", 0.0))
+		var factor := 1.0 if hp_ratio <= threshold else clampf((1.0 - hp_ratio) / (1.0 - threshold), 0.0, 1.0)
+		total += max_add * factor
+	return total
+
+
 func _recover_sp(delta: float) -> void:
 	var sp_max := float(cfg.get("sp_max", 0.0))
 	if _skill_behavior != null and _skill_behavior.has_method("get_sp_max"):
@@ -889,6 +999,33 @@ func _recover_sp(delta: float) -> void:
 		sp = min(sp, sp_max)
 		return
 	sp = min(sp + get_effective_sp_recover_per_sec() * delta, sp_max)
+
+
+func _tick_periodic_relic_sp(delta: float) -> void:
+	if _is_skill_active():
+		return
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_entries_for_unit"):
+		return
+	var active_keys: Dictionary = {}
+	var index := 0
+	for effect in run_state.get_buff_effect_entries_for_unit(&"unit_sp_periodic_add", cfg):
+		var interval: float = maxf(float(effect.get("interval", 1.0)), 0.1)
+		var amount := int(effect.get("effect_value", 0))
+		if amount <= 0:
+			continue
+		var effect_key := StringName("periodic_sp_%d_%s_%s" % [index, str(interval), str(amount)])
+		active_keys[effect_key] = true
+		var remaining := float(_relic_sp_periodic_timers.get(effect_key, interval))
+		remaining -= delta
+		while remaining <= 0.0:
+			gain_sp(amount)
+			remaining += interval
+		_relic_sp_periodic_timers[effect_key] = remaining
+		index += 1
+	for effect_key in _relic_sp_periodic_timers.keys().duplicate():
+		if not active_keys.has(effect_key):
+			_relic_sp_periodic_timers.erase(effect_key)
 
 
 func _is_skill_active() -> bool:
@@ -970,7 +1107,7 @@ func _tick_attack(delta: float) -> void:
 	if not override_targets.is_empty():
 		for enemy in override_targets:
 			_attack_target(enemy, false)
-		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+		gain_sp(int(cfg.get("sp_gain_on_attack", 0)) + _get_relic_sp_on_attack_add())
 		_attack_timer = effective_attack_interval
 		return
 	var target := _select_attack_target()
@@ -1007,11 +1144,11 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 				launched_count += 1
 		if launched_count > 0:
 			if gain_sp_on_attack:
-				gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+				gain_sp(int(cfg.get("sp_gain_on_attack", 0)) + _get_relic_sp_on_attack_add())
 			return
 	_resolve_attack_hit(target, damage_value, damage_type, true, defense_ignore)
 	if gain_sp_on_attack:
-		gain_sp(int(cfg.get("sp_gain_on_attack", 0)))
+		gain_sp(int(cfg.get("sp_gain_on_attack", 0)) + _get_relic_sp_on_attack_add())
 
 
 func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true, defense_ignore: float = 0.0) -> void:

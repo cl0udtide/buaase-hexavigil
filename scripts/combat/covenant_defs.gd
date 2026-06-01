@@ -106,45 +106,44 @@ static func foresight_sell_value(base_cost_prestige: int) -> int:
 
 
 # ---------------------------------------------------------------------------
-# UI 提示文案（按当前层数生成 2 人 / 3 人两条说明）
+# UI 提示文案（用公式说明层数收益，避免只显示当前计算值）
 # ---------------------------------------------------------------------------
-static func describe(covenant_id: StringName, layer: int) -> Array:
+static func describe(covenant_id: StringName, _layer: int) -> Array:
 	match covenant_id:
 		ID_UNYIELDING:
 			return [
-				"2人：不屈干员被击倒时 %d%% 概率清空再部署并原地满血复活" % int(round(unyielding_revive_chance(layer) * 100.0)),
+				"2人：不屈干员被击倒时，有 10% × 盟约层数 的概率清空再部署并原地满血复活（最高 100%）",
 				"3人：上述效果作用于所有干员",
 			]
 		ID_PRECISION:
 			return [
-				"2人：精准干员攻击力 +%d%%" % int(round(precision_atk_percent(layer) * 100.0)),
-				"3人：作用于所有远程干员，并攻击无视敌人 %d%% 防御/法抗" % int(round(precision_defense_ignore() * 100.0)),
+				"2人：精准干员攻击力提升 30% + 10% × 盟约层数",
+				"3人：作用于所有远程干员，并攻击无视敌人 30% 防御/法抗",
 			]
 		ID_STEADFAST:
 			return [
-				"2人：坚守干员生命 +%d%%" % int(round(steadfast_hp_percent(layer) * 100.0)),
+				"2人：坚守干员最大生命提升 30% + 10% × 盟约层数",
 				"3人：场上所有干员受到伤害时，由所有坚守干员均摊",
 			]
 		ID_SWIFT:
 			return [
-				"2人：所有干员 SP 回复 +%.1f/秒" % swift_sp_recover_add(layer),
-				"3人：所有干员部署/再部署初动 +%d SP" % swift_deploy_sp(),
+				"2人：所有干员 SP 自然回复额外 +0.1 × 盟约层数 /秒",
+				"3人：所有干员部署/再部署初动 +5 SP",
 			]
 		ID_RAID:
 			return [
-				"2人：突袭干员再部署时间 −%d%%" % int(round(raid_redeploy_reduction(layer) * 100.0)),
+				"2人：突袭干员再部署时间缩短 10% × 盟约层数（最高 70%）",
 				"3人：作用于所有干员",
 			]
 		ID_SARGON:
 			return [
-				"2人：萨尔贡干员开技能时，所有萨尔贡干员攻速+%d、攻击力+%d%%，最多叠 %d 层" % [int(sargon_aspd_per_stack()), int(round(sargon_atk_percent_per_stack() * 100.0)), sargon_max_stacks(layer)],
-				"3人：增益作用于所有干员（仍只有萨尔贡干员开技能叠层）",
+				"2人：萨尔贡干员每次开技能，使增益叠加 1 层；每层 +10 攻速、+10% 攻击，叠层上限 = 盟约层数",
+				"3人：增益作用于所有干员（仍由萨尔贡干员开技能叠层）",
 			]
 		ID_FORESIGHT:
-			var sell_line := "3人：商店购买 −1 声望" + ("；层数≥%d 时出售按基础价折半" % foresight_sell_discount_min_layers() if layer >= foresight_sell_discount_min_layers() else "")
 			return [
 				"2人：商店买空后刷新不消耗声望（按拥有数计算）",
-				sell_line,
+				"3人：商店购买 −1 声望；盟约层数 ≥10 时，出售按基础价折半",
 			]
 		_:
 			return []

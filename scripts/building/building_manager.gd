@@ -59,6 +59,7 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	var cost_wood := int(material_costs.get("wood", 0))
 	var cost_stone := int(material_costs.get("stone", 0))
 	var cost_mana := int(material_costs.get("mana", 0))
+	var ap_cost := BuildValidator.get_building_ap_cost(cfg)
 	var material_result: Dictionary = run_state.spend_materials(
 		cost_wood,
 		cost_stone,
@@ -66,7 +67,7 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	)
 	if not material_result.get("ok", false):
 		return material_result
-	var ap_result: Dictionary = run_state.consume_action_points(int(cfg.get("ap_cost", 0)))
+	var ap_result: Dictionary = run_state.consume_action_points(ap_cost)
 	if not ap_result.get("ok", false):
 		run_state.add_materials(cost_wood, cost_stone, cost_mana)
 		return ap_result
@@ -74,11 +75,11 @@ func try_place_building(cell: Vector2i, building_id: StringName) -> Dictionary:
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
 		run_state.add_materials(cost_wood, cost_stone, cost_mana)
-		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
+		run_state.reset_action_points(run_state.action_points + ap_cost)
 		return ActionResult.err(&"SCENE_MISSING", "建造失败：建筑场景缺失")
 	if _building_root == null:
 		run_state.add_materials(cost_wood, cost_stone, cost_mana)
-		run_state.reset_action_points(run_state.action_points + int(cfg.get("ap_cost", 0)))
+		run_state.reset_action_points(run_state.action_points + ap_cost)
 		return ActionResult.err(&"WORLD_NOT_READY", "操作失败：建筑根节点不可用")
 
 	var actor: Node = scene.instantiate()
@@ -301,6 +302,12 @@ func refresh_daytime_repair() -> void:
 			repaired_count += 1
 	if repaired_count > 0:
 		_debug_log("白天自动修复 %d 个未完全损毁建筑" % repaired_count)
+
+
+func refresh_relic_effects_on_buildings() -> void:
+	for actor in _get_building_list():
+		if actor != null and is_instance_valid(actor) and actor.has_method("refresh_relic_effects"):
+			actor.refresh_relic_effects()
 
 
 func get_building_by_cell(cell: Vector2i) -> Node:

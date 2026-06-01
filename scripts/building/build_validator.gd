@@ -35,7 +35,7 @@ func can_place_building(cell: Vector2i, building_id: StringName, material_costs:
 	var costs := material_costs if not material_costs.is_empty() else get_building_material_costs(cfg)
 	if run_state.wood < int(costs.get("wood", 0)) or run_state.stone < int(costs.get("stone", 0)) or run_state.mana < int(costs.get("mana", 0)):
 		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "资源不足：材料不足")
-	if run_state.action_points < int(cfg.get("ap_cost", 0)):
+	if run_state.action_points < get_building_ap_cost(cfg):
 		return ActionResult.err(&"NOT_ENOUGH_AP", "资源不足：行动力不足")
 	if bool(cfg.get("blocks_path", false)):
 		var path_result := _validate_path_after_block(cell)
@@ -62,6 +62,14 @@ static func get_building_material_cost(cfg: Dictionary, material: StringName) ->
 		if run_state.has_method("get_buff_effect_total_for_material"):
 			cost += int(round(float(run_state.get_buff_effect_total_for_material(&"building_material_cost_add", material))))
 	return max(cost, 0)
+
+
+static func get_building_ap_cost(cfg: Dictionary) -> int:
+	var cost := int(cfg.get("ap_cost", 0))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+		cost += int(round(float(run_state.get_buff_effect_total_for_building(&"building_ap_cost_add", cfg))))
+	return max(cost, 1)
 
 
 func can_repair_building(_building_runtime_id: int) -> Dictionary:

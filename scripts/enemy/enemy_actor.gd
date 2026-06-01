@@ -1,6 +1,7 @@
 extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 const BossController = preload("res://scripts/enemy/boss_controller.gd")
 const EnemyMovementController = preload("res://scripts/enemy/enemy_movement_controller.gd")
 const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controller.gd")
@@ -115,7 +116,11 @@ func _process(delta: float) -> void:
 func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: Vector2i) -> void:
 	enemy_id = new_enemy_id
 	cfg = new_cfg.duplicate(true)
+	cfg["id"] = new_enemy_id
 	max_hp = int(cfg.get("max_hp", 1))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_enemy"):
+		max_hp = max(int(round(float(max_hp) * (1.0 + float(run_state.get_buff_effect_total_for_enemy(&"enemy_hp_percent", cfg))))), 1)
 	current_hp = max_hp
 	_max_shield_hp = max(int(cfg.get("shield_hp", 0)), 0)
 	_shield_hp = _max_shield_hp
@@ -164,6 +169,9 @@ func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0) -
 	elif damage_type == GameEnums.DAMAGE_MAGIC:
 		final_damage = CombatMath.calc_magic_damage(value, int(round(float(_get_effective_resistance()) * (1.0 - ignore))))
 	final_damage = max(int(round(float(final_damage) * _get_vulnerability_multiplier(damage_type))), 0)
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_enemy_damage_taken_percent"):
+		final_damage = max(int(round(float(final_damage) * (1.0 + float(run_state.get_enemy_damage_taken_percent(damage_type, cfg))))), 0)
 	var shield_absorbed: int = _absorb_damage_with_shield(final_damage)
 	final_damage = max(final_damage - shield_absorbed, 0)
 	current_hp = max(current_hp - final_damage, 0)
@@ -390,7 +398,11 @@ func set_external_move_speed_multiplier(value: float) -> void:
 
 
 func get_effective_attack_speed() -> float:
-	return CombatMath.clamp_attack_speed(float(cfg.get("attack_speed", 100.0)) + _external_attack_speed_add)
+	var relic_add := 0.0
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_enemy"):
+		relic_add += float(run_state.get_buff_effect_total_for_enemy(&"enemy_attack_speed_add", cfg))
+	return CombatMath.clamp_attack_speed(float(cfg.get("attack_speed", 100.0)) + _external_attack_speed_add + relic_add)
 
 
 func set_external_attack_speed_add(value: float) -> void:
@@ -1112,11 +1124,19 @@ func _is_movement_locked() -> bool:
 
 
 func _get_effective_defense() -> int:
-	return max(int(cfg.get("def", 0)) - _sum_number_status(_defense_shred_effects), 0)
+	var defense_value := float(cfg.get("def", 0))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_enemy"):
+		defense_value *= 1.0 + float(run_state.get_buff_effect_total_for_enemy(&"enemy_def_percent", cfg))
+	return max(int(round(defense_value)) - _sum_number_status(_defense_shred_effects), 0)
 
 
 func _get_effective_resistance() -> int:
-	return max(int(cfg.get("res", 0)) - _sum_number_status(_resistance_shred_effects), 0)
+	var resistance_value := float(cfg.get("res", 0))
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_enemy"):
+		resistance_value *= 1.0 + float(run_state.get_buff_effect_total_for_enemy(&"enemy_res_percent", cfg))
+	return max(int(round(resistance_value)) - _sum_number_status(_resistance_shred_effects), 0)
 
 
 func _sum_number_status(status_dict: Dictionary) -> int:

@@ -176,13 +176,13 @@ func _get_unit_ids_by_cost(cost: int) -> Array[StringName]:
 
 func _get_refresh_cost() -> int:
 	# 远见 2 人：商店买空后刷新不消耗声望。
-	if _foresight_tier() >= CovenantDefs.TIER_PAIR and _is_shop_bought_out():
-		return 0
 	var run_state = AppRefs.run_state()
 	var cost := REFRESH_COST
+	if _foresight_tier() >= CovenantDefs.TIER_PAIR and _is_shop_bought_out():
+		cost = 0
 	if run_state != null and run_state.has_method("get_buff_effect_total"):
 		cost += int(round(float(run_state.get_buff_effect_total(&"shop_refresh_cost_add"))))
-	return max(cost, 0)
+	return max(cost, 1)
 
 
 func _get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
@@ -193,7 +193,7 @@ func _get_unit_purchase_cost(unit_cfg: Dictionary) -> int:
 	# 远见 3 人：所有商店干员购买价格 -1。
 	if _foresight_tier() >= CovenantDefs.TIER_TRIO:
 		cost += CovenantDefs.foresight_purchase_cost_delta()
-	return max(cost, 0)
+	return max(cost, 1)
 
 
 func _foresight_tier() -> int:

@@ -1,6 +1,7 @@
 extends Node2D
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 
 const VISUAL_TEXTURE_ROOT := "res://assets/sprites/buildings"
@@ -20,6 +21,7 @@ var max_hp := 1
 var current_hp := 1
 var effect_radius := 0
 var cfg: Dictionary = {}
+var _base_max_hp := 1
 var _enabled := true
 var _is_destroyed := false
 var _wall_connection_mask := 0
@@ -39,7 +41,8 @@ func setup_from_cfg(new_building_id: StringName, new_cfg: Dictionary, cell: Vect
 	building_id = new_building_id
 	cfg = new_cfg.duplicate(true)
 	current_cell = cell
-	max_hp = int(cfg.get("max_hp", 1))
+	_base_max_hp = int(cfg.get("max_hp", 1))
+	max_hp = _calculate_effective_max_hp()
 	current_hp = max_hp
 	effect_radius = int(cfg.get("effect_radius", 0))
 	_enabled = bool(cfg.get("initial_enabled", true))
@@ -67,8 +70,28 @@ func repair_full() -> void:
 	_play_repair_effect()
 
 
+func refresh_relic_effects() -> void:
+	var new_max := _calculate_effective_max_hp()
+	if new_max == max_hp:
+		return
+	var delta := new_max - max_hp
+	max_hp = new_max
+	if delta > 0 and not _is_destroyed:
+		current_hp += delta
+	current_hp = min(current_hp, max_hp)
+	_update_status_view()
+
+
 func is_destroyed() -> bool:
 	return _is_destroyed
+
+
+func _calculate_effective_max_hp() -> int:
+	var run_state = AppRefs.run_state()
+	var hp_percent := 0.0
+	if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
+		hp_percent += float(run_state.get_buff_effect_total_for_building(&"building_max_hp_percent", cfg))
+	return max(int(round(float(_base_max_hp) * (1.0 + hp_percent))), 1)
 
 
 func get_runtime_id() -> int:

@@ -225,6 +225,23 @@ func get_operator_status(operator_key: StringName) -> StringName:
 	return &"ready"
 
 
+func ready_random_redeploying_operator() -> StringName:
+	if _redeploy_timers.is_empty():
+		return StringName()
+	var operator_keys := _redeploy_timers.keys()
+	var operator_key := StringName(operator_keys.pick_random())
+	_redeploy_timers.erase(operator_key)
+	operator_redeploy_completed.emit(operator_key)
+	_debug_log("遗物效果：干员 %s 再部署冷却归零" % String(operator_key))
+	return operator_key
+
+
+func refresh_relic_effects_on_deployed_units() -> void:
+	for unit in _units_by_runtime_id.values():
+		if unit != null and is_instance_valid(unit) and unit.has_method("refresh_relic_effects"):
+			unit.refresh_relic_effects()
+
+
 func withdraw_operators_for_merge(operator_keys: Array[StringName]) -> Dictionary:
 	var withdrawn: Array[StringName] = []
 	for operator_key in operator_keys:
@@ -282,6 +299,8 @@ func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	if run_state != null:
 		run_state.change_deployed_count(-deploy_slot_cost)
 	if event_bus != null:
+		if reason == GameEnums.UNIT_REMOVE_DEAD:
+			event_bus.unit_died.emit(unit_runtime_id, StringName(unit.unit_id), unit.get_current_cell())
 		event_bus.unit_removed.emit(unit_runtime_id, reason)
 	_debug_log("单位离场 %s#%d，原因：%s" % [_get_unit_display_name(unit), unit_runtime_id, _remove_reason_text(reason)])
 	unit.queue_free()

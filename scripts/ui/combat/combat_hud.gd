@@ -396,6 +396,7 @@ func _build_covenant_chip(entry: Dictionary) -> Control:
 
 	var lines: Array = CovenantDefs.describe(StringName(entry.get("id", "")), layers)
 	var tip := "%s（%d人激活）" % [cov_name, tier] if active else "%s（未激活，需 %d 人）" % [cov_name, CovenantDefs.TIER_PAIR]
+	tip += "\n盟约层数：当前计入该盟约的干员星级总和。"
 	if not lines.is_empty():
 		tip += "\n" + "\n".join(lines)
 	chip.tooltip_text = tip

@@ -72,6 +72,24 @@ func get_alive_enemy_count() -> int:
 	return _enemies_by_runtime_id.size()
 
 
+func stun_all_enemies(duration: float) -> void:
+	if duration <= 0.0:
+		return
+	for enemy in _enemies_by_runtime_id.values():
+		if enemy != null and is_instance_valid(enemy) and enemy.has_method("apply_stun"):
+			enemy.apply_stun(duration)
+
+
+func stun_enemies_in_radius(center_cell: Vector2i, radius: int, duration: float) -> void:
+	if radius <= 0 or duration <= 0.0:
+		return
+	for enemy in _enemies_by_runtime_id.values():
+		if enemy == null or not is_instance_valid(enemy) or not enemy.has_method("apply_stun"):
+			continue
+		if enemy.has_method("get_current_cell") and _cell_distance(center_cell, enemy.get_current_cell()) <= radius:
+			enemy.apply_stun(duration)
+
+
 func notify_enemy_reached_core(enemy_runtime_id: int) -> void:
 	var enemy := get_enemy_by_runtime_id(enemy_runtime_id)
 	if enemy == null:
@@ -108,6 +126,10 @@ func _award_prestige_for_defeat(enemy: Node) -> void:
 		reward += int(round(float(reward) * float(run_state.get_buff_effect_total(&"kill_prestige_percent"))))
 	run_state.add_prestige(reward)
 	_debug_log("击杀敌人 %s#%d，获得 %d 声望" % [enemy.enemy_id, int(enemy.get_runtime_id()), reward])
+
+
+func _cell_distance(a: Vector2i, b: Vector2i) -> int:
+	return max(abs(a.x - b.x), abs(a.y - b.y))
 
 
 func _debug_log(message: String) -> void:
