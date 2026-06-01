@@ -144,6 +144,9 @@ func try_cast_skill(unit_runtime_id: int) -> Dictionary:
 	if not unit.can_cast_skill():
 		return ActionResult.err(&"SP_NOT_READY", "无法释放技能：技力尚未准备好")
 	unit.cast_skill()
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.unit_skill_cast.emit(unit_runtime_id, _get_unit_operator_key(unit), StringName(unit.unit_id))
 	return ActionResult.ok()
 
 

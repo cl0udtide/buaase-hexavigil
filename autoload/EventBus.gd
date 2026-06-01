@@ -77,6 +77,8 @@ signal unit_deployed(unit_runtime_id: int, operator_key: StringName, unit_id: St
 @warning_ignore("unused_signal")
 signal unit_removed(unit_runtime_id: int, reason: int)
 @warning_ignore("unused_signal")
+signal unit_skill_cast(unit_runtime_id: int, operator_key: StringName, unit_id: StringName)
+@warning_ignore("unused_signal")
 signal enemy_spawned(enemy_runtime_id: int, enemy_id: StringName, cell: Vector2i)
 @warning_ignore("unused_signal")
 signal enemy_died(enemy_runtime_id: int, enemy_id: StringName)
