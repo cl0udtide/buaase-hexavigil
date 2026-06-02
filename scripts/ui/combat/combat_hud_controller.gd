@@ -45,6 +45,7 @@ var _latest_wave_routes: Array[Dictionary] = []
 var _latest_wave_preview_text := ""
 var _wave_route_revision := 0
 var _wave_preview_refresh_queued := false
+var _operator_cards_update_queued := false
 var _normal_time_scale := 1.0
 var _bullet_time_active := false
 var _bullet_time_suspended := false
@@ -713,14 +714,7 @@ func _on_operator_sell_requested(operator_key: StringName) -> void:
 	_show_result_message(result, "已出售", "出售失败")
 
 
-func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
-	if _is_predeploy_refreshing_for_night():
-		_update_operator_cards()
-		return
-	_selected_operator_key = operator_key
-	var unit = _unit_manager.get_unit_by_runtime_id(unit_runtime_id) if _unit_manager != null and _unit_manager.has_method("get_unit_by_runtime_id") else null
-	if unit != null:
-		_select_unit(unit)
+func _on_unit_deployed(_unit_runtime_id: int, _operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
 	_update_operator_cards()
 
 
@@ -728,7 +722,7 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 	if _selected_unit_runtime_id == unit_runtime_id:
 		_clear_selected_unit()
 		_refresh_detail_panel()
-	_update_operator_cards()
+	_queue_operator_cards_update()
 
 
 func _on_path_grid_changed() -> void:
@@ -1227,7 +1221,21 @@ func _update_operator_cards() -> void:
 	for operator_info in _operator_defs:
 		var operator_key := StringName((operator_info as Dictionary).get("key", ""))
 		var state := _get_operator_state(operator_key)
+		if _combat_hud.has_method("set_operator_card_visible"):
+			_combat_hud.set_operator_card_visible(operator_key, state != &"deployed")
 		_combat_hud.set_operator_card(operator_key, _format_operator_card_text(operator_info, state), state)
+
+
+func _queue_operator_cards_update() -> void:
+	if _operator_cards_update_queued:
+		return
+	_operator_cards_update_queued = true
+	call_deferred("_flush_operator_cards_update")
+
+
+func _flush_operator_cards_update() -> void:
+	_operator_cards_update_queued = false
+	_update_operator_cards()
 
 
 func _format_operator_card_text(operator_info: Dictionary, state: StringName) -> String:
