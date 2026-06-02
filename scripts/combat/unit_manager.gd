@@ -13,6 +13,7 @@ var _runtime_by_operator_key: Dictionary = {}
 var _operator_key_by_runtime_id: Dictionary = {}
 var _deploy_slot_cost_by_runtime_id: Dictionary = {}
 var _redeploy_timers: Dictionary = {}
+var _refreshing_predeployed_units_for_night := false
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _unit_root: Node = get_node_or_null("../../World/UnitRoot")
@@ -273,6 +274,36 @@ func prepare_for_day() -> void:
 			unit.receive_heal(int(unit.get("max_hp")))
 
 
+func refresh_predeployed_units_for_night() -> void:
+	var deployments: Array[Dictionary] = []
+	for unit in _units_by_runtime_id.values():
+		if unit == null or not is_instance_valid(unit):
+			continue
+		deployments.append({
+			"runtime_id": int(unit.get_runtime_id()) if unit.has_method("get_runtime_id") else int(unit.runtime_id),
+			"operator_key": _get_unit_operator_key(unit),
+			"cell": unit.get_current_cell() if unit.has_method("get_current_cell") else unit.current_cell,
+			"facing": unit.facing
+		})
+	_refreshing_predeployed_units_for_night = true
+	for deployment in deployments:
+		var runtime_id := int(deployment.get("runtime_id", -1))
+		var operator_key := StringName(deployment.get("operator_key", ""))
+		var cell: Vector2i = deployment.get("cell", Vector2i.ZERO)
+		var facing: Vector2i = deployment.get("facing", Vector2i.RIGHT)
+		if runtime_id < 0 or operator_key == StringName():
+			continue
+		remove_unit(runtime_id, GameEnums.UNIT_REMOVE_PREDEPLOY_REFRESH)
+		var result := try_deploy_operator(operator_key, cell, facing)
+		if not bool(result.get("ok", false)):
+			_debug_log("夜晚开场重新部署失败：%s 于 %s，%s" % [String(operator_key), cell, String(result.get("message", ""))])
+	_refreshing_predeployed_units_for_night = false
+
+
+func is_refreshing_predeployed_units_for_night() -> bool:
+	return _refreshing_predeployed_units_for_night
+
+
 func remove_unit(unit_runtime_id: int, reason: int) -> void:
 	var unit := get_unit_by_runtime_id(unit_runtime_id)
 	if unit == null:
@@ -337,6 +368,8 @@ func _remove_reason_text(reason: int) -> String:
 			return "调试清场"
 		GameEnums.UNIT_REMOVE_MERGE:
 			return "合成"
+		GameEnums.UNIT_REMOVE_PREDEPLOY_REFRESH:
+			return "夜晚开场重新部署"
 		_:
 			return "未知"
 

@@ -256,9 +256,11 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 	_cancel_deploy_flow("")
 	_bullet_time_suspended = false
 	_exit_bullet_time(false)
-	if _new_phase != GameEnums.PHASE_NIGHT:
-		get_tree().paused = false
-		Engine.time_scale = 1.0
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	_normal_time_scale = 1.0
+	if _new_phase == GameEnums.PHASE_NIGHT:
+		_clear_detail_selection()
 	if _new_phase != GameEnums.PHASE_DAY and _selected_shop_slot_index >= 0:
 		_clear_detail_selection()
 	_refresh_top_hud()
@@ -712,6 +714,9 @@ func _on_operator_sell_requested(operator_key: StringName) -> void:
 
 
 func _on_unit_deployed(unit_runtime_id: int, operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
+	if _is_predeploy_refreshing_for_night():
+		_update_operator_cards()
+		return
 	_selected_operator_key = operator_key
 	var unit = _unit_manager.get_unit_by_runtime_id(unit_runtime_id) if _unit_manager != null and _unit_manager.has_method("get_unit_by_runtime_id") else null
 	if unit != null:
@@ -768,6 +773,8 @@ func _sync_bullet_time_from_selection() -> void:
 
 
 func _should_use_bullet_time() -> bool:
+	if _is_predeploy_refreshing_for_night():
+		return false
 	if _bullet_time_suspended:
 		return false
 	if get_tree() == null or get_tree().paused:
@@ -783,6 +790,10 @@ func _should_use_bullet_time() -> bool:
 
 func _has_active_tactical_selection() -> bool:
 	return _bullet_time_active or _selected_unit_runtime_id >= 0 or (_selected_operator_key != StringName() and _selected_shop_slot_index < 0)
+
+
+func _is_predeploy_refreshing_for_night() -> bool:
+	return _unit_manager != null and _unit_manager.has_method("is_refreshing_predeployed_units_for_night") and bool(_unit_manager.is_refreshing_predeployed_units_for_night())
 
 
 func _enter_bullet_time() -> void:

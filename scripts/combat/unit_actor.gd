@@ -2,6 +2,7 @@ extends Node2D
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const GameplaySettings = preload("res://scripts/core/gameplay_settings.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 
 const CELL_SIZE := 64.0
@@ -115,6 +116,8 @@ func _exit_tree() -> void:
 
 func _process(delta: float) -> void:
 	if _is_dead:
+		return
+	if not _is_combat_simulation_active():
 		return
 	# UnitActor 只保留公共战斗循环；角色特化技能通过 SkillBehavior 子节点接入。
 	if _skill_behavior != null and _skill_behavior.has_method("tick"):
@@ -280,6 +283,8 @@ func gain_sp(value: int) -> void:
 
 
 func can_cast_skill() -> bool:
+	if not _is_combat_simulation_active():
+		return false
 	if _skill_behavior != null and _skill_behavior.has_method("can_cast"):
 		return bool(_skill_behavior.can_cast())
 	var sp_max := float(cfg.get("sp_max", 0.0))
@@ -1037,11 +1042,41 @@ func _cleanup_skill_behavior() -> void:
 		_skill_behavior.cleanup()
 
 
+func _is_combat_simulation_active() -> bool:
+	var run_state = AppRefs.run_state()
+	return run_state != null and int(run_state.phase) == GameEnums.PHASE_NIGHT
+
+
 func _try_auto_cast_skill() -> void:
 	if _skill_behavior == null or not _skill_behavior.has_method("should_auto_cast"):
 		return
-	if bool(_skill_behavior.should_auto_cast()) and can_cast_skill():
-		cast_skill()
+	var config_auto_cast := bool(_skill_behavior.should_auto_cast())
+	if not config_auto_cast and not GameplaySettings.is_auto_skill_cast_enabled():
+		return
+	if not can_cast_skill():
+		return
+	if _requires_auto_cast_target() and not _has_auto_cast_target():
+		return
+	cast_skill()
+
+
+func _requires_auto_cast_target() -> bool:
+	if _skill_behavior != null and _skill_behavior.has_method("requires_auto_cast_target"):
+		return bool(_skill_behavior.requires_auto_cast_target())
+	return not bool(cfg.get("skill_infinite_duration", false))
+
+
+func _has_auto_cast_target() -> bool:
+	if _skill_behavior != null and _skill_behavior.has_method("has_auto_cast_target"):
+		return bool(_skill_behavior.has_auto_cast_target())
+	return _has_attack_target_for_auto_skill()
+
+
+func _has_attack_target_for_auto_skill() -> bool:
+	for enemy in get_attack_targets():
+		if enemy != null and is_instance_valid(enemy) and int(enemy.get("current_hp")) > 0:
+			return true
+	return false
 
 
 func _tick_damage_reduction_effects(delta: float) -> void:
