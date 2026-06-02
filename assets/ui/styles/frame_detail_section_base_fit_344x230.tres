@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_detail_section_base_fit_344x230.png" id="1_detail_section"]
+
+[resource]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+texture = ExtResource("1_detail_section")
+texture_margin_left = 28.02
+texture_margin_top = 28.02
+texture_margin_right = 28.02
+texture_margin_bottom = 28.02

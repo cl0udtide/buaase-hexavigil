@@ -6,6 +6,10 @@
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_choice_button_base.tres" id="4_choice_button"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="5_button_primary"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="6_button_disabled"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay_fit_150x40.tres" id="fit_frame_button_disabled_overlay_150x40"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay_fit_150x40.tres" id="fit_frame_button_primary_overlay_150x40"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_choice_button_base_fit_150x40.tres" id="fit_frame_event_choice_button_base_150x40"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_panel_base_fit_540x260.tres" id="fit_frame_event_panel_base_540x260"]
 
 [node name="EventPanel" type="PanelContainer" unique_id=239470582]
 visible = false
@@ -20,7 +24,7 @@ offset_right = 270.0
 offset_bottom = 130.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = ExtResource("2_event_panel")
+theme_override_styles/panel = ExtResource("fit_frame_event_panel_base_540x260")
 script = ExtResource("1_0pxnh")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000105]
@@ -60,8 +64,8 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 40)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_styles/normal = ExtResource("4_choice_button")
-theme_override_styles/hover = ExtResource("5_button_primary")
-theme_override_styles/pressed = ExtResource("5_button_primary")
-theme_override_styles/disabled = ExtResource("6_button_disabled")
+theme_override_styles/normal = ExtResource("fit_frame_event_choice_button_base_150x40")
+theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_150x40")
+theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_150x40")
+theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_150x40")
 text = "关闭"

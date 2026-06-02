@@ -3,6 +3,8 @@ extends RefCounted
 
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
+const STYLE_DIR := "res://assets/ui/styles/"
+
 const TOP_HUD := &"frame_top_status_bar_base"
 const TOP_CARD := &"frame_top_status_chip_base"
 const TOP_CARD_ACTIVE := &"frame_top_status_chip_active_overlay"
@@ -172,6 +174,9 @@ const SPECS := {
 
 static func style_box(component: StringName, fallback_fill: Color, fallback_border: Color, include_content := true) -> StyleBox:
 	var content := content_insets(component) if include_content else ZERO_INSETS
+	var style := _style_resource(component)
+	if style is StyleBoxTexture:
+		return _prepared_texture_style(style as StyleBoxTexture, fallback_fill, content)
 	var texture := UiArtRegistry.get_frame_texture(component)
 	if texture == null:
 		return _fallback_box(fallback_fill, fallback_border, content)
@@ -229,6 +234,23 @@ static func _fallback_box(fill: Color, border: Color, content: Vector4) -> Style
 	style.content_margin_top = content.y
 	style.content_margin_right = content.z
 	style.content_margin_bottom = content.w
+	return style
+
+
+static func _style_resource(component: StringName) -> StyleBox:
+	var path := "%s%s.tres" % [STYLE_DIR, String(component)]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as StyleBox
+
+
+static func _prepared_texture_style(base_style: StyleBoxTexture, fallback_fill: Color, content: Vector4) -> StyleBoxTexture:
+	var style := base_style.duplicate(true) as StyleBoxTexture
+	style.content_margin_left = content.x
+	style.content_margin_top = content.y
+	style.content_margin_right = content.z
+	style.content_margin_bottom = content.w
+	style.modulate_color = Color(1.0, 1.0, 1.0, fallback_fill.a)
 	return style
 
 
