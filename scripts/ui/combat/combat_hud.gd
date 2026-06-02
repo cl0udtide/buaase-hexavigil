@@ -534,6 +534,14 @@ func set_operator_card(operator_key: StringName, text_value: String, state: Stri
 		card.set_state_text(text_value, state)
 
 
+func set_operator_card_visible(operator_key: StringName, visible: bool) -> void:
+	var card := _cards_by_operator_key.get(operator_key) as Control
+	if card == null or card.visible == visible:
+		return
+	card.visible = visible
+	call_deferred("_refresh_deploy_deck_scroll_content")
+
+
 func show_drag_ghost(text_value: String) -> void:
 	_drag_ghost_label.text = text_value
 	_drag_ghost.visible = true
