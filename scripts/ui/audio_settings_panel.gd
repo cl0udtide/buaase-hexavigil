@@ -1,5 +1,6 @@
 extends Control
 
+const GameplaySettings = preload("res://scripts/core/gameplay_settings.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 signal close_requested
@@ -13,6 +14,7 @@ signal close_requested
 @onready var _music_value_label: Label = %MusicValueLabel
 @onready var _sfx_value_label: Label = %SfxValueLabel
 @onready var _close_button: Button = get_node_or_null("%CloseButton") as Button
+@onready var _auto_skill_button: Button = get_node_or_null("%AutoSkillButton") as Button
 
 var _audio_manager: Node
 var _updating := false
@@ -24,7 +26,9 @@ func _ready() -> void:
 	if _close_button != null:
 		_close_button.pressed.connect(func() -> void: close_requested.emit())
 	_bind_sliders()
+	_bind_auto_skill_toggle()
 	refresh_from_audio_manager()
+	refresh_from_gameplay_settings()
 
 
 func set_audio_manager(audio_manager: Node) -> void:
@@ -46,9 +50,19 @@ func refresh_from_audio_manager() -> void:
 	_refresh_value_labels()
 
 
+func refresh_from_gameplay_settings() -> void:
+	if _auto_skill_button == null:
+		return
+	_updating = true
+	_auto_skill_button.button_pressed = GameplaySettings.is_auto_skill_cast_enabled()
+	_updating = false
+	_refresh_auto_skill_button()
+
+
 func show_panel() -> void:
 	visible = true
 	refresh_from_audio_manager()
+	refresh_from_gameplay_settings()
 
 
 func hide_panel() -> void:
@@ -66,6 +80,12 @@ func _bind_sliders() -> void:
 	_master_slider.value_changed.connect(_on_master_changed)
 	_music_slider.value_changed.connect(_on_music_changed)
 	_sfx_slider.value_changed.connect(_on_sfx_changed)
+
+
+func _bind_auto_skill_toggle() -> void:
+	if _auto_skill_button == null:
+		return
+	_auto_skill_button.toggled.connect(_on_auto_skill_toggled)
 
 
 func _on_master_changed(value: float) -> void:
@@ -92,11 +112,25 @@ func _on_sfx_changed(value: float) -> void:
 	_refresh_value_labels()
 
 
+func _on_auto_skill_toggled(enabled: bool) -> void:
+	if _updating:
+		return
+	GameplaySettings.set_auto_skill_cast_enabled(enabled)
+	_refresh_auto_skill_button()
+
+
 func _refresh_value_labels() -> void:
 	_master_value_label.text = _format_percent(_master_slider.value)
 	_music_value_label.text = _format_percent(_music_slider.value)
 	_sfx_value_label.text = _format_percent(_sfx_slider.value)
 	_refresh_volume_icons()
+
+
+func _refresh_auto_skill_button() -> void:
+	if _auto_skill_button == null:
+		return
+	_auto_skill_button.text = "开启" if _auto_skill_button.button_pressed else "关闭"
+	_auto_skill_button.tooltip_text = "开启后，普通手动技能会在攻击范围内有目标时自动释放"
 
 
 func _format_percent(value: float) -> String:

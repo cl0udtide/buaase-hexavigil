@@ -63,6 +63,8 @@ func enter_night() -> void:
 	if run_state == null:
 		return
 	run_state.set_phase(GameEnums.PHASE_NIGHT)
+	if _unit_manager != null and _unit_manager.has_method("refresh_predeployed_units_for_night"):
+		_unit_manager.refresh_predeployed_units_for_night()
 	if _night_manager != null and _night_manager.has_method("start_night"):
 		_night_manager.start_night(run_state.day)
 	if event_bus != null:

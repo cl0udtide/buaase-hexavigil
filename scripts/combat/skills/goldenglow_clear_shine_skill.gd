@@ -54,8 +54,14 @@ func _on_skill_end() -> void:
 	owner_unit.attack_multiplier = _base_attack_multiplier
 
 
+func has_auto_cast_target() -> bool:
+	return not _collect_global_targets().is_empty()
+
+
 func _collect_global_targets() -> Array:
 	var targets: Array = []
+	if owner_unit == null:
+		return targets
 	for enemy in owner_unit.get_all_enemies():
 		if enemy == null or not is_instance_valid(enemy):
 			continue

@@ -32,6 +32,19 @@ func should_auto_cast() -> bool:
 	return bool(owner_unit.cfg.get("skill_auto_cast", false)) if owner_unit != null else false
 
 
+func requires_auto_cast_target() -> bool:
+	return not bool(owner_unit.cfg.get("skill_infinite_duration", false)) if owner_unit != null else true
+
+
+func has_auto_cast_target() -> bool:
+	if owner_unit == null:
+		return false
+	for enemy in owner_unit.get_attack_targets():
+		if enemy != null and is_instance_valid(enemy) and int(enemy.get("current_hp")) > 0:
+			return true
+	return false
+
+
 func can_cast() -> bool:
 	return owner_unit != null and not is_active() and owner_unit.sp >= get_sp_max()
 
