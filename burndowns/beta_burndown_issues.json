@@ -62,9 +62,9 @@
   {
     "number": 175,
     "title": "Beta: 扩充遗物内容与构筑策略空间",
-    "state": "open",
+    "state": "closed",
     "created_at": "2026-05-26T15:20:32+00:00",
-    "closed_at": null,
+    "closed_at": "2026-06-02T00:45:20+00:00",
     "estimate": 8,
     "labels": [
       "enhancement",
@@ -376,6 +376,78 @@
     "title": "[Beta美工] 全 UI 目视 QA、截图对比、残边扫描、验收记录",
     "state": "open",
     "created_at": "2026-05-26T15:31:19+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 210,
+    "title": "Beta: 建立命名夜晚出怪模板与白天敌情预告",
+    "state": "open",
+    "created_at": "2026-06-02T02:00:43+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 211,
+    "title": "Beta: 优化右上角出怪预览 UI 承载",
+    "state": "open",
+    "created_at": "2026-06-02T02:00:57+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 212,
+    "title": "Beta: 增加开局遗物选择与规则型遗物",
+    "state": "open",
+    "created_at": "2026-06-02T02:01:19+00:00",
+    "closed_at": null,
+    "estimate": 8,
+    "labels": [
+      "enhancement",
+      "estimate:8"
+    ]
+  },
+  {
+    "number": 213,
+    "title": "Beta: 调整数值经济与后期难度曲线",
+    "state": "open",
+    "created_at": "2026-06-02T02:01:36+00:00",
+    "closed_at": null,
+    "estimate": 5,
+    "labels": [
+      "enhancement",
+      "estimate:5"
+    ]
+  },
+  {
+    "number": 214,
+    "title": "Beta: 在设置面板中增加技能自动释放开关",
+    "state": "open",
+    "created_at": "2026-06-02T02:01:54+00:00",
+    "closed_at": null,
+    "estimate": 3,
+    "labels": [
+      "enhancement",
+      "estimate:3"
+    ]
+  },
+  {
+    "number": 215,
+    "title": "Beta: 设计更长流程的夜晚数量与游戏模式",
+    "state": "open",
+    "created_at": "2026-06-02T02:02:13+00:00",
     "closed_at": null,
     "estimate": 3,
     "labels": [
