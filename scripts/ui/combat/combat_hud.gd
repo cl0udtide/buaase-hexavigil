@@ -19,7 +19,15 @@ signal wave_route_preview_toggled(enabled: bool)
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone", &"mana"]
 const CORE_HP_TITLE := "核心生命"
-const WAVE_PREVIEW_MIN_HEIGHT := 260.0
+const WAVE_PREVIEW_MIN_HEIGHT := 368.0
+const WAVE_PREVIEW_DESC_MIN_HEIGHT := 52.0
+const WAVE_PREVIEW_SCROLL_MIN_HEIGHT := 178.0
+const LEVEL_INTRO_WIDTH_RATIO := 0.56
+const LEVEL_INTRO_MIN_WIDTH := 560.0
+const LEVEL_INTRO_MAX_WIDTH := 820.0
+const LEVEL_INTRO_HEIGHT := 178.0
+const LEVEL_INTRO_TOP_RATIO := 0.15
+const LEVEL_INTRO_MIN_TOP := 124.0
 
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
@@ -514,12 +522,14 @@ func play_level_intro(day: int, name: String, desc: String) -> void:
 	_level_intro_desc_label.visible = not desc.strip_edges().is_empty()
 	_level_intro_banner.visible = true
 	_level_intro_banner.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	_level_intro_content.position.y = 18.0
+	var target_rect := _level_intro_content_rect(0.0)
+	_apply_level_intro_content_rect(_level_intro_content_rect(18.0))
 	_level_intro_line.scale.x = 0.0
 	_level_intro_tween = create_tween()
 	_level_intro_tween.set_parallel(true)
 	_level_intro_tween.tween_property(_level_intro_banner, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.22)
-	_level_intro_tween.tween_property(_level_intro_content, "position:y", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_level_intro_tween.tween_property(_level_intro_content, "offset_top", target_rect.position.y, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_level_intro_tween.tween_property(_level_intro_content, "offset_bottom", target_rect.end.y, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_level_intro_tween.tween_property(_level_intro_line, "scale:x", 1.0, 0.34).set_delay(0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_level_intro_tween.set_parallel(false)
 	var hold_time := 1.45 + minf(float(desc.length()) * 0.006, 0.65)
@@ -679,7 +689,7 @@ func _ensure_wave_preview_v2_nodes() -> void:
 	_wave_preview_content.move_child(_wave_level_name_label, 1)
 
 	_wave_desc_label = _make_wave_label("WaveLevelDescLabel", 13, GameUiStyle.TEXT_INVERTED_DIM, true)
-	_wave_desc_label.custom_minimum_size = Vector2(0, 44)
+	_wave_desc_label.custom_minimum_size = Vector2(0, WAVE_PREVIEW_DESC_MIN_HEIGHT)
 	_wave_preview_content.add_child(_wave_desc_label)
 	_wave_preview_content.move_child(_wave_desc_label, 2)
 
@@ -693,7 +703,10 @@ func _ensure_wave_preview_v2_nodes() -> void:
 	_wave_spawn_cards_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_wave_spawn_cards_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_wave_preview_scroll.add_child(_wave_spawn_cards_box)
-	_wave_preview_scroll.custom_minimum_size = Vector2(0, 96)
+	_wave_preview_scroll.custom_minimum_size = Vector2(0, WAVE_PREVIEW_SCROLL_MIN_HEIGHT)
+	_wave_preview_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_wave_preview_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	GameUiStyle.apply_scroll_style(_wave_preview_scroll)
 	_wave_preview_label.visible = false
 
 	_wave_warning_label = _make_wave_label("WaveWarningLabel", 12, GameUiStyle.AMBER, true)
@@ -855,13 +868,11 @@ func _ensure_level_intro_banner() -> void:
 
 	_level_intro_content = VBoxContainer.new()
 	_level_intro_content.name = "LevelIntroContent"
-	_level_intro_content.anchor_left = 0.22
-	_level_intro_content.anchor_top = 0.14
-	_level_intro_content.anchor_right = 0.78
-	_level_intro_content.anchor_bottom = 0.34
+	_level_intro_content.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
 	_level_intro_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_level_intro_content.add_theme_constant_override("separation", 8)
 	_level_intro_banner.add_child(_level_intro_content)
+	_apply_level_intro_content_rect(_level_intro_content_rect(0.0))
 
 	_level_intro_day_label = _make_wave_label("LevelIntroDayLabel", 16, GameUiStyle.AMBER, false)
 	_level_intro_day_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1279,6 +1290,26 @@ func _apply_legend_icon(row_name: String, icon_id: StringName) -> void:
 
 func _on_viewport_size_changed() -> void:
 	_refresh_core_fill()
+	if _level_intro_banner != null and not _level_intro_banner.visible:
+		_apply_level_intro_content_rect(_level_intro_content_rect(0.0))
+
+
+func _level_intro_content_rect(y_offset: float) -> Rect2:
+	var viewport_size := get_viewport_rect().size
+	var width: float = clampf(viewport_size.x * LEVEL_INTRO_WIDTH_RATIO, LEVEL_INTRO_MIN_WIDTH, LEVEL_INTRO_MAX_WIDTH)
+	var left: float = (viewport_size.x - width) * 0.5
+	var top: float = maxf(LEVEL_INTRO_MIN_TOP, viewport_size.y * LEVEL_INTRO_TOP_RATIO) + y_offset
+	return Rect2(left, top, width, LEVEL_INTRO_HEIGHT)
+
+
+func _apply_level_intro_content_rect(rect: Rect2) -> void:
+	if _level_intro_content == null:
+		return
+	_level_intro_content.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	_level_intro_content.offset_left = rect.position.x
+	_level_intro_content.offset_top = rect.position.y
+	_level_intro_content.offset_right = rect.end.x
+	_level_intro_content.offset_bottom = rect.end.y
 
 
 func _core_title_from_text(core_text: String) -> String:
