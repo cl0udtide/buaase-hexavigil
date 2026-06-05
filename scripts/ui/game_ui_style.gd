@@ -343,33 +343,76 @@ static func cost_badge() -> StyleBox:
 
 
 static func relic_strip() -> StyleBox:
-	return frame_box(UiFrameSpec.RELIC_STRIP, BG_GLASS, STROKE_SOFT, false)
+	return frame_box(UiFrameSpec.RELIC_STRIP, Color(0.036, 0.050, 0.058, 0.86), STROKE_SOFT, false)
 
 
 static func relic_icon(rarity: int = 1, highlighted: bool = false) -> StyleBox:
-	var border := relic_rarity_color(rarity)
-	if highlighted:
-		border = AMBER
-	var component := UiFrameSpec.RELIC_ICON_COMMON
-	if rarity == 3:
-		component = UiFrameSpec.RELIC_ICON_RARE
-	elif rarity == 2:
-		component = UiFrameSpec.RELIC_ICON_UNCOMMON
-	return frame_box(component, BG_CARD_HOVER if highlighted else BG_CARD, border, false)
+	var border := AMBER if highlighted else relic_rarity_color(rarity)
+	var fill := Color(0.036, 0.050, 0.058, 0.90 if highlighted else 0.78)
+	return frame_box(UiFrameSpec.RELIC_ICON, fill, border, false)
+
+
+static func relic_icon_highlight_overlay() -> StyleBox:
+	return frame_box(UiFrameSpec.RELIC_ICON, Color(0.950, 0.650, 0.220, 0.18), AMBER, false)
+
+
+static func relic_icon_backplate() -> StyleBox:
+	return frame_box(UiFrameSpec.RELIC_ICON_BACKPLATE, Color(0.026, 0.040, 0.046, 0.82), STROKE_SOFT)
+
+
+static func relic_rarity_overlay(rarity: int = 1, selected: bool = false, compact := false) -> StyleBox:
+	var rarity_color := relic_rarity_color(rarity)
+	var alpha := 0.11
+	if rarity == 2:
+		alpha = 0.14
+	elif rarity >= 3:
+		alpha = 0.17
+	if selected:
+		alpha += 0.05
+	if compact:
+		alpha = maxf(alpha - 0.03, 0.08)
+		return flat_box(Color(rarity_color.r, rarity_color.g, rarity_color.b, alpha), Color.TRANSPARENT, 0.0, 4.0)
+	return frame_box(_relic_rarity_component(rarity), Color(rarity_color.r, rarity_color.g, rarity_color.b, alpha), Color.TRANSPARENT, false)
+
+
+static func relic_card_hover_overlay(selected: bool = false) -> StyleBox:
+	var alpha := 0.26 if selected else 0.14
+	var fill := Color(0.950, 0.650, 0.220, alpha)
+	if _frame_texture_is_landscape(UiFrameSpec.RELIC_CARD_HOVER):
+		return frame_box(UiFrameSpec.RELIC_CARD_HOVER, fill, AMBER, false)
+	return flat_box(fill, AMBER, 1.0, 5.0)
 
 
 static func relic_card(rarity: int = 1, selected: bool = false) -> StyleBox:
-	var border := AMBER if selected else relic_rarity_color(rarity)
-	var component := UiFrameSpec.RELIC_CARD_COMMON
-	if rarity == 3:
-		component = UiFrameSpec.RELIC_CARD_RARE
-	elif rarity == 2:
-		component = UiFrameSpec.RELIC_CARD_UNCOMMON
-	return frame_box(component, BG_CARD_HOVER if selected else BG_CARD, border, false)
+	var fill := Color(0.046, 0.060, 0.066, 0.86)
+	if selected:
+		fill = Color(0.064, 0.086, 0.092, 0.92)
+	var border := AMBER if selected else STROKE_SOFT
+	if _frame_texture_is_landscape(UiFrameSpec.RELIC_CARD):
+		return frame_box(UiFrameSpec.RELIC_CARD, fill, border, false)
+	return flat_box(fill, border, 1.0, 5.0)
 
 
 static func relic_panel() -> StyleBox:
-	return frame_box(UiFrameSpec.RELIC_PANEL, BG_GLASS, STROKE_SOFT, false)
+	return frame_box(UiFrameSpec.RELIC_PANEL, Color(0.034, 0.048, 0.056, 0.90), STROKE_SOFT, false)
+
+
+static func relic_detail_section() -> StyleBox:
+	return frame_box(UiFrameSpec.DETAIL_SECTION, Color(0.034, 0.048, 0.056, 0.82), STROKE_SOFT, false)
+
+
+static func relic_filter_tab(selected: bool = false, hovered: bool = false) -> StyleBox:
+	var component := UiFrameSpec.RELIC_FILTER_SELECTED if selected else UiFrameSpec.RELIC_FILTER_TAB
+	var fill := Color(0.048, 0.064, 0.070, 0.68)
+	var border := STROKE_SOFT
+	if selected:
+		fill = Color(0.090, 0.085, 0.060, 0.78)
+		border = AMBER
+	elif hovered:
+		fill = Color(0.062, 0.084, 0.092, 0.74)
+	if hovered and selected:
+		fill = Color(0.108, 0.098, 0.070, 0.84)
+	return frame_box(component, fill, border)
 
 
 static func settings_panel() -> StyleBox:
@@ -440,6 +483,21 @@ static func relic_rarity_color(rarity: int) -> Color:
 			return ACCENT
 		_:
 			return SUCCESS
+
+
+static func _relic_rarity_component(rarity: int) -> StringName:
+	match rarity:
+		3:
+			return UiFrameSpec.RELIC_CARD_RARE
+		2:
+			return UiFrameSpec.RELIC_CARD_UNCOMMON
+		_:
+			return UiFrameSpec.RELIC_CARD_COMMON
+
+
+static func _frame_texture_is_landscape(component: StringName) -> bool:
+	var texture := UiArtRegistry.get_frame_texture(component)
+	return texture == null or texture.get_width() >= texture.get_height()
 
 
 static func tab(selected: bool) -> StyleBox:

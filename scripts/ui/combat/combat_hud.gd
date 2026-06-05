@@ -149,6 +149,7 @@ var _message_warning_overlay: NinePatchRect
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_process_input(true)
 	set_process_unhandled_input(true)
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
@@ -181,6 +182,7 @@ func _ready() -> void:
 	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
 	_wave_preview_panel.z_index = 18
 	_deck_panel.z_index = 12
+	_deck_panel.visible = _deck_container.get_child_count() > 0
 	_legend_panel.z_index = 14
 	_detail_panel.z_index = 40
 	_drag_ghost_base.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
@@ -210,17 +212,32 @@ func _notification(what: int) -> void:
 		_refresh_core_fill()
 
 
+func _input(event: InputEvent) -> void:
+	_handle_overlay_shortcut(event)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	_handle_overlay_shortcut(event)
+
+
+func _handle_overlay_shortcut(event: InputEvent) -> void:
 	if not (event is InputEventKey):
 		return
 	var key_event := event as InputEventKey
 	if not key_event.pressed or key_event.echo:
+		return
+	if _is_text_input_focused():
 		return
 	if key_event.keycode == KEY_R:
 		toggle_relic_panel()
 		get_viewport().set_input_as_handled()
 	elif key_event.keycode == KEY_ESCAPE and close_top_panel():
 		get_viewport().set_input_as_handled()
+
+
+func _is_text_input_focused() -> bool:
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	return focus_owner is LineEdit or focus_owner is TextEdit
 
 
 func set_top_values(core_text: String, deploy_text: String, queue_text: String) -> void:
@@ -410,6 +427,7 @@ func set_operators(operators: Array[Dictionary]) -> void:
 	for child in _deck_container.get_children():
 		child.queue_free()
 	_cards_by_operator_key.clear()
+	_deck_panel.visible = not operators.is_empty()
 	_deck_container.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_deck_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_deck_container.custom_minimum_size = Vector2.ZERO
@@ -680,9 +698,11 @@ func _refresh_deploy_deck_scroll_content() -> void:
 	var separation := float(_deck_container.get_theme_constant("separation"))
 	if visible_card_count > 1:
 		card_width += separation * float(visible_card_count - 1)
+	if _deck_panel != null:
+		_deck_panel.visible = visible_card_count > 0
 	_deck_container.custom_minimum_size = Vector2(card_width, card_height)
 	_deck_container.size.x = card_width
-	_deck_container.size.y = maxf(_deck_container.size.y, card_height)
+	_deck_container.size.y = card_height
 
 
 func _style_top_cards() -> void:

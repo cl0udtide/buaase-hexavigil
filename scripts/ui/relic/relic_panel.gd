@@ -1,21 +1,12 @@
-extends Control
+﻿extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
-const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 const RELIC_CARD_SCENE := preload("res://scenes/ui/relic/RelicCard.tscn")
-const FILTERS := [
-	{"category": &"all", "label": "全部"},
-	{"category": &"unit", "label": "单位"},
-	{"category": &"building", "label": "建筑"},
-	{"category": &"economy", "label": "经济"},
-	{"category": &"core", "label": "核心"},
-	{"category": &"risk", "label": "风险"},
-]
 
 signal close_requested
 
@@ -23,7 +14,6 @@ var _relic_ids: Array[StringName] = []
 var _current_filter := &"all"
 var _selected_buff_id := StringName()
 
-@onready var _panel_base: Panel = %PanelBase
 @onready var _title_label: Label = %TitleLabel
 @onready var _count_label: Label = %CountLabel
 @onready var _close_button: Button = %CloseButton
@@ -41,10 +31,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	visible = false
-	_panel_base.add_theme_stylebox_override("panel", GameUiStyle.relic_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_PANEL)
 	_style_labels()
-	_detail_panel.add_theme_stylebox_override("panel", GameUiStyle.detail_section())
 	GameUiStyle.apply_scroll_style(_card_scroll)
 	_bind_filter_buttons()
 	_close_button.pressed.connect(func() -> void: close_requested.emit())
@@ -86,7 +73,7 @@ func select_relic(buff_id: StringName) -> void:
 
 
 func _refresh() -> void:
-	_count_label.text = "%d 件" % _relic_ids.size()
+	_count_label.text = "%d 浠? % _relic_ids.size()
 	_refresh_filter_buttons()
 	_refresh_cards()
 	_refresh_detail()
@@ -109,7 +96,8 @@ func _refresh_cards() -> void:
 		card.configure(buff_id, cfg, {
 			"selectable": true,
 			"selected": buff_id == _selected_buff_id,
-			"compact": true
+			"compact": true,
+			"show_effect": false
 		})
 		card.set_meta("audio_cue", &"ui_card_select")
 		card.pressed.connect(_on_card_pressed)
@@ -125,14 +113,14 @@ func _refresh_card_selection() -> void:
 
 func _refresh_detail() -> void:
 	if _selected_buff_id == StringName():
-		_detail_title_label.text = "暂无遗物"
-		_detail_meta_label.text = "当前还没有获得遗物"
-		_detail_effect_label.text = "通过祝福选择获得遗物后，这里会显示完整效果。"
+		_detail_title_label.text = "鏆傛棤閬楃墿"
+		_detail_meta_label.text = "褰撳墠杩樻病鏈夎幏寰楅仐鐗?
+		_detail_effect_label.text = "閫氳繃绁濈閫夋嫨鑾峰緱閬楃墿鍚庯紝杩欓噷浼氭樉绀哄畬鏁存晥鏋溿€?
 		return
 	var data_repo = AppRefs.data_repo()
 	var cfg: Dictionary = data_repo.get_buff_cfg(_selected_buff_id) if data_repo != null else {}
 	_detail_title_label.text = UiDisplayText.config_name(cfg, _selected_buff_id)
-	_detail_meta_label.text = "%s · %s" % [
+	_detail_meta_label.text = "%s 路 %s" % [
 		UiDisplayText.relic_rarity_label(int(cfg.get("rarity", 1))),
 		UiDisplayText.relic_tag_text(cfg)
 	]
@@ -145,17 +133,12 @@ func _on_card_pressed(buff_id: StringName) -> void:
 
 
 func _bind_filter_buttons() -> void:
-	for child in _filter_bar.get_children():
-		child.free()
-	for filter_def in FILTERS:
-		var button := Button.new()
-		button.text = String(filter_def.get("label", ""))
+	for button in _filter_buttons():
 		button.focus_mode = Control.FOCUS_NONE
-		button.set_custom_minimum_size(Vector2(72.0, 32.0))
-		button.set_meta("category", filter_def.get("category", &"all"))
-		button.set_meta("audio_cue", &"ui_tab_switch")
-		_filter_bar.add_child(button)
-		var category := StringName(filter_def.get("category", &"all"))
+		button.set_custom_minimum_size(Vector2(86.0, 32.0))
+		if not button.has_meta("audio_cue"):
+			button.set_meta("audio_cue", &"ui_tab_switch")
+		var category := StringName(button.get_meta("category", &"all"))
 		button.pressed.connect(_on_filter_pressed.bind(category))
 		_style_filter_button(button, category == _current_filter)
 
@@ -166,10 +149,17 @@ func _on_filter_pressed(category: StringName) -> void:
 
 
 func _refresh_filter_buttons() -> void:
-	for button in _filter_bar.get_children():
-		if button is Button:
-			var category := StringName((button as Button).get_meta("category", &"all"))
-			_style_filter_button(button as Button, category == _current_filter)
+	for button in _filter_buttons():
+		var category := StringName(button.get_meta("category", &"all"))
+		_style_filter_button(button, category == _current_filter)
+
+
+func _filter_buttons() -> Array[Button]:
+	var buttons: Array[Button] = []
+	for child in _filter_bar.get_children():
+		if child is Button:
+			buttons.append(child as Button)
+	return buttons
 
 
 func _style_labels() -> void:
@@ -179,7 +169,10 @@ func _style_labels() -> void:
 		label.add_theme_constant_override("shadow_offset_x", 0)
 		label.add_theme_constant_override("shadow_offset_y", 0)
 	_title_label.add_theme_font_size_override("font_size", 22)
-	_detail_title_label.add_theme_font_size_override("font_size", 18)
+	_detail_title_label.add_theme_font_size_override("font_size", 15)
+	_detail_meta_label.add_theme_font_size_override("font_size", 12)
+	_detail_effect_label.add_theme_font_size_override("font_size", 12)
+	_detail_effect_label.add_theme_constant_override("line_spacing", 0)
 	_count_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_empty_label.add_theme_color_override("font_color", GameUiStyle.TEXT_MUTED)
 	_detail_effect_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
@@ -188,13 +181,13 @@ func _style_labels() -> void:
 
 func _style_filter_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
-	var normal_component := UiFrameSpec.RELIC_FILTER_SELECTED if selected else UiFrameSpec.RELIC_FILTER_TAB
 	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(StringName("filter_%s" % String(button.get_meta("category", &"all")))), &"left", 7.0)
-	button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(normal_component, GameUiStyle.BG_CARD, GameUiStyle.AMBER if selected else GameUiStyle.STROKE_SOFT))
-	button.add_theme_stylebox_override("hover", GameUiStyle.frame_box(UiFrameSpec.RELIC_FILTER_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
-	button.add_theme_stylebox_override("pressed", GameUiStyle.frame_box(UiFrameSpec.RELIC_FILTER_SELECTED, GameUiStyle.BG_CARD, GameUiStyle.AMBER))
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if selected else GameUiStyle.TEXT_DIM)
-	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_stylebox_override("normal", GameUiStyle.relic_filter_tab(selected, false))
+	button.add_theme_stylebox_override("hover", GameUiStyle.relic_filter_tab(selected, true))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.relic_filter_tab(true, true))
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT if selected else GameUiStyle.TEXT_DIM)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT)
+	button.add_theme_font_size_override("font_size", 12)
 
 
 func _style_close_button() -> void:
