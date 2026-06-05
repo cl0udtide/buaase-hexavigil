@@ -9,6 +9,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 @onready var _building_manager: Node = get_node_or_null("../BuildingManager")
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _unit_manager: Node = get_node_or_null("../UnitManager")
+@onready var _wave_manager: Node = get_node_or_null("../WaveManager")
 
 
 func _ready() -> void:
@@ -43,6 +44,7 @@ func enter_day(day: int) -> void:
 		return
 	run_state.set_day(day)
 	run_state.set_phase(GameEnums.PHASE_DAY)
+	_resolve_night_template_for_day(run_state, day)
 	run_state.reset_action_points(run_state.DEFAULT_ACTION_POINTS)
 	if _day_manager != null and _day_manager.has_method("start_day"):
 		_day_manager.start_day(day)
@@ -95,6 +97,17 @@ func end_run(win: bool) -> void:
 func get_current_phase() -> int:
 	var run_state = AppRefs.run_state()
 	return run_state.phase if run_state != null else GameEnums.PHASE_MENU
+
+
+func _resolve_night_template_for_day(run_state: Node, day: int) -> void:
+	if _wave_manager == null or not _wave_manager.has_method("resolve_night_template"):
+		run_state.night_template_id = StringName()
+		return
+	var tier: StringName = _wave_manager.tier_for_day(day) if _wave_manager.has_method("tier_for_day") else StringName()
+	var template_id: StringName = _wave_manager.resolve_night_template(tier, int(run_state.random_seed), day, run_state.used_template_ids)
+	run_state.night_template_id = template_id
+	if template_id != StringName() and not run_state.used_template_ids.has(template_id):
+		run_state.used_template_ids.append(template_id)
 
 
 func _bootstrap_run_if_needed() -> void:

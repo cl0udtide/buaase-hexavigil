@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 
 var _elapsed := 0.0
@@ -49,6 +50,43 @@ func start_wave_for_day(day: int) -> void:
 	_running = true
 
 
+func tier_for_day(day: int) -> StringName:
+	return NightTemplateResolver.tier_for_day(day)
+
+
+func resolve_night_template(tier: StringName, run_seed: int, day: int, used_ids: Array) -> StringName:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_wave_template_ids_by_tier"):
+		return StringName()
+	var pool: Array[StringName] = data_repo.get_wave_template_ids_by_tier(tier)
+	return NightTemplateResolver.resolve(pool, used_ids, run_seed, day)
+
+
+func start_wave_for_template(template_id: StringName) -> void:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or template_id == StringName():
+		_pending_spawns.clear()
+		_running = false
+		return
+	var cfg: Dictionary = data_repo.get_wave_template_cfg(template_id) if data_repo.has_method("get_wave_template_cfg") else {}
+	if cfg.is_empty():
+		_pending_spawns.clear()
+		_running = false
+		return
+	_pending_spawns.clear()
+	var raw_entries: Array = cfg.get("entries", [])
+	var seed_day := _seed_day_for(template_id)
+	for entry_index in range(raw_entries.size()):
+		var entry_variant: Variant = raw_entries[entry_index]
+		if typeof(entry_variant) == TYPE_DICTIONARY:
+			var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
+			if StringName(entry.get("enemy_id", "")) != StringName():
+				_pending_spawns.append_array(_make_expanded_spawn_entries(entry))
+	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
+	_elapsed = 0.0
+	_running = true
+
+
 func stop_wave() -> void:
 	_pending_spawns.clear()
 	_running = false
@@ -66,10 +104,29 @@ func get_wave_preview_for_day(day: int) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
 		return {}
+	var run_state = AppRefs.run_state()
+	if run_state != null and StringName(run_state.night_template_id) != StringName() and data_repo.has_method("get_wave_template_cfg"):
+		return get_wave_preview_for_template(run_state.night_template_id)
 	var cfg: Dictionary = _get_wave_cfg_with_fallback(data_repo, day)
 	if cfg.is_empty():
 		return {}
+	return _build_wave_preview(cfg, day, StringName())
 
+
+func get_wave_preview_for_template(template_id: StringName) -> Dictionary:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or template_id == StringName():
+		return {}
+	var cfg: Dictionary = data_repo.get_wave_template_cfg(template_id) if data_repo.has_method("get_wave_template_cfg") else {}
+	if cfg.is_empty():
+		return {}
+	return _build_wave_preview(cfg, _seed_day_for(template_id), template_id)
+
+
+func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName = StringName()) -> Dictionary:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return {}
 	var entries_by_key: Dictionary = {}
 	var spawn_order: Array[StringName] = []
 	var total_count := 0
@@ -78,7 +135,7 @@ func get_wave_preview_for_day(day: int) -> Dictionary:
 		var entry_variant: Variant = raw_entries[entry_index]
 		if typeof(entry_variant) != TYPE_DICTIONARY:
 			continue
-		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, day, entry_index)
+		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
 		var enemy_id := StringName(entry.get("enemy_id", ""))
 		var spawn_key := StringName(entry.get("spawn_key", ""))
 		if enemy_id == StringName() or spawn_key == StringName():
@@ -120,13 +177,21 @@ func get_wave_preview_for_day(day: int) -> Dictionary:
 			return float(a.get("first_time", 0.0)) < float(b.get("first_time", 0.0))
 		return spawn_a < spawn_b
 	)
-	return {
-		"day": int(cfg.get("day", day)),
-		"requested_day": day,
+	var run_state = AppRefs.run_state()
+	var day_value: int = int(run_state.day) if run_state != null else int(cfg.get("day", seed_day))
+	var preview := {
+		"day": day_value,
+		"seed_day": seed_day,
+		"template_id": template_id,
+		"name": String(cfg.get("name", template_id)),
+		"desc": String(cfg.get("desc", "")),
+		"tier": StringName(cfg.get("tier", "")),
+		"key_enemies": _normalize_key_enemies(cfg.get("key_enemies", []), entries),
 		"entries": entries,
 		"spawn_order": spawn_order,
 		"total_count": total_count
 	}
+	return preview
 
 
 func _on_enemy_died(_enemy_runtime_id: int, _enemy_id: StringName) -> void:
@@ -201,6 +266,59 @@ func _make_enemy_choice_seed(day: int, entry_index: int) -> int:
 	var run_seed := int(run_state.random_seed) if run_state != null else 0
 	var seed_text := "%d|%d|%d" % [run_seed, day, entry_index]
 	return abs(seed_text.hash())
+
+
+func _seed_day_for(template_id: StringName) -> int:
+	return abs(String(template_id).hash())
+
+
+func _normalize_key_enemies(raw_key_enemies: Variant, entries: Array[Dictionary]) -> Array[StringName]:
+	var result: Array[StringName] = []
+	if typeof(raw_key_enemies) == TYPE_ARRAY:
+		for raw_enemy: Variant in raw_key_enemies:
+			var enemy_id := StringName(raw_enemy)
+			if enemy_id != StringName() and not result.has(enemy_id):
+				result.append(enemy_id)
+	if not result.is_empty():
+		return result
+	var scored: Array[Dictionary] = []
+	for entry: Dictionary in entries:
+		var enemy_cfg: Dictionary = entry.get("enemy_cfg", {})
+		var enemy_id := StringName(entry.get("enemy_id", ""))
+		if enemy_id == StringName():
+			continue
+		scored.append({
+			"enemy_id": enemy_id,
+			"score": _key_enemy_score(entry, enemy_cfg)
+		})
+	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("score", 0.0)) > float(b.get("score", 0.0))
+	)
+	for item: Dictionary in scored:
+		var enemy_id := StringName(item.get("enemy_id", ""))
+		if enemy_id != StringName() and not result.has(enemy_id):
+			result.append(enemy_id)
+		if result.size() >= 2:
+			break
+	return result
+
+
+func _key_enemy_score(entry: Dictionary, enemy_cfg: Dictionary) -> float:
+	var score := float(entry.get("count", 0))
+	var enemy_id := StringName(entry.get("enemy_id", ""))
+	var behavior_type := StringName(enemy_cfg.get("behavior_type", "normal"))
+	var move_type := StringName(enemy_cfg.get("move_type", "ground"))
+	if enemy_id == &"milk_dragon_chief" or enemy_id == &"patriot":
+		score += 1000.0
+	if behavior_type == &"demolisher":
+		score += 120.0
+	if int(enemy_cfg.get("core_damage", 1)) >= 2:
+		score += 60.0
+	if float(enemy_cfg.get("attack_range", 0.0)) > 1.0:
+		score += 45.0
+	if move_type == &"flying":
+		score += 35.0
+	return score
 
 
 func _get_wave_cfg_with_fallback(data_repo: Node, day: int) -> Dictionary:

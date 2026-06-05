@@ -10,7 +10,8 @@ const DATA_FILES := {
 	"buildings": "res://data/buildings.json",
 	"buffs": "res://data/buffs.json",
 	"events": "res://data/events.json",
-	"waves": "res://data/waves.json"
+	"waves": "res://data/waves.json",
+	"wave_templates": "res://data/wave_templates.json"
 }
 
 const CONFIG_FILES := {
@@ -34,7 +35,8 @@ var _tables: Dictionary = {
 	"buildings": {},
 	"buffs": {},
 	"events": {},
-	"waves": {}
+	"waves": {},
+	"wave_templates": {}
 }
 
 var _configs: Dictionary = {
@@ -90,6 +92,28 @@ func get_event_cfg(event_id: StringName) -> Dictionary:
 
 func get_wave_cfg(day: int) -> Dictionary:
 	return _tables["waves"].get(day, {}).duplicate(true)
+
+
+func get_wave_template_cfg(template_id: StringName) -> Dictionary:
+	return _tables["wave_templates"].get(template_id, {}).duplicate(true)
+
+
+func get_wave_template_ids_by_tier(tier: StringName) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for template_id in _tables["wave_templates"].keys():
+		var cfg: Dictionary = _tables["wave_templates"].get(template_id, {})
+		if StringName(cfg.get("tier", "")) == tier:
+			ids.append(StringName(template_id))
+	ids.sort()
+	return ids
+
+
+func get_all_wave_template_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for template_id in _tables["wave_templates"].keys():
+		ids.append(StringName(template_id))
+	ids.sort()
+	return ids
 
 
 func get_map_generation_cfg() -> Dictionary:

@@ -270,9 +270,10 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 	_force_wave_preview_refresh()
 
 
-func _on_day_started(_day: int) -> void:
+func _on_day_started(day: int) -> void:
 	_refresh_top_hud()
 	_force_wave_preview_refresh()
+	_play_level_intro(day)
 
 
 func _on_night_started(_day: int) -> void:
@@ -970,7 +971,12 @@ func _refresh_wave_preview() -> void:
 		_set_wave_preview_text("今晚敌情\n地图或波次数据加载中...", true)
 		return
 
-	var preview: Dictionary = _wave_manager.get_wave_preview_for_day(int(run_state.day)) if _wave_manager.has_method("get_wave_preview_for_day") else {}
+	var template_id := StringName(run_state.night_template_id) if run_state != null else StringName()
+	var preview: Dictionary = {}
+	if template_id != StringName() and _wave_manager.has_method("get_wave_preview_for_template"):
+		preview = _wave_manager.get_wave_preview_for_template(template_id)
+	elif _wave_manager.has_method("get_wave_preview_for_day"):
+		preview = _wave_manager.get_wave_preview_for_day(int(run_state.day))
 	if preview.is_empty():
 		_last_wave_preview_signature = ""
 		_set_wave_preview_text("今晚敌情\n暂无波次配置", true)
@@ -987,7 +993,7 @@ func _refresh_wave_preview() -> void:
 		_set_wave_routes(routes)
 	else:
 		_apply_wave_route_visibility()
-	_set_wave_preview_text(_format_wave_preview_text(preview, _latest_wave_routes, hover_cell), true)
+	_set_wave_preview_data(preview, _latest_wave_routes, hover_cell, true)
 
 
 func _force_wave_preview_refresh() -> void:
@@ -1037,6 +1043,37 @@ func _set_wave_preview_text(text_value: String, show_panel: bool) -> void:
 	_wave_preview_active = show_panel and not text_value.strip_edges().is_empty()
 	if _combat_hud != null and _combat_hud.has_method("set_wave_preview_text"):
 		_combat_hud.set_wave_preview_text(text_value, show_panel)
+
+
+func _set_wave_preview_data(preview: Dictionary, routes: Array[Dictionary], hover_cell: Vector2i, show_panel: bool) -> void:
+	_latest_wave_preview_text = ""
+	_wave_preview_active = show_panel and not preview.is_empty()
+	if _combat_hud == null:
+		return
+	if _combat_hud.has_method("set_wave_preview_data"):
+		var data := preview.duplicate(true)
+		data["routes"] = routes
+		data["hover_cell"] = hover_cell
+		_combat_hud.set_wave_preview_data(data, show_panel)
+	else:
+		_set_wave_preview_text(_format_wave_preview_text(preview, routes, hover_cell), show_panel)
+
+
+func _play_level_intro(day: int) -> void:
+	if _combat_hud == null or not _combat_hud.has_method("play_level_intro"):
+		return
+	if _wave_manager == null or not _wave_manager.has_method("get_wave_preview_for_template"):
+		return
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return
+	var template_id := StringName(run_state.night_template_id)
+	if template_id == StringName():
+		return
+	var preview: Dictionary = _wave_manager.get_wave_preview_for_template(template_id)
+	if preview.is_empty():
+		return
+	_combat_hud.play_level_intro(day, String(preview.get("name", "今夜")), String(preview.get("desc", "")))
 
 
 func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictionary) -> Array[Dictionary]:

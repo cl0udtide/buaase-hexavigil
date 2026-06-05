@@ -3,6 +3,7 @@ extends Control
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
+const EnemyIconHelper = preload("res://scripts/ui/combat/enemy_icon_helper.gd")
 
 signal operator_card_pressed(operator_key: StringName)
 signal operator_card_drag_started(operator_key: StringName)
@@ -18,6 +19,7 @@ signal wave_route_preview_toggled(enabled: bool)
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone", &"mana"]
 const CORE_HP_TITLE := "核心生命"
+const WAVE_PREVIEW_MIN_HEIGHT := 260.0
 
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
@@ -105,6 +107,18 @@ var _core_hp_current := 0
 var _core_hp_max := 0
 var _message_warning_overlay: NinePatchRect
 var _bullet_time_feedback_tween: Tween
+var _level_intro_tween: Tween
+var _wave_level_name_label: Label
+var _wave_desc_label: Label
+var _wave_summary_label: Label
+var _wave_spawn_cards_box: VBoxContainer
+var _wave_warning_label: Label
+var _level_intro_banner: Control
+var _level_intro_content: VBoxContainer
+var _level_intro_day_label: Label
+var _level_intro_name_label: Label
+var _level_intro_desc_label: Label
+var _level_intro_line: ColorRect
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
@@ -137,8 +151,10 @@ var _covenant_row: HBoxContainer = null
 @onready var _relic_strip: Control = %RelicStrip
 @onready var _relic_panel: Control = %RelicPanel
 @onready var _wave_preview_panel: Control = %WavePreviewPanel
+@onready var _wave_preview_content: VBoxContainer = _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent") as VBoxContainer
 @onready var _wave_preview_title_label: Label = %WavePreviewTitleLabel
 @onready var _wave_route_toggle: Button = %WaveRouteToggle
+@onready var _wave_preview_scroll: ScrollContainer = %WavePreviewScroll
 @onready var _wave_preview_label: Label = %WavePreviewLabel
 @onready var _deck_panel: Control = %DeployDeck
 @onready var _deck_scroll: ScrollContainer = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
@@ -179,6 +195,8 @@ func _ready() -> void:
 	_wave_preview_label.add_theme_constant_override("shadow_offset_y", 0)
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_style_wave_route_toggle()
+	_ensure_wave_preview_v2_nodes()
+	_ensure_level_intro_banner()
 	_setup_deploy_deck_scroll()
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -452,8 +470,65 @@ func close_top_panel() -> bool:
 
 
 func set_wave_preview_text(text_value: String, show_panel: bool = true) -> void:
+	_set_wave_preview_v2_visible(false)
 	_wave_preview_label.text = text_value
+	_wave_preview_label.visible = true
 	_wave_preview_panel.visible = show_panel and not text_value.strip_edges().is_empty()
+
+
+func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
+	_ensure_wave_preview_v2_nodes()
+	var has_content := show_panel and not data.is_empty()
+	_wave_preview_panel.visible = has_content
+	_set_wave_preview_v2_visible(has_content)
+	_wave_preview_label.visible = false
+	if not has_content:
+		return
+
+	var day := int(data.get("day", 0))
+	var name := String(data.get("name", data.get("template_id", "今夜")))
+	var desc := String(data.get("desc", "")).strip_edges()
+	var total_count := int(data.get("total_count", 0))
+	var spawn_order: Array = data.get("spawn_order", [])
+	var entries: Array = data.get("entries", [])
+	var active_spawn_count := spawn_order.size()
+	_wave_preview_title_label.text = "DAY %d · 今夜" % day if day > 0 else "今夜"
+	_wave_level_name_label.text = name
+	_wave_desc_label.text = desc
+	_wave_desc_label.visible = not desc.is_empty()
+	_wave_summary_label.text = "合计来袭 %d · 活跃出怪口 %d" % [total_count, active_spawn_count]
+	_rebuild_wave_spawn_cards(spawn_order, entries, data.get("key_enemies", []))
+	_wave_warning_label.text = _format_wave_warning_text(data)
+	_wave_warning_label.visible = not _wave_warning_label.text.strip_edges().is_empty()
+
+
+func play_level_intro(day: int, name: String, desc: String) -> void:
+	_ensure_level_intro_banner()
+	if _level_intro_banner == null:
+		return
+	if _level_intro_tween != null:
+		_level_intro_tween.kill()
+	_level_intro_day_label.text = "DAY %d · 今夜" % day
+	_level_intro_name_label.text = name
+	_level_intro_desc_label.text = desc
+	_level_intro_desc_label.visible = not desc.strip_edges().is_empty()
+	_level_intro_banner.visible = true
+	_level_intro_banner.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	_level_intro_content.position.y = 18.0
+	_level_intro_line.scale.x = 0.0
+	_level_intro_tween = create_tween()
+	_level_intro_tween.set_parallel(true)
+	_level_intro_tween.tween_property(_level_intro_banner, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.22)
+	_level_intro_tween.tween_property(_level_intro_content, "position:y", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_level_intro_tween.tween_property(_level_intro_line, "scale:x", 1.0, 0.34).set_delay(0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_level_intro_tween.set_parallel(false)
+	var hold_time := 1.45 + minf(float(desc.length()) * 0.006, 0.65)
+	_level_intro_tween.tween_interval(hold_time)
+	_level_intro_tween.tween_property(_level_intro_banner, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.32)
+	_level_intro_tween.tween_callback(func() -> void:
+		if _level_intro_banner != null:
+			_level_intro_banner.visible = false
+	)
 
 
 func set_wave_route_preview_enabled(enabled: bool) -> void:
@@ -592,6 +667,221 @@ func _style_wave_route_toggle() -> void:
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
+
+
+func _ensure_wave_preview_v2_nodes() -> void:
+	if _wave_preview_content == null or _wave_level_name_label != null:
+		return
+	_wave_preview_panel.custom_minimum_size = Vector2(_wave_preview_panel.custom_minimum_size.x, WAVE_PREVIEW_MIN_HEIGHT)
+	_wave_level_name_label = _make_wave_label("WaveLevelNameLabel", 22, GameUiStyle.TEXT_INVERTED, true)
+	_wave_level_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_wave_preview_content.add_child(_wave_level_name_label)
+	_wave_preview_content.move_child(_wave_level_name_label, 1)
+
+	_wave_desc_label = _make_wave_label("WaveLevelDescLabel", 13, GameUiStyle.TEXT_INVERTED_DIM, true)
+	_wave_desc_label.custom_minimum_size = Vector2(0, 44)
+	_wave_preview_content.add_child(_wave_desc_label)
+	_wave_preview_content.move_child(_wave_desc_label, 2)
+
+	_wave_summary_label = _make_wave_label("WaveSummaryLabel", 13, GameUiStyle.AMBER, false)
+	_wave_preview_content.add_child(_wave_summary_label)
+	_wave_preview_content.move_child(_wave_summary_label, 3)
+
+	_wave_spawn_cards_box = VBoxContainer.new()
+	_wave_spawn_cards_box.name = "WaveSpawnCardsBox"
+	_wave_spawn_cards_box.add_theme_constant_override("separation", 6)
+	_wave_spawn_cards_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_wave_spawn_cards_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_wave_preview_scroll.add_child(_wave_spawn_cards_box)
+	_wave_preview_scroll.custom_minimum_size = Vector2(0, 96)
+	_wave_preview_label.visible = false
+
+	_wave_warning_label = _make_wave_label("WaveWarningLabel", 12, GameUiStyle.AMBER, true)
+	_wave_warning_label.visible = false
+	_wave_preview_content.add_child(_wave_warning_label)
+
+
+func _set_wave_preview_v2_visible(visible: bool) -> void:
+	if _wave_level_name_label != null:
+		_wave_level_name_label.visible = visible
+	if _wave_desc_label != null:
+		_wave_desc_label.visible = visible and not _wave_desc_label.text.strip_edges().is_empty()
+	if _wave_summary_label != null:
+		_wave_summary_label.visible = visible
+	if _wave_spawn_cards_box != null:
+		_wave_spawn_cards_box.visible = visible
+	if _wave_warning_label != null:
+		_wave_warning_label.visible = visible and not _wave_warning_label.text.strip_edges().is_empty()
+
+
+func _make_wave_label(node_name: String, font_size: int, color: Color, autowrap: bool) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	label.add_theme_constant_override("shadow_offset_x", 0)
+	label.add_theme_constant_override("shadow_offset_y", 0)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if autowrap else TextServer.AUTOWRAP_OFF
+	label.clip_text = false
+	return label
+
+
+func _rebuild_wave_spawn_cards(spawn_order: Array, entries: Array, raw_key_enemies: Variant) -> void:
+	if _wave_spawn_cards_box == null:
+		return
+	for child in _wave_spawn_cards_box.get_children():
+		child.queue_free()
+	var entries_by_spawn: Dictionary = {}
+	for raw_spawn: Variant in spawn_order:
+		entries_by_spawn[String(raw_spawn)] = []
+	for entry_variant: Variant in entries:
+		if typeof(entry_variant) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_variant
+		var spawn_key := String(entry.get("spawn_key", ""))
+		if spawn_key.is_empty():
+			continue
+		if not entries_by_spawn.has(spawn_key):
+			entries_by_spawn[spawn_key] = []
+		(entries_by_spawn[spawn_key] as Array).append(entry)
+	var key_enemies := _key_enemy_lookup(raw_key_enemies)
+	for raw_spawn: Variant in spawn_order:
+		var spawn_key := String(raw_spawn)
+		var spawn_entries: Array = entries_by_spawn.get(spawn_key, [])
+		_wave_spawn_cards_box.add_child(_build_wave_spawn_card(spawn_key, spawn_entries, key_enemies))
+
+
+func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dictionary) -> Control:
+	var card := PanelContainer.new()
+	card.name = "WaveSpawn%sCard" % spawn_key
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_theme_stylebox_override("panel", GameUiStyle.flat_box(GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	card.add_child(row)
+
+	var key_label := Label.new()
+	key_label.custom_minimum_size = Vector2(38, 30)
+	key_label.text = spawn_key
+	key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	key_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	key_label.add_theme_font_size_override("font_size", 15)
+	key_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	row.add_child(key_label)
+
+	var chips := HFlowContainer.new()
+	chips.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chips.add_theme_constant_override("h_separation", 6)
+	chips.add_theme_constant_override("v_separation", 4)
+	row.add_child(chips)
+	for entry_variant: Variant in entries:
+		if typeof(entry_variant) == TYPE_DICTIONARY:
+			var entry: Dictionary = entry_variant
+			chips.add_child(_build_wave_enemy_chip(entry, key_enemies.has(StringName(entry.get("enemy_id", "")))))
+	return card
+
+
+func _build_wave_enemy_chip(entry: Dictionary, highlighted: bool) -> Control:
+	var chip := PanelContainer.new()
+	chip.add_theme_stylebox_override("panel", GameUiStyle.flat_box(
+		GameUiStyle.AMBER_SOFT if highlighted else GameUiStyle.BG_DARK,
+		GameUiStyle.AMBER if highlighted else GameUiStyle.STROKE_SOFT,
+		1.0,
+		5.0
+	))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 5)
+	chip.add_child(row)
+
+	var texture_rect := TextureRect.new()
+	texture_rect.custom_minimum_size = Vector2(24, 24)
+	texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	texture_rect.texture = EnemyIconHelper.texture_for_cfg(entry.get("enemy_cfg", {}))
+	texture_rect.visible = texture_rect.texture != null
+	row.add_child(texture_rect)
+
+	var label := Label.new()
+	label.text = "%s ×%d" % [String(entry.get("enemy_name", entry.get("enemy_id", ""))), int(entry.get("count", 0))]
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if not highlighted else GameUiStyle.AMBER)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(label)
+	return chip
+
+
+func _key_enemy_lookup(raw_key_enemies: Variant) -> Dictionary:
+	var lookup: Dictionary = {}
+	if typeof(raw_key_enemies) != TYPE_ARRAY:
+		return lookup
+	for raw_enemy: Variant in raw_key_enemies:
+		lookup[StringName(raw_enemy)] = true
+	return lookup
+
+
+func _format_wave_warning_text(data: Dictionary) -> String:
+	var routes: Array = data.get("routes", [])
+	var warnings := PackedStringArray()
+	for route_variant: Variant in routes:
+		if typeof(route_variant) != TYPE_DICTIONARY:
+			continue
+		var route: Dictionary = route_variant
+		var status := StringName(route.get("status", &"ok"))
+		if status != &"no_path" and status != &"core_enclosed":
+			continue
+		var message := String(route.get("message", "路线异常"))
+		if not warnings.has(message):
+			warnings.append(message)
+	var hover_cell: Vector2i = data.get("hover_cell", Vector2i(-9999, -9999))
+	if hover_cell != Vector2i(-9999, -9999):
+		warnings.append("预览阻挡：%s" % str(hover_cell))
+	return "；".join(warnings)
+
+
+func _ensure_level_intro_banner() -> void:
+	if _level_intro_banner != null:
+		return
+	_level_intro_banner = Control.new()
+	_level_intro_banner.name = "LevelIntroBanner"
+	_level_intro_banner.visible = false
+	_level_intro_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_level_intro_banner.z_index = 80
+	_level_intro_banner.anchor_right = 1.0
+	_level_intro_banner.anchor_bottom = 1.0
+	add_child(_level_intro_banner)
+
+	_level_intro_content = VBoxContainer.new()
+	_level_intro_content.name = "LevelIntroContent"
+	_level_intro_content.anchor_left = 0.22
+	_level_intro_content.anchor_top = 0.14
+	_level_intro_content.anchor_right = 0.78
+	_level_intro_content.anchor_bottom = 0.34
+	_level_intro_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_level_intro_content.add_theme_constant_override("separation", 8)
+	_level_intro_banner.add_child(_level_intro_content)
+
+	_level_intro_day_label = _make_wave_label("LevelIntroDayLabel", 16, GameUiStyle.AMBER, false)
+	_level_intro_day_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_level_intro_content.add_child(_level_intro_day_label)
+
+	_level_intro_name_label = _make_wave_label("LevelIntroNameLabel", 38, GameUiStyle.TEXT_INVERTED, true)
+	_level_intro_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_level_intro_content.add_child(_level_intro_name_label)
+
+	var line_wrap := CenterContainer.new()
+	line_wrap.custom_minimum_size = Vector2(0, 5)
+	_level_intro_content.add_child(line_wrap)
+	_level_intro_line = ColorRect.new()
+	_level_intro_line.custom_minimum_size = Vector2(460, 3)
+	_level_intro_line.color = GameUiStyle.AMBER
+	line_wrap.add_child(_level_intro_line)
+
+	_level_intro_desc_label = _make_wave_label("LevelIntroDescLabel", 16, GameUiStyle.TEXT_INVERTED_DIM, true)
+	_level_intro_desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_level_intro_content.add_child(_level_intro_desc_label)
 
 
 func _collect_resource_items() -> void:
