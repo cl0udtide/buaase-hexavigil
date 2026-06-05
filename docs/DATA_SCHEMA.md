@@ -11,7 +11,7 @@ data/
 ├─ buildings.json
 ├─ buffs.json
 ├─ events.json
-├─ waves.json
+├─ wave_templates.json
 ├─ map_generation.json
 └─ ui_icons.json
 ```
@@ -28,8 +28,8 @@ data/
   遗物静态配置。旧接口仍沿用 buff 命名以兼容现有代码。
 - `events.json`
   随机事件静态配置。
-- `waves.json`
-  夜晚波次配置。
+- `wave_templates.json`
+  夜晚关卡模板池。运行时按天数阶段和本局随机种子解析出当晚模板。
 - `map_generation.json`
   地图生成与探索相关调参配置。
 - `ui_icons.json`
@@ -50,8 +50,7 @@ data/
 ### 2.2 `id`
 
 - 每条记录必须有唯一标识。
-- 单位、敌人、建筑、Buff、事件统一使用 `id`。
-- `waves.json` 以 `day` 作为主标识。
+- 单位、敌人、建筑、Buff、事件、夜晚关卡模板统一使用 `id`。
 
 ### 2.3 命名规则
 
@@ -396,35 +395,42 @@ Boss 多阶段规则：
 
 ---
 
-## 6. `waves.json`
+## 6. `wave_templates.json`
 
 作用：
 
-- 定义每天夜晚的刷怪计划。
+- 定义夜晚关卡模板池，包括关卡名称、预览文案、分层标签和刷怪计划。
+- 运行时由 `GameController` / `WaveManager` 根据当前天数、`RunState.random_seed` 和已使用模板解析出当晚模板；不要在该表中写入运行时状态。
+- 第 1-2 夜使用 `early` 池，第 3-4 夜使用 `mid` 池，第 5 夜使用 `late` 池，第 6 夜使用 `boss` 池。该规则由 `scripts/enemy/night_template_resolver.gd` 维护。
 
 记录示例：
 
 ```json
 [
   {
-    "day": 1,
+    "id": "slug_tide",
+    "name": "虫潮涌流",
+    "desc": "占位文案 01：正式关卡文案待定。用于检查预览面板和横幅的多行显示；上线前需替换为正式文本。",
+    "tier": "early",
+    "key_enemies": ["hound"],
     "entries": [
-      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 2, "interval": 0.8 },
-      { "time": 6.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 8, "interval": 0.45 },
+      { "time": 3.0, "enemy_id": "hound", "spawn_key": "S2", "count": 8, "interval": 0.55 }
     ]
   },
   {
-    "day": 6,
+    "id": "fiends_carnival",
+    "name": "狂欢之主",
+    "desc": "占位文案 14：正式关卡文案待定。用于检查预览面板和横幅的多行显示；上线前需替换为正式文本。",
+    "tier": "boss",
+    "key_enemies": ["milk_dragon_chief"],
     "entries": [
       {
-        "time": 4.0,
+        "time": 8.0,
         "spawn_key": "S2",
         "count": 1,
         "interval": 0.0,
-        "enemy_choices": [
-          { "enemy_id": "milk_dragon_chief", "weight": 1.0 },
-          { "enemy_id": "patriot", "weight": 1.0 }
-        ]
+        "enemy_id": "milk_dragon_chief"
       }
     ]
   }
@@ -435,8 +441,12 @@ Boss 多阶段规则：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `day` | `int` | 第几天夜晚 |
-| `entries` | `Array` | 本夜晚的刷怪条目列表 |
+| `id` | `String` | 模板唯一标识，使用英文小写加下划线 |
+| `name` | `String` | 关卡标题，显示在右上角敌情面板和开局横幅中 |
+| `desc` | `String` | 关卡预览文案。当前可使用占位符检查 UI，正式发布前应替换为定稿文案 |
+| `tier` | `String` | 模板分层。当前允许 `early`、`mid`、`late`、`boss` |
+| `key_enemies` | `Array[String]` | 关键敌人 ID，用于预览面板优先展示威胁点 |
+| `entries` | `Array` | 本模板的刷怪条目列表 |
 
 `entries` 中每条记录基础字段：
 
@@ -452,7 +462,7 @@ Boss 多阶段规则：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、天数和条目序号确定选择，白天预览与夜晚实际刷怪保持一致 |
+| `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、模板 ID 和条目序号确定选择，白天预览与夜晚实际刷怪保持一致 |
 
 ---
 
@@ -702,10 +712,12 @@ Boss 多阶段规则：
 - `buildings.json[].scene_key` 引用建筑模板
 - `buildings.json[].icon_path` 引用建筑 UI 图标
 
-### 11.4 波次
+### 11.4 夜晚关卡模板
 
-- `waves.json[].entries[].enemy_id` 引用 `enemies.json[].id`
-- `waves.json[].entries[].spawn_key` 引用地图中的刷怪点逻辑名
+- `wave_templates.json[].key_enemies[]` 引用 `enemies.json[].id`
+- `wave_templates.json[].entries[].enemy_id` 引用 `enemies.json[].id`
+- `wave_templates.json[].entries[].enemy_choices[].enemy_id` 引用 `enemies.json[].id`
+- `wave_templates.json[].entries[].spawn_key` 引用地图中的刷怪点逻辑名
 
 ### 11.5 Buff 与事件
 

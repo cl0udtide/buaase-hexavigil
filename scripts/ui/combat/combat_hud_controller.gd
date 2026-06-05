@@ -975,11 +975,9 @@ func _refresh_wave_preview() -> void:
 	var preview: Dictionary = {}
 	if template_id != StringName() and _wave_manager.has_method("get_wave_preview_for_template"):
 		preview = _wave_manager.get_wave_preview_for_template(template_id)
-	elif _wave_manager.has_method("get_wave_preview_for_day"):
-		preview = _wave_manager.get_wave_preview_for_day(int(run_state.day))
 	if preview.is_empty():
 		_last_wave_preview_signature = ""
-		_set_wave_preview_text("今晚敌情\n暂无波次配置", true)
+		_set_wave_preview_text("今晚敌情\n暂无关卡模板", true)
 		_clear_wave_routes()
 		return
 	var hover_cell: Vector2i = _get_blocking_build_preview_cell()

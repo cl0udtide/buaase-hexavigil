@@ -284,7 +284,7 @@ UI
 
 具体职责：
 
-- Autoload `_ready()` 时读取 `units.json`、`enemies.json`、`buildings.json`、`buffs.json`、`events.json`、`waves.json` 和应用级配置
+- Autoload `_ready()` 时读取 `units.json`、`enemies.json`、`buildings.json`、`buffs.json`、`events.json`、`wave_templates.json` 和应用级配置
 - 按 `id` 索引这些配置，供其他模块查询
 - 提供按建筑类别读取建筑 ID 的接口，供 `BuildPanel` 从 `buildings.json[].building_type` 动态生成建筑列表
 - 维护一张场景注册表，把逻辑名映射到实际场景资源
@@ -303,8 +303,10 @@ UI
   保存 Buff 或祝福的静态配置。
 - `events.json`
   保存随机事件的静态配置。
-- `waves.json`
-  保存夜晚刷怪波次配置。
+- `wave_templates.json`
+  保存夜晚关卡模板池，包括关卡标题、预览文案、分层标签、关键敌人和刷怪条目。
+
+夜晚关卡模板不按天数直接索引。`GameController.enter_day()` 会在白天开始时根据当前天数、`RunState.random_seed` 和 `RunState.used_template_ids` 解析 `RunState.night_template_id`；`NightManager.start_night()` 再把该模板交给 `WaveManager.start_wave_for_template()` 执行。右上角敌情预览也读取同一个模板，确保预览与夜晚实际刷怪一致。
 
 配置表里不直接写 `res://scenes/...` 路径，而是写 `scene_key`。
 
@@ -768,7 +770,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `data/buildings.json`
 - `data/buffs.json`
 - `data/events.json`
-- `data/waves.json`
+- `data/wave_templates.json`
 - `assets/sprites/`
 - `assets/audio/`
 

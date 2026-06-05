@@ -411,8 +411,11 @@ func get_enemy_cfg(enemy_id: StringName) -> Dictionary
 func get_building_cfg(building_id: StringName) -> Dictionary
 func get_buff_cfg(buff_id: StringName) -> Dictionary
 func get_event_cfg(event_id: StringName) -> Dictionary
-func get_wave_cfg(day: int) -> Dictionary
+func get_wave_template_cfg(template_id: StringName) -> Dictionary
+func get_wave_template_ids_by_tier(tier: StringName) -> Array[StringName]
+func get_all_wave_template_ids() -> Array[StringName]
 func get_map_generation_cfg() -> Dictionary
+func get_ui_icon_catalog() -> Dictionary
 func get_scene_by_key(scene_key: StringName) -> PackedScene
 func get_all_building_ids() -> Array[StringName]
 func get_building_ids_by_type(building_type: StringName) -> Array[StringName]
@@ -448,13 +451,25 @@ func get_building_ids_by_type(building_type: StringName) -> Array[StringName]
   输入：`event_id: StringName`。
   行为：查询事件配置。
   返回：`Dictionary`。
-- `get_wave_cfg(day)`
-  输入：`day: int`。
-  行为：查询指定天数波次配置。
+- `get_wave_template_cfg(template_id)`
+  输入：`template_id: StringName`。
+  行为：查询指定夜晚关卡模板配置。
   返回：`Dictionary`。
+- `get_wave_template_ids_by_tier(tier)`
+  输入：`tier: StringName`。
+  行为：读取指定分层的模板 ID 列表。当前分层为 `early`、`mid`、`late`、`boss`。
+  返回：`Array[StringName]`。
+- `get_all_wave_template_ids()`
+  输入：无。
+  行为：读取全部夜晚关卡模板 ID。
+  返回：`Array[StringName]`。
 - `get_map_generation_cfg()`
   输入：无。
   行为：读取地图生成调参配置，包括地图尺寸、资源点数量、事件点数量、障碍数量和安全半径。
+  返回：`Dictionary`。
+- `get_ui_icon_catalog()`
+  输入：无。
+  行为：读取 UI 图标目录配置。
   返回：`Dictionary`。
 - `get_scene_by_key(scene_key)`
   输入：`scene_key: StringName`。
@@ -1230,20 +1245,31 @@ func setup(payload: Dictionary) -> void
 
 作用：
 
-- 波次执行器
+- 夜晚关卡模板解析辅助与波次执行器
 
 ```gdscript
-func start_wave_for_day(day: int) -> void
+func tier_for_day(day: int) -> StringName
+func resolve_night_template(tier: StringName, run_seed: int, day: int, used_ids: Array) -> StringName
+func start_wave_for_template(template_id: StringName) -> void
 func stop_wave() -> void
 func is_wave_finished() -> bool
 func has_pending_spawn() -> bool
+func get_wave_preview_for_template(template_id: StringName) -> Dictionary
 ```
 
 方法规格：
 
-- `start_wave_for_day(day)`
+- `tier_for_day(day)`
   输入：`day: int`。
-  行为：启动指定天数的波次执行。
+  行为：根据当前天数返回夜晚关卡模板分层。当前规则为第 1-2 夜 `early`，第 3-4 夜 `mid`，第 5 夜 `late`，第 6 夜及以后 `boss`。
+  返回：`StringName`。
+- `resolve_night_template(tier, run_seed, day, used_ids)`
+  输入：`tier: StringName`、`run_seed: int`、`day: int`、`used_ids: Array`。
+  行为：从指定分层模板池中按本局随机种子和天数确定当晚模板，并尽量避开本局已使用模板。
+  返回：`StringName`。
+- `start_wave_for_template(template_id)`
+  输入：`template_id: StringName`。
+  行为：读取指定夜晚关卡模板，展开其中 `entries` 并启动实际刷怪。
   返回：无。
 - `stop_wave()`
   输入：无。
@@ -1257,6 +1283,10 @@ func has_pending_spawn() -> bool
   输入：无。
   行为：判断是否仍有待生成敌人。
   返回：`bool`。
+- `get_wave_preview_for_template(template_id)`
+  输入：`template_id: StringName`。
+  行为：聚合模板刷怪条目，返回右上角敌情面板所需的关卡标题、文案、关键敌人、路线和总数信息。预览中的随机敌人选择与夜晚实际刷怪使用同一确定性种子。
+  返回：`Dictionary`。
 
 #### `EnemyManager`
 
@@ -1400,7 +1430,7 @@ func apply_phase_enter_effects() -> void
 Boss 阶段链路：
 
 ```text
-waves.json -> WaveManager -> EnemyManager.spawn_enemy()
+wave_templates.json -> WaveManager -> EnemyManager.spawn_enemy()
 -> DataRepo.get_enemy_cfg()
 -> EnemyActor.setup_from_cfg()
 -> EnemyActor 启用 BossController

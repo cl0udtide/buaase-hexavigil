@@ -30,26 +30,6 @@ func _process(delta: float) -> void:
 	_check_finish()
 
 
-func start_wave_for_day(day: int) -> void:
-	var data_repo = AppRefs.data_repo()
-	if data_repo == null:
-		_pending_spawns.clear()
-		_running = false
-		return
-	var cfg: Dictionary = _get_wave_cfg_with_fallback(data_repo, day)
-	_pending_spawns.clear()
-	var raw_entries: Array = cfg.get("entries", [])
-	for entry_index in range(raw_entries.size()):
-		var entry_variant: Variant = raw_entries[entry_index]
-		if typeof(entry_variant) == TYPE_DICTIONARY:
-			var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, day, entry_index)
-			if StringName(entry.get("enemy_id", "")) != StringName():
-				_pending_spawns.append_array(_make_expanded_spawn_entries(entry))
-	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
-	_elapsed = 0.0
-	_running = true
-
-
 func tier_for_day(day: int) -> StringName:
 	return NightTemplateResolver.tier_for_day(day)
 
@@ -98,19 +78,6 @@ func is_wave_finished() -> bool:
 
 func has_pending_spawn() -> bool:
 	return not _pending_spawns.is_empty()
-
-
-func get_wave_preview_for_day(day: int) -> Dictionary:
-	var data_repo = AppRefs.data_repo()
-	if data_repo == null:
-		return {}
-	var run_state = AppRefs.run_state()
-	if run_state != null and StringName(run_state.night_template_id) != StringName() and data_repo.has_method("get_wave_template_cfg"):
-		return get_wave_preview_for_template(run_state.night_template_id)
-	var cfg: Dictionary = _get_wave_cfg_with_fallback(data_repo, day)
-	if cfg.is_empty():
-		return {}
-	return _build_wave_preview(cfg, day, StringName())
 
 
 func get_wave_preview_for_template(template_id: StringName) -> Dictionary:
@@ -319,16 +286,6 @@ func _key_enemy_score(entry: Dictionary, enemy_cfg: Dictionary) -> float:
 	if move_type == &"flying":
 		score += 35.0
 	return score
-
-
-func _get_wave_cfg_with_fallback(data_repo: Node, day: int) -> Dictionary:
-	var fallback_day := day
-	while fallback_day >= 1:
-		var cfg: Dictionary = data_repo.get_wave_cfg(fallback_day)
-		if not cfg.is_empty() and not (cfg.get("entries", []) as Array).is_empty():
-			return cfg
-		fallback_day -= 1
-	return {}
 
 
 func _resolve_enemy_path_mode(enemy_cfg: Dictionary) -> StringName:
