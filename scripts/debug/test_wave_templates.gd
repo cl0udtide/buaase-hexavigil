@@ -60,7 +60,7 @@ func _check_data(templates: Array) -> void:
 		_expect(not seen_ids.has(id), "template id unique: %s" % id)
 		seen_ids[id] = true
 		_expect(String(template.get("name", "")) != "", "%s has name" % id)
-		_expect(String(template.get("desc", "")) != "", "%s has desc placeholder" % id)
+		_expect(String(template.get("desc", "")) != "", "%s has desc" % id)
 		var tier := StringName(template.get("tier", ""))
 		_expect(valid_tiers.has(tier), "%s tier valid" % id)
 		tier_counts[tier] = int(tier_counts.get(tier, 0)) + 1
