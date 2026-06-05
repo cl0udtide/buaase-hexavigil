@@ -22,6 +22,10 @@ const CORE_HP_TITLE := "核心生命"
 const WAVE_PREVIEW_MIN_HEIGHT := 368.0
 const WAVE_PREVIEW_DESC_MIN_HEIGHT := 52.0
 const WAVE_PREVIEW_SCROLL_MIN_HEIGHT := 178.0
+const WAVE_ENEMY_CARD_MIN_WIDTH := 142.0
+const WAVE_ENEMY_CARD_MIN_HEIGHT := 130.0
+const WAVE_ENEMY_PREVIEW_WIDTH := 78.0
+const WAVE_ENEMY_PREVIEW_HEIGHT := 100.0
 const LEVEL_INTRO_WIDTH_RATIO := 0.56
 const LEVEL_INTRO_MIN_WIDTH := 560.0
 const LEVEL_INTRO_MAX_WIDTH := 820.0
@@ -121,6 +125,8 @@ var _wave_desc_label: Label
 var _wave_summary_label: Label
 var _wave_spawn_cards_box: VBoxContainer
 var _wave_warning_label: Label
+var _wave_preview_available := false
+var _right_detail_active := false
 var _level_intro_banner: Control
 var _level_intro_content: VBoxContainer
 var _level_intro_day_label: Label
@@ -213,6 +219,7 @@ func _ready() -> void:
 	_bullet_time_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_bullet_time_overlay.visible = false
 	_wave_preview_panel.z_index = 18
+	_wave_preview_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_deck_panel.z_index = 12
 	_legend_panel.z_index = 14
 	_detail_panel.z_index = 40
@@ -481,16 +488,18 @@ func set_wave_preview_text(text_value: String, show_panel: bool = true) -> void:
 	_set_wave_preview_v2_visible(false)
 	_wave_preview_label.text = text_value
 	_wave_preview_label.visible = true
-	_wave_preview_panel.visible = show_panel and not text_value.strip_edges().is_empty()
+	_wave_preview_available = show_panel and not text_value.strip_edges().is_empty()
+	_apply_right_column_visibility()
 
 
 func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 	_ensure_wave_preview_v2_nodes()
 	var has_content := show_panel and not data.is_empty()
-	_wave_preview_panel.visible = has_content
+	_wave_preview_available = has_content
 	_set_wave_preview_v2_visible(has_content)
 	_wave_preview_label.visible = false
 	if not has_content:
+		_apply_right_column_visibility()
 		return
 
 	var day := int(data.get("day", 0))
@@ -508,6 +517,7 @@ func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 	_rebuild_wave_spawn_cards(spawn_order, entries, data.get("key_enemies", []))
 	_wave_warning_label.text = _format_wave_warning_text(data)
 	_wave_warning_label.visible = not _wave_warning_label.text.strip_edges().is_empty()
+	_apply_right_column_visibility()
 
 
 func play_level_intro(day: int, name: String, desc: String) -> void:
@@ -645,21 +655,40 @@ func hide_drag_ghost() -> void:
 func show_unit_detail(unit: Node, display_name: String, damage_label: String, direction_label: String) -> void:
 	if _detail_panel.has_method("show_unit"):
 		_detail_panel.show_unit(unit, display_name, damage_label, direction_label)
+	_set_right_detail_active(unit != null)
 
 
 func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
 	if _detail_panel.has_method("show_operator_preview"):
 		_detail_panel.show_operator_preview(operator_info, unit_cfg, state, status_text)
+	_set_right_detail_active(true)
 
 
 func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
 	if _detail_panel.has_method("show_shop_unit_preview"):
 		_detail_panel.show_shop_unit_preview(slot_index, unit_id, unit_cfg, price, can_purchase, disabled_reason)
+	_set_right_detail_active(true)
 
 
 func clear_unit_detail() -> void:
 	if _detail_panel.has_method("clear_unit"):
 		_detail_panel.clear_unit()
+	_set_right_detail_active(false)
+
+
+func _set_right_detail_active(active: bool) -> void:
+	_right_detail_active = active
+	_apply_right_column_visibility()
+
+
+func _apply_right_column_visibility() -> void:
+	if _wave_preview_panel != null:
+		_wave_preview_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		_wave_preview_panel.visible = _wave_preview_available and not _right_detail_active
+	if _detail_panel != null:
+		_detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		if not _right_detail_active:
+			_detail_panel.visible = false
 
 
 func _style_button(button: Button, accent: Color) -> void:
@@ -799,31 +828,199 @@ func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dict
 
 func _build_wave_enemy_chip(entry: Dictionary, highlighted: bool) -> Control:
 	var chip := PanelContainer.new()
+	chip.name = "WaveEnemyCard"
+	chip.custom_minimum_size = Vector2(WAVE_ENEMY_CARD_MIN_WIDTH, WAVE_ENEMY_CARD_MIN_HEIGHT)
+	chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	chip.add_theme_stylebox_override("panel", GameUiStyle.flat_box(
 		GameUiStyle.AMBER_SOFT if highlighted else GameUiStyle.BG_DARK,
 		GameUiStyle.AMBER if highlighted else GameUiStyle.STROKE_SOFT,
 		1.0,
 		5.0
 	))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 5)
-	chip.add_child(row)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 7)
+	margin.add_theme_constant_override("margin_bottom", 7)
+	chip.add_child(margin)
+
+	var body := HBoxContainer.new()
+	body.add_theme_constant_override("separation", 7)
+	margin.add_child(body)
+
+	var info_box := VBoxContainer.new()
+	info_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info_box.add_theme_constant_override("separation", 4)
+	body.add_child(info_box)
+
+	var name_label := Label.new()
+	name_label.text = String(entry.get("enemy_name", entry.get("enemy_id", "")))
+	name_label.add_theme_font_size_override("font_size", 12)
+	name_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if not highlighted else GameUiStyle.AMBER)
+	name_label.clip_text = true
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info_box.add_child(name_label)
+
+	var count_label := Label.new()
+	count_label.text = "×%d · %s" % [int(entry.get("count", 0)), _format_wave_enemy_timing(entry)]
+	count_label.add_theme_font_size_override("font_size", 10)
+	count_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	count_label.clip_text = true
+	count_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info_box.add_child(count_label)
+
+	var stats := VBoxContainer.new()
+	stats.name = "WaveEnemyStats"
+	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats.add_theme_constant_override("separation", 1)
+	info_box.add_child(stats)
+
+	var enemy_cfg: Dictionary = entry.get("enemy_cfg", {})
+	for line in _wave_enemy_stat_lines(enemy_cfg):
+		stats.add_child(_make_wave_enemy_stat_label(line))
+
+	var tags := _wave_enemy_tags(enemy_cfg)
+	if not tags.is_empty():
+		var tag_label := Label.new()
+		tag_label.text = " / ".join(tags)
+		tag_label.add_theme_font_size_override("font_size", 10)
+		tag_label.add_theme_color_override("font_color", GameUiStyle.AMBER if highlighted else GameUiStyle.TEXT_INVERTED_DIM)
+		tag_label.clip_text = true
+		tag_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		info_box.add_child(tag_label)
+
+	body.add_child(_build_wave_enemy_preview(entry, enemy_cfg))
+	chip.tooltip_text = _wave_enemy_tooltip(entry)
+	return chip
+
+
+func _build_wave_enemy_preview(entry: Dictionary, enemy_cfg: Dictionary) -> Control:
+	var slot := Control.new()
+	slot.name = "WaveEnemyPreview"
+	slot.custom_minimum_size = Vector2(WAVE_ENEMY_PREVIEW_WIDTH, WAVE_ENEMY_PREVIEW_HEIGHT)
+	slot.size_flags_horizontal = Control.SIZE_SHRINK_END
+	slot.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var texture_rect := TextureRect.new()
-	texture_rect.custom_minimum_size = Vector2(24, 24)
+	texture_rect.name = "WaveEnemyPreviewTexture"
+	texture_rect.anchor_right = 1.0
+	texture_rect.anchor_bottom = 1.0
+	texture_rect.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	texture_rect.grow_vertical = Control.GROW_DIRECTION_BOTH
 	texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	texture_rect.texture = EnemyIconHelper.texture_for_cfg(entry.get("enemy_cfg", {}))
+	texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	texture_rect.texture = EnemyIconHelper.texture_for_cfg(enemy_cfg)
 	texture_rect.visible = texture_rect.texture != null
-	row.add_child(texture_rect)
+	slot.add_child(texture_rect)
 
+	var fallback_label := Label.new()
+	fallback_label.name = "WaveEnemyPreviewFallback"
+	fallback_label.anchor_right = 1.0
+	fallback_label.anchor_bottom = 1.0
+	fallback_label.text = String(entry.get("enemy_name", entry.get("enemy_id", "?"))).substr(0, 1)
+	fallback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	fallback_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	fallback_label.add_theme_font_size_override("font_size", 34)
+	fallback_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	fallback_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	fallback_label.add_theme_constant_override("shadow_offset_x", 0)
+	fallback_label.add_theme_constant_override("shadow_offset_y", 0)
+	fallback_label.visible = texture_rect.texture == null
+	slot.add_child(fallback_label)
+	return slot
+
+
+func _make_wave_enemy_stat_label(text_value: String) -> Label:
 	var label := Label.new()
-	label.text = "%s ×%d" % [String(entry.get("enemy_name", entry.get("enemy_id", ""))), int(entry.get("count", 0))]
-	label.add_theme_font_size_override("font_size", 12)
-	label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if not highlighted else GameUiStyle.AMBER)
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(label)
-	return chip
+	label.text = text_value
+	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	label.clip_text = true
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	return label
+
+
+func _wave_enemy_stat_lines(enemy_cfg: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	lines.append("HP %d  攻 %d" % [
+		int(enemy_cfg.get("max_hp", 0)),
+		int(enemy_cfg.get("atk", 0))
+	])
+	lines.append("防 %d  抗 %d" % [
+		int(enemy_cfg.get("def", 0)),
+		int(enemy_cfg.get("res", 0))
+	])
+	var attack_range := float(enemy_cfg.get("attack_range", 0.0))
+	if attack_range > 0.0:
+		lines.append("速 %.2f  距 %.0f" % [float(enemy_cfg.get("move_speed", 0.0)), attack_range])
+	else:
+		lines.append("速 %.2f  近战" % float(enemy_cfg.get("move_speed", 0.0)))
+	lines.append("核 %d  声 %d" % [
+		int(enemy_cfg.get("core_damage", 1)),
+		int(enemy_cfg.get("prestige_reward", 0))
+	])
+	return lines
+
+
+func _wave_enemy_tags(enemy_cfg: Dictionary) -> Array[String]:
+	var tags: Array[String] = []
+	var damage_type := StringName(enemy_cfg.get("damage_type", "physical"))
+	match damage_type:
+		&"magic":
+			tags.append("法术")
+		&"true":
+			tags.append("真实")
+		_:
+			tags.append("物理")
+	var behavior_type := StringName(enemy_cfg.get("behavior_type", "normal"))
+	if behavior_type == &"boss":
+		tags.append("首领")
+	elif behavior_type == &"demolisher":
+		tags.append("拆墙")
+	if StringName(enemy_cfg.get("move_type", "ground")) == &"flying":
+		tags.append("飞行")
+	if enemy_cfg.has("death_area_damage"):
+		tags.append("爆裂")
+	if enemy_cfg.has("death_spawn"):
+		tags.append("分裂")
+	if float(enemy_cfg.get("regen_per_sec", 0.0)) > 0.0:
+		tags.append("自愈")
+	if int(enemy_cfg.get("shield_hp", 0)) > 0:
+		tags.append("护盾")
+	return tags
+
+
+func _format_wave_enemy_timing(entry: Dictionary) -> String:
+	var first_time := float(entry.get("first_time", 0.0))
+	var last_time := float(entry.get("last_time", first_time))
+	if is_equal_approx(first_time, last_time):
+		return "%.0fs" % first_time
+	return "%.0f-%.0fs" % [first_time, last_time]
+
+
+func _wave_enemy_tooltip(entry: Dictionary) -> String:
+	var enemy_cfg: Dictionary = entry.get("enemy_cfg", {})
+	var lines := PackedStringArray()
+	lines.append("%s ×%d" % [String(entry.get("enemy_name", entry.get("enemy_id", ""))), int(entry.get("count", 0))])
+	lines.append("出现：%s" % _format_wave_enemy_timing(entry))
+	lines.append("生命 %d / 攻击 %d / 防御 %d / 法抗 %d" % [
+		int(enemy_cfg.get("max_hp", 0)),
+		int(enemy_cfg.get("atk", 0)),
+		int(enemy_cfg.get("def", 0)),
+		int(enemy_cfg.get("res", 0))
+	])
+	lines.append("移速 %.2f / 攻击间隔 %.2fs / 核心伤害 %d / 声望 %d" % [
+		float(enemy_cfg.get("move_speed", 0.0)),
+		float(enemy_cfg.get("attack_interval", 0.0)),
+		int(enemy_cfg.get("core_damage", 1)),
+		int(enemy_cfg.get("prestige_reward", 0))
+	])
+	var tags := _wave_enemy_tags(enemy_cfg)
+	if not tags.is_empty():
+		lines.append("特性：%s" % " / ".join(tags))
+	return "\n".join(lines)
 
 
 func _key_enemy_lookup(raw_key_enemies: Variant) -> Dictionary:

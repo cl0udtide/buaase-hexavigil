@@ -43,8 +43,13 @@ func _run() -> void:
 		var spawn_cards := combat_hud.find_child("WaveSpawnCardsBox", true, false) as VBoxContainer
 		_expect(spawn_cards != null, "spawn cards container exists")
 		_expect(spawn_cards != null and spawn_cards.get_child_count() > 0, "spawn cards populated")
+		var enemy_stats := combat_hud.find_child("WaveEnemyStats", true, false) as Control
+		_expect(enemy_stats != null and enemy_stats.get_child_count() >= 3, "enemy stat lines populated")
+		var enemy_preview := combat_hud.find_child("WaveEnemyPreview", true, false) as Control
+		_expect(enemy_preview != null and enemy_preview.custom_minimum_size.x >= 60.0, "enemy preview placed on right with larger width")
 		var banner := combat_hud.find_child("LevelIntroBanner", true, false) as Control
 		_expect(banner != null, "level intro banner exists")
+		await _check_right_column_exclusive(game, combat_hud, preview_panel)
 
 	game.queue_free()
 	await process_frame
@@ -55,6 +60,36 @@ func _expect(cond: bool, msg: String) -> void:
 	if not cond:
 		_failures += 1
 		printerr("FAIL: %s" % msg)
+
+
+func _check_right_column_exclusive(game: Node, combat_hud: Node, preview_panel: Control) -> void:
+	var controller := game.get_node_or_null("UI/CombatHudController")
+	_expect(controller != null, "CombatHudController exists")
+	var detail_panel := combat_hud.get_node_or_null("%UnitDetailPanel") as Control
+	_expect(detail_panel != null, "unit detail panel exists")
+	var run_state = root.get_node_or_null("RunState")
+	_expect(run_state != null, "RunState exists for right column test")
+	var data_repo = root.get_node_or_null("DataRepo")
+	_expect(data_repo != null, "DataRepo exists for right column test")
+	if controller == null or detail_panel == null or run_state == null or data_repo == null or not data_repo.has_method("get_all_unit_ids"):
+		return
+	var unit_ids: Array[StringName] = data_repo.get_all_unit_ids()
+	_expect(not unit_ids.is_empty(), "unit ids available for right column test")
+	if unit_ids.is_empty():
+		return
+	var unit_id := unit_ids[0]
+	if controller.has_method("_on_shop_unit_preview_requested"):
+		controller.call("_on_shop_unit_preview_requested", 0, unit_id, 1, true, "")
+	await process_frame
+	await process_frame
+	_expect(detail_panel.visible, "detail visible when unit preview opens")
+	_expect(preview_panel != null and not preview_panel.visible, "wave preview hidden while detail visible")
+	if controller.has_method("_clear_detail_selection"):
+		controller.call("_clear_detail_selection")
+	await process_frame
+	await process_frame
+	_expect(not detail_panel.visible, "detail hidden after clear")
+	_expect(preview_panel != null and preview_panel.visible, "wave preview restored after detail clear")
 
 
 func _finish() -> void:

@@ -530,12 +530,12 @@ WavePreviewPanel
       ├─ WaveLevelDescLabel    # 运行时补齐，显示完整关卡预览文案
       ├─ WaveSummaryLabel      # 运行时补齐，显示总数和关键敌人摘要
       ├─ WavePreviewScroll
-      │  └─ WaveSpawnCardsBox  # 运行时补齐，按刷怪点分组显示敌人芯片
+      │  └─ WaveSpawnCardsBox  # 运行时补齐，按刷怪点分组显示敌人 mini-card：左侧数量/时间窗/基础数值/特性标签，右侧保留更大的怪物预览
       ├─ WaveWarningLabel      # 运行时补齐，显示路线异常/拆墙提示
       └─ WavePreviewLabel      # 旧文本兜底；V2 数据可用时隐藏
 ```
 
-“今晚敌情”模块应放在右侧详情卡上方，并比当前版本略微上移，让标题、路线开关、关卡文案、敌人卡片和警告行形成一个完整面板。`WaveRouteToggle` 不得漂在模块外部。敌情模块与 `UnitDetailPanel` 共享右侧列宽；当详情卡打开时，敌情模块占上方较小高度，详情卡从它下方开始。
+“今晚敌情”模块和 `UnitDetailPanel` 共用最右侧列，但二者互斥显示：没有选中干员、商店商品或场上单位时，`WavePreviewPanel` 占满右侧列；打开任意干员详情时，`WavePreviewPanel` 隐藏，`UnitDetailPanel` 占满右侧列。`WaveRouteToggle` 不得漂在模块外部。敌情预览不需要为详情卡预留空间，详情卡也不需要为敌情预留空间。
 
 夜晚关卡模板的完整文案必须放在 `WaveLevelDescLabel` 中。开局横幅只是一闪而过的气氛提示，不能成为唯一承载剧情或关键信息的位置。路线异常文案保留在敌情面板内；普通路线被完全封闭时，提示使用“普通路线封闭：敌人将改走拆墙路径”，而不是把它当作不可继续游戏的阻塞错误。
 
