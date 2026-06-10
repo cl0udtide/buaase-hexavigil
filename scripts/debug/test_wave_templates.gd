@@ -47,7 +47,7 @@ func _check_data(templates: Array) -> void:
 				enemy_ids[StringName(enemy.get("id", ""))] = true
 
 	var valid_tiers := {&"early": true, &"mid": true, &"late": true, &"boss": true}
-	var valid_spawns := {"S1": true, "S2": true, "S3": true}
+	var valid_lanes := {"main": true, "flank": true, "any": true}
 	var seen_ids: Dictionary = {}
 	var tier_counts: Dictionary = {}
 	for template_variant: Variant in templates:
@@ -68,15 +68,17 @@ func _check_data(templates: Array) -> void:
 		_expect(not key_enemies.is_empty(), "%s has key_enemies" % id)
 		for key_enemy: Variant in key_enemies:
 			_expect(enemy_ids.has(StringName(key_enemy)), "%s key enemy valid: %s" % [id, key_enemy])
-		var entries: Array = template.get("entries", [])
-		_expect(entries.size() > 0, "%s has entries" % id)
-		for entry_variant: Variant in entries:
-			_expect(typeof(entry_variant) == TYPE_DICTIONARY, "%s entry is dict" % id)
-			if typeof(entry_variant) != TYPE_DICTIONARY:
+		var groups: Array = template.get("groups", [])
+		_expect(groups.size() > 0, "%s has groups" % id)
+		_expect(not template.has("entries"), "%s legacy entries removed" % id)
+		var main_count := 0
+		for group_variant: Variant in groups:
+			_expect(typeof(group_variant) == TYPE_DICTIONARY, "%s group is dict" % id)
+			if typeof(group_variant) != TYPE_DICTIONARY:
 				continue
-			var entry: Dictionary = entry_variant
-			var enemy_id := StringName(entry.get("enemy_id", ""))
-			var choices: Array = entry.get("enemy_choices", [])
+			var group: Dictionary = group_variant
+			var enemy_id := StringName(group.get("enemy_id", ""))
+			var choices: Array = group.get("enemy_choices", [])
 			if enemy_id != StringName():
 				_expect(enemy_ids.has(enemy_id), "%s enemy_id valid: %s" % [id, enemy_id])
 			else:
@@ -85,10 +87,15 @@ func _check_data(templates: Array) -> void:
 					if typeof(choice_variant) == TYPE_DICTIONARY:
 						var choice: Dictionary = choice_variant
 						_expect(enemy_ids.has(StringName(choice.get("enemy_id", ""))), "%s enemy_choice valid" % id)
-			_expect(valid_spawns.has(String(entry.get("spawn_key", ""))), "%s spawn_key valid: %s" % [id, entry.get("spawn_key", "")])
-			_expect(int(entry.get("count", 0)) > 0, "%s count positive" % id)
-			_expect(float(entry.get("time", -1.0)) >= 0.0, "%s time non-negative" % id)
-			_expect(float(entry.get("interval", -1.0)) >= 0.0, "%s interval non-negative" % id)
+			_expect(not group.has("spawn_key"), "%s group has no hardcoded spawn_key" % id)
+			var lane := String(group.get("lane", ""))
+			_expect(valid_lanes.has(lane), "%s lane valid: %s" % [id, lane])
+			if lane == "main":
+				main_count += 1
+			_expect(int(group.get("count", 0)) > 0, "%s count positive" % id)
+			_expect(float(group.get("time", -1.0)) >= 0.0, "%s time non-negative" % id)
+			_expect(float(group.get("interval", -1.0)) >= 0.0, "%s interval non-negative" % id)
+		_expect(main_count >= 1, "%s has at least one main group" % id)
 	_expect(int(tier_counts.get(&"early", 0)) == 4, "early template count")
 	_expect(int(tier_counts.get(&"mid", 0)) == 5, "mid template count")
 	_expect(int(tier_counts.get(&"late", 0)) == 4, "late template count")

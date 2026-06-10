@@ -179,6 +179,7 @@ func get_wave_preview_for_template(template_id: StringName) -> Dictionary:
 
 
 ## 整夜聚合预览：多波合并构成 + 词缀公示。条目与敌人属性均为词缀生效后的真实值。
+## 预览的 gate 种子隐式使用当前 RunState.day，仅对"当晚"的计划有效；对未来夜晚的预演结果仅供参考。
 func get_night_preview(template_ids: Array, affix_ids: Array = []) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null or template_ids.is_empty():
@@ -371,7 +372,8 @@ func _make_expanded_spawn_entries(entry: Dictionary) -> Array[Dictionary]:
 ## 运行时与预览共用，保证公示诚实。lane 解析必须在词缀 transform 之前（spawn_surge 等按 spawn_key 结算）。
 func _build_resolved_entries(cfg: Dictionary, template_id: StringName, wave_index: int, affix_cfgs: Array) -> Array[Dictionary]:
 	var resolved: Array[Dictionary] = []
-	var raw_entries: Array = cfg.get("groups", cfg.get("entries", []))
+	var raw_entries_variant: Variant = cfg.get("groups", cfg.get("entries", []))
+	var raw_entries: Array = raw_entries_variant if typeof(raw_entries_variant) == TYPE_ARRAY else []
 	var seed_day := _seed_day_for(template_id)
 	var active_gates: Array = _active_spawn_keys()
 	var main_gate := _main_gate_for_wave(wave_index, active_gates)
@@ -414,6 +416,7 @@ func _active_spawn_keys() -> Array:
 
 
 func _main_gate_for_wave(wave_index: int, active_gates: Array) -> String:
+	# 预览（_build_wave_preview）与条目解析（_build_resolved_entries）两处调用必须保持同参，否则公示与实际落口会分叉。
 	var run_state = AppRefs.run_state()
 	var run_seed := int(run_state.random_seed) if run_state != null else 0
 	var day := int(run_state.day) if run_state != null else 0
