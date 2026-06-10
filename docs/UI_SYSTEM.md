@@ -532,7 +532,7 @@ WavePreviewPanel
       ├─ WaveLevelDescLabel    # 运行时补齐，显示完整关卡预览文案
       ├─ WaveSummaryLabel      # 运行时补齐，显示总数和关键敌人摘要
       ├─ WavePreviewScroll
-      │  └─ WaveSpawnCardsBox  # 运行时补齐，按刷怪点分组显示敌人 mini-card：左侧数量/时间窗/基础数值/特性标签，右侧保留更大的怪物预览
+      │  └─ WaveSpawnCardsBox  # 运行时补齐，按刷怪点分组显示敌人 mini-card：左侧数量/时间窗/基础数值/特性标签，右侧保留更大的怪物预览。多波夜晚按"第 N 波 · 模板名 · 主攻 Sx"分段展示，单波回退聚合卡片（主攻口仍标注）。
       ├─ WaveWarningLabel      # 运行时补齐，显示路线异常/拆墙提示
       └─ WavePreviewLabel      # 旧文本兜底；V2 数据可用时隐藏
 ```
