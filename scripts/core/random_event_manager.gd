@@ -405,7 +405,7 @@ func _pick_event_for_day(day: int, rng: RandomNumberGenerator) -> StringName:
 
 
 # ---------------------------------------------------------------------------
-# 古代祭坛：为干员实例灌注盟约 tag（动态三选一 + 离开）
+# 古代祭坛：为单位类型灌注本局永久盟约 tag（动态三选一 + 离开）
 # ---------------------------------------------------------------------------
 func _build_altar_choices(cell: Vector2i) -> Array:
 	var choices: Array = []
@@ -416,7 +416,7 @@ func _build_altar_choices(cell: Vector2i) -> Array:
 			"text": "灌注「%s」→ %s" % [String(offer.get("covenant", "")), String(offer.get("operator_name", ""))],
 			"kind": "primary",
 			"event_id": "event_altar_infused",
-			"effect_desc": "消耗 %d 魔力矿，%s 永久获得「%s」盟约。" % [ALTAR_MANA_COST, String(offer.get("operator_name", "")), String(offer.get("covenant", ""))],
+			"effect_desc": "消耗 %d 魔力矿，本局中所有 %s（包括后续购买）永久获得「%s」盟约。" % [ALTAR_MANA_COST, String(offer.get("operator_name", "")), String(offer.get("covenant", ""))],
 		})
 	choices.append({
 		"id": "leave",
@@ -428,7 +428,7 @@ func _build_altar_choices(cell: Vector2i) -> Array:
 	return choices
 
 
-## 生成最多 3 个（干员, 盟约）灌注组合：偏向玩家已有人数的盟约，帮助凑触发档位。
+## 生成最多 3 个（单位类型, 盟约）灌注组合：偏向玩家已有人数的盟约，帮助凑触发档位。
 func _ensure_altar_offers(cell: Vector2i) -> Array:
 	if _altar_offers_by_cell.has(cell):
 		return _altar_offers_by_cell[cell]
@@ -448,16 +448,23 @@ func _ensure_altar_offers(cell: Vector2i) -> Array:
 			presence[covenant] = int(presence.get(covenant, 0)) + 1
 
 	var candidates: Array[Dictionary] = []
+	var seen_units: Dictionary = {}
+	var data_repo = AppRefs.data_repo()
 	for operator_variant: Variant in operators:
 		var operator: Dictionary = operator_variant
-		var operator_key := StringName(operator.get("key", ""))
-		var current: Array = run_state.get_operator_covenants(operator_key)
+		var unit_id := StringName(operator.get("unit_id", ""))
+		if unit_id == StringName() or seen_units.has(unit_id):
+			continue
+		seen_units[unit_id] = true
+		var current: Array = run_state.get_unit_covenants(unit_id) if run_state.has_method("get_unit_covenants") else run_state.get_operator_covenants(StringName(operator.get("key", "")))
+		var unit_cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
+		var display_name := String(unit_cfg.get("name", operator.get("name", unit_id)))
 		for covenant_id in CovenantDefs.ORDER:
 			if current.has(covenant_id):
 				continue
 			candidates.append({
-				"operator_key": operator_key,
-				"operator_name": String(operator.get("name", operator_key)),
+				"unit_id": unit_id,
+				"operator_name": display_name,
 				"covenant": covenant_id,
 				"weight": 1.0 + 2.0 * float(int(presence.get(covenant_id, 0))),
 			})
@@ -496,8 +503,8 @@ func _apply_altar_infusion(cell: Vector2i, choice_id: StringName) -> Dictionary:
 	if not spend_result.get("ok", false):
 		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "魔力矿不足，灌注取消")
 	var covenant := StringName(offer.get("covenant", ""))
-	var operator_key := StringName(offer.get("operator_key", ""))
-	var infuse_result: Dictionary = run_state.add_operator_covenant(operator_key, covenant)
+	var unit_id := StringName(offer.get("unit_id", ""))
+	var infuse_result: Dictionary = run_state.add_unit_covenant(unit_id, covenant) if run_state.has_method("add_unit_covenant") else run_state.add_operator_covenant(StringName(offer.get("operator_key", "")), covenant)
 	if not infuse_result.get("ok", false):
 		run_state.add_materials(0, 0, ALTAR_MANA_COST)
 		return infuse_result
@@ -512,7 +519,7 @@ func _apply_altar_infusion(cell: Vector2i, choice_id: StringName) -> Dictionary:
 		"effect_type": &"contract",
 		"effect_payload": {
 			"mana": -ALTAR_MANA_COST,
-			"summary": "%s 获得「%s」盟约" % [String(offer.get("operator_name", "")), String(covenant)],
+			"summary": "所有 %s 获得「%s」盟约" % [String(offer.get("operator_name", "")), String(covenant)],
 		},
 	})
 

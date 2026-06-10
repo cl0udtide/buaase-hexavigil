@@ -34,6 +34,8 @@ var used_template_ids: Array[StringName] = []
 var owned_units: Array[StringName] = []
 # 干员槽位是真正的拥有列表；owned_units 只作为旧 UI / 旧调用路径的兼容视图。
 var owned_operators: Array[Dictionary] = []
+# 本局内按单位类型永久追加的盟约 tag。祭坛灌注写在这里，因此现有与后续同名实例都继承。
+var unit_extra_covenants: Dictionary = {}
 var buffs: Array[StringName] = []
 
 var _next_operator_serial := 1
@@ -63,6 +65,7 @@ func reset_for_new_run(seed: int) -> void:
 	_day_deploy_limit_bonus = 0
 	owned_units.clear()
 	owned_operators.clear()
+	unit_extra_covenants.clear()
 	_next_operator_serial = 1
 	buffs.clear()
 	_emit_all_state()
@@ -627,24 +630,51 @@ func _emit_owned_roster() -> void:
 func _normalized_operator_dict(operator: Dictionary) -> Dictionary:
 	var normalized := operator.duplicate(true)
 	normalized["star"] = OperatorProgression.normalize_star(normalized.get("star", OperatorProgression.DEFAULT_STAR))
+	var unit_extra := _get_unit_extra_covenants(StringName(normalized.get("unit_id", "")))
 	var raw_extra: Variant = normalized.get("extra_covenants", [])
-	normalized["extra_covenants"] = raw_extra if raw_extra is Array else []
+	for raw_covenant: Variant in (raw_extra if raw_extra is Array else []):
+		var covenant := StringName(raw_covenant)
+		if covenant != StringName() and not unit_extra.has(covenant):
+			unit_extra.append(covenant)
+	normalized["extra_covenants"] = unit_extra
 	return normalized
 
 
-## 干员实例的有效盟约 = 单位配置盟约 + 实例额外盟约（祭坛灌注等），去重。
-func get_operator_covenants(operator_key: StringName) -> Array:
-	var operator := get_owned_operator(operator_key)
-	if operator.is_empty():
+func _get_unit_extra_covenants(unit_id: StringName) -> Array:
+	var raw_extra: Variant = unit_extra_covenants.get(unit_id, [])
+	var result: Array = []
+	for raw_covenant: Variant in (raw_extra if raw_extra is Array else []):
+		var covenant := StringName(raw_covenant)
+		if covenant != StringName() and not result.has(covenant):
+			result.append(covenant)
+	return result
+
+
+## 单位类型的有效盟约 = 单位配置盟约 + 本局追加盟约（祭坛灌注等），去重。
+func get_unit_covenants(unit_id: StringName) -> Array:
+	if unit_id == StringName():
 		return []
 	var data_repo = AppRefs.data_repo()
-	var unit_cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator.get("unit_id", ""))) if data_repo != null else {}
+	var unit_cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
 	var covenants: Array = []
 	var raw_base: Variant = unit_cfg.get("covenants", [])
 	for raw_covenant: Variant in (raw_base if raw_base is Array else []):
 		var covenant := StringName(raw_covenant)
 		if covenant != StringName() and not covenants.has(covenant):
 			covenants.append(covenant)
+	for raw_covenant: Variant in _get_unit_extra_covenants(unit_id):
+		var covenant := StringName(raw_covenant)
+		if covenant != StringName() and not covenants.has(covenant):
+			covenants.append(covenant)
+	return covenants
+
+
+## 干员实例的有效盟约 = 单位类型有效盟约 + 旧实例额外盟约，去重。
+func get_operator_covenants(operator_key: StringName) -> Array:
+	var operator := get_owned_operator(operator_key)
+	if operator.is_empty():
+		return []
+	var covenants := get_unit_covenants(StringName(operator.get("unit_id", "")))
 	for raw_covenant: Variant in (operator.get("extra_covenants", []) as Array):
 		var covenant := StringName(raw_covenant)
 		if covenant != StringName() and not covenants.has(covenant):
@@ -652,26 +682,35 @@ func get_operator_covenants(operator_key: StringName) -> Array:
 	return covenants
 
 
-## 为干员实例追加盟约 tag（祭坛事件）。已拥有该盟约时失败。
-func add_operator_covenant(operator_key: StringName, covenant: StringName) -> Dictionary:
+## 为单位类型追加本局永久盟约 tag。现有与后续同名实例都会继承。
+func add_unit_covenant(unit_id: StringName, covenant: StringName) -> Dictionary:
 	if covenant == StringName():
 		return ActionResult.err(&"INVALID_COVENANT", "无效的盟约")
-	if not has_owned_operator(operator_key):
-		return ActionResult.err(&"OPERATOR_NOT_OWNED", "未拥有该干员")
-	if get_operator_covenants(operator_key).has(covenant):
+	if unit_id == StringName():
+		return ActionResult.err(&"UNIT_NOT_FOUND", "无效的干员")
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or data_repo.get_unit_cfg(unit_id).is_empty():
+		return ActionResult.err(&"UNIT_NOT_FOUND", "找不到该干员")
+	if get_unit_covenants(unit_id).has(covenant):
 		return ActionResult.err(&"COVENANT_EXISTS", "该干员已拥有此盟约")
-	for index in range(owned_operators.size()):
-		var operator_dict := owned_operators[index] as Dictionary
-		if StringName(operator_dict.get("key", "")) != operator_key:
-			continue
-		var raw_extra: Variant = operator_dict.get("extra_covenants", [])
-		var extra: Array = raw_extra if raw_extra is Array else []
-		extra.append(covenant)
-		operator_dict["extra_covenants"] = extra
-		owned_operators[index] = operator_dict
-		_emit_owned_roster()
-		return ActionResult.ok({"operator_key": operator_key, "covenant": covenant})
-	return ActionResult.err(&"OPERATOR_NOT_OWNED", "未拥有该干员")
+	var extra := _get_unit_extra_covenants(unit_id)
+	extra.append(covenant)
+	unit_extra_covenants[unit_id] = extra
+	_emit_owned_roster()
+	return ActionResult.ok({"unit_id": unit_id, "covenant": covenant})
+
+
+## 兼容旧调用：传入一个实例，实际为它的单位类型追加本局永久盟约 tag。
+func add_operator_covenant(operator_key: StringName, covenant: StringName) -> Dictionary:
+	var operator := get_owned_operator(operator_key)
+	if operator.is_empty():
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "未拥有该干员")
+	var result := add_unit_covenant(StringName(operator.get("unit_id", "")), covenant)
+	if result.get("ok", false):
+		var payload: Dictionary = result.get("payload", {})
+		payload["operator_key"] = operator_key
+		result["payload"] = payload
+	return result
 
 
 func _refresh_owned_units_view() -> void:

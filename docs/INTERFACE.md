@@ -137,7 +137,7 @@ func start_day(day: int) -> void
 func try_explore(cell: Vector2i) -> Dictionary
 func try_collect_resource(cell: Vector2i) -> Dictionary
 func is_resource_collected_today(cell: Vector2i) -> bool
-func try_trigger_event(cell: Vector2i) -> Dictionary
+func try_trigger_event(cell: Vector2i, choice_id: StringName = StringName()) -> Dictionary
 func request_start_night() -> Dictionary
 ```
 
@@ -149,7 +149,7 @@ func request_start_night() -> Dictionary
   返回：无。
 - `try_explore(cell)`
   输入：`cell: Vector2i`。
-  行为：校验指定格子是否允许探索；目标必须未探索，且上下左右至少邻接一个已探索格；成功时扣除 2 点行动力并揭开 3×3 迷雾。若探索中心格带有随机事件 ID，则进入“发现事件”流程，但地图侧不负责结算事件效果。
+  行为：校验指定格子是否允许探索；目标必须未探索，且上下左右至少邻接一个已探索格；成功时扣除 2 点行动力并揭开 3×3 迷雾。若揭开的格子存在随机事件覆盖层，后续由地图交互弹窗触发，探索本身不结算事件效果。
   成功结果：返回 `ActionResult(ok = true)`，并推进探索后续逻辑。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `try_collect_resource(cell)`
@@ -161,9 +161,9 @@ func request_start_night() -> Dictionary
   输入：`cell: Vector2i`。
   行为：查询该资源点当天是否已经手动采集。
   返回：布尔值。
-- `try_trigger_event(cell)`
-  输入：`cell: Vector2i`。
-  行为：校验指定格子位于已探索区域且存在事件，消耗 2 点行动力后委托 `RandomEventManager.apply_event_for_cell()` 完成事件结算。
+- `try_trigger_event(cell, choice_id = StringName())`
+  输入：`cell: Vector2i`，可选事件选项 ID。
+  行为：校验指定格子位于已探索区域且存在事件，消耗 2 点行动力后委托 `RandomEventManager.apply_event_for_cell(cell, choice_id)` 完成事件结算。
   成功结果：返回 `ActionResult(ok = true)`，并完成事件结算；事件覆盖层移除该事件点，地图格属性不修改。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态；若事件结算失败会退还已扣除行动力。
 - `request_start_night()`
@@ -240,8 +240,13 @@ func get_all_buffs() -> Array[StringName]
 
 ```gdscript
 func roll_event_for_cell(cell: Vector2i) -> StringName
+func get_event_id_at_cell(cell: Vector2i) -> StringName
+func has_event_at_cell(cell: Vector2i) -> bool
+func get_event_cells() -> Array[Vector2i]
+func get_event_cfg_at_cell(cell: Vector2i) -> Dictionary
 func apply_event(event_id: StringName) -> Dictionary
-func apply_event_for_cell(cell: Vector2i) -> Dictionary
+func apply_event_for_cell(cell: Vector2i, choice_id: StringName = StringName()) -> Dictionary
+func mark_event_triggered(cell: Vector2i) -> void
 func get_event_cfg(event_id: StringName) -> Dictionary
 ```
 
@@ -249,18 +254,38 @@ func get_event_cfg(event_id: StringName) -> Dictionary
 
 - `roll_event_for_cell(cell)`
   输入：`cell: Vector2i`。
-  行为：读取指定地图格上的随机事件 ID；当前地图模块已在生成阶段决定事件点位置，不在探索时临时随机抽取。
+  行为：兼容入口，读取指定地图格上的随机事件覆盖层 ID。正式事件点由每日刷新系统投放，不在探索时临时随机抽取。
   返回：事件 `id`；无事件时返回空值或约定空标识。
+- `get_event_id_at_cell(cell)`
+  输入：`cell: Vector2i`。
+  行为：读取指定坐标上的事件覆盖层 ID。
+  返回：事件 `id`；无事件时返回空 `StringName`。
+- `has_event_at_cell(cell)`
+  输入：`cell: Vector2i`。
+  行为：检查指定坐标是否有事件覆盖层。
+  返回：`bool`。
+- `get_event_cells()`
+  输入：无。
+  行为：读取当前所有活跃事件点坐标。
+  返回：`Array[Vector2i]`。
+- `get_event_cfg_at_cell(cell)`
+  输入：`cell: Vector2i`。
+  行为：读取指定坐标上的事件配置；古代祭坛会动态补全该格子的灌注选项。
+  返回：`Dictionary`。
 - `apply_event(event_id)`
   输入：`event_id: StringName`。
   行为：结算指定事件。
   成功结果：返回 `ActionResult(ok = true)`，事件结算完成。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
-- `apply_event_for_cell(cell)`
-  输入：`cell: Vector2i`。
-  行为：读取指定坐标上的事件覆盖层 ID，结算事件并从覆盖层移除该事件点。
+- `apply_event_for_cell(cell, choice_id = StringName())`
+  输入：`cell: Vector2i`，可选事件选项 ID。
+  行为：读取指定坐标上的事件覆盖层 ID，按选项跳转或动态祭坛选项结算事件，并从覆盖层移除该事件点。
   成功结果：返回 `ActionResult(ok = true)`，事件结算完成。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
+- `mark_event_triggered(cell)`
+  输入：`cell: Vector2i`。
+  行为：移除指定坐标上的事件覆盖层并刷新地图显示。
+  返回：无。
 - `get_event_cfg(event_id)`
   输入：`event_id: StringName`。
   行为：读取事件静态配置。
@@ -289,8 +314,12 @@ func add_owned_operator_with_key(operator_key: StringName, unit_id: StringName, 
 func get_owned_operator(operator_key: StringName) -> Dictionary
 func get_owned_operators() -> Array[Dictionary]
 func has_owned_operator(operator_key: StringName) -> bool
-func sell_owned_operator(operator_key: StringName) -> Dictionary
+func sell_owned_operator(operator_key: StringName, refund_override: int = -1) -> Dictionary
 func auto_merge_operators_for_unit(unit_id: StringName, before_merge: Callable = Callable()) -> Dictionary
+func get_unit_covenants(unit_id: StringName) -> Array
+func get_operator_covenants(operator_key: StringName) -> Array
+func add_unit_covenant(unit_id: StringName, covenant: StringName) -> Dictionary
+func add_operator_covenant(operator_key: StringName, covenant: StringName) -> Dictionary
 func add_owned_unit(unit_id: StringName) -> void
 func has_owned_unit(unit_id: StringName) -> bool
 func set_deploy_limit(value: int) -> void
@@ -366,15 +395,33 @@ func change_deployed_count(delta: int) -> void
   输入：干员槽位 key。
   行为：检查是否拥有该槽位。
   返回：`bool`。
-- `sell_owned_operator(operator_key)`
-  输入：干员槽位 key。
-  行为：仅白天可调用；移除该干员槽位并固定返还 1 声望，不随星级变化。
-  成功结果：返回 `ActionResult(ok = true)`，payload 中包含 `operator_key` 和 `refund_prestige = 1`。
+- `sell_owned_operator(operator_key, refund_override = -1)`
+  输入：干员槽位 key 与可选返还覆盖值。
+  行为：仅白天可调用；移除该干员槽位并返还声望。`refund_override < 0` 时使用默认 1 声望；调用方可按盟约等规则传入覆盖返还值。
+  成功结果：返回 `ActionResult(ok = true)`，payload 中包含 `operator_key` 和 `refund_prestige`。
   失败结果：返回 `ActionResult(ok = false)`，槽位和声望不变。
 - `auto_merge_operators_for_unit(unit_id, before_merge = Callable())`
   输入：单位 ID 与可选合成前回调。
   行为：按同名同星三合一规则自动合成，保留最早槽位并提升星级；回调用于让 `UnitManager` 在合成前撤回参与槽位。
   返回：`ActionResult(ok = true)`，payload 中包含 `merge_events`。
+- `get_unit_covenants(unit_id)`
+  输入：`unit_id: StringName`。
+  行为：读取单位类型的有效盟约，等于静态单位配置盟约加本局单位类型额外盟约，去重。
+  返回：盟约 ID 数组。
+- `get_operator_covenants(operator_key)`
+  输入：干员槽位 key。
+  行为：读取干员实例的有效盟约，等于其单位类型有效盟约加旧实例额外盟约，去重。
+  返回：盟约 ID 数组。
+- `add_unit_covenant(unit_id, covenant)`
+  输入：单位 ID 与盟约 ID。
+  行为：为该单位类型在本局追加永久盟约；现有与后续购买的同 `unit_id` 干员实例都会继承，自动三合一不会移除该追加盟约。
+  成功结果：返回 `ActionResult(ok = true)`，payload 中包含 `unit_id` 和 `covenant`。
+  失败结果：返回 `ActionResult(ok = false)`，单位不存在、盟约无效或已经拥有该盟约时不修改状态。
+- `add_operator_covenant(operator_key, covenant)`
+  输入：干员槽位 key 与盟约 ID。
+  行为：兼容旧调用；先解析槽位对应的 `unit_id`，再调用 `add_unit_covenant`。
+  成功结果：返回 `ActionResult(ok = true)`，payload 中包含 `unit_id`、`operator_key` 和 `covenant`。
+  失败结果：返回 `ActionResult(ok = false)`。
 - `add_owned_unit(unit_id)`
   输入：`unit_id: StringName`。
   行为：兼容旧调用，内部应转为新增一个干员实例槽位。
@@ -414,9 +461,15 @@ func get_event_cfg(event_id: StringName) -> Dictionary
 func get_wave_template_cfg(template_id: StringName) -> Dictionary
 func get_wave_template_ids_by_tier(tier: StringName) -> Array[StringName]
 func get_all_wave_template_ids() -> Array[StringName]
+func get_night_affix_cfg(affix_id: StringName) -> Dictionary
+func get_all_night_affix_ids() -> Array[StringName]
 func get_map_generation_cfg() -> Dictionary
 func get_ui_icon_catalog() -> Dictionary
 func get_scene_by_key(scene_key: StringName) -> PackedScene
+func get_all_unit_ids() -> Array[StringName]
+func get_all_enemy_ids() -> Array[StringName]
+func get_all_buff_ids() -> Array[StringName]
+func get_all_event_ids() -> Array[StringName]
 func get_all_building_ids() -> Array[StringName]
 func get_building_ids_by_type(building_type: StringName) -> Array[StringName]
 ```
@@ -463,9 +516,17 @@ func get_building_ids_by_type(building_type: StringName) -> Array[StringName]
   输入：无。
   行为：读取全部夜晚关卡模板 ID。
   返回：`Array[StringName]`。
+- `get_night_affix_cfg(affix_id)`
+  输入：`affix_id: StringName`。
+  行为：查询指定夜晚词缀配置。
+  返回：`Dictionary`。
+- `get_all_night_affix_ids()`
+  输入：无。
+  行为：读取全部夜晚词缀 ID。
+  返回：`Array[StringName]`。
 - `get_map_generation_cfg()`
   输入：无。
-  行为：读取地图生成调参配置，包括地图尺寸、资源点数量、事件点数量、障碍数量和安全半径。
+  行为：读取地图生成调参配置，包括地图尺寸、资源点数量、旧事件点数量、障碍数量和安全半径；正式随机事件点由 `RandomEventManager` 每日刷新。
   返回：`Dictionary`。
 - `get_ui_icon_catalog()`
   输入：无。
@@ -475,6 +536,22 @@ func get_building_ids_by_type(building_type: StringName) -> Array[StringName]
   输入：`scene_key: StringName`。
   行为：将逻辑场景名解析为场景模板。
   返回：`PackedScene`。
+- `get_all_unit_ids()`
+  输入：无。
+  行为：读取全部单位配置 ID。
+  返回：`Array[StringName]`。
+- `get_all_enemy_ids()`
+  输入：无。
+  行为：读取全部敌人配置 ID。
+  返回：`Array[StringName]`。
+- `get_all_buff_ids()`
+  输入：无。
+  行为：读取全部 Buff/遗物配置 ID。
+  返回：`Array[StringName]`。
+- `get_all_event_ids()`
+  输入：无。
+  行为：读取全部可进入地图事件刷新池的根事件 ID，过滤 `hidden_in_map_pool` 的结果事件。
+  返回：`Array[StringName]`。
 - `get_all_building_ids()`
   输入：无。
   行为：按 `sort_order` 读取全部建筑配置 ID。
@@ -880,8 +957,10 @@ func get_effect_radius() -> int
 func start_new_day_shop(day: int) -> void
 func refresh_shop() -> Dictionary
 func get_current_stock() -> Array[Dictionary]
+func get_refresh_cost() -> int
+func get_unit_purchase_cost(unit_cfg: Dictionary) -> int
+func grant_unit(unit_id: StringName, star: int = 1, display_name: String = "") -> Dictionary
 func try_buy_shop_slot(slot_index: int) -> Dictionary
-func try_buy_unit(unit_id: StringName) -> Dictionary
 ```
 
 方法规格：
@@ -899,15 +978,23 @@ func try_buy_unit(unit_id: StringName) -> Dictionary
   输入：无。
   行为：读取当前 5 个商店槽位。每个槽位至少包含 `slot_index`、`unit_id`、`sold`。
   返回：`Array[Dictionary]`。
+- `get_refresh_cost()`
+  输入：无。
+  行为：读取当前商店刷新价格；基础为 2 声望，远见 2 人且商店已买空时内部基价会置为 0，再叠加遗物修正，但当前实现最终最低夹取为 1。
+  返回：`int`。
+- `get_unit_purchase_cost(unit_cfg)`
+  输入：单位配置字典。
+  行为：读取当前购买该单位的实际价格；以 `cost_prestige` 为基础，叠加遗物和远见 3 人的价格修正，最终最低 1。
+  返回：`int`。
+- `grant_unit(unit_id, star = 1, display_name = "")`
+  输入：单位 ID、可选星级和显示名。
+  行为：不扣声望，直接新增一个干员槽位，并对该 `unit_id` 执行同名同星自动合成；事件奖励和调试工具使用该入口。
+  成功结果：返回 `ActionResult(ok = true)`，payload 中包含新增槽位和 `merge_events`。
+  失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `try_buy_shop_slot(slot_index)`
   输入：`slot_index: int`。
   行为：尝试购买指定商店槽位中的干员，购买成功后对该 `unit_id` 执行同名同星自动合成。
   成功结果：返回 `ActionResult(ok = true)`，扣除声望、新增一个绑定该 `unit_id` 的 1 星干员实例槽位，并将商店槽位标记为已购买；payload 中可包含 `merge_events`。
-  失败结果：返回 `ActionResult(ok = false)`，购买不生效。
-- `try_buy_unit(unit_id)`
-  输入：`unit_id: StringName`。
-  行为：兼容入口，尝试购买当前商店中第一个未售出的指定单位。
-  成功结果：返回 `ActionResult(ok = true)`，新增一个绑定该 `unit_id` 的干员实例槽位；返回数据中应包含槽位信息。
   失败结果：返回 `ActionResult(ok = false)`，购买不生效。
 
 #### `UnitManager`
@@ -970,7 +1057,7 @@ func clear_all_units() -> void
 - `try_sell_operator(operator_key)`
   输入：干员槽位 key。
   行为：检查白天阶段、拥有状态、未部署且未处于再部署冷却后，委托 `RunState.sell_owned_operator()` 移除槽位。
-  成功结果：返回 `ActionResult(ok = true)`，固定获得 1 声望。
+  成功结果：返回 `ActionResult(ok = true)`，默认获得 1 声望；远见 3 人且层数达标时由 `UnitManager` 按基础购买价折半覆盖返还值。
   失败结果：返回 `ActionResult(ok = false)`，槽位和声望不变。
 - `get_unit_by_runtime_id(unit_runtime_id)`
   输入：单位运行时 ID。
@@ -1250,26 +1337,40 @@ func setup(payload: Dictionary) -> void
 ```gdscript
 func tier_for_day(day: int) -> StringName
 func resolve_night_template(tier: StringName, run_seed: int, day: int, used_ids: Array) -> StringName
+func resolve_night_plan(run_seed: int, day: int, used_ids: Array) -> Array[StringName]
+func start_night(template_ids: Array, affix_ids: Array = []) -> void
 func start_wave_for_template(template_id: StringName) -> void
 func stop_wave() -> void
 func is_wave_finished() -> bool
 func has_pending_spawn() -> bool
+func get_current_wave_index() -> int
+func get_wave_count() -> int
+func get_current_wave_template_id() -> StringName
 func get_wave_preview_for_template(template_id: StringName) -> Dictionary
+func get_night_preview(template_ids: Array, affix_ids: Array = []) -> Dictionary
 ```
 
 方法规格：
 
 - `tier_for_day(day)`
   输入：`day: int`。
-  行为：根据当前天数返回夜晚关卡模板分层。当前规则为第 1-2 夜 `early`，第 3-4 夜 `mid`，第 5 夜 `late`，第 6 夜及以后 `boss`。
+  行为：兼容入口，返回当晚多波计划的首波分层。完整分层序列由 `night_template_resolver.gd` 的 `wave_tiers_for_day()` 维护。
   返回：`StringName`。
 - `resolve_night_template(tier, run_seed, day, used_ids)`
   输入：`tier: StringName`、`run_seed: int`、`day: int`、`used_ids: Array`。
-  行为：从指定分层模板池中按本局随机种子和天数确定当晚模板，并尽量避开本局已使用模板。
+  行为：兼容入口，从指定分层模板池中按本局随机种子和天数确定一个模板，并尽量避开本局已使用模板。
   返回：`StringName`。
+- `resolve_night_plan(run_seed, day, used_ids)`
+  输入：本局随机种子、天数和已使用模板 ID。
+  行为：按当日多波分层序列逐波抽取模板；夜内和局内尽量不重复，池耗尽时允许回退重复。
+  返回：`Array[StringName]`，为空表示无法解析有效夜晚计划。
+- `start_night(template_ids, affix_ids = [])`
+  输入：整夜模板 ID 序列与当晚词缀 ID 序列。
+  行为：启动整夜多波刷怪流程；每波条目会先应用夜晚词缀变换，敌人生成时再应用词缀后的配置覆盖。
+  返回：无。
 - `start_wave_for_template(template_id)`
   输入：`template_id: StringName`。
-  行为：读取指定夜晚关卡模板，展开其中 `entries` 并启动实际刷怪。
+  行为：单波兼容入口，内部等价于 `start_night([template_id], [])`。
   返回：无。
 - `stop_wave()`
   输入：无。
@@ -1277,15 +1378,31 @@ func get_wave_preview_for_template(template_id: StringName) -> Dictionary
   返回：无。
 - `is_wave_finished()`
   输入：无。
-  行为：判断当前波次是否已结束。
+  行为：判断整夜是否已结束：所有波次已放完、待刷怪队列为空且场上无敌人。
   返回：`bool`。
 - `has_pending_spawn()`
   输入：无。
   行为：判断是否仍有待生成敌人。
   返回：`bool`。
+- `get_current_wave_index()`
+  输入：无。
+  行为：读取当前正在执行的波次索引，未运行时返回 `-1`。
+  返回：`int`。
+- `get_wave_count()`
+  输入：无。
+  行为：读取当前整夜计划中的波次数。
+  返回：`int`。
+- `get_current_wave_template_id()`
+  输入：无。
+  行为：读取当前波次对应的模板 ID。
+  返回：`StringName`。
 - `get_wave_preview_for_template(template_id)`
   输入：`template_id: StringName`。
-  行为：聚合模板刷怪条目，返回右上角敌情面板所需的关卡标题、文案、关键敌人、路线和总数信息。预览中的随机敌人选择与夜晚实际刷怪使用同一确定性种子。
+  行为：聚合单个模板刷怪条目，返回右上角敌情面板所需的标题、文案、关键敌人、路线和总数信息。预览中的随机敌人选择与夜晚实际刷怪使用同一确定性种子。
+  返回：`Dictionary`。
+- `get_night_preview(template_ids, affix_ids = [])`
+  输入：整夜模板 ID 序列与当晚词缀 ID 序列。
+  行为：聚合整夜多波预览，返回波次摘要、合并敌群、总数、出怪口顺序和词缀公示；条目和敌人数值按词缀生效后的真实结果计算。
   返回：`Dictionary`。
 
 #### `EnemyManager`
@@ -1295,22 +1412,23 @@ func get_wave_preview_for_template(template_id: StringName) -> Dictionary
 - 场上敌人主控
 
 ```gdscript
-func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i) -> int
-func remove_enemy(enemy_runtime_id: int) -> void
+func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i, cfg_override: Dictionary = {}) -> int
+func remove_enemy(enemy_runtime_id: int, defeated: bool = true) -> void
 func get_enemy_by_runtime_id(enemy_runtime_id: int) -> Node
 func get_alive_enemy_count() -> int
 func notify_enemy_reached_core(enemy_runtime_id: int) -> void
+func clear_all_enemies() -> void
 ```
 
 方法规格：
 
-- `spawn_enemy(enemy_id, spawn_cell)`
-  输入：敌人 ID 与刷怪格。
-  行为：创建敌人实例并加入场景。
+- `spawn_enemy(enemy_id, spawn_cell, cfg_override = {})`
+  输入：敌人 ID、刷怪格和可选配置覆盖。
+  行为：读取敌人基础配置，叠加 `cfg_override` 后创建敌人实例并加入场景；夜晚词缀使用该覆盖参数修正敌人数值。
   返回：敌人运行时 ID。
-- `remove_enemy(enemy_runtime_id)`
-  输入：敌人运行时 ID。
-  行为：移除指定敌人实例。
+- `remove_enemy(enemy_runtime_id, defeated = true)`
+  输入：敌人运行时 ID 和是否视为被击败。
+  行为：移除指定敌人实例；`defeated = true` 时结算死亡效果和击杀声望，进核心等非击杀离场传 `false`。
   返回：无。
 - `get_enemy_by_runtime_id(enemy_runtime_id)`
   输入：敌人运行时 ID。
@@ -1323,6 +1441,10 @@ func notify_enemy_reached_core(enemy_runtime_id: int) -> void
 - `notify_enemy_reached_core(enemy_runtime_id)`
   输入：敌人运行时 ID。
   行为：处理敌人抵达核心后的扣血与移除。
+  返回：无。
+- `clear_all_enemies()`
+  输入：无。
+  行为：清空当前场上所有敌人，不结算击杀奖励。
   返回：无。
 
 #### `EnemyActor`
@@ -1748,6 +1870,7 @@ func hide_panel() -> void
 | `day_started` | `day: int` | `GameController` | UI、DayManager、ShopManager、BuildingManager | 一天开始 |
 | `night_started` | `day: int` | `GameController` | NightManager、WaveManager、UI | 夜晚开始 |
 | `night_cleared` | `day: int` | `WaveManager` / `NightManager` | `GameController` | 夜战结束且守住 |
+| `night_wave_started` | `wave_index: int, wave_count: int` | `WaveManager` | UI、调试工具 | 整夜中的某一波开始 |
 | `run_ended` | `win: bool` | `GameController` | `SceneRouter`、`ResultPanel` | 一局结束 |
 
 ### 4.2 状态变化信号
@@ -1758,6 +1881,7 @@ func hide_panel() -> void
 | `prestige_changed` | `value: int` | `RunState` | CombatHudController、BuildPanel | 声望变化 |
 | `materials_changed` | `wood: int, stone: int, mana: int` | `RunState` | CombatHudController、BuildPanel | 材料变化 |
 | `core_hp_changed` | `current: int, max_value: int` | `RunState` | CombatHudController、ResultPanel | 核心血量变化 |
+| `core_damaged` | `amount: int, current: int, max_value: int` | `RunState` | GameController、调试工具 | 核心实际受到伤害 |
 | `deploy_limit_changed` | `current: int, max_value: int` | `RunState` | CombatHudController、CombatSandbox | 部署数量变化 |
 | `owned_operators_changed` | `operators: Array[Dictionary]` | `RunState` | CombatHudController、CombatSandbox | 已拥有干员槽位变化 |
 | `owned_units_changed` | `unit_ids: Array[StringName]` | `RunState` | 兼容旧调用、调试工具 | 已拥有单位类型集合变化，兼容旧的按 `unit_id` 读取方式 |
@@ -1774,6 +1898,7 @@ func hide_panel() -> void
 | `request_build` | `cell: Vector2i, building_id: StringName` | UI | `BuildingManager` / `DayManager` | 请求建造 |
 | `request_toggle_building` | `building_runtime_id: int` | UI / ActionPanel | `BuildingManager` | 请求切换可开关建筑的启用状态 |
 | `request_interact_event` | `cell: Vector2i` | UI | `DayManager` / `RandomEventManager` | 请求处理事件 |
+| `request_open_event_panel` | `cell: Vector2i` | UI | `EventPanel` | 请求打开指定事件点的事件弹窗 |
 | `request_start_night` | 无 | UI | `GameController` / `DayManager` | 请求结束白天 |
 | `request_buy_shop_slot` | `slot_index: int` | UI | `ShopManager` | 请求购买指定商店槽位 |
 | `request_refresh_shop` | 无 | UI | `ShopManager` | 请求刷新商店 |
@@ -1785,16 +1910,24 @@ func hide_panel() -> void
 |---|---|---|---|---|
 | `fog_revealed` | `cells: Array[Vector2i]` | `MapManager` | UI、调试工具 | 迷雾被揭开 |
 | `map_cell_clicked` | `cell: Vector2i` | `MapRoot` | ActionPanel、CombatHudController、CombatSandbox | 地图格点击事件，承载场景根据当前模式解释点击含义 |
+| `map_cell_hovered` | `cell: Vector2i` | `MapRoot` | CombatHudController、CombatSandbox | 地图格悬停事件 |
+| `right_click_tapped` | 无 | `MapRoot` | ActionPanel、CombatHudController | 右键/取消输入 |
 | `building_placed` | `building_runtime_id: int, building_id: StringName, cell: Vector2i` | `BuildingManager` | `MapManager`、`PathService` | 建筑已放置 |
 | `building_destroyed` | `building_runtime_id: int, building_id: StringName, cell: Vector2i` | `BuildingManager` | `MapManager`、`PathService` | 建筑已摧毁 |
 | `building_state_changed` | `building_runtime_id: int, building_id: StringName, enabled: bool` | `BuildingManager` | ActionPanel、调试工具 | 建筑启用/停用状态已变化 |
+| `build_action_result` | `building_id: StringName, cell: Vector2i, result: Dictionary` | `BuildingManager` | BuildPanel、ActionPanel | 建造/建筑操作结果 |
 | `path_grid_changed` | 无 | `BuildingManager` / `MapManager` | `PathService`、`EnemyManager` | 寻路网格需重建 |
 | `unit_deployed` | `unit_runtime_id: int, operator_key: StringName, unit_id: StringName, cell: Vector2i` | `UnitManager` | CombatHudController、CombatSandbox | 干员槽位已部署 |
 | `unit_removed` | `unit_runtime_id: int, reason: int` | `UnitManager` | CombatHudController、CombatSandbox | 单位离场 |
+| `unit_died` | `unit_runtime_id: int, unit_id: StringName, cell: Vector2i` | `UnitManager` | BuffManager、CombatHudController | 单位死亡 |
+| `covenants_changed` | `entries: Array` | `CovenantManager` | UI、调试工具 | 盟约状态重算 |
+| `unit_skill_cast` | `unit_runtime_id: int, unit_id: StringName` | `UnitActor` | BuffManager | 单位释放技能 |
 | `enemy_spawned` | `enemy_runtime_id: int, enemy_id: StringName, cell: Vector2i` | `EnemyManager` | CombatHudController、调试工具 | 敌人出生 |
 | `enemy_died` | `enemy_runtime_id: int, enemy_id: StringName` | `EnemyManager` | `WaveManager`、`BuffManager` | 敌人死亡 |
 | `random_event_triggered` | `event_id: StringName, cell: Vector2i` | `RandomEventManager` | `EventPanel` | 兼容旧事件展示入口；当前地图事件默认通过地图对象弹窗点击触发 |
+| `random_event_choice_selected` | `event_id: StringName, cell: Vector2i, choice_id: StringName, result: Dictionary` | `EventPanel` | UI、调试工具 | 事件选项已选择并返回结算结果 |
 | `blessing_choices_ready` | `choice_ids: Array[StringName]` | `BuffManager` | `BlessingPanel` | 祝福选项已生成 |
+| `audio_cue_requested` | `cue_key: StringName` | UI / 系统 | 音频绑定器 | 请求播放指定音效 |
 | `core_destroyed` | 无 | `RunState` | `GameController`、`ResultPanel` | 核心归零 |
 
 ---

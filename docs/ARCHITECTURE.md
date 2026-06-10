@@ -263,9 +263,11 @@ UI
 - 核心生命
 - 已获得 Buff
 - 已拥有干员实例槽位
+- 本局按单位类型追加的盟约 tag
 - 部署上限
 - 当前已部署数量
 - 随机种子
+- 当晚模板计划与夜晚词缀
 
 不负责：
 
@@ -284,7 +286,7 @@ UI
 
 具体职责：
 
-- Autoload `_ready()` 时读取 `units.json`、`enemies.json`、`buildings.json`、`buffs.json`、`events.json`、`wave_templates.json` 和应用级配置
+- Autoload `_ready()` 时读取 `units.json`、`enemies.json`、`buildings.json`、`buffs.json`、`events.json`、`wave_templates.json`、`night_affixes.json` 和应用级配置
 - 按 `id` 索引这些配置，供其他模块查询
 - 提供按建筑类别读取建筑 ID 的接口，供 `BuildPanel` 从 `buildings.json[].building_type` 动态生成建筑列表
 - 维护一张场景注册表，把逻辑名映射到实际场景资源
@@ -305,8 +307,10 @@ UI
   保存随机事件的静态配置。
 - `wave_templates.json`
   保存夜晚关卡模板池，包括关卡标题、预览文案、分层标签、关键敌人和刷怪条目。
+- `night_affixes.json`
+  保存夜晚词缀池，包括出现天数、抽取权重、展示文案和词缀效果原语。
 
-夜晚关卡模板不按天数直接索引。`GameController.enter_day()` 会在白天开始时根据当前天数、`RunState.random_seed` 和 `RunState.used_template_ids` 解析 `RunState.night_template_id`；`NightManager.start_night()` 再把该模板交给 `WaveManager.start_wave_for_template()` 执行。右上角敌情预览也读取同一个模板，确保预览与夜晚实际刷怪一致。
+夜晚关卡模板不按天数直接索引。`GameController.enter_day()` 会在白天开始时根据当前天数、`RunState.random_seed` 和 `RunState.used_template_ids` 解析整夜多波计划，写入 `RunState.night_wave_template_ids`；`night_template_id` 始终保留为首波模板，作为旧调用路径兼容视图。`NightManager.start_night()` 再把整夜计划和 `RunState.night_affix_ids` 交给 `WaveManager.start_night()` 执行。右上角敌情预览读取同一份计划和词缀，确保预览与夜晚实际刷怪一致。
 
 配置表里不直接写 `res://scenes/...` 路径，而是写 `scene_key`。
 
@@ -477,7 +481,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 管理刷怪点和核心位置
 - 提供格子坐标与可通行信息
 - 根据 `data/map_generation.json` 统一读取地图生成参数
-- 在格子上记录资源点与随机事件点，但不结算资源或事件效果
+- 在格子上记录资源点；随机事件点由运行时覆盖层维护，地图模块只委托查询和刷新显示
 - 为敌人寻路提供底层支持
 - 为 UI 提供格子预览与作战范围绘制
 
@@ -487,8 +491,8 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 障碍随机生成，但核心安全半径与刷怪点安全半径内不生成障碍、资源点和事件点。
 - 障碍放置会保持刷怪点到核心的地面路径连通，避免地图生成破坏夜晚基础路径。
 - 资源类型为木材、石材、魔力，当前每种目标 12 个；其中每种至少 2 个放在初始可见区外侧的近探索圈作为开局保底。
-- 随机事件点数量由 `event_point_count` 控制；当前 `data/map_generation.json` 中该值为 8，正式地图默认生成 8 个事件点。
-- 事件点与资源点互斥；地图模块只负责生成事件点坐标，运行时事件覆盖层由 `RandomEventManager` 维护，事件展示和效果结算由白天流程与地图对象弹窗负责。
+- `event_point_count` 当前置为 0，地图生成期不再放置正式随机事件点。
+- 随机事件点由 `RandomEventManager` 在每天开始时刷新：第 1 天保底 2 个，此后每天 1-2 个，活跃上限 4 个；事件点与资源点互斥，展示和效果结算由白天流程与事件弹窗负责。
 
 各文件作用：
 
@@ -499,7 +503,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `cell_data.gd`
   单格数据结构，描述地形、发现状态、资源类型、可建造、可通行、占用等属性；随机事件运行时状态由 `RandomEventManager` 维护。
 - `map_generator.gd`
-  地图生成逻辑，负责按 `data/map_generation.json` 生成初始地图，包括核心、初始迷雾、刷怪点、障碍、资源点和随机事件点。
+  地图生成逻辑，负责按 `data/map_generation.json` 生成初始地图，包括核心、初始迷雾、刷怪点、障碍和资源点。它保留旧的 `event_point_count` 生成入口作兼容；当前配置为 0，正式随机事件点由 `RandomEventManager` 每日刷新。
 - `map_root_view.gd`
   `MapRoot.tscn` 的显示与输入脚本，负责图层绘制、鼠标点击转发、攻击范围和部署预览。
 - `core_view.gd`
@@ -708,13 +712,13 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
-  共用 UI 样式辅助函数，集中生成现代深色战术 HUD 面板、按钮和进度条等 `StyleBoxFlat`。当前基线不使用 UI 图片资产。
+  共用 UI 样式辅助函数，集中生成现代深色战术 HUD 面板、按钮和进度条等样式。当前实现优先通过 `UiFrameSpec` / `UiArtRegistry` 解析九宫格贴图、图标和进度条资源；资源缺失时再回退为扁平 `StyleBoxFlat`。
 - `ui_art_registry.gd`
-  UI 图片资源入口。当前阶段固定返回空贴图，让所有图标、肖像和技能图标回退为文本占位；未来重新接入资源时只能改这里，组件不得自行拼资源路径。
+  UI 图片资源入口。它按数据表显式资源路径、`data/ui_icons.json` 目录、`assets/ui/generated/` 约定命名和旧版 `icon_key` 兼容路径解析图标、肖像、技能图标和边框贴图；找不到资源时返回 `null`，由调用组件决定文本或扁平样式兜底。
 - `ui_display_text.gd`
   统一显示文本工具，集中处理职业、阶级、伤害类型、方向、阶段、占位图标文本等跨 UI 复用映射。数据表已有 `name`、`desc`、`icon_text` 时优先使用数据字段，工具只负责兜底和统一规则。UI 分层与重构构想见 `docs/UI_SYSTEM.md`。
 - `ui_frame_spec.gd`
-  组件级内容边距规格。当前只保存 padding，不再保存贴图路径或九宫格切片。
+  组件级边框规格，集中保存语义 frame key、内容边距和九宫格贴图切片。组件只请求语义 frame，具体贴图解析与缺图回退都收束在这里和 `UiArtRegistry`。
 - `ui_layout_rules.gd` / `ui_tokens.gd`
   统一计算 HUD 响应式矩形、断点、间距和组件尺寸，避免场景与脚本各写一套布局常量。
 - `combat/combat_hud.gd`
@@ -872,7 +876,7 @@ UI -> ShopManager -> RunState -> UnitManager/UI
 同一个 `unit_id` 可以被多次购买，每次购买都会得到不同的 `operator_key`，后续部署、撤退和再部署都按这个槽位独立结算。
 
 商店每页包含 5 个槽位。新一天会免费刷新一页，玩家也可以在白天花费 2 声望刷新。
-干员按固定权重抽取：1 声望一阶 60%，3 声望二阶 30%，7 声望三阶 10%。同一页允许出现重复干员。
+干员按固定权重抽取：2 声望一阶 60%，4 声望二阶 30%，7 声望三阶 10%。同一页允许出现重复干员。
 购买指定槽位后，该槽位标记为已购买并保持为空位状态，直到下一次刷新或进入新一天。
 
 ### 7.4 进入夜晚
