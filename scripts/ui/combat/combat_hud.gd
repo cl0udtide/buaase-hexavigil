@@ -793,7 +793,7 @@ func _make_wave_label(node_name: String, font_size: int, color: Color, autowrap:
 	return label
 
 
-func _rebuild_wave_spawn_cards(spawn_order: Array, entries: Array, raw_key_enemies: Variant) -> void:
+func _rebuild_wave_spawn_cards(spawn_order: Array, entries: Array, raw_key_enemies: Variant, main_gate: String = "") -> void:
 	if _wave_spawn_cards_box == null or _wave_spawn_card_template == null or _wave_enemy_card_template == null:
 		return
 	for child in _wave_spawn_cards_box.get_children():
@@ -815,7 +815,7 @@ func _rebuild_wave_spawn_cards(spawn_order: Array, entries: Array, raw_key_enemi
 	for raw_spawn: Variant in spawn_order:
 		var spawn_key := String(raw_spawn)
 		var spawn_entries: Array = entries_by_spawn.get(spawn_key, [])
-		_wave_spawn_cards_box.add_child(_build_wave_spawn_card(spawn_key, spawn_entries, key_enemies))
+		_wave_spawn_cards_box.add_child(_build_wave_spawn_card(spawn_key, spawn_entries, key_enemies, main_gate))
 
 
 ## 多波时按"波 × 口"分段展示（消费 get_night_preview 的 waves[].entries / main_gate）；
@@ -829,7 +829,10 @@ func _rebuild_wave_spawn_cards_by_wave(waves: Array, merged_spawn_order: Array, 
 		if not (wave_info.get("entries", []) as Array).is_empty():
 			usable_waves.append(wave_info)
 	if usable_waves.size() <= 1:
-		_rebuild_wave_spawn_cards(merged_spawn_order, merged_entries, raw_key_enemies)
+		var single_main: String = ""
+		if usable_waves.size() == 1:
+			single_main = String(usable_waves[0].get("main_gate", ""))
+		_rebuild_wave_spawn_cards(merged_spawn_order, merged_entries, raw_key_enemies, single_main)
 		return
 	if _wave_spawn_cards_box == null or _wave_spawn_card_template == null or _wave_enemy_card_template == null:
 		return

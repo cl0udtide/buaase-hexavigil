@@ -224,6 +224,27 @@ func _test_game_boot() -> void:
 				var spawn_cell: Vector2i = raw_cell
 				_expect(not map_manager.is_discovered(spawn_cell), "spawn cell stays undiscovered at start")
 
+		# --- 实刷对照：start_night 后第一波 pending 的 (口|敌) 计数与预览一致 ---
+		if wave_manager != null and not (affixed_preview.get("waves", []) as Array).is_empty():
+			wave_manager.start_night(late_plan, [&"forced_march", &"spawn_surge"])
+			var pending_counts: Dictionary = {}
+			for raw_pending: Variant in (wave_manager._pending_spawns as Array):
+				if typeof(raw_pending) != TYPE_DICTIONARY:
+					continue
+				var pending: Dictionary = raw_pending
+				var pending_key := "%s|%s" % [String(pending.get("spawn_key", "")), String(pending.get("enemy_id", ""))]
+				pending_counts[pending_key] = int(pending_counts.get(pending_key, 0)) + 1
+			var preview_counts: Dictionary = {}
+			var first_wave: Dictionary = (affixed_preview.get("waves", []) as Array)[0]
+			for raw_preview_entry: Variant in (first_wave.get("entries", []) as Array):
+				if typeof(raw_preview_entry) != TYPE_DICTIONARY:
+					continue
+				var preview_entry: Dictionary = raw_preview_entry
+				var preview_key := "%s|%s" % [String(preview_entry.get("spawn_key", "")), String(preview_entry.get("enemy_id", ""))]
+				preview_counts[preview_key] = int(preview_counts.get(preview_key, 0)) + int(preview_entry.get("count", 0))
+			_expect(pending_counts == preview_counts, "first wave actual spawn plan matches preview (%s vs %s)" % [str(pending_counts), str(preview_counts)])
+			wave_manager.stop_wave()
+
 	game.queue_free()
 	await process_frame
 
