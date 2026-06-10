@@ -530,7 +530,7 @@ func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 		_wave_summary_label.text = "共 %d 波 · 合计来袭 %d · 活跃出怪口 %d" % [wave_count, total_count, active_spawn_count]
 	else:
 		_wave_summary_label.text = "合计来袭 %d · 活跃出怪口 %d" % [total_count, active_spawn_count]
-	_rebuild_wave_spawn_cards(spawn_order, entries, data.get("key_enemies", []))
+	_rebuild_wave_spawn_cards_by_wave(data.get("waves", []), spawn_order, entries, data.get("key_enemies", []))
 	_wave_warning_label.text = _format_wave_warning_text(data)
 	_wave_warning_row.visible = not _wave_warning_label.text.strip_edges().is_empty()
 	_apply_right_column_visibility()
@@ -816,13 +816,64 @@ func _rebuild_wave_spawn_cards(spawn_order: Array, entries: Array, raw_key_enemi
 		_wave_spawn_cards_box.add_child(_build_wave_spawn_card(spawn_key, spawn_entries, key_enemies))
 
 
-func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dictionary) -> Control:
+## 多波时按"波 × 口"分段展示（消费 get_night_preview 的 waves[].entries / main_gate）；
+## 单波或缺 per-wave 数据时回退聚合卡片。
+func _rebuild_wave_spawn_cards_by_wave(waves: Array, merged_spawn_order: Array, merged_entries: Array, raw_key_enemies: Variant) -> void:
+	var usable_waves: Array[Dictionary] = []
+	for wave_variant: Variant in waves:
+		if typeof(wave_variant) != TYPE_DICTIONARY:
+			continue
+		var wave_info: Dictionary = wave_variant
+		if not (wave_info.get("entries", []) as Array).is_empty():
+			usable_waves.append(wave_info)
+	if usable_waves.size() <= 1:
+		_rebuild_wave_spawn_cards(merged_spawn_order, merged_entries, raw_key_enemies)
+		return
+	if _wave_spawn_cards_box == null or _wave_spawn_card_template == null or _wave_enemy_card_template == null:
+		return
+	for child in _wave_spawn_cards_box.get_children():
+		child.queue_free()
+	var key_enemies := _key_enemy_lookup(raw_key_enemies)
+	for wave_info in usable_waves:
+		var main_gate := String(wave_info.get("main_gate", ""))
+		var header := Label.new()
+		var header_text := "第 %d 波 · %s" % [int(wave_info.get("wave_index", 0)) + 1, String(wave_info.get("name", ""))]
+		if not main_gate.is_empty():
+			header_text += " · 主攻 %s" % main_gate
+		header.text = header_text
+		header.add_theme_color_override("font_color", GameUiStyle.AMBER)
+		_wave_spawn_cards_box.add_child(header)
+		var wave_entries: Array = wave_info.get("entries", [])
+		var spawn_order: Array = wave_info.get("spawn_order", [])
+		var entries_by_spawn: Dictionary = {}
+		for raw_spawn: Variant in spawn_order:
+			entries_by_spawn[String(raw_spawn)] = []
+		for entry_variant: Variant in wave_entries:
+			if typeof(entry_variant) != TYPE_DICTIONARY:
+				continue
+			var entry: Dictionary = entry_variant
+			var spawn_key := String(entry.get("spawn_key", ""))
+			if spawn_key.is_empty():
+				continue
+			if not entries_by_spawn.has(spawn_key):
+				entries_by_spawn[spawn_key] = []
+			(entries_by_spawn[spawn_key] as Array).append(entry)
+		for raw_spawn: Variant in spawn_order:
+			var spawn_key := String(raw_spawn)
+			var spawn_entries: Array = entries_by_spawn.get(spawn_key, [])
+			_wave_spawn_cards_box.add_child(_build_wave_spawn_card(spawn_key, spawn_entries, key_enemies, main_gate))
+
+
+func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dictionary, main_gate: String = "") -> Control:
 	var card := _wave_spawn_card_template.duplicate() as PanelContainer
 	card.name = "WaveSpawn%sCard" % spawn_key
 	card.unique_name_in_owner = false
 	card.visible = true
 	var key_label := card.get_node_or_null("SpawnCardRow/SpawnKeyLabel") as Label
-	key_label.text = spawn_key
+	if spawn_key == main_gate and not main_gate.is_empty():
+		key_label.text = "%s · 主攻" % spawn_key
+	else:
+		key_label.text = spawn_key
 	key_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	var chips := card.get_node_or_null("SpawnCardRow/WaveEnemyCardsFlow") as HFlowContainer
 	for child in chips.get_children():
