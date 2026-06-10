@@ -71,6 +71,40 @@ func _run() -> void:
 		_expect(int(run_state.pending_extra_blessings) == 1, "clean night pays extra blessing")
 		_expect(not bool(run_state.night_wager_active), "wager resets after settlement")
 
+	# 每日刷新：day1 保底 2 个事件点；活跃上限 4。
+	_expect((event_manager.get_event_cells() as Array).size() == 2, "day1 spawns exactly 2 event points")
+	event_manager._spawn_daily_events(2)
+	event_manager._spawn_daily_events(3)
+	event_manager._spawn_daily_events(4)
+	_expect((event_manager.get_event_cells() as Array).size() <= 4, "active event points capped at 4")
+
+	# 雇佣兵营地：声望换随机干员。
+	run_state.prestige = 10
+	var roster_before: int = (run_state.get_owned_operators() as Array).size()
+	var hire: Dictionary = event_manager.apply_event(&"event_mercenary_hire_mid")
+	_expect(hire.get("ok", false), "mercenary hire applies")
+	_expect((run_state.get_owned_operators() as Array).size() == roster_before + 1, "mercenary hire grants an operator")
+	_expect(run_state.prestige == 7, "mercenary hire costs 3 prestige")
+
+	# 祭坛：动态选项 + 灌注 = 干员实例获得盟约，魔力矿扣减。
+	run_state.add_owned_operator(&"guard_t1", "测试斯卡蒂")
+	var altar_cell := Vector2i(5, 5)
+	event_manager._events_by_cell[altar_cell] = &"event_altar"
+	var altar_cfg: Dictionary = event_manager.get_event_cfg_at_cell(altar_cell)
+	var altar_choices: Array = altar_cfg.get("choices", [])
+	_expect(altar_choices.size() >= 2, "altar offers dynamic choices plus leave")
+	_expect(String((altar_choices[0] as Dictionary).get("id", "")).begins_with("infuse_"), "altar first choice is infusion")
+	run_state.mana = 5
+	var offers: Array = event_manager._ensure_altar_offers(altar_cell)
+	var offer: Dictionary = offers[0]
+	var target_key := StringName(offer.get("operator_key", ""))
+	var target_covenant := StringName(offer.get("covenant", ""))
+	var infuse: Dictionary = event_manager.apply_event_for_cell(altar_cell, StringName(offer.get("choice_id", "")))
+	_expect(infuse.get("ok", false), "altar infusion applies")
+	_expect(run_state.mana == 3, "altar infusion costs 2 mana")
+	_expect((run_state.get_operator_covenants(target_key) as Array).has(target_covenant), "operator gains infused covenant")
+	_expect(event_manager.get_event_id_at_cell(altar_cell) == StringName(), "altar consumed after infusion")
+
 	game.queue_free()
 	await process_frame
 	_finish()

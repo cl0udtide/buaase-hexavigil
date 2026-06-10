@@ -38,7 +38,14 @@ func show_event_for_cell(cell: Vector2i) -> void:
 	var event_id: StringName = random_event_manager.get_event_id_at_cell(cell)
 	if event_id == StringName():
 		return
-	var cfg: Dictionary = random_event_manager.get_event_cfg(event_id) if random_event_manager.has_method("get_event_cfg") else _get_event_cfg(event_id)
+	# 优先按格子取配置：祭坛等事件的选项是按格子动态生成的。
+	var cfg: Dictionary = {}
+	if random_event_manager.has_method("get_event_cfg_at_cell"):
+		cfg = random_event_manager.get_event_cfg_at_cell(cell)
+	elif random_event_manager.has_method("get_event_cfg"):
+		cfg = random_event_manager.get_event_cfg(event_id)
+	else:
+		cfg = _get_event_cfg(event_id)
 	if cfg.is_empty():
 		return
 	_current_cell = cell

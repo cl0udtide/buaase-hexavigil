@@ -28,8 +28,15 @@
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "effects": [
-      { "type": "core_max_hp_add", "value": -2 },
-      { "type": "grant_random_relic", "rarity_min": 2, "rarity_max": 3 }
+      {
+        "type": "core_max_hp_add",
+        "value": -2
+      },
+      {
+        "type": "grant_random_relic",
+        "rarity_min": 2,
+        "rarity_max": 3
+      }
     ]
   },
   {
@@ -59,7 +66,8 @@
         "event_id": "event_war_wager_decline",
         "effect_desc": "不冒这个险。"
       }
-    ]
+    ],
+    "max_day": 5
   },
   {
     "id": "event_war_wager_accept",
@@ -68,8 +76,12 @@
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "effects": [
-      { "type": "night_affix_add_random" },
-      { "type": "wager_no_leak" }
+      {
+        "type": "night_affix_add_random"
+      },
+      {
+        "type": "wager_no_leak"
+      }
     ]
   },
   {
@@ -107,7 +119,9 @@
     "desc": "成交。矿石沉甸甸的，成色不错。",
     "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
-    "requires": { "prestige": 3 },
+    "requires": {
+      "prestige": 3
+    },
     "payload": {
       "wood": 0,
       "stone": 0,
@@ -121,12 +135,221 @@
     "desc": "头领清点完矿石，把一袋报酬丢了过来。",
     "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
-    "requires": { "mana": 2 },
+    "requires": {
+      "mana": 2
+    },
     "payload": {
       "wood": 0,
       "stone": 0,
       "mana": -2,
       "prestige": 3
+    }
+  },
+  {
+    "id": "event_altar",
+    "name": "古代祭坛",
+    "desc": "半埋在土里的环形祭坛仍在低声嗡鸣。把魔力矿放上凹槽，就能将一种盟约的烙印灌注给一名干员。",
+    "effect_type": "contract",
+    "min_day": 2,
+    "weight": 2,
+    "choices": []
+  },
+  {
+    "id": "event_altar_infused",
+    "name": "古代祭坛",
+    "desc": "矿石化为流光没入干员的轮廓，新的烙印亮起，随后祭坛彻底沉寂。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_altar_leave",
+    "name": "古代祭坛",
+    "desc": "你们没有惊动祭坛。嗡鸣声在身后渐渐远去。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_mercenary_camp",
+    "name": "雇佣兵营地",
+    "desc": "篝火旁坐着几名待价而沽的佣兵。中介摊开名册：“价格好说，但人选得抽签。”",
+    "effect_type": "contract",
+    "choices": [
+      {
+        "id": "hire_mid",
+        "text": "雇一名中坚佣兵",
+        "kind": "primary",
+        "event_id": "event_mercenary_hire_mid",
+        "effect_desc": "支付 3 声望，获得一名随机 4 费干员。"
+      },
+      {
+        "id": "hire_high",
+        "text": "雇一名精锐佣兵",
+        "kind": "primary",
+        "event_id": "event_mercenary_hire_high",
+        "effect_desc": "支付 5 声望，获得一名随机 7 费干员。"
+      },
+      {
+        "id": "leave",
+        "text": "绕开营地",
+        "kind": "secondary",
+        "event_id": "event_mercenary_leave",
+        "effect_desc": "不做交易。"
+      }
+    ]
+  },
+  {
+    "id": "event_mercenary_hire_mid",
+    "name": "雇佣兵营地",
+    "desc": "中介摇了摇签筒。走出帐篷的身影披挂整齐，朝你们点了点头。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "requires": {
+      "prestige": 3
+    },
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 0,
+      "prestige": -3
+    },
+    "effects": [
+      {
+        "type": "grant_random_operator",
+        "unit_cost": 4
+      }
+    ]
+  },
+  {
+    "id": "event_mercenary_hire_high",
+    "name": "雇佣兵营地",
+    "desc": "签筒停住，中介挑了挑眉：“运气不错。”帐篷里走出的人物气场迥然不同。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "requires": {
+      "prestige": 5
+    },
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 0,
+      "prestige": -5
+    },
+    "effects": [
+      {
+        "type": "grant_random_operator",
+        "unit_cost": 7
+      }
+    ]
+  },
+  {
+    "id": "event_mercenary_leave",
+    "name": "雇佣兵营地",
+    "desc": "篝火的光被你们留在了身后。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_old_arsenal",
+    "name": "废弃军械库",
+    "desc": "锈蚀的大门虚掩着，里面堆满还能用的建材。但搬运的动静一定会引来注意。",
+    "effect_type": "contract",
+    "choices": [
+      {
+        "id": "loot",
+        "text": "搬空军械库",
+        "kind": "primary",
+        "event_id": "event_arsenal_loot",
+        "effect_desc": "获得 2 木材 2 石材，但今晚追加一条随机夜晚词缀。"
+      },
+      {
+        "id": "leave",
+        "text": "原样封好大门",
+        "kind": "secondary",
+        "event_id": "event_arsenal_leave",
+        "effect_desc": "不冒险。"
+      }
+    ]
+  },
+  {
+    "id": "event_arsenal_loot",
+    "name": "废弃军械库",
+    "desc": "建材装了满满几车。远处传来一声悠长的嚎叫——今晚不会安生了。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "payload": {
+      "wood": 2,
+      "stone": 2,
+      "mana": 0,
+      "prestige": 0
+    },
+    "effects": [
+      {
+        "type": "night_affix_add_random"
+      }
+    ]
+  },
+  {
+    "id": "event_arsenal_leave",
+    "name": "废弃军械库",
+    "desc": "大门重新合拢，灰尘落定。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_mana_rift",
+    "name": "魔力裂隙",
+    "desc": "地面裂开一道细缝，幽蓝的源质雾气正缓缓外溢。引导它能采到不少魔力矿，封住它则更稳妥。",
+    "effect_type": "contract",
+    "choices": [
+      {
+        "id": "siphon",
+        "text": "引导裂隙",
+        "kind": "primary",
+        "event_id": "event_rift_siphon",
+        "effect_desc": "获得 3 魔力矿，但今晚敌人获得「巫术潮汐」词缀（法抗 +20）。"
+      },
+      {
+        "id": "seal",
+        "text": "用石材封堵",
+        "kind": "secondary",
+        "event_id": "event_rift_seal",
+        "effect_desc": "消耗 1 石材，获得 2 声望。"
+      }
+    ]
+  },
+  {
+    "id": "event_rift_siphon",
+    "name": "魔力裂隙",
+    "desc": "采集装置收满了结晶。雾气漫过营地时，你们闻到了雷雨将至的味道。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 3,
+      "prestige": 0
+    },
+    "effects": [
+      {
+        "type": "night_affix_add",
+        "affix_id": "arcane_tide"
+      }
+    ]
+  },
+  {
+    "id": "event_rift_seal",
+    "name": "魔力裂隙",
+    "desc": "石材压住裂缝，雾气散尽。附近的幸存者送来了谢礼。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "requires": {
+      "stone": 1
+    },
+    "payload": {
+      "wood": 0,
+      "stone": -1,
+      "mana": 0,
+      "prestige": 2
     }
   }
 ]
