@@ -358,7 +358,7 @@ Expected: 每个模板 FAIL "has groups"。
 | siege_breach | demolitionist→flank, shieldguard→main, heavy_defender→main, siege_breaker→main |
 | greatblade_abyss | bat→flank, splitting_originium_slug→any, possessed_soldier→main, sarkaz_greatswordsman→main |
 | heavyplate_siege | slime→any, shieldguard→main, heavy_defender→main, senior_caster→flank |
-| arts_cataclysm | caster→main, arts_drone→flank, senior_caster→main, infused_originium_slug→any |
+| arts_cataclysm | caster→main, arts_drone→flank, senior_caster→main, infused_originium_slug→main（2026-06-11 评审调整：main 强度需过半）|
 | fiends_carnival | armored_soldier→main, crossbowman→flank, milk_dragon_chief→main, heavy_defender→main, caster→flank |
 | twilight_triumph | shieldguard→main, crossbowman→flank, patriot→main, sarkaz_greatswordsman→main, caster→flank |
 
