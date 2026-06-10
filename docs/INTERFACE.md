@@ -961,22 +961,25 @@ func get_refresh_cost() -> int
 func get_unit_purchase_cost(unit_cfg: Dictionary) -> int
 func grant_unit(unit_id: StringName, star: int = 1, display_name: String = "") -> Dictionary
 func try_buy_shop_slot(slot_index: int) -> Dictionary
+func try_toggle_lock_slot(slot_index: int) -> Dictionary
+func get_covenant_drift_state() -> Dictionary
+func get_unit_roll_weight(unit_id: StringName) -> float
 ```
 
 方法规格：
 
 - `start_new_day_shop(day)`
   输入：`day: int`。
-  行为：初始化指定天数的商店库存。
+  行为：初始化指定天数的商店库存；若存在锁定且未购买的槽位，其 `unit_id` 原位保留并维持锁定，其余槽位重抽。
   返回：无。
 - `refresh_shop()`
   输入：无。
-  行为：刷新当前商店库存。
+  行为：刷新当前商店库存；手动刷新会清空锁定并整页重抽。
   成功结果：返回 `ActionResult(ok = true)`，库存已更新。
   失败结果：返回 `ActionResult(ok = false)`，库存保持不变。
 - `get_current_stock()`
   输入：无。
-  行为：读取当前 5 个商店槽位。每个槽位至少包含 `slot_index`、`unit_id`、`sold`。
+  行为：读取当前 5 个商店槽位。每个槽位至少包含 `slot_index`、`unit_id`、`sold`、`locked`。
   返回：`Array[Dictionary]`。
 - `get_refresh_cost()`
   输入：无。
@@ -993,9 +996,22 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary
   失败结果：返回 `ActionResult(ok = false)`，不修改状态。
 - `try_buy_shop_slot(slot_index)`
   输入：`slot_index: int`。
-  行为：尝试购买指定商店槽位中的干员，购买成功后对该 `unit_id` 执行同名同星自动合成。
+  行为：尝试购买指定商店槽位中的干员，购买成功后对该 `unit_id` 执行同名同星自动合成；若该槽位处于锁定状态则同时清除锁定。
   成功结果：返回 `ActionResult(ok = true)`，扣除声望、新增一个绑定该 `unit_id` 的 1 星干员实例槽位，并将商店槽位标记为已购买；payload 中可包含 `merge_events`。
   失败结果：返回 `ActionResult(ok = false)`，购买不生效。
+- `try_toggle_lock_slot(slot_index)`
+  输入：`slot_index: int`。
+  行为：锁定或解锁指定的未购买槽位；每页同时只保留 1 个锁定位，锁定另一槽位会移走原锁定。锁定槽在次日 `start_new_day_shop` 重抽时原位保留，手动刷新清空锁定。仅白天可操作。
+  成功结果：返回 `ActionResult(ok = true)`，payload 含 `slot_index`、`locked` 与最新 `stock`，并广播 `shop_stock_changed`。
+  失败结果：返回 `ActionResult(ok = false)`（非白天、槽位无效、已购买或为空）。
+- `get_covenant_drift_state()`
+  输入：无。
+  行为：读取盟约权重漂移状态。第 3 天起，按"去重单位类型"统计持有数最多的前 2 个盟约进入漂移集，其成员干员在同费用档内的出现权重 ×1.2（命中多个漂移盟约不叠乘），不影响 2/4/7 费档位分布。
+  返回：`Dictionary`，含 `active: bool`、`covenants: Array[StringName]`、`multiplier: float`。
+- `get_unit_roll_weight(unit_id)`
+  输入：`unit_id: StringName`。
+  行为：读取该单位在当前漂移状态下的商店抽取权重。
+  返回：`float`（1.0 或漂移倍率）。
 
 #### `UnitManager`
 
@@ -1617,6 +1633,8 @@ func refresh_from_state() -> void
   行为：发出 `EventBus.request_buy_shop_slot(slot_index)`。
 - 刷新按钮
   行为：发出 `EventBus.request_refresh_shop()`。
+- 锁定按钮
+  行为：对当前选中的商店槽位发出 `EventBus.request_toggle_shop_lock(slot_index)`；选中槽位已锁定时按钮文案变为"解锁槽位"，非白天、未选中、已购买或空槽位时禁用。锁定中的卡片状态栏显示"已锁定"。
 
 #### `BuildListCard`
 
@@ -1902,6 +1920,7 @@ func hide_panel() -> void
 | `request_start_night` | 无 | UI | `GameController` / `DayManager` | 请求结束白天 |
 | `request_buy_shop_slot` | `slot_index: int` | UI | `ShopManager` | 请求购买指定商店槽位 |
 | `request_refresh_shop` | 无 | UI | `ShopManager` | 请求刷新商店 |
+| `request_toggle_shop_lock` | `slot_index: int` | UI | `ShopManager` | 请求锁定/解锁指定商店槽位 |
 | `blessing_chosen` | `buff_id: StringName` | UI | `GameController`、`BuffManager` | 选择某个祝福 |
 
 ### 4.4 世界事件信号
