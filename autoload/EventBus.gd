@@ -56,6 +56,11 @@ signal owned_operators_changed(operators: Array[Dictionary])
 @warning_ignore("unused_signal")
 signal owned_units_changed(unit_ids: Array[StringName])
 @warning_ignore("unused_signal")
+# 定向升星请求（白天消耗魔力矿+声望对指定干员 +1 星），由 UnitManager 处理。
+signal request_upgrade_operator_star(operator_key: StringName)
+@warning_ignore("unused_signal")
+signal operator_star_upgrade_result(operator_key: StringName, result: Dictionary)
+@warning_ignore("unused_signal")
 signal map_cell_clicked(cell: Vector2i)
 
 @warning_ignore("unused_signal")
