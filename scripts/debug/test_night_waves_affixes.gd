@@ -64,17 +64,22 @@ func _test_gate_assignment() -> void:
 	_expect(seen.size() >= 2, "main gate varies across seeds")
 
 	_expect(Resolver.resolve_lane_gate(&"main", 0, main_a, gates, 42, 3, 0) == main_a, "lane main goes to main gate")
+	var seen_flank: Dictionary = {}
 	for group_index in range(8):
 		var flank_gate: String = Resolver.resolve_lane_gate(&"flank", group_index, main_a, gates, 42, 3, 0)
+		seen_flank[flank_gate] = true
 		_expect(flank_gate != main_a, "flank avoids main gate (group %d)" % group_index)
 		_expect(gates.has(flank_gate), "flank gate is active (group %d)" % group_index)
 		var any_gate: String = Resolver.resolve_lane_gate(&"any", group_index, main_a, gates, 42, 3, 0)
 		_expect(gates.has(any_gate), "any gate is active (group %d)" % group_index)
+	_expect(seen_flank.size() >= 2, "flank gate varies across groups")
 	_expect(Resolver.resolve_lane_gate(&"flank", 0, main_a, gates, 42, 3, 0) == Resolver.resolve_lane_gate(&"flank", 0, main_a, gates, 42, 3, 0), "flank assignment deterministic")
 	# 单口回退
 	_expect(Resolver.resolve_lane_gate(&"flank", 0, "S1", ["S1"], 42, 3, 0) == "S1", "flank falls back to main when single gate")
 	# 空口集合
 	_expect(Resolver.resolve_main_gate([], 42, 3, 0) == "", "empty gates yield empty main")
+	# 顺序无关
+	_expect(Resolver.resolve_main_gate(["S3", "S1", "S2"], 42, 3, 0) == main_a, "gate order does not affect result")
 
 
 func _test_affix_resolution() -> void:

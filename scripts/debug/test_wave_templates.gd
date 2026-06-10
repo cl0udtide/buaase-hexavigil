@@ -108,9 +108,9 @@ func _ids_by_tier(templates: Array, tier: StringName) -> Array[StringName]:
 
 func _check_resolver(templates: Array) -> void:
 	_expect(Resolver.tier_for_day(1) == &"early", "day 1 tier")
-	_expect(Resolver.tier_for_day(3) == &"mid", "day 3 tier")
-	_expect(Resolver.tier_for_day(5) == &"late", "day 5 tier")
-	_expect(Resolver.tier_for_day(6) == &"boss", "day 6 tier")
+	_expect(Resolver.tier_for_day(3) == &"early", "day 3 first-wave tier")
+	_expect(Resolver.tier_for_day(5) == &"mid", "day 5 first-wave tier")
+	_expect(Resolver.tier_for_day(6) == &"late", "day 6 first-wave tier")
 	for day in range(1, 7):
 		var tier := Resolver.tier_for_day(day)
 		var pool := _ids_by_tier(templates, tier)
