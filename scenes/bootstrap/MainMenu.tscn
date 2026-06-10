@@ -68,3 +68,11 @@ custom_minimum_size = Vector2(280, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "开始行动"
+
+[node name="TutorialButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 86)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+text = "新手教程\n第一天演习"

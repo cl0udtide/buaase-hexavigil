@@ -9,8 +9,12 @@ const DEFAULT_CORE_HP := 10
 const DEFAULT_DEPLOY_LIMIT := 4
 const DEPLOY_LIMIT_INCREASE_DAYS := 2
 const OPERATOR_SELL_PRESTIGE := 1
+const RUN_MODE_STANDARD := &"standard"
+const RUN_MODE_TUTORIAL := &"tutorial"
 
 var phase: int = GameEnums.PHASE_MENU
+var run_mode: StringName = RUN_MODE_STANDARD
+var tutorial_completed := false
 var day: int = 0
 var action_points: int = DEFAULT_ACTION_POINTS
 var prestige: int = 0
@@ -42,8 +46,9 @@ var _next_operator_serial := 1
 var _day_deploy_limit_bonus: int = 0
 
 
-func reset_for_new_run(seed: int) -> void:
+func reset_for_new_run(seed: int, mode: StringName = RUN_MODE_STANDARD) -> void:
 	random_seed = seed
+	run_mode = _normalize_run_mode(mode)
 	phase = GameEnums.PHASE_MENU
 	day = 0
 	action_points = DEFAULT_ACTION_POINTS
@@ -606,6 +611,18 @@ func _emit_all_state() -> void:
 	EventBus.deploy_limit_changed.emit(deployed_count, deploy_limit)
 	_emit_owned_roster()
 	EventBus.buffs_changed.emit(buffs.duplicate())
+
+
+func is_tutorial_run() -> bool:
+	return run_mode == RUN_MODE_TUTORIAL
+
+
+func mark_tutorial_completed() -> void:
+	tutorial_completed = true
+
+
+func _normalize_run_mode(mode: StringName) -> StringName:
+	return RUN_MODE_TUTORIAL if mode == RUN_MODE_TUTORIAL else RUN_MODE_STANDARD
 
 
 func _apply_day_deploy_limit_bonus() -> void:

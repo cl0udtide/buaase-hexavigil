@@ -26,7 +26,7 @@ func _ready() -> void:
 		call_deferred("_bootstrap_run_if_needed")
 
 
-func start_new_run(seed: int = -1) -> void:
+func start_new_run(seed: int = -1, run_mode: StringName = &"standard") -> void:
 	var actual_seed := seed if seed >= 0 else int(Time.get_unix_time_from_system())
 	var data_repo = AppRefs.data_repo()
 	var run_state = AppRefs.run_state()
@@ -34,7 +34,7 @@ func start_new_run(seed: int = -1) -> void:
 		push_error("DataRepo must be loaded before starting a run.")
 		return
 	if run_state != null:
-		run_state.reset_for_new_run(actual_seed)
+		run_state.reset_for_new_run(actual_seed, run_mode)
 	if _map_manager != null and _map_manager.has_method("generate_new_map"):
 		_map_manager.generate_new_map(actual_seed)
 	enter_day(1)
@@ -132,7 +132,11 @@ func _resolve_night_affixes_for_day(run_state: Node, day: int) -> void:
 
 
 func _bootstrap_run_if_needed() -> void:
-	start_new_run()
+	var run_mode := &"standard"
+	var scene_router = AppRefs.scene_router()
+	if scene_router != null and scene_router.has_method("consume_pending_run_mode"):
+		run_mode = scene_router.consume_pending_run_mode()
+	start_new_run(-1, run_mode)
 
 
 func _on_request_start_night() -> void:
@@ -170,6 +174,8 @@ func _on_blessing_chosen(buff_id: StringName) -> void:
 		buff_manager.apply_blessing(buff_id)
 	if run_state == null:
 		return
+	if _is_tutorial_run(run_state):
+		return
 	# 战争赌局奖励：先兑现额外的遗物三选一，再进入新的一天。
 	if int(run_state.pending_extra_blessings) > 0:
 		run_state.pending_extra_blessings -= 1
@@ -182,3 +188,7 @@ func _on_core_damaged_for_wager(_amount: int, _current: int, _max_value: int) ->
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.phase == GameEnums.PHASE_NIGHT:
 		run_state.night_core_damaged = true
+
+
+func _is_tutorial_run(run_state: Node) -> bool:
+	return run_state != null and run_state.has_method("is_tutorial_run") and run_state.is_tutorial_run()

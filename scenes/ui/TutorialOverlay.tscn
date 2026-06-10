@@ -1,0 +1,91 @@
+[gd_scene load_steps=2 format=3 uid="uid://dks4jlf2r1x6h"]
+
+[ext_resource type="Script" path="res://scripts/ui/tutorial_overlay.gd" id="1_tutorial_overlay"]
+
+[node name="TutorialOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_tutorial_overlay")
+
+[node name="Panel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+z_index = 120
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -462.0
+offset_top = 118.0
+offset_right = -22.0
+offset_bottom = 372.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="Stack" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StepLabel" type="Label" parent="Panel/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "教程 1/1"
+
+[node name="TitleLabel" type="Label" parent="Panel/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "标题"
+text_overrun_behavior = 3
+
+[node name="BodyLabel" type="Label" parent="Panel/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "正文"
+autowrap_mode = 3
+
+[node name="HintLabel" type="Label" parent="Panel/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "提示"
+autowrap_mode = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="Panel/Margin/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SkipButton" type="Button" parent="Panel/Margin/Stack/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 34)
+layout_mode = 2
+focus_mode = 0
+text = "跳过"
+
+[node name="Spacer" type="Control" parent="Panel/Margin/Stack/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NextButton" type="Button" parent="Panel/Margin/Stack/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 34)
+layout_mode = 2
+focus_mode = 0
+text = "下一步"
