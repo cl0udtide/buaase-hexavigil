@@ -15,6 +15,7 @@ func _init() -> void:
 
 func _run() -> void:
 	_test_resolver_plan()
+	_test_gate_assignment()
 	_test_affix_resolution()
 	_test_affix_enemy_cfg()
 	_test_affix_entries()
@@ -46,6 +47,34 @@ func _test_resolver_plan() -> void:
 	_expect(not plan_c.has(plan_a[0]), "used templates are excluded while pool lasts")
 	var boss_plan: Array[StringName] = Resolver.resolve_night_plan(pools, [], 42, 6)
 	_expect(boss_plan.size() == 2 and boss_plan[1] == &"b1", "day6 plan ends with boss template")
+
+
+func _test_gate_assignment() -> void:
+	var gates: Array = ["S1", "S2", "S3"]
+	var main_a: String = Resolver.resolve_main_gate(gates, 42, 3, 0)
+	var main_b: String = Resolver.resolve_main_gate(gates, 42, 3, 0)
+	_expect(main_a == main_b, "main gate is deterministic")
+	_expect(gates.has(main_a), "main gate is an active gate")
+	var main_wave1: String = Resolver.resolve_main_gate(gates, 42, 3, 1)
+	_expect(gates.has(main_wave1), "wave1 main gate is an active gate")
+	# 不同 seed 下主攻口应该会变（扫几个 seed 至少出现两种结果）
+	var seen: Dictionary = {}
+	for probe_seed in range(20):
+		seen[Resolver.resolve_main_gate(gates, probe_seed, 3, 0)] = true
+	_expect(seen.size() >= 2, "main gate varies across seeds")
+
+	_expect(Resolver.resolve_lane_gate(&"main", 0, main_a, gates, 42, 3, 0) == main_a, "lane main goes to main gate")
+	for group_index in range(8):
+		var flank_gate: String = Resolver.resolve_lane_gate(&"flank", group_index, main_a, gates, 42, 3, 0)
+		_expect(flank_gate != main_a, "flank avoids main gate (group %d)" % group_index)
+		_expect(gates.has(flank_gate), "flank gate is active (group %d)" % group_index)
+		var any_gate: String = Resolver.resolve_lane_gate(&"any", group_index, main_a, gates, 42, 3, 0)
+		_expect(gates.has(any_gate), "any gate is active (group %d)" % group_index)
+	_expect(Resolver.resolve_lane_gate(&"flank", 0, main_a, gates, 42, 3, 0) == Resolver.resolve_lane_gate(&"flank", 0, main_a, gates, 42, 3, 0), "flank assignment deterministic")
+	# 单口回退
+	_expect(Resolver.resolve_lane_gate(&"flank", 0, "S1", ["S1"], 42, 3, 0) == "S1", "flank falls back to main when single gate")
+	# 空口集合
+	_expect(Resolver.resolve_main_gate([], 42, 3, 0) == "", "empty gates yield empty main")
 
 
 func _test_affix_resolution() -> void:

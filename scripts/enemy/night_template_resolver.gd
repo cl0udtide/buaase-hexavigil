@@ -70,3 +70,56 @@ static func resolve(pool_ids: Array, used_ids: Array, run_seed: int, day: int, w
 	var rng := RandomNumberGenerator.new()
 	rng.seed = abs(("%d|%d|%d|%s" % [run_seed, day, wave_index, String(tier_for_day(day))]).hash())
 	return available[rng.randi() % available.size()]
+
+
+## ---- 出怪口分配：lane 角色 -> 具体 spawn_key ----
+## 设计稿见 docs/superpowers/specs/2026-06-10-dynamic-spawn-gates-design.md §3-§4。
+## 纯静态、确定性：同 (run_seed, day, wave_index) 输入永远得到同样结果，预览即契约。
+
+const LANE_MAIN: StringName = &"main"
+const LANE_FLANK: StringName = &"flank"
+const LANE_ANY: StringName = &"any"
+
+
+static func _sorted_gates(active_gates: Array) -> Array[String]:
+	var gates: Array[String] = []
+	for raw_gate: Variant in active_gates:
+		var gate := String(raw_gate)
+		if not gate.is_empty() and not gates.has(gate):
+			gates.append(gate)
+	gates.sort()
+	return gates
+
+
+## 该波的主攻口：在活跃口中等权抽取。
+static func resolve_main_gate(active_gates: Array, run_seed: int, day: int, wave_index: int) -> String:
+	var gates := _sorted_gates(active_gates)
+	if gates.is_empty():
+		return ""
+	var rng := RandomNumberGenerator.new()
+	rng.seed = abs(("gate|%d|%d|%d" % [run_seed, day, wave_index]).hash())
+	return gates[rng.randi() % gates.size()]
+
+
+## 按 lane 给一个组分配落口。flank 从非主攻口中独立抽取（单口时回退主攻口），any 全口等权。
+static func resolve_lane_gate(lane: StringName, group_index: int, main_gate: String, active_gates: Array, run_seed: int, day: int, wave_index: int) -> String:
+	var gates := _sorted_gates(active_gates)
+	if gates.is_empty():
+		return main_gate
+	match lane:
+		LANE_MAIN:
+			return main_gate
+		LANE_FLANK:
+			var others: Array[String] = []
+			for gate in gates:
+				if gate != main_gate:
+					others.append(gate)
+			if others.is_empty():
+				return main_gate
+			var rng := RandomNumberGenerator.new()
+			rng.seed = abs(("lane|%d|%d|%d|%d|flank" % [run_seed, day, wave_index, group_index]).hash())
+			return others[rng.randi() % others.size()]
+		_:
+			var rng_any := RandomNumberGenerator.new()
+			rng_any.seed = abs(("lane|%d|%d|%d|%d|any" % [run_seed, day, wave_index, group_index]).hash())
+			return gates[rng_any.randi() % gates.size()]
