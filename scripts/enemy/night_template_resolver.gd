@@ -102,6 +102,7 @@ static func resolve_main_gate(active_gates: Array, run_seed: int, day: int, wave
 
 
 ## 按 lane 给一个组分配落口。flank 从非主攻口中独立抽取（单口时回退主攻口），any 全口等权。
+## 未知 lane 按 any 处理；空口集合回退 main_gate。
 static func resolve_lane_gate(lane: StringName, group_index: int, main_gate: String, active_gates: Array, run_seed: int, day: int, wave_index: int) -> String:
 	var gates := _sorted_gates(active_gates)
 	if gates.is_empty():
