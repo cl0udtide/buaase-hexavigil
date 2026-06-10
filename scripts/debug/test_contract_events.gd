@@ -34,6 +34,27 @@ func _run() -> void:
 		var cells: Array = event_manager.get_event_cells()
 		_expect(cells.size() >= 1, "map has event points")
 
+	# 回归（c2b5450 误存 visible=false 家族）：模态层链路必须默认可见，
+	# 否则事件/三选一/结算面板打开后永不渲染，点击事件泡泡表现为"无反应"。
+	var modal_layer := game.get_node_or_null("UI/ModalLayer") as Control
+	var event_panel_slot := game.get_node_or_null("UI/ModalLayer/EventPanelSlot") as Control
+	var floating_layer := game.get_node_or_null("UI/FloatingLayer") as Control
+	_expect(modal_layer != null and modal_layer.visible, "ModalLayer visible by default")
+	_expect(event_panel_slot != null and event_panel_slot.visible, "EventPanelSlot visible by default")
+	_expect(floating_layer != null and floating_layer.visible, "FloatingLayer visible by default")
+	var event_panel := game.get_node_or_null("UI/ModalLayer/EventPanelSlot/EventPanel") as Control
+	_expect(event_panel != null, "EventPanel exists")
+	if event_panel != null and event_manager.has_method("get_event_cells"):
+		var open_cells: Array = event_manager.get_event_cells()
+		var event_bus = root.get_node_or_null("EventBus")
+		_expect(event_bus != null, "EventBus exists")
+		if event_bus != null and not open_cells.is_empty():
+			event_bus.request_open_event_panel.emit(open_cells[0])
+			await process_frame
+			_expect(event_panel.is_visible_in_tree(), "event panel renders after bubble click signal")
+			if event_panel.has_method("hide_event"):
+				event_panel.hide_event()
+
 	# 黑市：先结算核心上限 -2，再获得一件稀有遗物；遗物可能再次影响核心上限。
 	var relics_before: int = (run_state.buffs as Array).size()
 	var deal: Dictionary = event_manager.apply_event(&"event_black_market_deal")
