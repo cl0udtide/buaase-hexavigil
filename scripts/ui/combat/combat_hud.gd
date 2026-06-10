@@ -1088,7 +1088,8 @@ func _ensure_night_affix_row() -> void:
 	_night_affix_row.z_index = 40
 	_night_affix_row.mouse_filter = Control.MOUSE_FILTER_STOP
 	_night_affix_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_night_affix_row.offset_top = 72.0
+	_night_affix_row.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_night_affix_row.offset_top = 94.0
 	add_child(_night_affix_row)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
