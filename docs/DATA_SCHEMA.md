@@ -562,7 +562,7 @@ Boss 多阶段规则：
 | `class_filter` | `String` | 可选，仅影响指定职业，例如 `guard`、`sniper`、`caster`、`defender` |
 | `building_type_filter` | `String` | 可选，仅影响指定建筑类别，例如 `resource`、`aura` |
 | `material_filter` | `String` | 可选，仅影响指定资源，例如 `wood`、`stone`、`mana` |
-| `covenant_filter` | `String` / `Array` | 可选，仅影响拥有指定盟约 tag 的干员（与 `units.json[].covenants` 求交集） |
+| `covenant_filter` | `String` / `Array` | 可选，仅影响拥有指定有效盟约 tag 的干员（静态 `units.json[].covenants` + 本局追加盟约） |
 | `category` | `String` | 抽取分槽用类别：`covenant` / `mechanic` / `class` / `economy` / `generic` |
 | `covenant` | `String` | `category = covenant` 时必填，对应盟约名，用于盟约导向槽匹配 |
 
@@ -583,7 +583,8 @@ Boss 多阶段规则：
 - 事件抽取受 `min_day` / `max_day` 门控与 `weight` 加权，且本局未刷过的事件优先。
 - 选项跳转的结果事件标记 `hidden_in_map_pool: true`。
 - 触发事件消耗 2 行动力（`day_manager.gd`）；`requires` 前置不满足时事件整体取消并退还行动力。
-- 特例：`event_altar`（古代祭坛）的选项按格子动态生成（最多 3 个"干员×盟约"灌注组合 + 离开），灌注消耗 2 魔力矿，为干员实例追加盟约 tag（`RunState.add_operator_covenant`）。
+- 特例：`event_altar`（古代祭坛）的选项按格子动态生成（最多 3 个"单位类型×盟约"灌注组合 + 离开），灌注消耗 2 魔力矿，为该 `unit_id` 在本局追加盟约 tag（`RunState.add_unit_covenant`），现有与后续同名实例都会继承。
+- 当前根事件池共 7 类：黑市商人、战争赌局、走私商队、古代祭坛、雇佣兵营地、废弃军械库、魔力裂隙。所有选项结果事件都应设置 `hidden_in_map_pool: true`。
 
 记录示例：
 
@@ -612,7 +613,7 @@ Boss 多阶段规则：
 | `desc` | `String` | 事件描述 |
 | `effect_type` | `String` | 结算类型：`material_and_prestige`（资源结算）或 `contract`（契约效果） |
 | `payload` | `Dictionary` | `material_and_prestige` 的资源增减参数 |
-| `requires` | `Dictionary` | 可选前置消耗校验，如 `{ "prestige": 3 }`、`{ "mana": 2 }` |
+| `requires` | `Dictionary` | 可选前置消耗校验，如 `{ "prestige": 4 }`、`{ "mana": 3 }` |
 | `effects` | `Array` | 契约效果列表（见下表） |
 | `choices` | `Array` | 选项列表；每项含 `id`、`text`、`kind`、`event_id`（跳转的结果事件）、`effect_desc` |
 | `hidden_in_map_pool` | `bool` | 结果事件标记，不进入地图事件点池 |
@@ -691,7 +692,7 @@ Boss 多阶段规则：
 
 作用：
 
-- 集中配置地图生成参数，便于快速调整资源点、事件点、障碍、刷怪点等数量和安全半径。
+- 集中配置地图生成参数，便于快速调整资源点、障碍、刷怪点等数量和安全半径。
 - 该文件只描述地图生成侧的数量、距离和安全区参数，不保存单局运行时状态。
 
 字段说明：
@@ -703,7 +704,7 @@ Boss 多阶段规则：
 | `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
 | `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
-| `event_point_count` | `int` | 地图上随机事件点数量；事件内容引用 `events.json`，当前配置为 8 |
+| `event_point_count` | `int` | 旧地图生成期事件点数量；当前配置为 0，正式事件由 `RandomEventManager` 每日刷新 |
 | `obstacle_ratio` | `float` | 障碍目标比例，最终数量还会受最小/最大值限制 |
 | `water_obstacle_chance` | `float` | 单个地貌簇或零散障碍生成为水域的概率；未命中时生成山地 |
 | `min_obstacle_count` | `int` | 障碍最小生成数量 |
@@ -727,7 +728,7 @@ Boss 多阶段规则：
   "spawn_count": 3,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
-  "event_point_count": 8,
+  "event_point_count": 0,
   "obstacle_ratio": 0.13,
   "water_obstacle_chance": 0.35,
   "min_obstacle_count": 65,
@@ -758,9 +759,9 @@ Boss 多阶段规则：
 事件点说明：
 
 - 随机事件点由 `RandomEventManager` 作为地图覆盖层维护，地图格本身不记录事件触发状态。
-- 当前 `event_point_count` 为 8，正式地图默认生成 8 个随机事件点。
+- 当前 `event_point_count` 为 0，正式地图不在生成期放置事件点；事件点在每天开始时刷新：第 1 天保底 2 个，此后每天 1-2 个，活跃上限 4 个。
 - 随机事件点与资源点互斥，同一个格子不会同时是资源点和事件点。
-- `MapGenerator` 只负责放置事件点并引用已有事件 ID，不负责新增事件内容。
+- `MapGenerator` 保留旧事件点字段兼容，但正式流程不再依赖它放置事件点。
 - 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。
 - 地图侧只负责“这个格子是否有事件”；探索发现后的展示和事件效果结算属于白天流程与随机事件模块。
 

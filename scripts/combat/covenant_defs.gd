@@ -142,7 +142,7 @@ static func describe(covenant_id: StringName, _layer: int) -> Array:
 			]
 		ID_FORESIGHT:
 			return [
-				"2人：商店买空后刷新不消耗声望（按拥有数计算）",
+				"2人：商店买空后刷新费用降至最低 1 声望（按拥有数计算）",
 				"3人：商店购买 −1 声望；盟约层数 ≥10 时，出售按基础价折半",
 			]
 		_:

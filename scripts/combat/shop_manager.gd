@@ -175,7 +175,7 @@ func _get_unit_ids_by_cost(cost: int) -> Array[StringName]:
 
 
 func _get_refresh_cost() -> int:
-	# 远见 2 人：商店买空后刷新不消耗声望。
+	# 远见 2 人：商店买空后刷新内部基价降为 0；最终仍遵循刷新费用最低 1。
 	var run_state = AppRefs.run_state()
 	var cost := REFRESH_COST
 	if _foresight_tier() >= CovenantDefs.TIER_PAIR and _is_shop_bought_out():

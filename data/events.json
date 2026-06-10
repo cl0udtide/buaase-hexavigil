@@ -102,14 +102,14 @@
         "text": "买入魔力矿",
         "kind": "primary",
         "event_id": "event_caravan_buy",
-        "effect_desc": "支付 3 声望，获得 2 魔力矿。"
+        "effect_desc": "支付 4 声望，获得 3 魔力矿。"
       },
       {
         "id": "sell_mana",
         "text": "卖出魔力矿",
         "kind": "secondary",
         "event_id": "event_caravan_sell",
-        "effect_desc": "交出 2 魔力矿，获得 3 声望。"
+        "effect_desc": "交出 3 魔力矿，获得 5 声望。"
       }
     ]
   },
@@ -120,13 +120,13 @@
     "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
     "requires": {
-      "prestige": 3
+      "prestige": 4
     },
     "payload": {
       "wood": 0,
       "stone": 0,
-      "mana": 2,
-      "prestige": -3
+      "mana": 3,
+      "prestige": -4
     }
   },
   {
@@ -136,19 +136,19 @@
     "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
     "requires": {
-      "mana": 2
+      "mana": 3
     },
     "payload": {
       "wood": 0,
       "stone": 0,
-      "mana": -2,
-      "prestige": 3
+      "mana": -3,
+      "prestige": 5
     }
   },
   {
     "id": "event_altar",
     "name": "古代祭坛",
-    "desc": "半埋在土里的环形祭坛仍在低声嗡鸣。把魔力矿放上凹槽，就能将一种盟约的烙印灌注给一名干员。",
+    "desc": "半埋在土里的环形祭坛仍在低声嗡鸣。把魔力矿放上凹槽，就能将一种盟约的烙印灌注给某类干员，使本局所有同名实例都继承它。",
     "effect_type": "contract",
     "min_day": 2,
     "weight": 2,
@@ -179,14 +179,14 @@
         "text": "雇一名中坚佣兵",
         "kind": "primary",
         "event_id": "event_mercenary_hire_mid",
-        "effect_desc": "支付 3 声望，获得一名随机 4 费干员。"
+        "effect_desc": "支付 2 声望，获得一名随机 4 费干员。"
       },
       {
         "id": "hire_high",
         "text": "雇一名精锐佣兵",
         "kind": "primary",
         "event_id": "event_mercenary_hire_high",
-        "effect_desc": "支付 5 声望，获得一名随机 7 费干员。"
+        "effect_desc": "支付 4 声望，获得一名随机 7 费干员。"
       },
       {
         "id": "leave",
@@ -204,13 +204,13 @@
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "requires": {
-      "prestige": 3
+      "prestige": 2
     },
     "payload": {
       "wood": 0,
       "stone": 0,
       "mana": 0,
-      "prestige": -3
+      "prestige": -2
     },
     "effects": [
       {
@@ -226,13 +226,13 @@
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "requires": {
-      "prestige": 5
+      "prestige": 4
     },
     "payload": {
       "wood": 0,
       "stone": 0,
       "mana": 0,
-      "prestige": -5
+      "prestige": -4
     },
     "effects": [
       {
@@ -259,7 +259,7 @@
         "text": "搬空军械库",
         "kind": "primary",
         "event_id": "event_arsenal_loot",
-        "effect_desc": "获得 2 木材 2 石材，但今晚追加一条随机夜晚词缀。"
+        "effect_desc": "获得 4 木材 3 石材，但今晚追加一条随机夜晚词缀。"
       },
       {
         "id": "leave",
@@ -277,8 +277,8 @@
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "payload": {
-      "wood": 2,
-      "stone": 2,
+      "wood": 4,
+      "stone": 3,
       "mana": 0,
       "prestige": 0
     },
@@ -306,14 +306,14 @@
         "text": "引导裂隙",
         "kind": "primary",
         "event_id": "event_rift_siphon",
-        "effect_desc": "获得 3 魔力矿，但今晚敌人获得「巫术潮汐」词缀（法抗 +20）。"
+        "effect_desc": "获得 5 魔力矿，但今晚敌人获得「巫术潮汐」词缀（法抗 +20）。"
       },
       {
         "id": "seal",
         "text": "用石材封堵",
         "kind": "secondary",
         "event_id": "event_rift_seal",
-        "effect_desc": "消耗 1 石材，获得 2 声望。"
+        "effect_desc": "消耗 1 石材，获得 4 声望。"
       }
     ]
   },
@@ -326,7 +326,7 @@
     "payload": {
       "wood": 0,
       "stone": 0,
-      "mana": 3,
+      "mana": 5,
       "prestige": 0
     },
     "effects": [
@@ -349,7 +349,7 @@
       "wood": 0,
       "stone": -1,
       "mana": 0,
-      "prestige": 2
+      "prestige": 4
     }
   }
 ]

@@ -34,15 +34,13 @@ func _run() -> void:
 		var cells: Array = event_manager.get_event_cells()
 		_expect(cells.size() >= 1, "map has event points")
 
-	# 黑市：核心上限 -2 并获得一件稀有遗物。
+	# 黑市：先结算核心上限 -2，再获得一件稀有遗物；遗物可能再次影响核心上限。
 	var relics_before: int = (run_state.buffs as Array).size()
-	var max_before: int = run_state.core_hp_max
 	var deal: Dictionary = event_manager.apply_event(&"event_black_market_deal")
 	_expect(deal.get("ok", false), "black market deal applies")
-	_expect(run_state.core_hp_max == max_before - 2, "black market costs 2 core max hp")
 	_expect((run_state.buffs as Array).size() == relics_before + 1, "black market grants a relic")
 	var summary := String((deal.get("payload", {}) as Dictionary).get("effect_payload", {}).get("summary", ""))
-	_expect(summary.contains("核心生命上限"), "deal summary mentions core cost")
+	_expect(summary.contains("核心生命上限 -2"), "deal summary mentions core cost")
 
 	# 商队：前置不足时整体取消；满足后双向兑换。
 	run_state.prestige = 0
@@ -52,7 +50,7 @@ func _run() -> void:
 	var mana_before: int = run_state.mana
 	var buy_ok: Dictionary = event_manager.apply_event(&"event_caravan_buy")
 	_expect(buy_ok.get("ok", false), "caravan buy applies")
-	_expect(run_state.prestige == 2 and run_state.mana == mana_before + 2, "caravan buy trades prestige for mana")
+	_expect(run_state.prestige == 1 and run_state.mana == mana_before + 3, "caravan buy trades prestige for mana")
 
 	# 赌局：追加一条词缀（day1 走回退池）并激活赌约。
 	var affixes_before: int = (run_state.night_affix_ids as Array).size()
@@ -84,7 +82,7 @@ func _run() -> void:
 	var hire: Dictionary = event_manager.apply_event(&"event_mercenary_hire_mid")
 	_expect(hire.get("ok", false), "mercenary hire applies")
 	_expect((run_state.get_owned_operators() as Array).size() == roster_before + 1, "mercenary hire grants an operator")
-	_expect(run_state.prestige == 7, "mercenary hire costs 3 prestige")
+	_expect(run_state.prestige == 8, "mercenary hire costs 2 prestige")
 
 	# 祭坛：动态选项 + 灌注 = 干员实例获得盟约，魔力矿扣减。
 	run_state.add_owned_operator(&"guard_t1", "测试斯卡蒂")
@@ -97,12 +95,15 @@ func _run() -> void:
 	run_state.mana = 5
 	var offers: Array = event_manager._ensure_altar_offers(altar_cell)
 	var offer: Dictionary = offers[0]
-	var target_key := StringName(offer.get("operator_key", ""))
+	var target_unit := StringName(offer.get("unit_id", ""))
 	var target_covenant := StringName(offer.get("covenant", ""))
 	var infuse: Dictionary = event_manager.apply_event_for_cell(altar_cell, StringName(offer.get("choice_id", "")))
 	_expect(infuse.get("ok", false), "altar infusion applies")
 	_expect(run_state.mana == 3, "altar infusion costs 2 mana")
-	_expect((run_state.get_operator_covenants(target_key) as Array).has(target_covenant), "operator gains infused covenant")
+	_expect((run_state.get_unit_covenants(target_unit) as Array).has(target_covenant), "unit type gains infused covenant")
+	var future_operator: Dictionary = run_state.add_owned_operator(target_unit, "后续同名干员")
+	var future_key := StringName(future_operator.get("key", ""))
+	_expect((run_state.get_operator_covenants(future_key) as Array).has(target_covenant), "future same-unit operator inherits covenant")
 	_expect(event_manager.get_event_id_at_cell(altar_cell) == StringName(), "altar consumed after infusion")
 
 	game.queue_free()

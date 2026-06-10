@@ -700,7 +700,7 @@ func _set_right_detail_active(active: bool) -> void:
 
 func _apply_right_column_visibility() -> void:
 	if _wave_preview_panel != null:
-		_wave_preview_panel.visible = _wave_preview_available
+		_wave_preview_panel.visible = _wave_preview_available and not _right_detail_active
 	if _detail_panel != null:
 		if not _right_detail_active:
 			_detail_panel.visible = false
