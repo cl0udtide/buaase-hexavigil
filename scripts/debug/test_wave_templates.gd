@@ -40,11 +40,14 @@ func _check_data(templates: Array) -> void:
 
 	var enemies_parsed: Variant = _load_json("res://data/enemies.json")
 	var enemy_ids: Dictionary = {}
+	var boss_ids: Dictionary = {}
 	if typeof(enemies_parsed) == TYPE_ARRAY:
 		for enemy_variant: Variant in enemies_parsed:
 			if typeof(enemy_variant) == TYPE_DICTIONARY:
 				var enemy: Dictionary = enemy_variant
 				enemy_ids[StringName(enemy.get("id", ""))] = true
+				if enemy.get("behavior_type", "") == "boss":
+					boss_ids[StringName(enemy.get("id", ""))] = true
 
 	var valid_tiers := {&"early": true, &"mid": true, &"late": true, &"boss": true}
 	var valid_lanes := {"main": true, "flank": true, "any": true}
@@ -90,6 +93,8 @@ func _check_data(templates: Array) -> void:
 			_expect(not group.has("spawn_key"), "%s group has no hardcoded spawn_key" % id)
 			var lane := String(group.get("lane", ""))
 			_expect(valid_lanes.has(lane), "%s lane valid: %s" % [id, lane])
+			if boss_ids.has(enemy_id):
+				_expect(lane == "main", "%s boss group must be main" % id)
 			if lane == "main":
 				main_count += 1
 			_expect(int(group.get("count", 0)) > 0, "%s count positive" % id)
