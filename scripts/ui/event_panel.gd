@@ -207,6 +207,9 @@ func _format_effect_payload(effect_payload: Dictionary) -> String:
 	_append_resource_delta(parts, effect_payload, "stone", "石材")
 	_append_resource_delta(parts, effect_payload, "mana", "魔力")
 	_append_resource_delta(parts, effect_payload, "prestige", "声望")
+	var summary := String(effect_payload.get("summary", "")).strip_edges()
+	if not summary.is_empty():
+		parts.append(summary)
 	if parts.is_empty():
 		return "无资源或声望变化"
 	return "，".join(parts)

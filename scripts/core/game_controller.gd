@@ -20,6 +20,7 @@ func _ready() -> void:
 		event_bus.night_cleared.connect(_on_night_cleared)
 		event_bus.core_destroyed.connect(_on_core_destroyed)
 		event_bus.blessing_chosen.connect(_on_blessing_chosen)
+		event_bus.core_damaged.connect(_on_core_damaged_for_wager)
 
 	if owner != null and owner.name == "Game":
 		call_deferred("_bootstrap_run_if_needed")
@@ -45,6 +46,8 @@ func enter_day(day: int) -> void:
 		return
 	run_state.set_day(day)
 	run_state.set_phase(GameEnums.PHASE_DAY)
+	run_state.night_wager_active = false
+	run_state.night_core_damaged = false
 	_resolve_night_template_for_day(run_state, day)
 	_resolve_night_affixes_for_day(run_state, day)
 	run_state.reset_action_points(run_state.DEFAULT_ACTION_POINTS)
@@ -147,6 +150,9 @@ func _on_night_cleared(_day: int) -> void:
 		return
 	if run_state.phase == GameEnums.PHASE_RESULT or run_state.core_hp <= 0:
 		return
+	if run_state.night_wager_active and not run_state.night_core_damaged:
+		run_state.pending_extra_blessings += 1
+	run_state.night_wager_active = false
 	if run_state.day >= 6:
 		end_run(true)
 	else:
@@ -162,5 +168,17 @@ func _on_blessing_chosen(buff_id: StringName) -> void:
 	var buff_manager := get_node_or_null("../BuffManager")
 	if buff_manager != null and buff_manager.has_method("apply_blessing"):
 		buff_manager.apply_blessing(buff_id)
-	if run_state != null:
-		enter_day(run_state.day + 1)
+	if run_state == null:
+		return
+	# 战争赌局奖励：先兑现额外的遗物三选一，再进入新的一天。
+	if int(run_state.pending_extra_blessings) > 0:
+		run_state.pending_extra_blessings -= 1
+		enter_blessing()
+		return
+	enter_day(run_state.day + 1)
+
+
+func _on_core_damaged_for_wager(_amount: int, _current: int, _max_value: int) -> void:
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.phase == GameEnums.PHASE_NIGHT:
+		run_state.night_core_damaged = true

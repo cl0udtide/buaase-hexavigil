@@ -578,23 +578,24 @@ Boss 多阶段规则：
 
 作用：
 
-- 定义随机事件及其结算参数。
+- 定义随机事件（契约系统）。设计铁律：事件必须是有代价、有改造或有赌注的交易，禁止无代价的纯资源发放。
+- 根事件（无 `hidden_in_map_pool`）进入地图事件点池（`map_generation.json` 的 `event_point_count` 控制数量）；选项跳转的结果事件标记 `hidden_in_map_pool: true`。
+- 触发事件消耗 2 行动力（`day_manager.gd`）；`requires` 前置不满足时事件整体取消并退还行动力。
 
 记录示例：
 
 ```json
 [
   {
-    "id": "event_abandoned_cart",
-    "name": "废弃货车",
-    "desc": "获得 2 木材，但失去 1 声望。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 2,
-      "stone": 0,
-      "mana": 0,
-      "prestige": -1
-    }
+    "id": "event_black_market_deal",
+    "name": "黑市商人",
+    "desc": "商人撬走了两块核心装甲板，留下一只沉重的箱子。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "core_max_hp_add", "value": -2 },
+      { "type": "grant_random_relic", "rarity_min": 2, "rarity_max": 3 }
+    ]
   }
 ]
 ```
@@ -606,8 +607,21 @@ Boss 多阶段规则：
 | `id` | `String` | 事件唯一标识 |
 | `name` | `String` | 显示名称 |
 | `desc` | `String` | 事件描述 |
-| `effect_type` | `String` | 结算类型 |
-| `payload` | `Dictionary` | 结算参数 |
+| `effect_type` | `String` | 结算类型：`material_and_prestige`（资源结算）或 `contract`（契约效果） |
+| `payload` | `Dictionary` | `material_and_prestige` 的资源增减参数 |
+| `requires` | `Dictionary` | 可选前置消耗校验，如 `{ "prestige": 3 }`、`{ "mana": 2 }` |
+| `effects` | `Array` | 契约效果列表（见下表） |
+| `choices` | `Array` | 选项列表；每项含 `id`、`text`、`kind`、`event_id`（跳转的结果事件）、`effect_desc` |
+| `hidden_in_map_pool` | `bool` | 结果事件标记，不进入地图事件点池 |
+
+`effects` 支持的契约效果（`random_event_manager.gd`）：
+
+| `type` | 字段 | 说明 |
+|---|---|---|
+| `core_max_hp_add` | `value` | 核心生命上限增减（最低保留 1） |
+| `grant_random_relic` | `rarity_min`、`rarity_max` | 获得一件指定稀有度区间的随机未持有遗物；池空时改发 6 声望 |
+| `night_affix_add_random` | — | 为今晚追加一条随机夜晚词缀（优先满足 `min_day`，无候选时回退全池） |
+| `wager_no_leak` | — | 激活赌约：核心一夜未失血则次日清晨额外一次遗物三选一（`game_controller.gd` 结算） |
 
 ---
 

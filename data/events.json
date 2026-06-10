@@ -1,182 +1,132 @@
 [
   {
-    "id": "event_abandoned_cart",
-    "name": "废弃货车",
-    "desc": "一辆被遗弃的补给车半陷在泥地里，车厢仍有可回收的木材。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 0,
-      "prestige": 0
-    },
+    "id": "event_black_market",
+    "name": "黑市商人",
+    "desc": "一名兜帽商人在废墟间支起摊位。货品来路不明，但确实是好东西——他指了指核心的方向，开出了价码。",
+    "effect_type": "contract",
     "choices": [
       {
-        "id": "salvage",
-        "text": "拆下还能用的木板",
+        "id": "deal",
+        "text": "用核心结构换货",
         "kind": "primary",
-        "event_id": "event_abandoned_cart_salvage",
-        "effect_desc": "获得 2 木材，但失去 1 声望。"
+        "event_id": "event_black_market_deal",
+        "effect_desc": "核心生命上限 -2，获得一件稀有遗物。"
       },
       {
-        "id": "mark_safe",
-        "text": "整理现场并留下路标",
+        "id": "leave",
+        "text": "保持距离",
         "kind": "secondary",
-        "event_id": "event_abandoned_cart_mark_safe",
-        "effect_desc": "获得 1 声望，不获得材料。"
+        "event_id": "event_black_market_leave",
+        "effect_desc": "不做交易，安全离开。"
       }
     ]
   },
   {
-    "id": "event_abandoned_cart_salvage",
-    "name": "废弃货车",
-    "desc": "你们快速拆下可用木料，粗暴的处理方式引起了附近幸存者的不满。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 2,
-      "stone": 0,
-      "mana": 0,
-      "prestige": -1
-    },
+    "id": "event_black_market_deal",
+    "name": "黑市商人",
+    "desc": "商人撬走了两块核心装甲板，留下一只沉重的箱子。里面的东西确实物有所值。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "core_max_hp_add", "value": -2 },
+      { "type": "grant_random_relic", "rarity_min": 2, "rarity_max": 3 }
+    ]
+  },
+  {
+    "id": "event_black_market_leave",
+    "name": "黑市商人",
+    "desc": "你们没有冒险。商人耸耸肩，收起摊位消失在雾里。",
+    "effect_type": "contract",
     "hidden_in_map_pool": true
   },
   {
-    "id": "event_abandoned_cart_mark_safe",
-    "name": "废弃货车",
-    "desc": "队伍清理道路并留下标记，后来者因此避开了危险路段。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 0,
-      "prestige": 1
-    },
+    "id": "event_war_wager",
+    "name": "战争赌局",
+    "desc": "一位伤痕累累的雇佣兵军官拦住了队伍：“敢不敢赌一把？今晚的进攻会更凶，但要是你们的核心毫发无伤，我的人脉会送来像样的报酬。”",
+    "effect_type": "contract",
+    "choices": [
+      {
+        "id": "accept",
+        "text": "接下赌约",
+        "kind": "primary",
+        "event_id": "event_war_wager_accept",
+        "effect_desc": "今晚追加一条夜晚词缀；若核心一夜未失血，明早额外进行一次遗物三选一。"
+      },
+      {
+        "id": "decline",
+        "text": "拒绝",
+        "kind": "secondary",
+        "event_id": "event_war_wager_decline",
+        "effect_desc": "不冒这个险。"
+      }
+    ]
+  },
+  {
+    "id": "event_war_wager_accept",
+    "name": "战争赌局",
+    "desc": "军官咧嘴一笑，吹了声口哨。远处的阴影开始躁动——赌约生效了。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "night_affix_add_random" },
+      { "type": "wager_no_leak" }
+    ]
+  },
+  {
+    "id": "event_war_wager_decline",
+    "name": "战争赌局",
+    "desc": "军官失望地摆摆手。今晚会照常到来。",
+    "effect_type": "contract",
     "hidden_in_map_pool": true
   },
   {
-    "id": "event_hidden_cache",
-    "name": "隐蔽储藏箱",
-    "desc": "你们撬开藏在碎石下的储藏箱，里面的基础物资仍然完好。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 1,
-      "stone": 1,
-      "mana": 0,
-      "prestige": 0
-    }
+    "id": "event_smuggler_caravan",
+    "name": "走私商队",
+    "desc": "商队头领拍了拍货箱：“魔力矿，硬通货，童叟无欺。买也行，卖也行。”",
+    "effect_type": "contract",
+    "choices": [
+      {
+        "id": "buy_mana",
+        "text": "买入魔力矿",
+        "kind": "primary",
+        "event_id": "event_caravan_buy",
+        "effect_desc": "支付 3 声望，获得 2 魔力矿。"
+      },
+      {
+        "id": "sell_mana",
+        "text": "卖出魔力矿",
+        "kind": "secondary",
+        "event_id": "event_caravan_sell",
+        "effect_desc": "交出 2 魔力矿，获得 3 声望。"
+      }
+    ]
   },
   {
-    "id": "event_mana_spring",
-    "name": "微光魔力泉",
-    "desc": "短暂喷涌的魔力泉在迷雾中亮起，采集装置迅速收束了残留能量。",
+    "id": "event_caravan_buy",
+    "name": "走私商队",
+    "desc": "成交。矿石沉甸甸的，成色不错。",
     "effect_type": "material_and_prestige",
+    "hidden_in_map_pool": true,
+    "requires": { "prestige": 3 },
     "payload": {
       "wood": 0,
       "stone": 0,
       "mana": 2,
-      "prestige": 0
+      "prestige": -3
     }
   },
   {
-    "id": "event_old_banner",
-    "name": "旧战旗",
-    "desc": "破旧战旗仍插在高地上，队伍可以选择如何处理这份象征。",
+    "id": "event_caravan_sell",
+    "name": "走私商队",
+    "desc": "头领清点完矿石，把一袋报酬丢了过来。",
     "effect_type": "material_and_prestige",
+    "hidden_in_map_pool": true,
+    "requires": { "mana": 2 },
     "payload": {
       "wood": 0,
       "stone": 0,
-      "mana": 0,
-      "prestige": 0
-    },
-    "choices": [
-      {
-        "id": "raise_banner",
-        "text": "重新竖起战旗",
-        "kind": "primary",
-        "event_id": "event_old_banner_raise",
-        "effect_desc": "获得 2 声望。"
-      },
-      {
-        "id": "recover_fittings",
-        "text": "回收旗杆金属件",
-        "kind": "secondary",
-        "event_id": "event_old_banner_recover",
-        "effect_desc": "获得 1 石材。"
-      }
-    ]
-  },
-  {
-    "id": "event_old_banner_raise",
-    "name": "旧战旗",
-    "desc": "战旗重新迎风展开，士气受到鼓舞。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 0,
-      "prestige": 2
-    },
-    "hidden_in_map_pool": true
-  },
-  {
-    "id": "event_old_banner_recover",
-    "name": "旧战旗",
-    "desc": "队伍谨慎拆下旗杆上还能使用的金属件。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 0,
-      "stone": 1,
-      "mana": 0,
-      "prestige": 0
-    },
-    "hidden_in_map_pool": true
-  },
-  {
-    "id": "event_ruined_watchtower",
-    "name": "坍塌瞭望塔",
-    "desc": "坍塌的瞭望塔中仍有大量可用塔材，队伍完成了快速回收。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 0,
-      "stone": 2,
-      "mana": 0,
-      "prestige": 0
-    }
-  },
-  {
-    "id": "event_lost_patrol",
-    "name": "迷路巡逻队",
-    "desc": "一支巡逻队在雾中迷失方向，救援小队带他们回到了安全路线。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 1,
-      "stone": 0,
-      "mana": 0,
-      "prestige": 1
-    }
-  },
-  {
-    "id": "event_fog_relic",
-    "name": "雾中古物",
-    "desc": "雾中显露出一件古旧装置，内部还残留着微弱能量。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 1,
-      "prestige": 1
-    }
-  },
-  {
-    "id": "event_broken_tools",
-    "name": "破损工具箱",
-    "desc": "修好的工具立刻派上了用场，周边材料也被一并回收。",
-    "effect_type": "material_and_prestige",
-    "payload": {
-      "wood": 1,
-      "stone": 1,
-      "mana": 0,
-      "prestige": 0
+      "mana": -2,
+      "prestige": 3
     }
   }
 ]

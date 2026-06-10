@@ -187,6 +187,7 @@ func _connect_events() -> void:
 		event_bus.day_started.connect(_on_day_started)
 		event_bus.night_started.connect(_on_night_started)
 		event_bus.night_wave_started.connect(_on_night_wave_started)
+		event_bus.random_event_triggered.connect(_on_random_event_triggered)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
 		event_bus.covenants_changed.connect(_on_covenants_changed)
@@ -1069,6 +1070,12 @@ func _play_level_intro(day: int) -> void:
 	if waves.size() > 1 and typeof(waves[0]) == TYPE_DICTIONARY:
 		intro_name = "%s · 共 %d 波" % [String((waves[0] as Dictionary).get("name", "今夜")), waves.size()]
 	_combat_hud.play_level_intro(day, intro_name, String(preview.get("desc", "")))
+
+
+## 事件可能改写当晚词缀（战争赌局等），立即刷新敌情预览。
+func _on_random_event_triggered(_event_id: StringName, _cell: Vector2i) -> void:
+	_force_wave_preview_refresh()
+	_refresh_wave_preview()
 
 
 func _on_night_wave_started(wave_index: int, wave_count: int) -> void:

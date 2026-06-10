@@ -26,6 +26,10 @@ var night_template_id: StringName = &""
 # 当晚完整波次计划（night_template_id 始终等于首波，作为旧调用路径的兼容视图）。
 var night_wave_template_ids: Array[StringName] = []
 var night_affix_ids: Array[StringName] = []
+# 战争赌局契约：当晚激活、核心是否失血、待发放的额外遗物三选一次数。
+var night_wager_active := false
+var night_core_damaged := false
+var pending_extra_blessings := 0
 var used_template_ids: Array[StringName] = []
 var owned_units: Array[StringName] = []
 # 干员槽位是真正的拥有列表；owned_units 只作为旧 UI / 旧调用路径的兼容视图。
@@ -52,6 +56,9 @@ func reset_for_new_run(seed: int) -> void:
 	night_template_id = &""
 	night_wave_template_ids.clear()
 	night_affix_ids.clear()
+	night_wager_active = false
+	night_core_damaged = false
+	pending_extra_blessings = 0
 	used_template_ids.clear()
 	_day_deploy_limit_bonus = 0
 	owned_units.clear()
@@ -138,6 +145,16 @@ func heal_core(value: int) -> void:
 
 func heal_core_full() -> void:
 	core_hp = core_hp_max
+	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
+
+
+## 增减核心生命上限（事件契约等使用）。上限最低保留 1；正向增加同时回复等量生命。
+func add_core_max_hp(delta: int) -> void:
+	core_hp_max = max(core_hp_max + delta, 1)
+	if delta > 0:
+		core_hp = min(core_hp + delta, core_hp_max)
+	else:
+		core_hp = clamp(core_hp, 1, core_hp_max)
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
 
 
