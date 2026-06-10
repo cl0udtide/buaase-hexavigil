@@ -330,7 +330,8 @@ func get_buff_effect_total_for_unit(effect_type: StringName, unit_cfg: Dictionar
 	var tags: Dictionary = {
 		"class": StringName(unit_cfg.get("class", "")),
 		"damage_type": StringName(unit_cfg.get("damage_type", "")),
-		"cost_prestige": int(unit_cfg.get("cost_prestige", 0))
+		"cost_prestige": int(unit_cfg.get("cost_prestige", 0)),
+		"covenants": unit_cfg.get("covenants", [])
 	}
 	return _get_filtered_buff_effect_total(effect_type, tags) + _get_dynamic_unit_buff_effect_total(effect_type, tags)
 
@@ -367,7 +368,8 @@ func get_buff_effect_entries_for_unit(effect_type: StringName, unit_cfg: Diction
 	var tags: Dictionary = {
 		"class": StringName(unit_cfg.get("class", "")),
 		"damage_type": StringName(unit_cfg.get("damage_type", "")),
-		"cost_prestige": int(unit_cfg.get("cost_prestige", 0))
+		"cost_prestige": int(unit_cfg.get("cost_prestige", 0)),
+		"covenants": unit_cfg.get("covenants", [])
 	}
 	return _get_filtered_buff_effect_entries(effect_type, tags)
 
@@ -449,7 +451,7 @@ func _get_buff_effect_entries(cfg: Dictionary) -> Array[Dictionary]:
 		for raw_effect in cfg.get("effects", []):
 			if typeof(raw_effect) == TYPE_DICTIONARY:
 				var effect := (raw_effect as Dictionary).duplicate(true)
-				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "max_cost_prestige", "min_cost_prestige", "condition"]:
+				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "covenant_filter", "max_cost_prestige", "min_cost_prestige", "condition"]:
 					if not effect.has(key) and cfg.has(key):
 						effect[key] = cfg[key]
 				result.append(effect)
@@ -465,6 +467,8 @@ func _buff_matches_tags(effect: Dictionary, tags: Dictionary) -> bool:
 			continue
 		if not _filter_matches(effect.get(filter_key), tags.get(key, "")):
 			return false
+	if effect.has("covenant_filter") and not _covenant_filter_matches(effect.get("covenant_filter"), tags.get("covenants", [])):
+		return false
 	if effect.has("max_cost_prestige") and int(tags.get("cost_prestige", 999)) > int(effect.get("max_cost_prestige", 999)):
 		return false
 	if effect.has("min_cost_prestige") and int(tags.get("cost_prestige", 0)) < int(effect.get("min_cost_prestige", 0)):
@@ -473,9 +477,23 @@ func _buff_matches_tags(effect: Dictionary, tags: Dictionary) -> bool:
 
 
 func _buff_effect_has_filters(effect: Dictionary) -> bool:
-	for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "enemy_id_filter", "max_cost_prestige", "min_cost_prestige"]:
+	for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "enemy_id_filter", "covenant_filter", "max_cost_prestige", "min_cost_prestige"]:
 		if effect.has(key):
 			return true
+	return false
+
+
+## covenant_filter：效果只作用于拥有指定盟约 tag 的干员。filter 与干员 covenants 数组求交集。
+func _covenant_filter_matches(raw_filter: Variant, raw_covenants: Variant) -> bool:
+	var covenants: Array = raw_covenants if raw_covenants is Array else []
+	var filters: Array = raw_filter if raw_filter is Array else [raw_filter]
+	for raw_expected: Variant in filters:
+		var expected := StringName(raw_expected)
+		if expected == StringName():
+			continue
+		for raw_covenant: Variant in covenants:
+			if StringName(raw_covenant) == expected:
+				return true
 	return false
 
 

@@ -1,19 +1,123 @@
 [
   {
-    "id": "relic_red_bowtie",
-    "name": "红色蝴蝶结",
-    "desc": "立即获得 4 声望；部署上限 +1。",
+    "id": "relic_legion_mirror",
+    "name": "军团护心镜",
+    "desc": "所有我方单位防御 +25%。",
     "rarity": 1,
-    "effects": [
-      { "effect_type": "prestige_add", "effect_value": 4 },
-      { "effect_type": "deploy_limit_add", "effect_value": 1 }
-    ]
+    "category": "generic",
+    "effect_type": "unit_def_percent",
+    "effect_value": 0.25
+  },
+  {
+    "id": "relic_first_aid_kit",
+    "name": "急救药箱",
+    "desc": "所有我方单位最大生命 +30%。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "unit_hp_percent",
+    "effect_value": 0.30
+  },
+  {
+    "id": "relic_noble_rapier",
+    "name": "贵族刺剑",
+    "desc": "近卫、重装攻击 +25%。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "unit_atk_percent",
+    "effect_value": 0.25,
+    "class_filter": ["guard", "defender"]
+  },
+  {
+    "id": "relic_silver_fork",
+    "name": "银餐叉",
+    "desc": "狙击、术师攻击 +25%。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "unit_atk_percent",
+    "effect_value": 0.25,
+    "class_filter": ["sniper", "caster"]
+  },
+  {
+    "id": "relic_gaul_bank_check",
+    "name": "高卢银行支票",
+    "desc": "干员部署时初始 SP +12。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "unit_initial_sp_add",
+    "effect_value": 12
+  },
+  {
+    "id": "relic_water_of_life",
+    "name": "生命之水",
+    "desc": "所有干员每 2.5 秒额外获得 1 SP。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "unit_sp_periodic_add",
+    "effect_value": 1,
+    "interval": 2.5
+  },
+  {
+    "id": "relic_gargoyle_statuette",
+    "name": "石像鬼塑像",
+    "desc": "核心生命上限 +3，并回复 3 核心生命。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "core_max_hp_add",
+    "effect_value": 3
+  },
+  {
+    "id": "relic_torn_photo",
+    "name": "残破合影",
+    "desc": "所有敌人防御 -20%。",
+    "rarity": 1,
+    "category": "generic",
+    "effect_type": "enemy_def_percent",
+    "effect_value": -0.20
+  },
+  {
+    "id": "relic_emperors_collection",
+    "name": "皇帝的收藏",
+    "desc": "敌人受到的法术伤害 +30%。",
+    "rarity": 2,
+    "category": "generic",
+    "effect_type": "enemy_damage_taken_percent",
+    "effect_value": 0.30,
+    "damage_type_filter": "magic"
+  },
+  {
+    "id": "relic_certificate_of_longevity",
+    "name": "长生者之证",
+    "desc": "核心生命上限 +6，并回复 6 核心生命。",
+    "rarity": 2,
+    "category": "generic",
+    "effect_type": "core_max_hp_add",
+    "effect_value": 6
+  },
+  {
+    "id": "relic_support_supply_station",
+    "name": "支援补给站",
+    "desc": "资源建筑产出 +25%。",
+    "rarity": 1,
+    "category": "economy",
+    "effect_type": "building_income_percent",
+    "effect_value": 0.25,
+    "building_type_filter": "resource"
+  },
+  {
+    "id": "relic_rusty_hammer",
+    "name": "锈蚀的铁锤",
+    "desc": "所有商店干员购买声望 -1，最低 1。",
+    "rarity": 2,
+    "category": "economy",
+    "effect_type": "shop_unit_cost_add",
+    "effect_value": -1
   },
   {
     "id": "relic_solo_music_box",
     "name": "独奏八音盒",
     "desc": "立即获得 8 声望；部署上限 +1；商店刷新费用 -1，最低 1。",
     "rarity": 2,
+    "category": "economy",
     "effects": [
       { "effect_type": "prestige_add", "effect_value": 8 },
       { "effect_type": "deploy_limit_add", "effect_value": 1 },
@@ -21,13 +125,25 @@
     ]
   },
   {
-    "id": "relic_fragrant_coffee_beans",
-    "name": "特级馥郁咖啡豆",
-    "desc": "立即获得 8 声望；部署上限 +1。",
+    "id": "relic_money_eye",
+    "name": "财眼",
+    "desc": "立即获得 10 声望；战斗声望收益 +20%。",
     "rarity": 2,
+    "category": "economy",
     "effects": [
-      { "effect_type": "prestige_add", "effect_value": 8 },
-      { "effect_type": "deploy_limit_add", "effect_value": 1 }
+      { "effect_type": "prestige_add", "effect_value": 10 },
+      { "effect_type": "kill_prestige_percent", "effect_value": 0.20 }
+    ]
+  },
+  {
+    "id": "relic_support_crane",
+    "name": "支援起重机",
+    "desc": "所有建筑木材、石材、魔力矿消耗各 -1，最低 0；建筑行动力消耗 -1，最低 1。",
+    "rarity": 2,
+    "category": "economy",
+    "effects": [
+      { "effect_type": "building_material_cost_add", "effect_value": -1 },
+      { "effect_type": "building_ap_cost_add", "effect_value": -1 }
     ]
   },
   {
@@ -35,467 +151,30 @@
     "name": "赤金的远征",
     "desc": "立即获得 12 声望；部署上限 +1。",
     "rarity": 3,
+    "category": "economy",
     "effects": [
       { "effect_type": "prestige_add", "effect_value": 12 },
       { "effect_type": "deploy_limit_add", "effect_value": 1 }
     ]
   },
   {
-    "id": "relic_thermos",
-    "name": "热水壶",
-    "desc": "核心生命上限 +1，并回复 1 核心生命。",
-    "rarity": 1,
-    "effect_type": "core_max_hp_add",
-    "effect_value": 1
-  },
-  {
-    "id": "relic_special_inhibitor",
-    "name": "特殊抑制器",
-    "desc": "核心生命上限 +2，并回复 2 核心生命。",
-    "rarity": 1,
-    "effect_type": "core_max_hp_add",
-    "effect_value": 2
-  },
-  {
-    "id": "relic_gargoyle_statuette",
-    "name": "石像鬼塑像",
-    "desc": "核心生命上限 +3，并回复 3 核心生命。",
-    "rarity": 2,
-    "effect_type": "core_max_hp_add",
-    "effect_value": 3
-  },
-  {
-    "id": "relic_vampire_bed",
-    "name": "血魔的寝床",
-    "desc": "核心生命上限 +4，并回复 4 核心生命。",
-    "rarity": 2,
-    "effect_type": "core_max_hp_add",
-    "effect_value": 4
-  },
-  {
-    "id": "relic_certificate_of_longevity",
-    "name": "长生者之证",
-    "desc": "核心生命上限 +6，并回复 6 核心生命。",
+    "id": "relic_gin_goblet",
+    "name": "金酒之杯",
+    "desc": "每拥有 10 声望，所有我方单位攻速 +7，最多 6 层。",
     "rarity": 3,
-    "effect_type": "core_max_hp_add",
-    "effect_value": 6
-  },
-  {
-    "id": "relic_akahulla_bowl",
-    "name": "阿卡胡拉饭碗",
-    "desc": "立即回复 4 核心生命。",
-    "rarity": 2,
-    "effect_type": "core_heal",
-    "effect_value": 4
-  },
-  {
-    "id": "relic_stereoscopic_art_installation",
-    "name": "立体艺术装置",
-    "desc": "立即回复 7 核心生命；之后每晚结束额外回复 1 核心生命。",
-    "rarity": 3,
-    "effects": [
-      { "effect_type": "core_heal", "effect_value": 7 },
-      { "effect_type": "core_heal_night_end", "effect_value": 1 }
-    ]
-  },
-  {
-    "id": "relic_iron_round_shield",
-    "name": "异铁小圆盾",
-    "desc": "所有我方单位防御 +15%。",
-    "rarity": 1,
-    "effect_type": "unit_def_percent",
-    "effect_value": 0.15
-  },
-  {
-    "id": "relic_legion_mirror",
-    "name": "军团护心镜",
-    "desc": "所有我方单位防御 +25%。",
-    "rarity": 2,
-    "effect_type": "unit_def_percent",
-    "effect_value": 0.25
-  },
-  {
-    "id": "relic_old_steam_armor",
-    "name": "古旧的蒸汽甲胄",
-    "desc": "所有我方单位防御 +35%。",
-    "rarity": 3,
-    "effect_type": "unit_def_percent",
-    "effect_value": 0.35
-  },
-  {
-    "id": "relic_foul_hemostatic",
-    "name": "难闻的止血剂",
-    "desc": "所有我方单位最大生命 +20%。",
-    "rarity": 1,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.20
-  },
-  {
-    "id": "relic_first_aid_kit",
-    "name": "急救药箱",
-    "desc": "所有我方单位最大生命 +35%。",
-    "rarity": 2,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.35
-  },
-  {
-    "id": "relic_unknown_instrument",
-    "name": "未知仪器",
-    "desc": "所有我方单位最大生命 +50%。",
-    "rarity": 3,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.50
-  },
-  {
-    "id": "relic_emperors_favor",
-    "name": "皇帝的恩宠",
-    "desc": "近卫、重装攻击 +15%。",
-    "rarity": 1,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.15,
-    "class_filter": ["guard", "defender"]
-  },
-  {
-    "id": "relic_noble_rapier",
-    "name": "贵族刺剑",
-    "desc": "近卫、重装攻击 +25%。",
-    "rarity": 2,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.25,
-    "class_filter": ["guard", "defender"]
-  },
-  {
-    "id": "relic_old_guard_blade",
-    "name": "老近卫军之锋",
-    "desc": "近卫、重装攻击 +35%。",
-    "rarity": 3,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.35,
-    "class_filter": ["guard", "defender"]
-  },
-  {
-    "id": "relic_holy_pendant",
-    "name": "显圣吊坠",
-    "desc": "狙击、术师攻击 +15%。",
-    "rarity": 1,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.15,
-    "class_filter": ["sniper", "caster"]
-  },
-  {
-    "id": "relic_silver_fork",
-    "name": "银餐叉",
-    "desc": "狙击、术师攻击 +25%。",
-    "rarity": 2,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.25,
-    "class_filter": ["sniper", "caster"]
-  },
-  {
-    "id": "relic_broken_revolver_cylinder",
-    "name": "损坏的左轮弹巢",
-    "desc": "狙击、术师攻击 +35%。",
-    "rarity": 3,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.35,
-    "class_filter": ["sniper", "caster"]
-  },
-  {
-    "id": "relic_torn_photo",
-    "name": "残破合影",
-    "desc": "所有敌人防御 -12%。",
-    "rarity": 1,
-    "effect_type": "enemy_def_percent",
-    "effect_value": -0.12
-  },
-  {
-    "id": "relic_dried_seaborn",
-    "name": "恐鱼干",
-    "desc": "所有敌人防御 -21%。",
-    "rarity": 2,
-    "effect_type": "enemy_def_percent",
-    "effect_value": -0.21
-  },
-  {
-    "id": "relic_rosmontis_embrace",
-    "name": "迷迭香之拥",
-    "desc": "所有敌人防御 -30%。",
-    "rarity": 3,
-    "effect_type": "enemy_def_percent",
-    "effect_value": -0.30
-  },
-  {
-    "id": "relic_standard_riot_gear",
-    "name": "制式防暴用具",
-    "desc": "敌人受到的法术伤害 +20%。",
-    "rarity": 1,
-    "effect_type": "enemy_damage_taken_percent",
-    "effect_value": 0.20,
-    "damage_type_filter": "magic"
-  },
-  {
-    "id": "relic_emperors_collection",
-    "name": "皇帝的收藏",
-    "desc": "敌人受到的法术伤害 +30%。",
-    "rarity": 2,
-    "effect_type": "enemy_damage_taken_percent",
-    "effect_value": 0.30,
-    "damage_type_filter": "magic"
-  },
-  {
-    "id": "relic_splendid_lament",
-    "name": "“璀璨悲泣”",
-    "desc": "敌人受到的法术伤害 +40%。",
-    "rarity": 3,
-    "effect_type": "enemy_damage_taken_percent",
-    "effect_value": 0.40,
-    "damage_type_filter": "magic"
-  },
-  {
-    "id": "relic_familiar_statue",
-    "name": "眼熟的雕像",
-    "desc": "所有敌人攻击速度 -15。",
-    "rarity": 2,
-    "effect_type": "enemy_attack_speed_add",
-    "effect_value": -15
-  },
-  {
-    "id": "relic_little_cube",
-    "name": "“小方块”",
-    "desc": "所有我方单位最大生命 +10%。",
-    "rarity": 1,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.10
-  },
-  {
-    "id": "relic_old_gaul_coin",
-    "name": "古高卢银币",
-    "desc": "干员部署时初始 SP +6。",
-    "rarity": 1,
-    "effect_type": "unit_initial_sp_add",
-    "effect_value": 6
-  },
-  {
-    "id": "relic_gaul_bank_check",
-    "name": "高卢银行支票",
-    "desc": "干员部署时初始 SP +12。",
-    "rarity": 2,
-    "effect_type": "unit_initial_sp_add",
-    "effect_value": 12
-  },
-  {
-    "id": "relic_second_economic_reform_act",
-    "name": "《第二经济改革法》",
-    "desc": "干员部署时初始 SP +18。",
-    "rarity": 3,
-    "effect_type": "unit_initial_sp_add",
-    "effect_value": 18
-  },
-  {
-    "id": "relic_vanilla_sarsaparilla",
-    "name": "香草沙士汽水",
-    "desc": "所有干员每秒 SP 回复 +0.2。",
-    "rarity": 1,
-    "effect_type": "unit_sp_recover_flat_add",
-    "effect_value": 0.20
-  },
-  {
-    "id": "relic_fowl_liver_pate",
-    "name": "羽兽肝酱",
-    "desc": "所有干员每秒 SP 回复 +0.35。",
-    "rarity": 2,
-    "effect_type": "unit_sp_recover_flat_add",
-    "effect_value": 0.35
-  },
-  {
-    "id": "relic_dreamy_essence",
-    "name": "迷梦香精",
-    "desc": "所有干员每秒 SP 回复 +0.5。",
-    "rarity": 3,
-    "effect_type": "unit_sp_recover_flat_add",
-    "effect_value": 0.50
-  },
-  {
-    "id": "relic_captain_morgan",
-    "name": "摩根队长佳酿",
-    "desc": "所有干员每 3 秒额外获得 1 SP。",
-    "rarity": 1,
-    "effect_type": "unit_sp_periodic_add",
-    "effect_value": 1,
-    "interval": 3.0
-  },
-  {
-    "id": "relic_water_of_life",
-    "name": "生命之水",
-    "desc": "所有干员每 2.5 秒额外获得 1 SP。",
-    "rarity": 2,
-    "effect_type": "unit_sp_periodic_add",
-    "effect_value": 1,
-    "interval": 2.5
-  },
-  {
-    "id": "relic_royal_liqueur",
-    "name": "皇家利口酒",
-    "desc": "所有干员每 1.5 秒额外获得 1 SP。",
-    "rarity": 3,
-    "effect_type": "unit_sp_periodic_add",
-    "effect_value": 1,
-    "interval": 1.5
-  },
-  {
-    "id": "relic_recuperation_card",
-    "name": "疗养体验卡",
-    "desc": "干员部署后 10 秒攻击速度 +40。",
-    "rarity": 1,
-    "effect_type": "unit_on_deploy_aspd_add_duration",
-    "effect_value": 40,
-    "duration": 10.0
-  },
-  {
-    "id": "relic_special_recuperation_card",
-    "name": "疗养特供卡",
-    "desc": "干员部署后 10 秒攻击速度 +70。",
-    "rarity": 2,
-    "effect_type": "unit_on_deploy_aspd_add_duration",
-    "effect_value": 70,
-    "duration": 10.0
-  },
-  {
-    "id": "relic_emergency_activator",
-    "name": "紧急活性剂",
-    "desc": "干员生命越低攻速越高，30% 生命及以下达到 +60。",
-    "rarity": 3,
-    "effect_type": "unit_low_hp_aspd_add",
-    "effect_value": 60,
-    "threshold": 0.30
-  },
-  {
-    "id": "relic_broken_halberd_breakthrough",
-    "name": "折戟-突破",
-    "desc": "近卫最大生命 +40%。",
-    "rarity": 2,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.40,
-    "class_filter": "guard"
-  },
-  {
-    "id": "relic_broken_halberd_blade",
-    "name": "折戟-锋刃",
-    "desc": "近卫攻击 +25%。",
-    "rarity": 1,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.25,
-    "class_filter": "guard"
-  },
-  {
-    "id": "relic_broken_halberd_bloodbath",
-    "name": "折戟-浴血",
-    "desc": "近卫攻击后获得 2 SP。",
-    "rarity": 3,
-    "effect_type": "unit_sp_on_attack_add",
-    "effect_value": 2,
-    "class_filter": "guard"
-  },
-  {
-    "id": "relic_iron_guard_breakthrough",
-    "name": "铁卫-突破",
-    "desc": "重装最大生命 +40%。",
-    "rarity": 2,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.40,
-    "class_filter": "defender"
-  },
-  {
-    "id": "relic_iron_guard_invasion",
-    "name": "铁卫-侵掠",
-    "desc": "重装攻击 +60%。",
-    "rarity": 2,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.60,
-    "class_filter": "defender"
-  },
-  {
-    "id": "relic_iron_guard_consolidation",
-    "name": "铁卫-整固",
-    "desc": "重装最大生命 +40%；防御 +40%；法抗 +20。",
-    "rarity": 3,
-    "class_filter": "defender",
-    "effects": [
-      { "effect_type": "unit_hp_percent", "effect_value": 0.40 },
-      { "effect_type": "unit_def_percent", "effect_value": 0.40 },
-      { "effect_type": "unit_res_add", "effect_value": 20 }
-    ]
-  },
-  {
-    "id": "relic_iron_guard_bluntless",
-    "name": "铁卫-无锋",
-    "desc": "重装受到攻击后获得 2 SP。",
-    "rarity": 3,
-    "effect_type": "unit_sp_on_hit_add",
-    "effect_value": 2,
-    "class_filter": "defender"
-  },
-  {
-    "id": "relic_remnant_crossbow_breakthrough",
-    "name": "残弩-突破",
-    "desc": "狙击最大生命 +60%。",
-    "rarity": 2,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.60,
-    "class_filter": "sniper"
-  },
-  {
-    "id": "relic_remnant_crossbow_marksman",
-    "name": "残弩-百步穿杨",
-    "desc": "狙击攻击 +20%。",
-    "rarity": 1,
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.20,
-    "class_filter": "sniper"
-  },
-  {
-    "id": "relic_remnant_crossbow_swiftness",
-    "name": "残弩-神速",
-    "desc": "狙击攻速 +70。",
-    "rarity": 3,
-    "effect_type": "unit_attack_speed_add",
-    "effect_value": 70,
-    "class_filter": "sniper"
-  },
-  {
-    "id": "relic_broken_staff_breakthrough",
-    "name": "断杖-突破",
-    "desc": "术师最大生命 +60%。",
-    "rarity": 2,
-    "effect_type": "unit_hp_percent",
-    "effect_value": 0.60,
-    "class_filter": "caster"
-  },
-  {
-    "id": "relic_broken_staff_weaver",
-    "name": "断杖-织法者",
-    "desc": "术师攻击 +25%；术师攻速 +25。",
-    "rarity": 2,
-    "class_filter": "caster",
-    "effects": [
-      { "effect_type": "unit_atk_percent", "effect_value": 0.25 },
-      { "effect_type": "unit_attack_speed_add", "effect_value": 25 }
-    ]
-  },
-  {
-    "id": "relic_broken_staff_focus",
-    "name": "断杖-凝神",
-    "desc": "术师每秒 SP 回复 +0.4。",
-    "rarity": 2,
-    "effect_type": "unit_sp_recover_flat_add",
-    "effect_value": 0.40,
-    "class_filter": "caster"
+    "category": "economy",
+    "effect_type": "prestige_chunk_effect",
+    "target_effect_type": "unit_attack_speed_add",
+    "effect_value": 7,
+    "chunk_size": 10,
+    "max_layers": 6
   },
   {
     "id": "relic_assault_protocol_blade",
     "name": "突击协议-利刃",
     "desc": "每拥有 1 名近卫，所有近卫攻击 +8%，最多 8 层。",
     "rarity": 2,
+    "category": "class",
     "effect_type": "formation_class_count_effect",
     "target_effect_type": "unit_atk_percent",
     "effect_value": 0.08,
@@ -508,6 +187,7 @@
     "name": "堡垒协议-固守",
     "desc": "每拥有 1 名重装，所有重装防御 +10%，最多 8 层。",
     "rarity": 2,
+    "category": "class",
     "effect_type": "formation_class_count_effect",
     "target_effect_type": "unit_def_percent",
     "effect_value": 0.10,
@@ -520,6 +200,7 @@
     "name": "远程协议-克敌",
     "desc": "每拥有 1 名狙击，所有狙击攻速 +6，最多 8 层。",
     "rarity": 2,
+    "category": "class",
     "effect_type": "formation_class_count_effect",
     "target_effect_type": "unit_attack_speed_add",
     "effect_value": 6,
@@ -532,6 +213,7 @@
     "name": "破坏协议-消除",
     "desc": "每拥有 1 名术师，所有术师攻击 +8%，最多 8 层。",
     "rarity": 2,
+    "category": "class",
     "effect_type": "formation_class_count_effect",
     "target_effect_type": "unit_atk_percent",
     "effect_value": 0.08,
@@ -544,16 +226,142 @@
     "name": "老蒲扇",
     "desc": "当前拥有职业每多 1 种，所有干员攻击 +10%，最多 4 层。",
     "rarity": 3,
+    "category": "class",
     "effect_type": "formation_distinct_class_effect",
     "target_effect_type": "unit_atk_percent",
     "effect_value": 0.10,
     "max_layers": 4
   },
   {
+    "id": "relic_cov_unyielding",
+    "name": "殉道者的回响",
+    "desc": "不屈干员最大生命 +30%；不屈干员被击倒时，眩晕周围 3 格敌人 4 秒。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "不屈",
+    "effects": [
+      { "effect_type": "unit_hp_percent", "effect_value": 0.30, "covenant_filter": "不屈" },
+      { "effect_type": "unit_death_stun_radius", "effect_value": 4.0, "radius": 3, "covenant_filter": "不屈" }
+    ]
+  },
+  {
+    "id": "relic_cov_precision",
+    "name": "鹰眼校准",
+    "desc": "精准干员攻击 +30%、攻速 +15。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "精准",
+    "effects": [
+      { "effect_type": "unit_atk_percent", "effect_value": 0.30, "covenant_filter": "精准" },
+      { "effect_type": "unit_attack_speed_add", "effect_value": 15, "covenant_filter": "精准" }
+    ]
+  },
+  {
+    "id": "relic_cov_steadfast",
+    "name": "磐石垒砌",
+    "desc": "坚守干员防御 +40%、法抗 +15。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "坚守",
+    "effects": [
+      { "effect_type": "unit_def_percent", "effect_value": 0.40, "covenant_filter": "坚守" },
+      { "effect_type": "unit_res_add", "effect_value": 15, "covenant_filter": "坚守" }
+    ]
+  },
+  {
+    "id": "relic_cov_swift",
+    "name": "迅捷髓液",
+    "desc": "迅捷干员每秒 SP 回复 +0.4，部署初始 SP +10。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "迅捷",
+    "effects": [
+      { "effect_type": "unit_sp_recover_flat_add", "effect_value": 0.40, "covenant_filter": "迅捷" },
+      { "effect_type": "unit_initial_sp_add", "effect_value": 10, "covenant_filter": "迅捷" }
+    ]
+  },
+  {
+    "id": "relic_cov_raid",
+    "name": "突袭信标",
+    "desc": "突袭干员再部署时间 -30%；部署后 10 秒攻速 +60。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "突袭",
+    "effects": [
+      { "effect_type": "unit_redeploy_percent", "effect_value": -0.30, "covenant_filter": "突袭" },
+      { "effect_type": "unit_on_deploy_aspd_add_duration", "effect_value": 60, "duration": 10.0, "covenant_filter": "突袭" }
+    ]
+  },
+  {
+    "id": "relic_cov_sargon",
+    "name": "萨尔贡战旗",
+    "desc": "萨尔贡干员攻击 +20%、最大生命 +20%。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "萨尔贡",
+    "effects": [
+      { "effect_type": "unit_atk_percent", "effect_value": 0.20, "covenant_filter": "萨尔贡" },
+      { "effect_type": "unit_hp_percent", "effect_value": 0.20, "covenant_filter": "萨尔贡" }
+    ]
+  },
+  {
+    "id": "relic_cov_foresight",
+    "name": "远见账本",
+    "desc": "立即获得 8 声望；战斗声望收益 +15%；商店刷新费用 -1，最低 1。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "远见",
+    "effects": [
+      { "effect_type": "prestige_add", "effect_value": 8 },
+      { "effect_type": "kill_prestige_percent", "effect_value": 0.15 },
+      { "effect_type": "shop_refresh_cost_add", "effect_value": -1 }
+    ]
+  },
+  {
+    "id": "relic_war_horn",
+    "name": "战吼图腾",
+    "desc": "任意干员开启技能时，所有在场干员获得 4 SP。",
+    "rarity": 2,
+    "category": "mechanic",
+    "effect_type": "unit_sp_on_skill_cast_team",
+    "effect_value": 4
+  },
+  {
+    "id": "relic_emergency_activator",
+    "name": "紧急活性剂",
+    "desc": "干员生命越低攻速越高，30% 生命及以下达到 +60。",
+    "rarity": 2,
+    "category": "mechanic",
+    "effect_type": "unit_low_hp_aspd_add",
+    "effect_value": 60,
+    "threshold": 0.30
+  },
+  {
+    "id": "relic_rainbow_urn",
+    "name": "彩虹瓮",
+    "desc": "每次敌人进入核心点后，随机一名正在再部署的干员冷却归零。",
+    "rarity": 2,
+    "category": "mechanic",
+    "effect_type": "core_breach_redeploy_ready_random",
+    "effect_value": 1
+  },
+  {
+    "id": "relic_stereoscopic_art_installation",
+    "name": "立体艺术装置",
+    "desc": "立即回复 7 核心生命；之后每晚结束额外回复 1 核心生命。",
+    "rarity": 2,
+    "category": "mechanic",
+    "effects": [
+      { "effect_type": "core_heal", "effect_value": 7 },
+      { "effect_type": "core_heal_night_end", "effect_value": 1 }
+    ]
+  },
+  {
     "id": "relic_mandate_form",
     "name": "王命凡形",
     "desc": "获得时将核心生命上限和当前核心生命都设为 1；核心生命为 1 时，所有干员攻击 +100%、攻速 +50。",
     "rarity": 3,
+    "category": "mechanic",
     "effects": [
       { "effect_type": "core_max_hp_set_to_one", "effect_value": 1 },
       { "effect_type": "unit_atk_percent", "effect_value": 1.00, "condition": { "type": "core_hp_equals", "value": 1 } },
@@ -565,6 +373,7 @@
     "name": "魔王的祭器",
     "desc": "获得时回复全部核心生命；核心生命达到上限时，所有干员最大生命 +80%、防御 +25%、法抗 +10。",
     "rarity": 3,
+    "category": "mechanic",
     "effects": [
       { "effect_type": "core_heal_full", "effect_value": 1 },
       { "effect_type": "unit_hp_percent", "effect_value": 0.80, "condition": { "type": "core_hp_full" } },
@@ -577,93 +386,18 @@
     "name": "“荣耀套餐”",
     "desc": "我方单位被击倒时，对周围 4 格敌人造成 6 秒眩晕。",
     "rarity": 3,
+    "category": "mechanic",
     "effect_type": "unit_death_stun_radius",
     "effect_value": 6.0,
     "radius": 4
-  },
-  {
-    "id": "relic_rainbow_urn",
-    "name": "彩虹瓮",
-    "desc": "每次敌人进入核心点后，随机一名正在再部署的干员冷却归零。",
-    "rarity": 2,
-    "effect_type": "core_breach_redeploy_ready_random",
-    "effect_value": 1
   },
   {
     "id": "relic_little_gran_faro",
     "name": "“小格兰法洛”",
     "desc": "每次敌人进入核心点后，眩晕全场敌人 3 秒。",
     "rarity": 3,
+    "category": "mechanic",
     "effect_type": "core_breach_stun_all_enemies",
     "effect_value": 3.0
-  },
-  {
-    "id": "relic_rusty_hammer",
-    "name": "锈蚀的铁锤",
-    "desc": "所有商店干员购买声望 -1，最低 1。",
-    "rarity": 2,
-    "effect_type": "shop_unit_cost_add",
-    "effect_value": -1
-  },
-  {
-    "id": "relic_gin_goblet",
-    "name": "金酒之杯",
-    "desc": "每拥有 10 声望，所有我方单位攻速 +7，最多 6 层。",
-    "rarity": 3,
-    "effect_type": "prestige_chunk_effect",
-    "target_effect_type": "unit_attack_speed_add",
-    "effect_value": 7,
-    "chunk_size": 10,
-    "max_layers": 6
-  },
-  {
-    "id": "relic_money_eye",
-    "name": "财眼",
-    "desc": "立即获得 10 声望；战斗声望收益 +20%。",
-    "rarity": 2,
-    "effects": [
-      { "effect_type": "prestige_add", "effect_value": 10 },
-      { "effect_type": "kill_prestige_percent", "effect_value": 0.20 }
-    ]
-  },
-  {
-    "id": "relic_support_supply_station",
-    "name": "支援补给站",
-    "desc": "资源建筑产出 +25%。",
-    "rarity": 2,
-    "effect_type": "building_income_percent",
-    "effect_value": 0.25,
-    "building_type_filter": "resource"
-  },
-  {
-    "id": "relic_support_crane",
-    "name": "支援起重机",
-    "desc": "所有建筑木材、石材、魔力矿消耗各 -1，最低 0；建筑行动力消耗 -1，最低 1。",
-    "rarity": 2,
-    "effects": [
-      { "effect_type": "building_material_cost_add", "effect_value": -1 },
-      { "effect_type": "building_ap_cost_add", "effect_value": -1 }
-    ]
-  },
-  {
-    "id": "relic_support_riot_pile",
-    "name": "支援防暴桩",
-    "desc": "阻挡建筑最大生命 +60%；所有建筑最大生命 +20%。",
-    "rarity": 2,
-    "effects": [
-      { "effect_type": "building_max_hp_percent", "effect_value": 0.60, "building_type_filter": "block" },
-      { "effect_type": "building_max_hp_percent", "effect_value": 0.20 }
-    ]
-  },
-  {
-    "id": "relic_support_fog_machine",
-    "name": "支援雾机",
-    "desc": "光环建筑范围 +1；光环效果 +20%。",
-    "rarity": 2,
-    "building_type_filter": "aura",
-    "effects": [
-      { "effect_type": "building_aura_radius_add", "effect_value": 1 },
-      { "effect_type": "building_aura_effect_percent", "effect_value": 0.20 }
-    ]
   }
 ]

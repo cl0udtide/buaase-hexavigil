@@ -4,6 +4,10 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 const DEFAULT_RELIC_CHOICES := 3
 const MAX_RELIC_CHOICES := 5
+# 三选一分槽构成：槽 A 盟约导向、槽 B 稀有度随机、槽 C 经济/通用保底。
+# 盟约槽要求玩家在该盟约下拥有的不同干员数达到该值（接近/已激活 2 人档）。
+const COVENANT_PRESENCE_MIN := 2
+const ECONOMY_SLOT_CATEGORIES: Array[StringName] = [&"economy", &"generic"]
 
 @onready var _unit_manager: Node = get_node_or_null("../UnitManager")
 @onready var _enemy_manager: Node = get_node_or_null("../EnemyManager")
@@ -18,22 +22,106 @@ func _ready() -> void:
 	event_bus.unit_died.connect(_on_unit_died)
 	event_bus.night_cleared.connect(_on_night_cleared)
 	event_bus.core_hp_changed.connect(_on_core_hp_changed)
+	event_bus.unit_skill_cast.connect(_on_unit_skill_cast)
 
 
+## 三选一构成：槽 A 从"接近/已激活盟约"的钥匙件中抽，槽 B 按当天稀有度门控随机，
+## 槽 C 经济/通用保底；不足时从槽 B 池补齐。稀有度门控：第 1-2 天仅普通(1)，
+## 第 3-4 天普通+稀有(1,2)，第 5 天起稀有+传说(2,3)；门控池不足时回退全池。
 func get_random_blessing_choices(count: int = 0) -> Array[StringName]:
 	var data_repo = AppRefs.data_repo()
 	var run_state = AppRefs.run_state()
-	var pool: Array[StringName] = []
-	var all_buff_ids: Array[StringName] = data_repo.get_all_buff_ids() if data_repo != null else []
-	for buff_id in all_buff_ids:
-		if run_state != null and run_state.has_buff(buff_id):
-			continue
-		pool.append(buff_id)
+	if data_repo == null:
+		return []
 	var choice_count := count
 	if choice_count <= 0:
 		choice_count = DEFAULT_RELIC_CHOICES
 	choice_count = clamp(choice_count, 1, MAX_RELIC_CHOICES)
-	return _draw_random_choices(pool, min(choice_count, pool.size()))
+
+	var unowned: Array[Dictionary] = []
+	var all_buff_ids: Array[StringName] = data_repo.get_all_buff_ids()
+	for buff_id in all_buff_ids:
+		if run_state != null and run_state.has_buff(buff_id):
+			continue
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		if cfg.is_empty():
+			continue
+		cfg["id"] = buff_id
+		unowned.append(cfg)
+
+	var day: int = int(run_state.day) if run_state != null else 1
+	var allowed_rarities := _allowed_rarities_for_day(day)
+	var rarity_pool: Array[Dictionary] = []
+	for cfg in unowned:
+		if allowed_rarities.has(int(cfg.get("rarity", 1))):
+			rarity_pool.append(cfg)
+	if rarity_pool.is_empty():
+		rarity_pool = unowned
+
+	var economy_pool: Array[Dictionary] = []
+	for cfg in rarity_pool:
+		if ECONOMY_SLOT_CATEGORIES.has(StringName(cfg.get("category", "generic"))):
+			economy_pool.append(cfg)
+
+	var presence := _covenant_presence()
+	var covenant_pool: Array[Dictionary] = []
+	for cfg in rarity_pool:
+		if StringName(cfg.get("category", "")) != &"covenant":
+			continue
+		if int(presence.get(StringName(cfg.get("covenant", "")), 0)) >= COVENANT_PRESENCE_MIN:
+			covenant_pool.append(cfg)
+
+	var result: Array[StringName] = []
+	_append_random_choice(covenant_pool, result)
+	_append_random_choice(rarity_pool, result)
+	if choice_count >= 3:
+		_append_random_choice(economy_pool, result)
+	while result.size() < choice_count:
+		if not _append_random_choice(rarity_pool, result) and not _append_random_choice(unowned, result):
+			break
+	result.shuffle()
+	return result
+
+
+func _allowed_rarities_for_day(day: int) -> Array[int]:
+	if day <= 2:
+		return [1]
+	if day <= 4:
+		return [1, 2]
+	return [2, 3]
+
+
+## 玩家在各盟约下拥有的不同干员数（同名干员去重，与盟约触发人数口径一致）。
+func _covenant_presence() -> Dictionary:
+	var presence: Dictionary = {}
+	var run_state = AppRefs.run_state()
+	var data_repo = AppRefs.data_repo()
+	if run_state == null or data_repo == null or not run_state.has_method("get_owned_operators"):
+		return presence
+	var seen_units: Dictionary = {}
+	for operator in run_state.get_owned_operators():
+		var unit_id := StringName((operator as Dictionary).get("unit_id", ""))
+		if unit_id == StringName() or seen_units.has(unit_id):
+			continue
+		seen_units[unit_id] = true
+		var unit_cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
+		for raw_covenant: Variant in unit_cfg.get("covenants", []):
+			var covenant := StringName(raw_covenant)
+			if covenant != StringName():
+				presence[covenant] = int(presence.get(covenant, 0)) + 1
+	return presence
+
+
+func _append_random_choice(pool: Array[Dictionary], result: Array[StringName]) -> bool:
+	var candidates: Array[StringName] = []
+	for cfg in pool:
+		var buff_id := StringName(cfg.get("id", ""))
+		if buff_id != StringName() and not result.has(buff_id):
+			candidates.append(buff_id)
+	if candidates.is_empty():
+		return false
+	result.append(candidates.pick_random())
+	return true
 
 
 func apply_blessing(buff_id: StringName) -> Dictionary:
@@ -100,7 +188,7 @@ func _get_effect_entries(cfg: Dictionary) -> Array[Dictionary]:
 		for raw_effect in cfg.get("effects", []):
 			if typeof(raw_effect) == TYPE_DICTIONARY:
 				var effect := (raw_effect as Dictionary).duplicate(true)
-				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "condition"]:
+				for key in ["class_filter", "damage_type_filter", "building_type_filter", "material_filter", "covenant_filter", "condition"]:
 					if not effect.has(key) and cfg.has(key):
 						effect[key] = cfg[key]
 				result.append(effect)
@@ -136,12 +224,44 @@ func _on_core_damaged(_amount: int, current: int, _max_value: int) -> void:
 	_refresh_relic_runtime_effects()
 
 
-func _on_unit_died(_unit_runtime_id: int, _unit_id: StringName, cell: Vector2i) -> void:
+func _on_unit_died(_unit_runtime_id: int, unit_id: StringName, cell: Vector2i) -> void:
+	var data_repo = AppRefs.data_repo()
+	var unit_cfg: Dictionary = data_repo.get_unit_cfg(unit_id) if data_repo != null else {}
 	for effect in _get_owned_effect_entries(&"unit_death_stun_radius"):
+		if not _effect_matches_unit_covenants(effect, unit_cfg):
+			continue
 		var duration := float(effect.get("effect_value", 0.0))
 		var radius := int(effect.get("radius", 0))
 		if duration > 0.0 and radius > 0 and _enemy_manager != null and _enemy_manager.has_method("stun_enemies_in_radius"):
 			_enemy_manager.stun_enemies_in_radius(cell, radius, duration)
+
+
+func _on_unit_skill_cast(_unit_runtime_id: int, _unit_id: StringName) -> void:
+	var sp_total := 0
+	for effect in _get_owned_effect_entries(&"unit_sp_on_skill_cast_team"):
+		sp_total += int(effect.get("effect_value", 0))
+	if sp_total <= 0 or _unit_manager == null or not _unit_manager.has_method("get_all_deployed_units"):
+		return
+	for unit in _unit_manager.get_all_deployed_units():
+		if unit != null and is_instance_valid(unit) and unit.has_method("gain_sp"):
+			unit.gain_sp(sp_total)
+
+
+func _effect_matches_unit_covenants(effect: Dictionary, unit_cfg: Dictionary) -> bool:
+	if not effect.has("covenant_filter"):
+		return true
+	var raw_filter: Variant = effect.get("covenant_filter")
+	var filters: Array = raw_filter if raw_filter is Array else [raw_filter]
+	var raw_covenants: Variant = unit_cfg.get("covenants", [])
+	var covenants: Array = raw_covenants if raw_covenants is Array else []
+	for raw_expected: Variant in filters:
+		var expected := StringName(raw_expected)
+		if expected == StringName():
+			continue
+		for raw_covenant: Variant in covenants:
+			if StringName(raw_covenant) == expected:
+				return true
+	return false
 
 
 func _on_night_cleared(_day: int) -> void:
