@@ -1,0 +1,74 @@
+[
+  {
+    "id": "forced_march",
+    "name": "急行军",
+    "desc": "敌军轻装疾行：全体移动速度 +30%，最大生命 -20%。",
+    "min_day": 2,
+    "weight": 10,
+    "effects": [
+      { "type": "enemy_stat_percent", "stat": "move_speed", "value": 0.30 },
+      { "type": "enemy_stat_percent", "stat": "max_hp", "value": -0.20 }
+    ]
+  },
+  {
+    "id": "bloodlust",
+    "name": "嗜血",
+    "desc": "敌军杀意高涨：全体攻击 +15%；击杀它们获得的声望 +30%。",
+    "min_day": 2,
+    "weight": 10,
+    "effects": [
+      { "type": "enemy_stat_percent", "stat": "atk", "value": 0.15 },
+      { "type": "enemy_stat_percent", "stat": "prestige_reward", "value": 0.30 }
+    ]
+  },
+  {
+    "id": "air_raid",
+    "name": "空袭警报",
+    "desc": "每波将额外来袭一队飞行单位。",
+    "min_day": 2,
+    "weight": 8,
+    "effects": [
+      { "type": "extra_squad", "enemy_id": "bat", "count": 4, "interval": 0.7, "time_offset": 6.0 }
+    ]
+  },
+  {
+    "id": "heavy_advance",
+    "name": "重甲推进",
+    "desc": "披甲敌人（防御不低于 20）的防御 +30%。",
+    "min_day": 3,
+    "weight": 8,
+    "effects": [
+      { "type": "enemy_stat_percent", "stat": "def", "value": 0.30, "min_def": 20 }
+    ]
+  },
+  {
+    "id": "arcane_tide",
+    "name": "巫术潮汐",
+    "desc": "魔力暗涌：全体敌人法术抗性 +20。",
+    "min_day": 3,
+    "weight": 8,
+    "effects": [
+      { "type": "enemy_stat_add", "stat": "res", "value": 20 }
+    ]
+  },
+  {
+    "id": "deathweave",
+    "name": "亡语之夜",
+    "desc": "敌人的死亡爆炸伤害 +50%，死亡分裂数量 +1。",
+    "min_day": 4,
+    "weight": 6,
+    "effects": [
+      { "type": "death_effect_percent", "value": 0.50, "spawn_add": 1 }
+    ]
+  },
+  {
+    "id": "spawn_surge",
+    "name": "出怪失衡",
+    "desc": "随机一个出怪口来敌翻倍，其余出怪口来敌减半。",
+    "min_day": 4,
+    "weight": 6,
+    "effects": [
+      { "type": "spawn_redistribute", "surge_multiplier": 2.0, "other_multiplier": 0.5 }
+    ]
+  }
+]

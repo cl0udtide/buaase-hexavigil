@@ -45,6 +45,7 @@ func enter_day(day: int) -> void:
 	run_state.set_day(day)
 	run_state.set_phase(GameEnums.PHASE_DAY)
 	_resolve_night_template_for_day(run_state, day)
+	_resolve_night_affixes_for_day(run_state, day)
 	run_state.reset_action_points(run_state.DEFAULT_ACTION_POINTS)
 	if _day_manager != null and _day_manager.has_method("start_day"):
 		_day_manager.start_day(day)
@@ -112,6 +113,18 @@ func _resolve_night_template_for_day(run_state: Node, day: int) -> void:
 	for template_id in plan:
 		if template_id != StringName() and not run_state.used_template_ids.has(template_id):
 			run_state.used_template_ids.append(template_id)
+
+
+func _resolve_night_affixes_for_day(run_state: Node, day: int) -> void:
+	var empty_affixes: Array[StringName] = []
+	run_state.night_affix_ids = empty_affixes
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_all_night_affix_ids"):
+		return
+	var affix_cfgs: Array = []
+	for affix_id in data_repo.get_all_night_affix_ids():
+		affix_cfgs.append(data_repo.get_night_affix_cfg(affix_id))
+	run_state.night_affix_ids = NightAffixService.resolve_affixes_for_day(int(run_state.random_seed), day, affix_cfgs)
 
 
 func _bootstrap_run_if_needed() -> void:

@@ -10,7 +10,8 @@ const DATA_FILES := {
 	"buildings": "res://data/buildings.json",
 	"buffs": "res://data/buffs.json",
 	"events": "res://data/events.json",
-	"wave_templates": "res://data/wave_templates.json"
+	"wave_templates": "res://data/wave_templates.json",
+	"night_affixes": "res://data/night_affixes.json"
 }
 
 const CONFIG_FILES := {
@@ -34,7 +35,8 @@ var _tables: Dictionary = {
 	"buildings": {},
 	"buffs": {},
 	"events": {},
-	"wave_templates": {}
+	"wave_templates": {},
+	"night_affixes": {}
 }
 
 var _configs: Dictionary = {
@@ -98,6 +100,18 @@ func get_wave_template_ids_by_tier(tier: StringName) -> Array[StringName]:
 		var cfg: Dictionary = _tables["wave_templates"].get(template_id, {})
 		if StringName(cfg.get("tier", "")) == tier:
 			ids.append(StringName(template_id))
+	ids.sort()
+	return ids
+
+
+func get_night_affix_cfg(affix_id: StringName) -> Dictionary:
+	return _tables["night_affixes"].get(affix_id, {}).duplicate(true)
+
+
+func get_all_night_affix_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for affix_id in _tables["night_affixes"].keys():
+		ids.append(StringName(affix_id))
 	ids.sort()
 	return ids
 
