@@ -401,7 +401,9 @@ func _refresh_world_markers() -> void:
 		var spawn_key: StringName = child.get("spawn_key") if child.get("spawn_key") != null else StringName()
 		var spawn_cell := get_spawn_cell_by_key(spawn_key)
 		(child as Node2D).global_position = cell_to_world(spawn_cell)
-		(child as Node2D).visible = is_discovered(spawn_cell)
+		# 出怪口标记穿透迷雾常显（设计稿 §3.3）：格子保持未探索，仅标记可见，
+		# 探索扩展约束与事件前沿落点都依赖 discovered，不得把出怪格置为已探索。
+		(child as Node2D).visible = true
 
 
 func _apply_debug_spawns(spawn_defs: Dictionary) -> void:
