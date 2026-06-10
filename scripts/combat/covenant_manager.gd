@@ -133,7 +133,10 @@ func recompute_owned() -> void:
 		for op in owned:
 			var op_dict := op as Dictionary
 			var unit_id := StringName(op_dict.get("unit_id", ""))
-			if _unit_id_has_covenant(unit_id, covenant_id, data_repo):
+			var has_covenant := _unit_id_has_covenant(unit_id, covenant_id, data_repo)
+			if not has_covenant and run_state.has_method("get_operator_covenants"):
+				has_covenant = _has_tag(run_state.get_operator_covenants(StringName(op_dict.get("key", ""))), covenant_id)
+			if has_covenant:
 				members[String(unit_id)] = true
 				layers += int(op_dict.get("star", 1))
 		var count := int(members.size())
