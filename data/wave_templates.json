@@ -500,7 +500,7 @@
       {
         "time": 15.0,
         "enemy_id": "infused_originium_slug",
-        "lane": "any",
+        "lane": "main",
         "count": 4,
         "interval": 0.8
       }
