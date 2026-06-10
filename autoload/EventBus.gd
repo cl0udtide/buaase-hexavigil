@@ -9,6 +9,8 @@ signal night_started(day: int)
 @warning_ignore("unused_signal")
 signal night_cleared(day: int)
 @warning_ignore("unused_signal")
+signal night_wave_started(wave_index: int, wave_count: int)
+@warning_ignore("unused_signal")
 signal run_ended(win: bool)
 
 @warning_ignore("unused_signal")
