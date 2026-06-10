@@ -12,6 +12,7 @@ data/
 ├─ buffs.json
 ├─ events.json
 ├─ wave_templates.json
+├─ night_affixes.json
 ├─ map_generation.json
 └─ ui_icons.json
 ```
@@ -29,7 +30,9 @@ data/
 - `events.json`
   随机事件静态配置。
 - `wave_templates.json`
-  夜晚关卡模板池。运行时按天数阶段和本局随机种子解析出当晚模板。
+  夜晚关卡模板池。运行时按天数阶段和本局随机种子解析出当晚的多波模板计划。
+- `night_affixes.json`
+  夜晚词缀池。每晚按天数与本局随机种子抽取 0-2 条全局修饰，清晨随敌情预览公示。
 - `map_generation.json`
   地图生成与探索相关调参配置。
 - `ui_icons.json`
@@ -400,8 +403,9 @@ Boss 多阶段规则：
 作用：
 
 - 定义夜晚关卡模板池，包括关卡名称、预览文案、分层标签和刷怪计划。
-- 运行时由 `GameController` / `WaveManager` 根据当前天数、`RunState.random_seed` 和已使用模板解析出当晚模板；不要在该表中写入运行时状态。
-- 第 1-2 夜使用 `early` 池，第 3-4 夜使用 `mid` 池，第 5 夜使用 `late` 池，第 6 夜使用 `boss` 池。该规则由 `scripts/enemy/night_template_resolver.gd` 维护。
+- 运行时由 `GameController` / `WaveManager` 根据当前天数、`RunState.random_seed` 和已使用模板解析出当晚的**多波模板计划**（`RunState.night_wave_template_ids`，`night_template_id` 始终等于首波作兼容视图）；不要在该表中写入运行时状态。
+- 每晚波数与档位由 `scripts/enemy/night_template_resolver.gd` 的 `WAVE_TIERS_BY_DAY` 维护：第 1 夜 1 波（early），第 2 夜 2 波（early），第 3 夜 early+mid，第 4 夜 2 波（mid），第 5 夜 mid+late+late，第 6 夜 late+boss。
+- 波间节奏由 `scripts/enemy/wave_manager.gd` 维护：上一波清场后 12 秒开下一波；残敌拖延超过 45 秒则强制开下一波。
 
 记录示例：
 
@@ -463,6 +467,55 @@ Boss 多阶段规则：
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、模板 ID 和条目序号确定选择，白天预览与夜晚实际刷怪保持一致 |
+
+---
+
+## 6.1 `night_affixes.json`
+
+作用：
+
+- 定义夜晚词缀池。每晚白天开始时由 `GameController` 按 `RunState.random_seed` 与天数确定性抽取，存入 `RunState.night_affix_ids` 并在敌情预览中公示。
+- 每晚词缀数量由 `scripts/enemy/night_affix_service.gd` 的 `AFFIX_COUNT_BY_DAY` 维护（当前：第 1 夜 0 条，2-3 夜 1 条，4-5 夜 2 条，第 6 夜 1 条）。
+- 词缀只通过两个挂点生效：条目级（波次 entries 展开前变换）与个体级（`spawn_enemy` 的 `cfg_override`），结算逻辑集中在 `night_affix_service.gd`。
+
+记录示例：
+
+```json
+[
+  {
+    "id": "forced_march",
+    "name": "急行军",
+    "desc": "敌军轻装疾行：全体移动速度 +30%，最大生命 -20%。",
+    "min_day": 2,
+    "weight": 10,
+    "effects": [
+      { "type": "enemy_stat_percent", "stat": "move_speed", "value": 0.30 },
+      { "type": "enemy_stat_percent", "stat": "max_hp", "value": -0.20 }
+    ]
+  }
+]
+```
+
+顶层字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `id` | `String` | 词缀唯一标识，使用英文小写加下划线 |
+| `name` | `String` | 词缀名称，公示于敌情面板预警区 |
+| `desc` | `String` | 玩家可读的完整效果描述 |
+| `min_day` | `int` | 最早出现天数（门控） |
+| `weight` | `float` | 抽取权重 |
+| `effects` | `Array` | 效果原语列表 |
+
+`effects` 支持的效果原语：
+
+| `type` | 字段 | 说明 |
+|---|---|---|
+| `enemy_stat_percent` | `stat`、`value`、可选 `min_def` | 敌人数值按百分比缩放；`min_def` 存在时仅作用于防御不低于该值的敌人。整数字段（`max_hp`/`atk`/`def`/`res`/`prestige_reward`/`core_damage`）四舍五入 |
+| `enemy_stat_add` | `stat`、`value` | 敌人数值加算 |
+| `death_effect_percent` | `value`、可选 `spawn_add` | 死亡爆炸伤害按百分比增强；`spawn_add` 增加死亡分裂数量 |
+| `extra_squad` | `enemy_id`、`count`、`interval`、`time_offset` | 每波在随机出怪口追加一支编队，`time_offset` 为相对波开始的时间 |
+| `spawn_redistribute` | `surge_multiplier`、`other_multiplier` | 随机一个出怪口条目数量乘 `surge_multiplier`，其余乘 `other_multiplier`（向上取整，最少 1） |
 
 ---
 
