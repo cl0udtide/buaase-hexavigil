@@ -1509,7 +1509,6 @@ theme_override_constants/separation = 10
 
 [node name="InteractionLayer" type="Control" parent="." unique_id=185512381]
 unique_name_in_owner = true
-visible = false
 z_index = 30
 anchors_preset = 0
 anchor_right = 1.0
@@ -1549,7 +1548,6 @@ vertical_alignment = 1
 
 [node name="PopupLayer" type="Control" parent="." unique_id=802516164]
 unique_name_in_owner = true
-visible = false
 z_index = 70
 anchors_preset = 0
 anchor_right = 1.0
@@ -1981,7 +1979,6 @@ text = "关闭"
 
 [node name="RelicPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619765]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1990,7 +1987,6 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="RelicPanelCenter" type="CenterContainer" parent="PopupLayer/RelicPanelSlot" unique_id=209348131]
-visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2006,7 +2002,6 @@ size_flags_vertical = 4
 
 [node name="TooltipLayer" type="Control" parent="." unique_id=541998327]
 unique_name_in_owner = true
-visible = false
 z_index = 100
 layout_mode = 1
 anchors_preset = 15
