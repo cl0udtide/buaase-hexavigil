@@ -178,19 +178,104 @@ func get_wave_preview_for_template(template_id: StringName) -> Dictionary:
 	return _build_wave_preview(cfg, _seed_day_for(template_id), template_id)
 
 
-func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName = StringName()) -> Dictionary:
+## 整夜聚合预览：多波合并构成 + 词缀公示。条目与敌人属性均为词缀生效后的真实值。
+func get_night_preview(template_ids: Array, affix_ids: Array = []) -> Dictionary:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or template_ids.is_empty():
+		return {}
+	var affix_cfgs: Array[Dictionary] = _load_affix_cfgs(affix_ids)
+	var wave_previews: Array[Dictionary] = []
+	for wave_index in range(template_ids.size()):
+		var template_id := StringName(template_ids[wave_index])
+		if template_id == StringName():
+			continue
+		var cfg: Dictionary = data_repo.get_wave_template_cfg(template_id) if data_repo.has_method("get_wave_template_cfg") else {}
+		if cfg.is_empty():
+			continue
+		var wave_preview := _build_wave_preview(cfg, _seed_day_for(template_id), template_id, wave_index, affix_cfgs)
+		if not wave_preview.is_empty():
+			wave_previews.append(wave_preview)
+	if wave_previews.is_empty():
+		return {}
+
+	var merged_by_key: Dictionary = {}
+	var spawn_order: Array[StringName] = []
+	var key_enemies: Array[StringName] = []
+	var wave_summaries: Array[Dictionary] = []
+	var wave_names := PackedStringArray()
+	var total_count := 0
+	for wave_preview in wave_previews:
+		wave_names.append(String(wave_preview.get("name", "")))
+		total_count += int(wave_preview.get("total_count", 0))
+		wave_summaries.append({
+			"wave_index": wave_summaries.size(),
+			"template_id": StringName(wave_preview.get("template_id", "")),
+			"name": String(wave_preview.get("name", "")),
+			"desc": String(wave_preview.get("desc", "")),
+			"total_count": int(wave_preview.get("total_count", 0)),
+		})
+		for raw_enemy: Variant in wave_preview.get("key_enemies", []):
+			var key_enemy := StringName(raw_enemy)
+			if key_enemy != StringName() and not key_enemies.has(key_enemy):
+				key_enemies.append(key_enemy)
+		for raw_entry: Variant in wave_preview.get("entries", []):
+			if typeof(raw_entry) != TYPE_DICTIONARY:
+				continue
+			var entry: Dictionary = raw_entry
+			var spawn_key := StringName(entry.get("spawn_key", ""))
+			var aggregate_key := "%s|%s" % [String(spawn_key), String(entry.get("enemy_id", ""))]
+			if not merged_by_key.has(aggregate_key):
+				merged_by_key[aggregate_key] = entry.duplicate(true)
+				if not spawn_order.has(spawn_key):
+					spawn_order.append(spawn_key)
+			else:
+				var merged: Dictionary = merged_by_key[aggregate_key]
+				merged["count"] = int(merged.get("count", 0)) + int(entry.get("count", 0))
+				merged["first_time"] = min(float(merged.get("first_time", 0.0)), float(entry.get("first_time", 0.0)))
+				merged["last_time"] = max(float(merged.get("last_time", 0.0)), float(entry.get("last_time", 0.0)))
+	var merged_entries: Array[Dictionary] = []
+	for raw_entry: Variant in merged_by_key.values():
+		merged_entries.append(raw_entry as Dictionary)
+	merged_entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var spawn_a := String(a.get("spawn_key", ""))
+		var spawn_b := String(b.get("spawn_key", ""))
+		if spawn_a == spawn_b:
+			return float(a.get("first_time", 0.0)) < float(b.get("first_time", 0.0))
+		return spawn_a < spawn_b
+	)
+
+	var affixes: Array[Dictionary] = []
+	for affix_cfg in affix_cfgs:
+		affixes.append({
+			"id": StringName(affix_cfg.get("id", "")),
+			"name": String(affix_cfg.get("name", "")),
+			"desc": String(affix_cfg.get("desc", "")),
+		})
+	var first_preview: Dictionary = wave_previews[0]
+	return {
+		"day": int(first_preview.get("day", 0)),
+		"template_id": StringName(first_preview.get("template_id", "")),
+		"name": " → ".join(wave_names),
+		"desc": String(first_preview.get("desc", "")),
+		"tier": StringName(first_preview.get("tier", "")),
+		"key_enemies": key_enemies,
+		"entries": merged_entries,
+		"spawn_order": spawn_order,
+		"total_count": total_count,
+		"wave_count": wave_previews.size(),
+		"waves": wave_summaries,
+		"affixes": affixes,
+	}
+
+
+func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName = StringName(), wave_index: int = 0, affix_cfgs: Array = []) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
 		return {}
 	var entries_by_key: Dictionary = {}
 	var spawn_order: Array[StringName] = []
 	var total_count := 0
-	var raw_entries: Array = cfg.get("entries", [])
-	for entry_index in range(raw_entries.size()):
-		var entry_variant: Variant = raw_entries[entry_index]
-		if typeof(entry_variant) != TYPE_DICTIONARY:
-			continue
-		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
+	for entry in _build_resolved_entries(cfg, template_id, wave_index, affix_cfgs):
 		var enemy_id := StringName(entry.get("enemy_id", ""))
 		var spawn_key := StringName(entry.get("spawn_key", ""))
 		if enemy_id == StringName() or spawn_key == StringName():
@@ -199,6 +284,8 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 		if count <= 0:
 			continue
 		var enemy_cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id)
+		if not affix_cfgs.is_empty():
+			enemy_cfg = NightAffixService.apply_to_enemy_cfg(enemy_cfg, affix_cfgs)
 		var aggregate_key := "%s|%s" % [String(spawn_key), String(enemy_id)]
 		if not entries_by_key.has(aggregate_key):
 			entries_by_key[aggregate_key] = {

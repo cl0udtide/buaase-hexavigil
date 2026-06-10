@@ -186,6 +186,7 @@ func _connect_events() -> void:
 		event_bus.phase_changed.connect(_on_phase_changed)
 		event_bus.day_started.connect(_on_day_started)
 		event_bus.night_started.connect(_on_night_started)
+		event_bus.night_wave_started.connect(_on_night_wave_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_removed.connect(_on_unit_removed)
 		event_bus.covenants_changed.connect(_on_covenants_changed)
@@ -971,17 +972,14 @@ func _refresh_wave_preview() -> void:
 		_set_wave_preview_text("今晚敌情\n地图或波次数据加载中...", true)
 		return
 
-	var template_id := StringName(run_state.night_template_id) if run_state != null else StringName()
-	var preview: Dictionary = {}
-	if template_id != StringName() and _wave_manager.has_method("get_wave_preview_for_template"):
-		preview = _wave_manager.get_wave_preview_for_template(template_id)
+	var preview: Dictionary = _build_night_preview_data(run_state)
 	if preview.is_empty():
 		_last_wave_preview_signature = ""
 		_set_wave_preview_text("今晚敌情\n暂无关卡模板", true)
 		_clear_wave_routes()
 		return
 	var hover_cell: Vector2i = _get_blocking_build_preview_cell()
-	var signature: String = "%d|%s|%d|%d" % [int(run_state.day), str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision]
+	var signature: String = "%d|%s|%d|%d|%d|%d" % [int(run_state.day), str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision, int(preview.get("wave_count", 1)), (preview.get("affixes", []) as Array).size()]
 	if signature != _last_wave_preview_signature:
 		_last_wave_preview_signature = signature
 		var extra_blocked_cells: Dictionary = {}
@@ -1060,18 +1058,52 @@ func _set_wave_preview_data(preview: Dictionary, routes: Array[Dictionary], hove
 func _play_level_intro(day: int) -> void:
 	if _combat_hud == null or not _combat_hud.has_method("play_level_intro"):
 		return
-	if _wave_manager == null or not _wave_manager.has_method("get_wave_preview_for_template"):
-		return
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return
-	var template_id := StringName(run_state.night_template_id)
-	if template_id == StringName():
-		return
-	var preview: Dictionary = _wave_manager.get_wave_preview_for_template(template_id)
+	var preview: Dictionary = _build_night_preview_data(run_state)
 	if preview.is_empty():
 		return
-	_combat_hud.play_level_intro(day, String(preview.get("name", "今夜")), String(preview.get("desc", "")))
+	var intro_name := String(preview.get("name", "今夜"))
+	var waves: Array = preview.get("waves", [])
+	if waves.size() > 1 and typeof(waves[0]) == TYPE_DICTIONARY:
+		intro_name = "%s · 共 %d 波" % [String((waves[0] as Dictionary).get("name", "今夜")), waves.size()]
+	_combat_hud.play_level_intro(day, intro_name, String(preview.get("desc", "")))
+
+
+func _on_night_wave_started(wave_index: int, wave_count: int) -> void:
+	if wave_index <= 0 or _combat_hud == null or not _combat_hud.has_method("play_level_intro"):
+		return
+	var run_state = AppRefs.run_state()
+	var day := int(run_state.day) if run_state != null else 0
+	var wave_name := ""
+	if _wave_manager != null and _wave_manager.has_method("get_current_wave_template_id"):
+		var data_repo = AppRefs.data_repo()
+		if data_repo != null and data_repo.has_method("get_wave_template_cfg"):
+			var cfg: Dictionary = data_repo.get_wave_template_cfg(_wave_manager.get_current_wave_template_id())
+			wave_name = String(cfg.get("name", ""))
+	var title := "第 %d/%d 波" % [wave_index + 1, wave_count]
+	if not wave_name.is_empty():
+		title += " · " + wave_name
+	_combat_hud.play_level_intro(day, title, "")
+
+
+## 整夜预览数据：优先多波计划 + 词缀，回退单模板。
+func _build_night_preview_data(run_state: Node) -> Dictionary:
+	if run_state == null or _wave_manager == null:
+		return {}
+	var plan: Array = []
+	for raw_id: Variant in (run_state.night_wave_template_ids as Array):
+		plan.append(raw_id)
+	if plan.is_empty() and StringName(run_state.night_template_id) != StringName():
+		plan = [run_state.night_template_id]
+	if plan.is_empty():
+		return {}
+	if _wave_manager.has_method("get_night_preview"):
+		return _wave_manager.get_night_preview(plan, (run_state.night_affix_ids as Array))
+	if _wave_manager.has_method("get_wave_preview_for_template"):
+		return _wave_manager.get_wave_preview_for_template(StringName(plan[0]))
+	return {}
 
 
 func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictionary) -> Array[Dictionary]:
