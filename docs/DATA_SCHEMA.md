@@ -579,8 +579,11 @@ Boss 多阶段规则：
 作用：
 
 - 定义随机事件（契约系统）。设计铁律：事件必须是有代价、有改造或有赌注的交易，禁止无代价的纯资源发放。
-- 根事件（无 `hidden_in_map_pool`）进入地图事件点池（`map_generation.json` 的 `event_point_count` 控制数量）；选项跳转的结果事件标记 `hidden_in_map_pool: true`。
+- 根事件（无 `hidden_in_map_pool`）进入**每日刷新池**：开局保底 2 个事件点，此后每天 1-2 个，活跃上限 4 个；落点优先探索前沿的迷雾（`random_event_manager.gd` 维护规则与数值）。`map_generation.json` 的 `event_point_count` 已置 0，不再在地图生成期放置。
+- 事件抽取受 `min_day` / `max_day` 门控与 `weight` 加权，且本局未刷过的事件优先。
+- 选项跳转的结果事件标记 `hidden_in_map_pool: true`。
 - 触发事件消耗 2 行动力（`day_manager.gd`）；`requires` 前置不满足时事件整体取消并退还行动力。
+- 特例：`event_altar`（古代祭坛）的选项按格子动态生成（最多 3 个"干员×盟约"灌注组合 + 离开），灌注消耗 2 魔力矿，为干员实例追加盟约 tag（`RunState.add_operator_covenant`）。
 
 记录示例：
 
@@ -613,6 +616,8 @@ Boss 多阶段规则：
 | `effects` | `Array` | 契约效果列表（见下表） |
 | `choices` | `Array` | 选项列表；每项含 `id`、`text`、`kind`、`event_id`（跳转的结果事件）、`effect_desc` |
 | `hidden_in_map_pool` | `bool` | 结果事件标记，不进入地图事件点池 |
+| `min_day` / `max_day` | `int` | 可选，事件可刷出的天数区间（默认 1 / 99） |
+| `weight` | `float` | 可选，刷新抽取权重（默认 1） |
 
 `effects` 支持的契约效果（`random_event_manager.gd`）：
 
@@ -622,6 +627,8 @@ Boss 多阶段规则：
 | `grant_random_relic` | `rarity_min`、`rarity_max` | 获得一件指定稀有度区间的随机未持有遗物；池空时改发 6 声望 |
 | `night_affix_add_random` | — | 为今晚追加一条随机夜晚词缀（优先满足 `min_day`，无候选时回退全池） |
 | `wager_no_leak` | — | 激活赌约：核心一夜未失血则次日清晨额外一次遗物三选一（`game_controller.gd` 结算） |
+| `grant_random_operator` | `unit_cost` | 获得一名指定费用档（`cost_prestige`）的随机干员；无候选时改发 3 声望 |
+| `night_affix_add` | `affix_id` | 为今晚追加指定的夜晚词缀（已存在时跳过） |
 
 ---
 

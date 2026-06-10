@@ -4,7 +4,7 @@
   "spawn_count": 3,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
-  "event_point_count": 8,
+  "event_point_count": 0,
   "obstacle_ratio": 0.13,
   "water_obstacle_chance": 0.35,
   "min_obstacle_count": 65,
