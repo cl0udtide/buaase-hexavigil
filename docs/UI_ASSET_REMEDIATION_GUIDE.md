@@ -1,237 +1,176 @@
 # UI Asset Remediation Guide
 
-本文档集中解决 Beta 阶段 UI 美术的三个核心问题：
+本文档只保留当前仍需要处理的 UI 资产任务。原问题 1「边缘背景残留和锯齿」与问题 2「青绿色廉价感/古早页游感」已经通过新一轮源图生成、`#FF00FF` 背景、裁剪脚本清理和低饱和战术奇幻风格约束解决，不再作为待办维护。
 
-1. UI 边缘有背景残留和锯齿。
-2. UI 风格偏古早页游，青绿色廉价感明显。
-3. UI 边框与底座烘在同一张 PNG 中，拉伸时边框粗细失控，也不好设置内容 margin。
+当前剩余任务：
 
-结论先行：第三个问题不能只靠“把边框和底座拆成两张 PNG”解决。拆层只解决语义和状态管理；边框拉伸不变形要靠 Godot 的九宫格 `StyleBoxTexture`、分段边线，或程序化 `StyleBoxFlat`/shader。可缩放 UI 不应直接把普通边框 PNG 当 `TextureRect` 拉伸。
+1. 解决可缩放 UI 的边框拉伸问题，推荐方案 A：`StyleBoxTexture` 九宫格。
+2. 对遗物 UI 进行微调。目前遗物 UI 尚未完成视觉微调，并且在实际界面中处于隐藏状态。
 
-## 1. 文档收口
+## 任务一：用 `StyleBoxTexture` 九宫格解决边框拉伸
 
-UI 文档保留三类：
+### 问题
 
-- `docs/UI_SYSTEM.md`：总纲，记录目标风格、UI 层级、职责边界、资产语义和验收原则。
-- `docs/UI_ASSET_GENERATION_PROMPTS.md`：提示词库，负责生成源图、命名和裁剪顺序。
-- `docs/UI_ASSET_REMEDIATION_GUIDE.md`：本文，负责修复 Alpha 阶段 UI 资产质量问题和说明技术对策。
+部分 `frame_*_base` 资产同时包含底座、边框、角部装饰和中心内容区域。如果直接把普通 PNG 放进 `TextureRect` 或普通拉伸控件中，整体缩放会导致：
 
-原来的 `UI_ASSET_SAFE_AREA_REFACTOR_GUIDE.md` 与 `UI_LAYOUT_SLOT_REFACTOR_GUIDE.md` 已被本文和 `UI_SYSTEM.md` 吸收，不再作为独立入口维护。
+- 角部装饰被横向或纵向拉扯，形状变形。
+- 边框厚度随控件尺寸变化，时粗时细。
+- 中心暗底纹理被不必要地拉伸，出现模糊或压缩感。
+- 内容节点没有可靠的安全边距，文字、图标和按钮容易压到视觉边框上。
 
-## 2. 问题一：背景残边与锯齿
+只把「底座」和「边框」拆成两张 PNG 并不能根治这个问题。如果边框 PNG 仍然被整体缩放，边框和角仍然会变形。正确做法是让 Godot 知道哪些像素是角、哪些像素是边、哪些像素是中心区域。
 
-### 2.1 根因
+### 推荐方案 A：`StyleBoxTexture` 九宫格
 
-Alpha 资产使用了接近 UI 主色的青绿色背景。UI 本体也大量使用青绿、蓝绿、半透明发光和柔边，导致抠图时背景与主体边缘难以区分。结果是：
-
-- 边缘留下青绿色 halo。
-- 半透明光晕被错误保留或错误删除。
-- 后续放到深色 HUD 上时残边特别明显。
-
-### 2.2 新规则
-
-- UI 源图背景统一使用高对比洋红 `#FF00FF`。
-- UI 主体禁止使用接近 `#FF00FF` 的品红、紫红、粉紫边缘或柔光。
-- 不再使用 `#79C7B6`、`#8AD1C1` 作为 UI 抠图背景。
-- 背景必须是纯色平涂，不能有渐变、阴影、噪点、假透明棋盘格或 JPEG 压缩痕迹。
-- 每个资产之间留足纯色间距，不互相接触，不投影到彼此背景上。
-
-### 2.3 裁剪与清理
-
-当前裁剪脚本 `scripts/dev/crop_ui_assets.py` 会从源图角落估计背景色，并对半透明边缘做 unmatting，理论上可以处理任意纯色背景。使用 `#FF00FF` 的目的不是让脚本只能识别这个颜色，而是让主体和背景距离足够大，减少 AI 生成阶段的颜色污染。
-
-入库前检查：
-
-- 透明 PNG 放在深灰、浅灰、纯黑三种背景上预览。
-- 200% 放大检查边缘，没有洋红、青绿或灰色脏边。
-- 半透明光晕贴近主体，不铺满整张图。
-- frame 中心需要抠空的位置必须真正透明。
-
-## 3. 问题二：廉价青绿色与古早页游感
-
-### 3.1 根因
-
-Alpha UI 的青绿色既是源图背景，又被当成 UI 主体色和状态光使用。大面积高饱和蓝绿、强发光、厚边框叠在一起，会让界面看起来像廉价页游或早期网页游戏皮肤。
-
-### 3.2 Beta 视觉方向
-
-UI 方向为“轻微奇幻 + 战术 HUD + 低饱和暗色”。推荐：
-
-- 主底色：深冷灰、深青灰、蓝灰黑，例如 `#18242A`、`#202A30`、`#26333A`。
-- 次级底色：低饱和灰蓝、灰绿，只作为微弱层次。
-- 强调色：浅金、琥珀、冷白、钢蓝灰。
-- 警告色：低饱和红灰或琥珀，不用纯红。
-- 禁用色：灰黑、低透明遮罩，不用强黑块。
-
-限制：
-
-- 青绿只能作为极少量功能点缀，不允许成为大面积主色。
-- 不使用大面积蓝紫渐变、霓虹外发光、黄金厚边、宝石角饰、卷轴边、家具感材质。
-- 边框优先 1px 级细线、轻内阴影、轻高光，不做粗描边。
-
-## 4. 问题三：边框与底座混在一张 PNG
-
-### 4.1 关键判断
-
-“分离边框与底座”本身不保证边框拉伸正确。
-
-如果把边框单独做成一张普通 PNG，再用 `TextureRect` 或普通缩放拉到不同尺寸，边框依然会变粗、变细，角也会变形。正确方案是：
-
-- 用九宫格保护边框厚度。
-- 或把边、角拆成分段素材，只沿正确方向拉伸/平铺。
-- 或使用程序化边框，让 Godot 画固定像素宽度的线。
-
-### 4.2 推荐方案 A：`StyleBoxTexture` 九宫格
-
-适用：
-
-- 面板、卡片、按钮、弹窗、资源项等矩形 UI。
-- 边框较薄、角落装饰克制、四边能横向/纵向拉伸的素材。
-
-做法：
-
-1. 资产仍可以是一张 `frame_*_base.png`，但必须设计成九宫格友好：
-   - 四个角包含完整圆角和角部装饰。
-   - 上下边只允许横向延展。
-   - 左右边只允许纵向延展。
-   - 中心区域可平铺或拉伸，不含固定内容。
-2. 在 `.tres` 或 `UiFrameSpec` 中设置：
-   - `texture_margin_left/top/right/bottom`：保护边框和角不被拉伸。
-   - `content_margin_left/top/right/bottom`：保护文字、图标和按钮不压边。
-3. 固定场景节点优先使用 `PanelContainer + StyleBoxTexture`。
-4. 动态卡片和按钮通过 `GameUiStyle` / `UiFrameSpec` 统一取样式。
-
-示意：
+`StyleBoxTexture` 把一张 UI 纹理切成九个区域：
 
 ```text
-StyleBoxTexture
-├─ corner：不拉伸
-├─ top/bottom edge：只横向拉伸
-├─ left/right edge：只纵向拉伸
-└─ center：拉伸或平铺
+┌─────────┬───────────────┬─────────┐
+│ 左上角  │ 上边          │ 右上角  │
+├─────────┼───────────────┼─────────┤
+│ 左边    │ 中心          │ 右边    │
+├─────────┼───────────────┼─────────┤
+│ 左下角  │ 下边          │ 右下角  │
+└─────────┴───────────────┴─────────┘
 ```
 
-这才是“边框粗细不随整体尺寸变化”的核心。
+缩放时：
 
-### 4.3 推荐方案 B：分段边线与角点
+- 四个角不拉伸，保持原始装饰比例。
+- 上下边只横向拉伸或平铺，边框厚度不变。
+- 左右边只纵向拉伸或平铺，边框厚度不变。
+- 中心区域负责填充可变尺寸，可以拉伸或平铺。
 
-适用：
+这正好匹配面板、按钮、卡片、弹窗、tooltip、资源项、状态栏等矩形 UI 的需求。
 
-- 装饰性强、九宫格拉伸会露馅的边框。
-- 需要局部角标、断点、线段动画的框。
-- 范围描边、选中框、警告框等状态层。
+### 资产设计要求
 
-做法：
+适合九宫格的 `frame_*_base.png` 应遵守：
 
-- 四个角独立 PNG，不缩放。
-- 上下左右边独立 PNG，只沿长度方向拉伸或平铺。
-- 中心底板独立 `base`。
-- 由场景节点或脚本组合：
+- 四个角包含完整角部造型，不能把关键装饰跨越到会被拉伸的边区。
+- 上下边的纹理可以横向延展，避免中间出现固定徽章、固定断点或不可重复图案。
+- 左右边的纹理可以纵向延展，避免大面积不可重复侧饰。
+- 中心区域保持干净，适合放运行时文字、数字、图标、头像、列表或按钮。
+- 不要把固定数量的格子、固定文字、固定头像、固定按钮组烘进底图。
 
-```text
-FrameRoot
-├─ Base                 # 可拉伸底板
-├─ TopEdge              # 横向拉伸/平铺
-├─ BottomEdge
-├─ LeftEdge             # 纵向拉伸/平铺
-├─ RightEdge
-├─ CornerTL             # 不缩放
-├─ CornerTR
-├─ CornerBL
-└─ CornerBR
+如果某个面板需要复杂非重复装饰，应优先把装饰限制在角部或固定尺寸 overlay 中；不要把复杂装饰放进会被拉伸的边区。
+
+### Godot `.tres` 配置
+
+每个可缩放的 `frame_*_base` 应对应一个 `StyleBoxTexture` `.tres`，例如：
+
+```gdresource
+[gd_resource type="StyleBoxTexture" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_example_base.png" id="1_texture"]
+
+[resource]
+texture = ExtResource("1_texture")
+texture_margin_left = 18.0
+texture_margin_top = 18.0
+texture_margin_right = 18.0
+texture_margin_bottom = 18.0
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
 ```
 
-代价是节点更多，维护成本高。只建议用于少数关键面板或特殊状态，不作为所有 UI 的默认方案。
+关键字段：
 
-### 4.4 推荐方案 C：程序化边框
+- `texture_margin_left/top/right/bottom`：九宫格切分线。它保护边框和角部不被错误拉伸。
+- `content_margin_left/top/right/bottom`：内容安全区。它保护文本、图标和按钮不压到边框。
 
-适用：
+设置原则：
 
-- 只是 1px-2px 细线、圆角矩形、简单内阴影。
-- 不需要复杂手绘材质。
+- `texture_margin_*` 至少覆盖完整边框厚度和角部装饰。
+- `content_margin_*` 通常大于或等于视觉边框厚度。
+- 大面板的 content margin 可以更大，按钮和小徽章可以更紧。
+- 同一类组件的 margin 应统一记录在 `.tres` 或 `UiFrameSpec` 中，避免场景里到处手调。
 
-做法：
+### 场景使用方式
 
-- 使用 `StyleBoxFlat` 设置固定 `border_width_*`、`corner_radius_*`、`content_margin_*`。
-- 或用 shader/自绘实现固定像素边线。
-
-优点：
-
-- 边宽永远稳定。
-- 不会有抠图残边。
-- 改色和状态切换成本低。
-
-缺点：
-
-- 手绘质感较弱，需要搭配轻微背景纹理或局部装饰。
-
-### 4.5 什么时候真的需要拆成 base/frame/overlay
-
-拆层主要解决下面的问题：
-
-- `base`：承托背景和中心材质，可九宫格拉伸。
-- `frame`：只用于头像、图标、特殊局部框，通常固定尺寸，中心透明。
-- `overlay`：选中、hover、禁用、冷却、稀有度等状态，不改变底板结构。
-- `track/fill`：进度条拆开，fill 按比例裁剪。
-
-如果只是普通面板的 1px 边线，没有必要强行把边框单独做成一张 overlay PNG。可以直接让 `frame_*_base` 作为九宫格 StyleBoxTexture，边框由 `texture_margin` 保护，内容由 `content_margin` 保护。
-
-## 5. 项目落地规则
-
-### 5.1 资产命名
-
-- `frame_*_base`：可作为 `StyleBoxTexture` 的底板。
-- `frame_*_backplate`：图标或头像下方暗底。
-- `frame_*_frame`：图标或头像上方覆盖框，通常固定尺寸，中心透明。
-- `frame_*_overlay`：状态叠层。
-- `bar_*_track`：进度条底轨。
-- `bar_*_fill_*`：进度条填充。
-- `icon_*`：纯图标，不带底板和边框。
-
-### 5.2 场景结构
-
-固定面板优先：
+固定面板优先使用：
 
 ```text
 PanelContainer
 └─ ContentRoot
 ```
 
-如果必须使用 `Panel + MarginContainer`：
+或在需要更明确分层时使用：
 
 ```text
 PanelRoot
-├─ PanelBase          # StyleBoxTexture 或 TextureRect，仅装饰
-└─ ContentMargin      # margin 来自 content_margin
+├─ PanelBase        # Panel，theme_override_styles/panel 指向 StyleBoxTexture
+└─ ContentMargin    # 内容节点；边距来自 StyleBoxTexture 或同步配置
    └─ ContentRoot
 ```
 
-不要让内容节点直接压在视觉边框上，也不要用负 margin 把内容挤回边框区域。
+避免：
 
-### 5.3 禁止事项
+- 用 `TextureRect` 直接整体拉伸带边框 PNG。
+- 用负 margin 把内容挤回边框区域。
+- 为同一个可缩放面板额外叠一张完整边框 overlay，再对 overlay 整体缩放。
 
-- 禁止用 `TextureRect` 直接拉伸有边框的 UI PNG 当大面板。
-- 禁止把固定数量的卡槽、列表项、头像框、文字、数字画进大面板底图。
-- 禁止把选中态、禁用态、冷却态复制成多张完整卡片图。
-- 禁止在组件脚本里自己拼 `res://assets/ui/generated/...` 路径。
-- 禁止使用接近 UI 主色的背景做抠图色键。
+### 验收标准
 
-## 6. 验收标准
+- 在 1920x1080 和更小窗口下，面板边框粗细稳定。
+- 四个角不变形，角部装饰不被压扁或拉长。
+- 文本、图标、头像和按钮不压到视觉边框。
+- 同一素材用于不同尺寸面板时，中心区域自然延展，边框仍然清晰。
+- 可缩放 `frame_*_base` 均有对应 `.tres` 或等效 `GameUiStyle` / `UiFrameSpec` 配置。
 
-- 透明 PNG 无洋红、青绿、灰边残留。
-- 主界面大面积色彩为低饱和冷灰/深青灰，不再以青绿色为主。
-- 所有可缩放 `frame_*_base` 都有 `texture_margin` 和 `content_margin`。
-- 1920x1080 下拉伸面板边框粗细稳定，圆角不变形。
-- 文本、图标、数值不压边框。
-- overlay 不拦截鼠标。
-- 动态内容由 Godot 节点绘制，不烘在 PNG 内。
+## 任务二：遗物 UI 微调
 
-## 7. 推荐执行顺序
+### 当前状态
 
-1. 修改提示词库，将 UI 源图背景改为 `#FF00FF`，限制青绿色大面积使用。
-2. 重新生成或清理 P0 UI 资产：按钮、顶部 HUD、资源项、部署栏、干员卡、右侧详情、建筑栏。
-3. 为 P0 `frame_*_base` 建立 `.tres` StyleBoxTexture。
-4. 在 `UiFrameSpec` 中补齐 texture margin 与 content margin。
-5. 将固定场景节点改为直接使用 `.tres`，动态节点继续走 `GameUiStyle`。
-6. 对少数九宫格不适合的特殊框，再使用分段边线方案。
-7. 跑 Godot 校验和截图验收。
+遗物 UI 已有基础资产和场景入口，但尚未进行完整视觉微调。当前界面中遗物面板/遗物列表处于隐藏或低使用状态，因此还没有经过实际截图验收。
+
+需要重点检查的资源包括：
+
+- `frame_relic_panel_base`
+- `frame_relic_filter_tab_base`
+- `frame_relic_filter_selected_overlay`
+- `frame_relic_card_base`
+- `frame_relic_card_hover_overlay`
+- `frame_relic_icon_backplate`
+- `frame_relic_icon_frame`
+- `frame_relic_rarity_common_overlay`
+- `frame_relic_rarity_uncommon_overlay`
+- `frame_relic_rarity_rare_overlay`
+- `icon_relic_*`
+- `icon_filter_*`
+
+### 调整目标
+
+- 遗物面板应与当前 UI 家族一致：低饱和、暗色、轻盈、实用，带清新战术奇幻工艺感。
+- 不要让遗物面板比作战 HUD 更厚重或更亮。
+- 遗物卡片要能清楚区分普通、hover/选中、稀有度状态。
+- 筛选标签要清晰，但不要像主导航一样抢视觉重心。
+- 遗物图标应保持小尺寸可读，避免过度复杂或接近完整插画。
+
+### 推荐检查顺序
+
+1. 在 `CombatHud.tscn` 或相关遗物场景中临时显示遗物 UI，截取 1920x1080 预览。
+2. 检查遗物面板与顶部 HUD、右侧详情栏、底部部署栏是否风格一致。
+3. 检查 `frame_relic_panel_base` 是否适合作为 `StyleBoxTexture` 九宫格面板。
+4. 检查遗物卡片是否有足够内容安全区，名称、描述、图标、稀有度 overlay 不压边。
+5. 检查筛选 tab 的普通态与选中态是否清楚，但不过亮。
+6. 检查 hover/selected overlay 是否只是状态层，不复制完整卡片底图。
+7. 检查所有 `icon_relic_*` 在实际卡片尺寸内是否可读。
+
+### 可能的修正项
+
+- 若遗物面板边框拉伸变形，优先补齐 `StyleBoxTexture` 九宫格 margin。
+- 若遗物卡片过亮，降低中心底色对比度，把高光限制在边缘。
+- 若稀有度 overlay 太花，改为细边线、角标或轻量色带。
+- 若筛选标签像按钮组一样拥挤，调整 tab 宽度、间距和 content margin。
+- 若遗物图标和卡片边框抢视觉焦点，降低 icon 饱和度或缩小卡片边框装饰。
+
+### 验收标准
+
+- 遗物 UI 从隐藏状态打开后，不遮挡或压迫主要战斗信息。
+- 面板、卡片、筛选标签和图标风格统一，但层级有区分。
+- 普通态、hover/选中态、稀有度状态都能一眼识别。
+- 所有可缩放遗物 frame 都通过 `StyleBoxTexture` 或等效方式保护边框。
+- 遗物内容由 Godot 节点动态填充，PNG 中不烘固定文字、数字、图标列表或卡片数量。

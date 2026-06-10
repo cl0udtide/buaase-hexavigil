@@ -25,19 +25,28 @@ except ImportError:  # pragma: no cover - fallback for lighter environments.
 ROOT = Path(__file__).resolve().parents[2]
 DOC_PATH = ROOT / "docs" / "UI_ASSET_GENERATION_PROMPTS.md"
 RAW_DIR = ROOT / "assets" / "raw"
-OUT_DIR = ROOT / "assets" / "ui" / "generated"
+OUT_DIR = ROOT / "tmp" / "ui_generated"
 SHEET_PREFIX = "source" + "_sheet"
 
 DEFAULT_THRESHOLD = 24.0
-DEFAULT_ALPHA_TRANSPARENT_THRESHOLD = 30.0
-DEFAULT_ALPHA_OPAQUE_THRESHOLD = 60.0
-DEFAULT_ALPHA_CUTOFF = 0
-DEFAULT_EDGE_BAND_RADIUS = 2
 DEFAULT_PADDING = 8
-INTERNAL_HOLE_THRESHOLD = 10.0
 MIN_AREA_RATIO = 0.00005
-MIN_BACKGROUND_COMPONENT_AREA = 48
 MORPH_SIZES = (9, 15, 21, 31, 41, 51, 61, 81, 101, 121, 151, 181, 221)
+DEFAULT_EDGE_SMOOTH_MIN_NEIGHBORS = 3
+DEFAULT_EDGE_PEEL_MAX_PASSES = 32
+DEFAULT_EDGE_FLATTEN_PASSES = 5
+EDGE_REPAIR_MAX_COMPONENT_AREA = 3
+
+NEIGHBOR_DIRECTIONS = (
+    (-1, -1),
+    (-1, 0),
+    (-1, 1),
+    (0, -1),
+    (0, 1),
+    (1, -1),
+    (1, 0),
+    (1, 1),
+)
 
 CROP_ORDER_OVERRIDES = {
     f"{SHEET_PREFIX}_05_operator_card.png": [
@@ -152,122 +161,364 @@ def make_base_mask(
     return mask, rgba, distance, background
 
 
-def smoothstep(value: np.ndarray) -> np.ndarray:
-    clipped = np.clip(value, 0.0, 1.0)
-    return clipped * clipped * (3.0 - 2.0 * clipped)
+def magenta_score_map(rgb: np.ndarray) -> np.ndarray:
+    rgb_float = rgb.astype(np.float32)
+    red = rgb_float[:, :, 0]
+    green = rgb_float[:, :, 1]
+    blue = rgb_float[:, :, 2]
+    return np.minimum(red, blue) - green
 
 
-def remove_small_background_components(background_candidate: np.ndarray) -> np.ndarray:
-    if cv2 is None:
-        return background_candidate
+def count_neighbor_support(mask: np.ndarray) -> np.ndarray:
+    if cv2 is not None:
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        support = cv2.filter2D(mask.astype(np.uint8), -1, kernel, borderType=cv2.BORDER_CONSTANT)
+        return support.astype(np.int16)
 
-    labels_count, labels, stats, _centroids = cv2.connectedComponentsWithStats(
-        background_candidate.astype(np.uint8), connectivity=8
+    padded = np.pad(mask.astype(np.int16), 1, mode="constant")
+    support = np.zeros(mask.shape, dtype=np.int16)
+    for dy in range(3):
+        for dx in range(3):
+            support += padded[dy : dy + mask.shape[0], dx : dx + mask.shape[1]]
+    return support
+
+
+def transparent_edge(alpha: np.ndarray) -> np.ndarray:
+    nonzero = alpha > 0
+    if not np.any(nonzero):
+        return np.zeros_like(nonzero, dtype=bool)
+    return nonzero & (count_neighbor_support(alpha == 0) > 0)
+
+
+def magenta_contamination_masks(rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    rgb_float = rgb.astype(np.float32)
+    red = rgb_float[:, :, 0]
+    green = rgb_float[:, :, 1]
+    blue = rgb_float[:, :, 2]
+    magenta_score = np.minimum(red, blue) - green
+    purple_score = blue - green
+    red_purple_score = red - green
+
+    bright = (
+        (red >= 150.0)
+        & (blue >= 135.0)
+        & (green <= 115.0)
+        & (magenta_score >= 45.0)
     )
-    cleaned = np.zeros_like(background_candidate, dtype=bool)
-    for label in range(1, labels_count):
-        if int(stats[label, cv2.CC_STAT_AREA]) >= MIN_BACKGROUND_COMPONENT_AREA:
-            cleaned[labels == label] = True
+    strict = bright | (
+        (red >= 42.0)
+        & (blue >= 38.0)
+        & (green <= 92.0)
+        & (magenta_score >= 10.0)
+    ) | (
+        (red >= 24.0)
+        & (blue >= 24.0)
+        & (green <= 48.0)
+        & (magenta_score >= 12.0)
+    ) | (
+        (red >= 38.0)
+        & (blue >= 20.0)
+        & (green <= 64.0)
+        & ((red - green) >= 18.0)
+        & ((blue - green) >= 4.0)
+    ) | (
+        (red >= 32.0)
+        & (blue >= 44.0)
+        & (green <= 88.0)
+        & (purple_score >= 12.0)
+        & (red_purple_score >= -10.0)
+    )
+    soft = bright | (
+        (red >= 32.0)
+        & (blue >= 28.0)
+        & (green <= 104.0)
+        & (magenta_score >= 5.0)
+    ) | (
+        (red >= 24.0)
+        & (blue >= 34.0)
+        & (green <= 112.0)
+        & (purple_score >= 7.0)
+        & (red_purple_score >= -18.0)
+    )
+    return bright, strict, soft
+
+
+def components_touching_seed(mask: np.ndarray, seed: np.ndarray) -> np.ndarray:
+    if not np.any(mask) or not np.any(seed):
+        return np.zeros_like(mask, dtype=bool)
+
+    if cv2 is not None:
+        labels_count, labels, _stats, _centroids = cv2.connectedComponentsWithStats(
+            mask.astype(np.uint8), connectivity=8
+        )
+        if labels_count <= 1:
+            return np.zeros_like(mask, dtype=bool)
+        touched = np.unique(labels[seed & mask])
+        touched = touched[touched != 0]
+        if len(touched) == 0:
+            return np.zeros_like(mask, dtype=bool)
+        return np.isin(labels, touched)
+
+    height, width = mask.shape
+    kept = np.zeros_like(mask, dtype=bool)
+    seen = np.zeros_like(mask, dtype=bool)
+    ys, xs = np.nonzero(mask)
+    for start_y, start_x in zip(ys.tolist(), xs.tolist()):
+        if seen[start_y, start_x]:
+            continue
+        stack = [(start_x, start_y)]
+        component: list[tuple[int, int]] = []
+        touches_seed = False
+        seen[start_y, start_x] = True
+        while stack:
+            x, y = stack.pop()
+            component.append((x, y))
+            touches_seed = touches_seed or bool(seed[y, x])
+            for ny in range(y - 1, y + 2):
+                for nx in range(x - 1, x + 2):
+                    if nx == x and ny == y:
+                        continue
+                    if 0 <= nx < width and 0 <= ny < height and mask[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((nx, ny))
+        if touches_seed:
+            for x, y in component:
+                kept[y, x] = True
+    return kept
+
+
+def remove_small_components(mask: np.ndarray, max_area: int) -> np.ndarray:
+    if max_area <= 0 or not np.any(mask):
+        return np.zeros_like(mask, dtype=bool)
+
+    if cv2 is not None:
+        labels_count, labels, stats, _centroids = cv2.connectedComponentsWithStats(
+            mask.astype(np.uint8), connectivity=8
+        )
+        cleaned = np.zeros_like(mask, dtype=bool)
+        for label in range(1, labels_count):
+            if int(stats[label, cv2.CC_STAT_AREA]) <= max_area:
+                cleaned[labels == label] = True
+        return cleaned
+
+    height, width = mask.shape
+    seen = np.zeros_like(mask, dtype=bool)
+    cleaned = np.zeros_like(mask, dtype=bool)
+    ys, xs = np.nonzero(mask)
+    for start_y, start_x in zip(ys.tolist(), xs.tolist()):
+        if seen[start_y, start_x]:
+            continue
+        stack = [(start_x, start_y)]
+        component: list[tuple[int, int]] = []
+        seen[start_y, start_x] = True
+        while stack:
+            x, y = stack.pop()
+            component.append((x, y))
+            for ny in range(y - 1, y + 2):
+                for nx in range(x - 1, x + 2):
+                    if nx == x and ny == y:
+                        continue
+                    if 0 <= nx < width and 0 <= ny < height and mask[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((nx, ny))
+        if len(component) <= max_area:
+            for x, y in component:
+                cleaned[y, x] = True
     return cleaned
 
 
-def connected_to_image_border(mask: np.ndarray) -> np.ndarray:
-    if cv2 is None:
-        return connected_to_image_border_fallback(mask)
-
-    labels_count, labels, _stats, _centroids = cv2.connectedComponentsWithStats(
-        mask.astype(np.uint8), connectivity=8
-    )
-    if labels_count <= 1:
-        return np.zeros_like(mask, dtype=bool)
-
-    border_labels = set(np.unique(labels[0, :]))
-    border_labels.update(np.unique(labels[-1, :]))
-    border_labels.update(np.unique(labels[:, 0]))
-    border_labels.update(np.unique(labels[:, -1]))
-    border_labels.discard(0)
-
-    if not border_labels:
-        return np.zeros_like(mask, dtype=bool)
-    return np.isin(labels, list(border_labels))
-
-
-def connected_to_image_border_fallback(mask: np.ndarray) -> np.ndarray:
+def shift_mask(mask: np.ndarray, dy: int, dx: int) -> np.ndarray:
+    shifted = np.zeros_like(mask, dtype=bool)
     height, width = mask.shape
-    seen = np.zeros_like(mask, dtype=bool)
-    stack: list[tuple[int, int]] = []
-
-    for x in range(width):
-        if mask[0, x]:
-            stack.append((x, 0))
-        if mask[height - 1, x]:
-            stack.append((x, height - 1))
-    for y in range(height):
-        if mask[y, 0]:
-            stack.append((0, y))
-        if mask[y, width - 1]:
-            stack.append((width - 1, y))
-
-    while stack:
-        x, y = stack.pop()
-        if seen[y, x] or not mask[y, x]:
-            continue
-        seen[y, x] = True
-        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-            if 0 <= nx < width and 0 <= ny < height and not seen[ny, nx] and mask[ny, nx]:
-                stack.append((nx, ny))
-
-    return seen
+    src_y1 = max(0, -dy)
+    src_y2 = min(height, height - dy)
+    src_x1 = max(0, -dx)
+    src_x2 = min(width, width - dx)
+    dst_y1 = max(0, dy)
+    dst_y2 = min(height, height + dy)
+    dst_x1 = max(0, dx)
+    dst_x2 = min(width, width + dx)
+    if src_y1 < src_y2 and src_x1 < src_x2:
+        shifted[dst_y1:dst_y2, dst_x1:dst_x2] = mask[src_y1:src_y2, src_x1:src_x2]
+    return shifted
 
 
-def dilate_mask(mask: np.ndarray, radius: int) -> np.ndarray:
-    if radius <= 0:
-        return mask
+def shift_values(values: np.ndarray, dy: int, dx: int) -> np.ndarray:
+    shifted = np.zeros_like(values)
+    height, width = values.shape
+    src_y1 = max(0, -dy)
+    src_y2 = min(height, height - dy)
+    src_x1 = max(0, -dx)
+    src_x2 = min(width, width - dx)
+    dst_y1 = max(0, dy)
+    dst_y2 = min(height, height + dy)
+    dst_x1 = max(0, dx)
+    dst_x2 = min(width, width + dx)
+    if src_y1 < src_y2 and src_x1 < src_x2:
+        shifted[dst_y1:dst_y2, dst_x1:dst_x2] = values[src_y1:src_y2, src_x1:src_x2]
+    return shifted
 
-    mask_u8 = mask.astype(np.uint8) * 255
-    kernel_size = radius * 2 + 1
-    if cv2 is not None:
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-        return cv2.dilate(mask_u8, kernel) > 0
 
-    return np.array(Image.fromarray(mask_u8).filter(ImageFilter.MaxFilter(kernel_size))) > 0
+def shift_rgb(rgb: np.ndarray, dy: int, dx: int) -> np.ndarray:
+    shifted = np.zeros_like(rgb, dtype=rgb.dtype)
+    height, width, _channels = rgb.shape
+    src_y1 = max(0, -dy)
+    src_y2 = min(height, height - dy)
+    src_x1 = max(0, -dx)
+    src_x2 = min(width, width - dx)
+    dst_y1 = max(0, dy)
+    dst_y2 = min(height, height + dy)
+    dst_x1 = max(0, dx)
+    dst_x2 = min(width, width + dx)
+    if src_y1 < src_y2 and src_x1 < src_x2:
+        shifted[dst_y1:dst_y2, dst_x1:dst_x2] = rgb[src_y1:src_y2, src_x1:src_x2]
+    return shifted
 
 
-def make_alpha_matte(
-    rgba: np.ndarray,
-    distance: np.ndarray,
-    transparent_threshold: float,
-    opaque_threshold: float,
-    alpha_cutoff: int,
-) -> np.ndarray:
-    if opaque_threshold <= transparent_threshold:
-        raise ValueError("opaque alpha threshold must be greater than transparent threshold")
+def opposite_neighbor_support(mask: np.ndarray) -> np.ndarray:
+    support = np.zeros_like(mask, dtype=bool)
+    for dy, dx in ((0, 1), (1, 0), (1, 1), (1, -1)):
+        support |= shift_mask(mask, dy, dx) & shift_mask(mask, -dy, -dx)
+    return support
 
-    edge_connected_background = connected_to_image_border(distance <= transparent_threshold)
-    strict_background = remove_small_background_components(distance <= INTERNAL_HOLE_THRESHOLD)
-    internal_holes = strict_background & ~connected_to_image_border(strict_background)
-    background_core = edge_connected_background | internal_holes
-    edge_band = dilate_mask(background_core, DEFAULT_EDGE_BAND_RADIUS) & ~background_core
 
-    alpha_u8 = np.full(distance.shape, 255, dtype=np.uint8)
-    alpha_u8[background_core] = 0
+def neighbor_average(
+    rgb: np.ndarray,
+    source_mask: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    rgb_float = rgb.astype(np.float32)
+    rgb_sum = np.zeros_like(rgb_float)
+    count = np.zeros(rgb.shape[:2], dtype=np.float32)
+    for dy, dx in NEIGHBOR_DIRECTIONS:
+        shifted_source = shift_mask(source_mask, dy, dx)
+        shifted_rgb = shift_rgb(rgb_float, dy, dx)
+        rgb_sum += shifted_rgb * shifted_source[:, :, None]
+        count += shifted_source.astype(np.float32)
+    return rgb_sum, count
 
-    edge_alpha = smoothstep(
-        (distance[edge_band] - transparent_threshold) / (opaque_threshold - transparent_threshold)
+
+def paint_from_neighbor_average(
+    crop: np.ndarray,
+    target: np.ndarray,
+    source_mask: np.ndarray,
+    min_sources: int,
+) -> bool:
+    if not np.any(target):
+        return False
+
+    rgb_sum, count = neighbor_average(crop[:, :, :3], source_mask)
+    paintable = target & (count >= float(min_sources))
+    if not np.any(paintable):
+        return False
+
+    crop[paintable, :3] = np.clip(
+        rgb_sum[paintable] / count[paintable, None],
+        0.0,
+        255.0,
+    ).astype(np.uint8)
+    crop[paintable, 3] = 255
+    return True
+
+
+def edge_inner_magenta_score(edge: np.ndarray, visible: np.ndarray, rgb: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    inner_source = visible & ~edge
+    score = magenta_score_map(rgb)
+    score_sum = np.zeros(edge.shape, dtype=np.float32)
+    count = np.zeros(edge.shape, dtype=np.float32)
+    for dy, dx in NEIGHBOR_DIRECTIONS:
+        shifted_source = shift_mask(inner_source, dy, dx)
+        shifted_score = shift_values(score, dy, dx)
+        score_sum += shifted_score * shifted_source.astype(np.float32)
+        count += shifted_source.astype(np.float32)
+
+    mean = np.zeros(edge.shape, dtype=np.float32)
+    np.divide(score_sum, count, out=mean, where=count > 0.0)
+    return mean, count
+
+
+def edge_magenta_removal_masks(crop: np.ndarray, edge: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    alpha = crop[:, :, 3]
+    rgb = crop[:, :, :3]
+    visible = alpha > 0
+    bright, strict, soft = magenta_contamination_masks(rgb)
+    score = magenta_score_map(rgb)
+    inner_score, inner_count = edge_inner_magenta_score(edge, visible, rgb)
+
+    clearly_more_magenta = score >= (inner_score + 6.0)
+    strong_without_reference = (inner_count == 0.0) & (score >= 14.0)
+    seed = edge & strict & (bright | clearly_more_magenta | strong_without_reference | (score >= 18.0))
+    candidate = edge & soft & (bright | clearly_more_magenta | strong_without_reference | (score >= 12.0))
+    return seed, candidate
+
+
+def repair_tiny_edge_contamination(crop: np.ndarray) -> bool:
+    alpha = crop[:, :, 3]
+    edge = transparent_edge(alpha)
+    if not np.any(edge):
+        return False
+
+    visible = alpha > 0
+    _bright, strict, soft = magenta_contamination_masks(crop[:, :, :3])
+    tiny = remove_small_components(edge & strict, EDGE_REPAIR_MAX_COMPONENT_AREA)
+    if not np.any(tiny):
+        return False
+
+    support8 = count_neighbor_support(visible) - 1
+    embedded = tiny & ((support8 >= 4) | opposite_neighbor_support(visible))
+    clean_neighbors = visible & ~soft
+    return paint_from_neighbor_average(crop, embedded, clean_neighbors, min_sources=2)
+
+
+def remove_large_bright_magenta(crop: np.ndarray) -> None:
+    alpha = crop[:, :, 3]
+    bright, _strict, _soft = magenta_contamination_masks(crop[:, :, :3])
+    visible = alpha > 0
+    bright_visible = bright & visible
+    tiny_embedded = remove_small_components(bright_visible, EDGE_REPAIR_MAX_COMPONENT_AREA) & (
+        (count_neighbor_support(visible) - 1 >= 4) | opposite_neighbor_support(visible)
     )
-    edge_alpha_u8 = np.clip(edge_alpha * 255.0, 0.0, 255.0).astype(np.uint8)
+    removable = bright_visible & ~tiny_embedded
+    if not np.any(removable):
+        return
 
-    if alpha_cutoff > 0:
-        cutoff = np.clip(alpha_cutoff, 0, 254)
-        kept = edge_alpha_u8 >= cutoff
-        remapped = np.zeros_like(edge_alpha_u8, dtype=np.float32)
-        remapped[kept] = (edge_alpha_u8[kept].astype(np.float32) - cutoff) / (255.0 - cutoff)
-        edge_alpha_u8 = np.clip(smoothstep(remapped) * 255.0, 0.0, 255.0).astype(np.uint8)
+    alpha[removable] = 0
+    crop[removable, :3] = 0
 
-    alpha_u8[edge_band] = edge_alpha_u8
-    alpha_u8 = np.minimum(alpha_u8, rgba[:, :, 3])
 
-    return alpha_u8
+def peel_magenta_edge_layers(crop: np.ndarray, max_passes: int) -> None:
+    alpha = crop[:, :, 3]
+    for _ in range(max_passes):
+        edge = transparent_edge(alpha)
+        if not np.any(edge):
+            break
+
+        seed, candidate = edge_magenta_removal_masks(crop, edge)
+        if not np.any(seed):
+            break
+
+        layer = components_touching_seed(candidate, seed)
+        if not np.any(layer):
+            layer = seed
+
+        alpha[layer] = 0
+        crop[layer, :3] = 0
+
+
+def flatten_transparent_edge(crop: np.ndarray, passes: int, min_neighbors: int) -> None:
+    alpha = crop[:, :, 3]
+    for _ in range(passes):
+        nonzero = alpha > 0
+        if not np.any(nonzero):
+            break
+
+        edge = transparent_edge(alpha)
+        support8 = count_neighbor_support(nonzero) - 1
+        removable_spurs = edge & (support8 <= min_neighbors)
+        if not np.any(removable_spurs):
+            break
+
+        alpha[removable_spurs] = 0
+        crop[removable_spurs, :3] = 0
 
 
 def remove_tiny_alpha_components(alpha: np.ndarray) -> np.ndarray:
@@ -427,26 +678,17 @@ def tighten_to_source_mask(component: Component, source_mask: np.ndarray, paddin
 
 def make_transparent_crop(
     rgba: np.ndarray,
-    matte_alpha: np.ndarray,
-    background: tuple[int, int, int],
+    source_mask: np.ndarray,
     box: Component,
+    edge_smooth_min_neighbors: int,
 ) -> Image.Image:
     crop = rgba[box.y1 : box.y2, box.x1 : box.x2].copy()
-    alpha = remove_tiny_alpha_components(matte_alpha[box.y1 : box.y2, box.x1 : box.x2])
+    mask = source_mask[box.y1 : box.y2, box.x1 : box.x2]
+    alpha = remove_tiny_alpha_components((mask.astype(np.uint8) * 255))
     crop[:, :, 3] = alpha
-
-    # Source sheets are rendered against a solid green matte. Reconstruct edge
-    # colors for partial-alpha pixels so the transparent PNG does not keep a
-    # green halo when composited in-game.
-    alpha_float = alpha.astype(np.float32) / 255.0
-    edge = (alpha > 0) & (alpha < 255)
-    if np.any(edge):
-        rgb = crop[:, :, :3].astype(np.float32)
-        bg = np.array(background, dtype=np.float32)
-        safe_alpha = np.maximum(alpha_float[:, :, None], 1.0 / 255.0)
-        unmatted = (rgb - bg * (1.0 - alpha_float[:, :, None])) / safe_alpha
-        rgb[edge] = np.clip(unmatted[edge], 0.0, 255.0)
-        crop[:, :, :3] = rgb.astype(np.uint8)
+    remove_large_bright_magenta(crop)
+    peel_magenta_edge_layers(crop, DEFAULT_EDGE_PEEL_MAX_PASSES)
+    flatten_transparent_edge(crop, DEFAULT_EDGE_FLATTEN_PASSES, edge_smooth_min_neighbors)
 
     crop[crop[:, :, 3] == 0, :3] = 0
     return Image.fromarray(crop)
@@ -464,10 +706,8 @@ def process_sheet(
     keys: list[str],
     output_dir: Path,
     threshold: float,
-    alpha_transparent_threshold: float,
-    alpha_opaque_threshold: float,
-    alpha_cutoff: int,
     padding: int,
+    edge_smooth_min_neighbors: int,
     dry_run: bool,
 ) -> tuple[bool, str, int]:
     image = Image.open(sheet_path).convert("RGBA")
@@ -486,14 +726,16 @@ def process_sheet(
     tight_components = [
         tighten_to_source_mask(component, base_mask, padding) for component in components
     ]
-    matte_alpha = make_alpha_matte(
-        rgba, distance, alpha_transparent_threshold, alpha_opaque_threshold, alpha_cutoff
-    )
 
     if not dry_run:
         output_dir.mkdir(parents=True, exist_ok=True)
         for key, component in zip(keys, tight_components):
-            crop = make_transparent_crop(rgba, matte_alpha, background, component)
+            crop = make_transparent_crop(
+                rgba,
+                base_mask,
+                component,
+                edge_smooth_min_neighbors,
+            )
             crop.save(output_dir / f"{key}.png")
 
     action = "detected" if dry_run else "wrote"
@@ -511,25 +753,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR, help="Directory containing generated sheet PNGs.")
     parser.add_argument("--output-dir", type=Path, default=OUT_DIR, help="Directory for generated PNG assets.")
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="RGB background distance threshold.")
-    parser.add_argument(
-        "--alpha-transparent-threshold",
-        type=float,
-        default=DEFAULT_ALPHA_TRANSPARENT_THRESHOLD,
-        help="Distance at or below which output alpha becomes transparent.",
-    )
-    parser.add_argument(
-        "--alpha-opaque-threshold",
-        type=float,
-        default=DEFAULT_ALPHA_OPAQUE_THRESHOLD,
-        help="Distance at or above which output alpha becomes opaque.",
-    )
-    parser.add_argument(
-        "--alpha-cutoff",
-        type=int,
-        default=DEFAULT_ALPHA_CUTOFF,
-        help="Drop output alpha below this value and remap the remaining alpha range.",
-    )
     parser.add_argument("--padding", type=int, default=DEFAULT_PADDING, help="Transparent crop padding in pixels.")
+    parser.add_argument(
+        "--edge-smooth-min-neighbors",
+        type=int,
+        default=DEFAULT_EDGE_SMOOTH_MIN_NEIGHBORS,
+        help="Remove transparent-edge pixels with fewer neighboring opaque pixels than this.",
+    )
     parser.add_argument(
         "--sheet",
         action="append",
@@ -573,10 +803,8 @@ def main() -> int:
             keys=keys,
             output_dir=args.output_dir,
             threshold=args.threshold,
-            alpha_transparent_threshold=args.alpha_transparent_threshold,
-            alpha_opaque_threshold=args.alpha_opaque_threshold,
-            alpha_cutoff=args.alpha_cutoff,
             padding=args.padding,
+            edge_smooth_min_neighbors=args.edge_smooth_min_neighbors,
             dry_run=args.dry_run,
         )
         if ok:

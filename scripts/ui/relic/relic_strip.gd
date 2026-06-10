@@ -4,7 +4,6 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
-const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 
 const RELIC_ICON_SCENE := preload("res://scenes/ui/relic/RelicIcon.tscn")
 const MAX_VISIBLE_RELICS := 14
@@ -32,8 +31,6 @@ var _last_visible_capacity := -1
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
-	_strip_base.add_theme_stylebox_override("panel", GameUiStyle.relic_strip())
-	GameUiStyle.apply_frame_margin(get_node_or_null("StripMargin") as MarginContainer, GameUiStyle.FRAME_RELIC_STRIP)
 	_entry_button.pressed.connect(func() -> void: panel_requested.emit())
 	_style_entry_button()
 	var parent_control := get_parent() as Control
@@ -147,7 +144,6 @@ func _style_entry_button() -> void:
 	_entry_button.set_custom_minimum_size(Vector2(86.0, 30.0))
 	_entry_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	GameUiStyle.center_button_text(_entry_button)
-	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.frame_box(UiFrameSpec.RELIC_ENTRY_BUTTON, GameUiStyle.BG_CARD, GameUiStyle.STROKE_SOFT))
 	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
 	_entry_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
 	_entry_button.add_theme_color_override("font_color", GameUiStyle.TEXT)

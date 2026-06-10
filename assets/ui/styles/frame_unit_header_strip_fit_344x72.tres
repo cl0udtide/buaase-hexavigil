@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_unit_header_strip_fit_344x72.png" id="1_header_strip"]
+
+[resource]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+texture = ExtResource("1_header_strip")
+texture_margin_left = 7.77
+texture_margin_top = 7.77
+texture_margin_right = 7.77
+texture_margin_bottom = 7.77

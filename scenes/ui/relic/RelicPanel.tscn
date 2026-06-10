@@ -1,10 +1,12 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/relic/relic_panel.gd" id="1_fyr10"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_panel_base.tres" id="2_panel"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail"]
 
 [node name="RelicPanel" type="Control" unique_id=1252642806]
 visible = false
-custom_minimum_size = Vector2(620, 420)
+custom_minimum_size = Vector2(668, 430)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_fyr10")
@@ -16,6 +18,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_panel")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=2024372061]
 layout_mode = 0
@@ -23,16 +27,21 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 20
 
 [node name="Content" type="VBoxContainer" parent="ContentMargin" unique_id=290667162]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="Header" type="HBoxContainer" parent="ContentMargin/Content" unique_id=1584482220]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="ContentMargin/Content/Header" unique_id=2083928132]
 unique_name_in_owner = true
@@ -43,7 +52,7 @@ vertical_alignment = 1
 
 [node name="CountLabel" type="Label" parent="ContentMargin/Content/Header" unique_id=160351734]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 0)
+custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "0 件"
 horizontal_alignment = 2
@@ -59,8 +68,62 @@ text = "×"
 [node name="FilterBar" type="HFlowContainer" parent="ContentMargin/Content" unique_id=1340319699]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 8
+
+[node name="AllFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+focus_mode = 0
+text = "全部"
+metadata/category = &"all"
+metadata/audio_cue = &"ui_tab_switch"
+
+[node name="UnitFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+focus_mode = 0
+text = "单位"
+metadata/category = &"unit"
+metadata/audio_cue = &"ui_tab_switch"
+
+[node name="BuildingFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+focus_mode = 0
+text = "建筑"
+metadata/category = &"building"
+metadata/audio_cue = &"ui_tab_switch"
+
+[node name="EconomyFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+focus_mode = 0
+text = "经济"
+metadata/category = &"economy"
+metadata/audio_cue = &"ui_tab_switch"
+
+[node name="CoreFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+focus_mode = 0
+text = "核心"
+metadata/category = &"core"
+metadata/audio_cue = &"ui_tab_switch"
+
+[node name="RiskFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(86, 32)
+layout_mode = 2
+focus_mode = 0
+text = "风险"
+metadata/category = &"risk"
+metadata/audio_cue = &"ui_tab_switch"
 
 [node name="CardScroll" type="ScrollContainer" parent="ContentMargin/Content" unique_id=401685243]
 unique_name_in_owner = true
@@ -73,7 +136,7 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="EmptyLabel" type="Label" parent="ContentMargin/Content" unique_id=1019742990]
 unique_name_in_owner = true
@@ -84,9 +147,11 @@ horizontal_alignment = 1
 
 [node name="DetailPanel" type="Panel" parent="ContentMargin/Content" unique_id=1240667341]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 126)
+custom_minimum_size = Vector2(0, 132)
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("3_detail")
 
 [node name="DetailMargin" type="MarginContainer" parent="ContentMargin/Content/DetailPanel" unique_id=986877736]
 layout_mode = 0
@@ -94,10 +159,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 19
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 14
 
 [node name="DetailColumn" type="VBoxContainer" parent="ContentMargin/Content/DetailPanel/DetailMargin" unique_id=1588518841]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 3
 
 [node name="DetailTitleLabel" type="Label" parent="ContentMargin/Content/DetailPanel/DetailMargin/DetailColumn" unique_id=638669085]
 unique_name_in_owner = true
@@ -114,6 +184,5 @@ text_overrun_behavior = 3
 [node name="DetailEffectLabel" type="Label" parent="ContentMargin/Content/DetailPanel/DetailMargin/DetailColumn" unique_id=1619967857]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
 text = "通过祝福选择获得遗物后，这里会显示完整效果。"
 autowrap_mode = 3

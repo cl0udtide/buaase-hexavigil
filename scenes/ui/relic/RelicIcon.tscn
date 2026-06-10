@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/relic/relic_icon.gd" id="1_625ck"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="2_backplate"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="3_frame"]
 
 [node name="RelicIcon" type="Control" unique_id=1519433248]
 custom_minimum_size = Vector2(34, 34)
@@ -15,6 +17,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_backplate")
 
 [node name="IconTexture" type="TextureRect" parent="." unique_id=2832801]
 unique_name_in_owner = true
@@ -53,6 +57,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("3_frame")
 
 [node name="RarityOverlay" type="Panel" parent="." unique_id=1866139985]
 unique_name_in_owner = true

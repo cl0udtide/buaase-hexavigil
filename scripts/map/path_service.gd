@@ -111,7 +111,7 @@ func find_path_preview(start_cell: Vector2i, end_cell: Vector2i, path_mode: Stri
 			path = demolisher_path
 			effective_path_mode = PATH_MODE_DEMOLISHER
 			status = &"core_enclosed"
-			message = "核心被阻挡建筑封死，普通敌人将改为拆墙路径"
+			message = "普通路线封闭：敌人将改走拆墙路径"
 
 	if path.is_empty():
 		return {
