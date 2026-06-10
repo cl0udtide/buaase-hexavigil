@@ -42,6 +42,17 @@ func resolve_night_template(tier: StringName, run_seed: int, day: int, used_ids:
 	return NightTemplateResolver.resolve(pool, used_ids, run_seed, day)
 
 
+func resolve_night_plan(run_seed: int, day: int, used_ids: Array) -> Array[StringName]:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_wave_template_ids_by_tier"):
+		return []
+	var pools: Dictionary = {}
+	for tier in NightTemplateResolver.wave_tiers_for_day(day):
+		if not pools.has(tier):
+			pools[tier] = data_repo.get_wave_template_ids_by_tier(tier)
+	return NightTemplateResolver.resolve_night_plan(pools, used_ids, run_seed, day)
+
+
 func start_wave_for_template(template_id: StringName) -> void:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null or template_id == StringName():

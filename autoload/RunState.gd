@@ -23,6 +23,9 @@ var deploy_limit: int = DEFAULT_DEPLOY_LIMIT
 var deployed_count: int = 0
 var random_seed: int = 0
 var night_template_id: StringName = &""
+# 当晚完整波次计划（night_template_id 始终等于首波，作为旧调用路径的兼容视图）。
+var night_wave_template_ids: Array[StringName] = []
+var night_affix_ids: Array[StringName] = []
 var used_template_ids: Array[StringName] = []
 var owned_units: Array[StringName] = []
 # 干员槽位是真正的拥有列表；owned_units 只作为旧 UI / 旧调用路径的兼容视图。
@@ -47,6 +50,8 @@ func reset_for_new_run(seed: int) -> void:
 	deploy_limit = DEFAULT_DEPLOY_LIMIT
 	deployed_count = 0
 	night_template_id = &""
+	night_wave_template_ids.clear()
+	night_affix_ids.clear()
 	used_template_ids.clear()
 	_day_deploy_limit_bonus = 0
 	owned_units.clear()
