@@ -10,7 +10,7 @@ const DATA_FILES := {
 	"buildings": "res://data/buildings.json",
 	"buffs": "res://data/buffs.json",
 	"events": "res://data/events.json",
-	"waves": "res://data/waves.json"
+	"wave_templates": "res://data/wave_templates.json"
 }
 
 const CONFIG_FILES := {
@@ -34,7 +34,7 @@ var _tables: Dictionary = {
 	"buildings": {},
 	"buffs": {},
 	"events": {},
-	"waves": {}
+	"wave_templates": {}
 }
 
 var _configs: Dictionary = {
@@ -52,7 +52,7 @@ func _ready() -> void:
 func load_all() -> void:
 	var loaded_tables: Dictionary = {}
 	for table_name: String in DATA_FILES.keys():
-		loaded_tables[table_name] = _load_table(DATA_FILES[table_name], table_name == "waves")
+		loaded_tables[table_name] = _load_table(DATA_FILES[table_name])
 	_tables = loaded_tables
 
 	var loaded_configs: Dictionary = {}
@@ -88,8 +88,26 @@ func get_event_cfg(event_id: StringName) -> Dictionary:
 	return _tables["events"].get(event_id, {}).duplicate(true)
 
 
-func get_wave_cfg(day: int) -> Dictionary:
-	return _tables["waves"].get(day, {}).duplicate(true)
+func get_wave_template_cfg(template_id: StringName) -> Dictionary:
+	return _tables["wave_templates"].get(template_id, {}).duplicate(true)
+
+
+func get_wave_template_ids_by_tier(tier: StringName) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for template_id in _tables["wave_templates"].keys():
+		var cfg: Dictionary = _tables["wave_templates"].get(template_id, {})
+		if StringName(cfg.get("tier", "")) == tier:
+			ids.append(StringName(template_id))
+	ids.sort()
+	return ids
+
+
+func get_all_wave_template_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for template_id in _tables["wave_templates"].keys():
+		ids.append(StringName(template_id))
+	ids.sort()
+	return ids
 
 
 func get_map_generation_cfg() -> Dictionary:
@@ -159,7 +177,7 @@ func get_building_ids_by_type(building_type: StringName) -> Array[StringName]:
 	return ids
 
 
-func _load_table(path: String, use_day_key: bool) -> Dictionary:
+func _load_table(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		push_warning("Missing data file: %s" % path)
 		data_reload_failed.emit("Missing data file: %s" % path)
@@ -176,12 +194,9 @@ func _load_table(path: String, use_day_key: bool) -> Dictionary:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
 		var entry_dict: Dictionary = entry
-		if use_day_key:
-			indexed[int(entry_dict.get("day", -1))] = entry_dict
-		else:
-			var id_value: StringName = StringName(entry_dict.get("id", ""))
-			if id_value != StringName():
-				indexed[id_value] = entry_dict
+		var id_value: StringName = StringName(entry_dict.get("id", ""))
+		if id_value != StringName():
+			indexed[id_value] = entry_dict
 	return indexed
 
 

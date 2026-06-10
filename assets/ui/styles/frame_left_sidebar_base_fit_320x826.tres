@@ -1,0 +1,15 @@
+[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_left_sidebar_base_fit_320x826.png" id="1_left_sidebar"]
+
+[resource]
+texture = ExtResource("1_left_sidebar")
+texture_margin_left = 16.45
+texture_margin_top = 16.45
+texture_margin_right = 16.45
+texture_margin_bottom = 16.45
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 28.0
+draw_center = true

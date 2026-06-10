@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/generated/bar_progress_fill_hp_fit_1x30.png" id="1_progress_hp"]
+
+[resource]
+content_margin_left = 0
+content_margin_top = 0.0
+content_margin_right = 0
+content_margin_bottom = 0.0
+texture = ExtResource("1_progress_hp")
+texture_margin_left = 0.00
+texture_margin_top = 0.00
+texture_margin_right = 0.00
+texture_margin_bottom = 0.00

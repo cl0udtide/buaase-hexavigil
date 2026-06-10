@@ -1,0 +1,199 @@
+[
+  {
+    "id": "slug_tide",
+    "name": "虫潮涌流",
+    "desc": "第一声警铃响起时，地缝里先钻出黏滑的虫群。它们不懂恐惧，只顺着灯光往核心涌来。",
+    "tier": "early",
+    "key_enemies": ["hound"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 8, "interval": 0.45 },
+      { "time": 3.0, "enemy_id": "hound", "spawn_key": "S2", "count": 8, "interval": 0.55 },
+      { "time": 8.0, "enemy_id": "hound_pro", "spawn_key": "S3", "count": 2, "interval": 1.2 },
+      { "time": 13.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S1", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "id": "moonlit_hounds",
+    "name": "猎人之夜",
+    "desc": "犬群没有吠叫，只有爪声贴着湿土急促逼近。弩手在更远处停下，等火光暴露守军。",
+    "tier": "early",
+    "key_enemies": ["crossbowman"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "hound", "spawn_key": "S1", "count": 6, "interval": 0.55 },
+      { "time": 3.0, "enemy_id": "crossbowman", "spawn_key": "S2", "count": 3, "interval": 1.1 },
+      { "time": 6.0, "enemy_id": "hound", "spawn_key": "S3", "count": 6, "interval": 0.55 },
+      { "time": 12.0, "enemy_id": "armored_soldier", "spawn_key": "S2", "count": 2, "interval": 1.3 }
+    ]
+  },
+  {
+    "id": "nightfall_axe",
+    "name": "破损墙体",
+    "desc": "白天砌好的墙还没干透，夜里已传来斧刃试探的声音。先来的小队像是在给后面的老手量路。",
+    "tier": "early",
+    "key_enemies": ["lumberjack_veteran"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "hound", "spawn_key": "S1", "count": 5, "interval": 0.6 },
+      { "time": 4.0, "enemy_id": "soldier", "spawn_key": "S2", "count": 6, "interval": 0.8 },
+      { "time": 9.0, "enemy_id": "crossbowman", "spawn_key": "S3", "count": 2, "interval": 1.3 },
+      { "time": 13.0, "enemy_id": "lumberjack_veteran", "spawn_key": "S2", "count": 2, "interval": 1.8 }
+    ]
+  },
+  {
+    "id": "swarming_assault",
+    "name": "孽生恶物",
+    "desc": "沟渠里的黑水忽然开始翻花，小虫、飞影和发亮的甲壳一同冒出。没人知道它们原本是什么。",
+    "tier": "early",
+    "key_enemies": ["originium_slug_alpha"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 8, "interval": 0.45 },
+      { "time": 3.0, "enemy_id": "originium_slug_alpha", "spawn_key": "S2", "count": 6, "interval": 0.55 },
+      { "time": 7.0, "enemy_id": "bat", "spawn_key": "S3", "count": 4, "interval": 0.75 },
+      { "time": 11.0, "enemy_id": "infused_originium_slug", "spawn_key": "S1", "count": 2, "interval": 1.4 }
+    ]
+  },
+  {
+    "id": "arts_eclipse",
+    "name": "苦夜惊雷",
+    "desc": "云层低得像要压住屋顶，术师的火光在雨线后闪烁。披甲者沉默前进，把雷声留给身后。",
+    "tier": "mid",
+    "key_enemies": ["caster"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "soldier", "spawn_key": "S1", "count": 5, "interval": 0.75 },
+      { "time": 4.0, "enemy_id": "caster", "spawn_key": "S2", "count": 3, "interval": 1.4 },
+      { "time": 8.0, "enemy_id": "armored_soldier", "spawn_key": "S3", "count": 4, "interval": 1.0 },
+      { "time": 14.0, "enemy_id": "shieldguard", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "id": "locust_swarm",
+    "name": "长夜枪火",
+    "desc": "远处的枪弦先响，近处的刀影才现。敌人不急着冲垮防线，他们要让每一次补位都暴露在火线里。",
+    "tier": "mid",
+    "key_enemies": ["crossbowman"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "crossbowman", "spawn_key": "S1", "count": 3, "interval": 1.0 },
+      { "time": 4.0, "enemy_id": "dualstrike_swordsman", "spawn_key": "S3", "count": 4, "interval": 0.7 },
+      { "time": 9.0, "enemy_id": "crossbowman", "spawn_key": "S2", "count": 4, "interval": 0.9 },
+      { "time": 14.0, "enemy_id": "caster", "spawn_key": "S3", "count": 2, "interval": 1.3 }
+    ]
+  },
+  {
+    "id": "splitting_brood",
+    "name": "枯朽孕育",
+    "desc": "枯枝下有什么东西正在裂开，倒下的外壳里又挤出新的脚步。清出一片空地，下一阵翻动已经贴着墙根响起。",
+    "tier": "mid",
+    "key_enemies": ["splitting_originium_slug"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "hound_pro", "spawn_key": "S1", "count": 5, "interval": 0.5 },
+      { "time": 4.0, "enemy_id": "splitting_originium_slug", "spawn_key": "S2", "count": 4, "interval": 1.0 },
+      { "time": 9.0, "enemy_id": "dualstrike_swordsman", "spawn_key": "S3", "count": 4, "interval": 0.8 },
+      { "time": 14.0, "enemy_id": "infused_originium_slug", "spawn_key": "S2", "count": 3, "interval": 0.9 }
+    ]
+  },
+  {
+    "id": "ironwall_advance",
+    "name": "无法停止",
+    "desc": "第一批快步兵只是尘烟，真正沉重的脚步还在后面。墙会被试探，门会被撞响，防线必须自己站稳。",
+    "tier": "mid",
+    "key_enemies": ["siege_breaker"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "hound_pro", "spawn_key": "S1", "count": 6, "interval": 0.45 },
+      { "time": 4.0, "enemy_id": "dualstrike_swordsman", "spawn_key": "S2", "count": 4, "interval": 0.7 },
+      { "time": 9.0, "enemy_id": "demolitionist", "spawn_key": "S3", "count": 2, "interval": 1.8 },
+      { "time": 15.0, "enemy_id": "siege_breaker", "spawn_key": "S2", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "id": "crossfire_volley",
+    "name": "血刃高悬",
+    "desc": "普通士兵举灯开路，术师把影子拉长；等大剑手踏进火光时，整条路都会变窄。",
+    "tier": "mid",
+    "key_enemies": ["sarkaz_greatswordsman"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "soldier", "spawn_key": "S1", "count": 6, "interval": 0.8 },
+      { "time": 4.0, "enemy_id": "caster", "spawn_key": "S2", "count": 3, "interval": 1.2 },
+      { "time": 9.0, "enemy_id": "sarkaz_greatswordsman", "spawn_key": "S3", "count": 2, "interval": 2.0 },
+      { "time": 15.0, "enemy_id": "demolitionist", "spawn_key": "S1", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "id": "siege_breach",
+    "name": "破碎大道",
+    "desc": "大道裂缝里积着旧日灰尘，攻坚手沿着最直的线推进。盾牌挡住火力，破城锤负责回答墙。",
+    "tier": "late",
+    "key_enemies": ["siege_breaker"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "demolitionist", "spawn_key": "S1", "count": 2, "interval": 1.8 },
+      { "time": 4.0, "enemy_id": "shieldguard", "spawn_key": "S2", "count": 2, "interval": 1.8 },
+      { "time": 9.0, "enemy_id": "heavy_defender", "spawn_key": "S3", "count": 2, "interval": 1.6 },
+      { "time": 15.0, "enemy_id": "siege_breaker", "spawn_key": "S2", "count": 2, "interval": 2.2 }
+    ]
+  },
+  {
+    "id": "greatblade_abyss",
+    "name": "骸骨之中",
+    "desc": "飞影掠过低空，虫群从骨堆间翻出。随后那些还记得战斗姿势的东西，拖着长刃走向核心。",
+    "tier": "late",
+    "key_enemies": ["sarkaz_greatswordsman"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "bat", "spawn_key": "S1", "count": 6, "interval": 0.6 },
+      { "time": 4.0, "enemy_id": "splitting_originium_slug", "spawn_key": "S2", "count": 5, "interval": 0.9 },
+      { "time": 10.0, "enemy_id": "possessed_soldier", "spawn_key": "S3", "count": 4, "interval": 1.0 },
+      { "time": 16.0, "enemy_id": "sarkaz_greatswordsman", "spawn_key": "S2", "count": 2, "interval": 2.0 }
+    ]
+  },
+  {
+    "id": "heavyplate_siege",
+    "name": "闭锁监狱",
+    "desc": "门被从外侧一层层锁上，重甲者却仍在里面行军。它们走得慢，却把每一格空地都压成牢房。",
+    "tier": "late",
+    "key_enemies": ["heavy_defender"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 10, "interval": 0.45 },
+      { "time": 4.0, "enemy_id": "shieldguard", "spawn_key": "S2", "count": 3, "interval": 1.5 },
+      { "time": 10.0, "enemy_id": "heavy_defender", "spawn_key": "S3", "count": 2, "interval": 1.8 },
+      { "time": 16.0, "enemy_id": "senior_caster", "spawn_key": "S1", "count": 1, "interval": 0.0 }
+    ]
+  },
+  {
+    "id": "arts_cataclysm",
+    "name": "火力覆盖",
+    "desc": "夜空被无人机的蓝光划开，术师在三条路上同时点火。前排刚刚倒下，真正的火线已经追着防线移动。",
+    "tier": "late",
+    "key_enemies": ["senior_caster"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "caster", "spawn_key": "S1", "count": 3, "interval": 1.1 },
+      { "time": 4.0, "enemy_id": "arts_drone", "spawn_key": "S2", "count": 5, "interval": 0.8 },
+      { "time": 9.0, "enemy_id": "senior_caster", "spawn_key": "S3", "count": 2, "interval": 1.8 },
+      { "time": 15.0, "enemy_id": "infused_originium_slug", "spawn_key": "S2", "count": 4, "interval": 0.8 }
+    ]
+  },
+  {
+    "id": "fiends_carnival",
+    "name": "狂欢之主",
+    "desc": "鼓点从黑暗深处传来，奶龙酋长被一队披甲护卫簇拥上场。它像在赴宴，沿途却只留下被踩碎的路。",
+    "tier": "boss",
+    "key_enemies": ["milk_dragon_chief"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "armored_soldier", "spawn_key": "S1", "count": 4, "interval": 0.9 },
+      { "time": 4.0, "enemy_id": "crossbowman", "spawn_key": "S3", "count": 3, "interval": 1.1 },
+      { "time": 8.0, "enemy_id": "milk_dragon_chief", "spawn_key": "S2", "count": 1, "interval": 0.0 },
+      { "time": 14.0, "enemy_id": "heavy_defender", "spawn_key": "S1", "count": 2, "interval": 1.8 },
+      { "time": 20.0, "enemy_id": "caster", "spawn_key": "S3", "count": 2, "interval": 1.3 }
+    ]
+  },
+  {
+    "id": "twilight_triumph",
+    "name": "爱国者之死",
+    "desc": "盾卫先行，弩手压住两翼，那道沉重的身影终于穿过烟尘。今晚的目标不是阻拦一波敌人，而是拦下一场行军。",
+    "tier": "boss",
+    "key_enemies": ["patriot"],
+    "entries": [
+      { "time": 0.0, "enemy_id": "shieldguard", "spawn_key": "S1", "count": 2, "interval": 1.8 },
+      { "time": 3.0, "enemy_id": "crossbowman", "spawn_key": "S3", "count": 3, "interval": 1.0 },
+      { "time": 7.0, "enemy_id": "patriot", "spawn_key": "S2", "count": 1, "interval": 0.0 },
+      { "time": 14.0, "enemy_id": "sarkaz_greatswordsman", "spawn_key": "S1", "count": 2, "interval": 1.8 },
+      { "time": 20.0, "enemy_id": "caster", "spawn_key": "S3", "count": 2, "interval": 1.2 }
+    ]
+  }
+]

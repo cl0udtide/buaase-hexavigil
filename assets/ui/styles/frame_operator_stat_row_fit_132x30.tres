@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_stat_row_fit_132x30.png" id="1_texture"]
+
+[resource]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+texture = ExtResource("1_texture")
+texture_margin_left = 15
+texture_margin_top = 9
+texture_margin_right = 15
+texture_margin_bottom = 9

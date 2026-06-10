@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/relic/relic_strip.gd" id="1_c303q"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_strip_base.tres" id="2_strip"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_entry_button_base.tres" id="3_entry"]
 
 [node name="RelicStrip" type="Control" unique_id=625474051]
 custom_minimum_size = Vector2(126, 40)
@@ -15,6 +17,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_strip")
 
 [node name="StripMargin" type="MarginContainer" parent="." unique_id=1965080679]
 layout_mode = 0
@@ -22,6 +26,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
 [node name="Row" type="HBoxContainer" parent="StripMargin" unique_id=1619510026]
 layout_mode = 2
@@ -34,6 +43,7 @@ custom_minimum_size = Vector2(86, 30)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
+theme_override_styles/normal = ExtResource("3_entry")
 text = "遗物 0"
 
 [node name="IconRow" type="HBoxContainer" parent="StripMargin/Row" unique_id=2112069031]
