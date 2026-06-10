@@ -342,6 +342,16 @@ func get_spawn_cell_by_key(spawn_key: StringName) -> Vector2i:
 	return Vector2i.ZERO
 
 
+func get_spawn_keys() -> Array[String]:
+	var keys: Array[String] = []
+	for cell in _spawn_cells:
+		var data := get_cell_data(cell)
+		if data != null and data.spawn_key != StringName():
+			keys.append(String(data.spawn_key))
+	keys.sort()
+	return keys
+
+
 func get_spawn_key_at_cell(cell: Vector2i) -> StringName:
 	var data := get_cell_data(cell)
 	if data == null:

@@ -189,6 +189,33 @@ func _test_game_boot() -> void:
 		var data_repo = root.get_node_or_null("DataRepo")
 		_expect(data_repo != null and not data_repo.get_night_affix_cfg(&"forced_march").is_empty(), "DataRepo loads night affixes")
 
+		# --- 动态出怪口 v1：预览暴露 per-wave 主攻口与条目 ---
+		var preview_repeat: Dictionary = wave_manager.get_night_preview(late_plan, [&"forced_march", &"spawn_surge"])
+		_expect(str(preview_repeat) == str(affixed_preview), "night preview fully deterministic")
+		var wave_infos: Array = affixed_preview.get("waves", [])
+		_expect(not wave_infos.is_empty(), "preview has wave summaries")
+		var active_gate_keys: Array = []
+		var map_manager := game.get_node_or_null("Managers/MapManager")
+		_expect(map_manager != null, "MapManager exists")
+		if map_manager != null and map_manager.has_method("get_spawn_keys"):
+			active_gate_keys = map_manager.get_spawn_keys()
+		_expect(active_gate_keys.size() >= 2, "map exposes spawn keys")
+		for raw_wave: Variant in wave_infos:
+			if typeof(raw_wave) != TYPE_DICTIONARY:
+				continue
+			var wave_info: Dictionary = raw_wave
+			var main_gate := String(wave_info.get("main_gate", ""))
+			_expect(active_gate_keys.has(main_gate), "wave main gate is active gate")
+			var wave_entries: Array = wave_info.get("entries", [])
+			_expect(not wave_entries.is_empty(), "wave summary carries entries")
+			for raw_entry: Variant in wave_entries:
+				if typeof(raw_entry) != TYPE_DICTIONARY:
+					continue
+				var wave_entry: Dictionary = raw_entry
+				_expect(active_gate_keys.has(String(wave_entry.get("spawn_key", ""))), "entry spawn key is active gate")
+				if StringName(wave_entry.get("lane", "")) == &"flank" and active_gate_keys.size() >= 2:
+					_expect(String(wave_entry.get("spawn_key", "")) != main_gate, "flank entry avoids main gate")
+
 	game.queue_free()
 	await process_frame
 
