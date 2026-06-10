@@ -524,18 +524,25 @@ Boss 多阶段规则：
 作用：
 
 - 定义肉鸽遗物效果。旧接口仍沿用 Buff 命名以兼容现有代码。
+- `rarity` 参与抽取门控（`buff_manager.gd`）：第 1-2 天只出 1（普通），第 3-4 天出 1-2，第 5 天起出 2-3（稀有/传说）。
+- 三选一为分槽构成：槽 A 从玩家"拥有不同干员数 ≥2"的盟约对应钥匙件（`category = covenant`）中抽，槽 B 按稀有度门控随机，槽 C 从 `economy`/`generic` 中保底。
+- `category` 取值：`covenant`（盟约钥匙件，需配 `covenant` 字段）、`mechanic`（机制改变件）、`class`（职业/编队件）、`economy`（经济引擎件）、`generic`（通用数值件）。
 
 记录示例：
 
 ```json
 [
   {
-    "id": "buff_atk_up_small",
-    "name": "战意高涨",
-    "desc": "所有已部署单位攻击力 +10%",
-    "effect_type": "unit_atk_percent",
-    "effect_value": 0.1,
-    "rarity": 1
+    "id": "relic_cov_steadfast",
+    "name": "磐石垒砌",
+    "desc": "坚守干员防御 +40%、法抗 +15。",
+    "rarity": 2,
+    "category": "covenant",
+    "covenant": "坚守",
+    "effects": [
+      { "effect_type": "unit_def_percent", "effect_value": 0.40, "covenant_filter": "坚守" },
+      { "effect_type": "unit_res_add", "effect_value": 15, "covenant_filter": "坚守" }
+    ]
   }
 ]
 ```
@@ -555,6 +562,15 @@ Boss 多阶段规则：
 | `class_filter` | `String` | 可选，仅影响指定职业，例如 `guard`、`sniper`、`caster`、`defender` |
 | `building_type_filter` | `String` | 可选，仅影响指定建筑类别，例如 `resource`、`aura` |
 | `material_filter` | `String` | 可选，仅影响指定资源，例如 `wood`、`stone`、`mana` |
+| `covenant_filter` | `String` / `Array` | 可选，仅影响拥有指定盟约 tag 的干员（与 `units.json[].covenants` 求交集） |
+| `category` | `String` | 抽取分槽用类别：`covenant` / `mechanic` / `class` / `economy` / `generic` |
+| `covenant` | `String` | `category = covenant` 时必填，对应盟约名，用于盟约导向槽匹配 |
+
+新增的机制效果类型：
+
+| `effect_type` | 说明 |
+|---|---|
+| `unit_sp_on_skill_cast_team` | 任意干员开启技能时，所有在场干员获得 `effect_value` 点 SP（`buff_manager.gd` 监听 `unit_skill_cast`） |
 
 ---
 
