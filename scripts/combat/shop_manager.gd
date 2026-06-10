@@ -5,6 +5,9 @@ const OperatorProgression = preload("res://scripts/combat/operator_progression.g
 
 const REFRESH_COST := 2
 const SHOP_SLOT_COUNT := 5
+const DRIFT_START_DAY := 3
+const DRIFT_TOP_COVENANT_COUNT := 2
+const DRIFT_WEIGHT_MULTIPLIER := 1.2
 const TIER_WEIGHTS := [
 	{"cost": 2, "weight": 60.0},
 	{"cost": 4, "weight": 30.0},
@@ -22,10 +25,11 @@ func _ready() -> void:
 	if event_bus != null:
 		event_bus.request_buy_shop_slot.connect(_on_request_buy_shop_slot)
 		event_bus.request_refresh_shop.connect(_on_request_refresh_shop)
+		event_bus.request_toggle_shop_lock.connect(_on_request_toggle_shop_lock)
 
 
 func start_new_day_shop(_day: int) -> void:
-	_roll_shop_stock()
+	_roll_shop_stock(true)
 	_emit_stock_changed()
 
 
@@ -39,7 +43,8 @@ func refresh_shop() -> Dictionary:
 	var spend_result: Dictionary = run_state.spend_prestige(_get_refresh_cost())
 	if not spend_result.get("ok", false):
 		return spend_result
-	_roll_shop_stock()
+	# 手动刷新清空锁定，整页重抽。
+	_roll_shop_stock(false)
 	_emit_stock_changed()
 	return ActionResult.ok({"stock": get_current_stock()}, "商店已刷新")
 
@@ -109,6 +114,7 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	if not bool(grant_result.get("ok", false)):
 		return grant_result
 	slot["sold"] = true
+	slot["locked"] = false
 	_stock_slots[slot_index] = slot
 	_emit_stock_changed()
 	var grant_payload: Dictionary = grant_result.get("payload", {})
@@ -123,17 +129,58 @@ func try_buy_shop_slot(slot_index: int) -> Dictionary:
 	}, "购买成功，已自动合成" if not merge_events.is_empty() else "购买成功")
 
 
-func _roll_shop_stock() -> void:
+## 锁定/解锁一个未购买槽位。每页同时只保留 1 个锁定位：
+## 锁定槽在次日 start_new_day_shop 重抽时原位保留，手动刷新则清空锁定。
+func try_toggle_lock_slot(slot_index: int) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"APP_REFS_MISSING", "操作失败：运行时服务不可用")
+	if run_state.phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以锁定商店槽位")
+	if slot_index < 0 or slot_index >= _stock_slots.size():
+		return ActionResult.err(&"SHOP_SLOT_INVALID", "锁定失败：商店槽位无效")
+	var slot: Dictionary = _stock_slots[slot_index]
+	if bool(slot.get("sold", false)):
+		return ActionResult.err(&"SHOP_SLOT_SOLD", "已购买的槽位无需锁定")
+	if StringName(slot.get("unit_id", "")) == StringName():
+		return ActionResult.err(&"SHOP_SLOT_EMPTY", "锁定失败：商店槽位为空")
+	var locking := not bool(slot.get("locked", false))
+	if locking:
+		for index in range(_stock_slots.size()):
+			var other := _stock_slots[index] as Dictionary
+			other["locked"] = false
+			_stock_slots[index] = other
+	slot["locked"] = locking
+	_stock_slots[slot_index] = slot
+	_emit_stock_changed()
+	return ActionResult.ok({
+		"slot_index": slot_index,
+		"locked": locking,
+		"stock": get_current_stock()
+	}, "已锁定，明日保留" if locking else "已取消锁定")
+
+
+func _roll_shop_stock(preserve_locked: bool = false) -> void:
+	var carried_units: Dictionary = {}
+	if preserve_locked:
+		for slot in _stock_slots:
+			var slot_dict := slot as Dictionary
+			if bool(slot_dict.get("locked", false)) and not bool(slot_dict.get("sold", false)) \
+					and StringName(slot_dict.get("unit_id", "")) != StringName():
+				carried_units[int(slot_dict.get("slot_index", -1))] = StringName(slot_dict.get("unit_id", ""))
+	var drifted_covenants := _get_active_drift_covenants()
 	_stock_slots.clear()
 	for index in range(SHOP_SLOT_COUNT):
+		var locked: bool = carried_units.has(index)
 		_stock_slots.append({
 			"slot_index": index,
-			"unit_id": _roll_unit_id(),
-			"sold": false
+			"unit_id": StringName(carried_units[index]) if locked else _roll_unit_id(drifted_covenants),
+			"sold": false,
+			"locked": locked
 		})
 
 
-func _roll_unit_id() -> StringName:
+func _roll_unit_id(drifted_covenants: Array[StringName]) -> StringName:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
 		return StringName()
@@ -143,7 +190,98 @@ func _roll_unit_id() -> StringName:
 		candidates = data_repo.get_all_unit_ids()
 	if candidates.is_empty():
 		return StringName()
-	return StringName(candidates.pick_random())
+	if drifted_covenants.is_empty():
+		return StringName(candidates.pick_random())
+	var weights: Array[float] = []
+	var total_weight := 0.0
+	for unit_id in candidates:
+		var weight := _unit_roll_weight(unit_id, drifted_covenants)
+		weights.append(weight)
+		total_weight += weight
+	var roll := randf() * total_weight
+	var cursor := 0.0
+	for index in range(candidates.size()):
+		cursor += weights[index]
+		if roll <= cursor:
+			return StringName(candidates[index])
+	return StringName(candidates.back())
+
+
+## 盟约权重漂移（方案 §8.1 P2-1）：第 DRIFT_START_DAY 天起，持有"去重单位数"
+## 最多的前 DRIFT_TOP_COVENANT_COUNT 个盟约，其成员干员的商店出现权重 x1.2。
+## 只改变同费用档内的相对权重，不影响 2/4/7 费档位分布。
+func get_covenant_drift_state() -> Dictionary:
+	var covenants := _get_active_drift_covenants()
+	return {
+		"active": not covenants.is_empty(),
+		"covenants": covenants,
+		"multiplier": DRIFT_WEIGHT_MULTIPLIER
+	}
+
+
+func get_unit_roll_weight(unit_id: StringName) -> float:
+	return _unit_roll_weight(unit_id, _get_active_drift_covenants())
+
+
+func _get_active_drift_covenants() -> Array[StringName]:
+	var run_state = AppRefs.run_state()
+	var empty: Array[StringName] = []
+	if run_state == null or int(run_state.day) < DRIFT_START_DAY:
+		return empty
+	return _top_owned_covenants()
+
+
+func _top_owned_covenants() -> Array[StringName]:
+	# 与 buff_manager._covenant_presence 同语义：每个盟约按去重单位类型统计持有数。
+	var result: Array[StringName] = []
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_owned_operators") \
+			or not run_state.has_method("get_operator_covenants"):
+		return result
+	var counted_units_by_covenant: Dictionary = {}
+	for operator in run_state.get_owned_operators():
+		var operator_dict := operator as Dictionary
+		var unit_id := StringName(operator_dict.get("unit_id", ""))
+		if unit_id == StringName():
+			continue
+		var covenants: Array = run_state.get_operator_covenants(StringName(operator_dict.get("key", "")))
+		for raw_covenant: Variant in covenants:
+			var covenant := StringName(raw_covenant)
+			if covenant == StringName():
+				continue
+			var units: Dictionary = counted_units_by_covenant.get(covenant, {})
+			units[unit_id] = true
+			counted_units_by_covenant[covenant] = units
+	var entries: Array[Dictionary] = []
+	for covenant: Variant in counted_units_by_covenant.keys():
+		entries.append({
+			"covenant": StringName(covenant),
+			"count": (counted_units_by_covenant[covenant] as Dictionary).size()
+		})
+	entries.sort_custom(func(entry_a: Dictionary, entry_b: Dictionary) -> bool:
+		var count_a := int(entry_a.get("count", 0))
+		var count_b := int(entry_b.get("count", 0))
+		if count_a != count_b:
+			return count_a > count_b
+		return String(entry_a.get("covenant", "")) < String(entry_b.get("covenant", ""))
+	)
+	var top_count: int = min(DRIFT_TOP_COVENANT_COUNT, entries.size())
+	for index in range(top_count):
+		result.append(StringName(entries[index].get("covenant", "")))
+	return result
+
+
+func _unit_roll_weight(unit_id: StringName, drifted_covenants: Array[StringName]) -> float:
+	if drifted_covenants.is_empty():
+		return 1.0
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_unit_covenants"):
+		return 1.0
+	for raw_covenant: Variant in run_state.get_unit_covenants(unit_id):
+		# 命中多个漂移盟约不叠乘，封顶一次倍率。
+		if drifted_covenants.has(StringName(raw_covenant)):
+			return DRIFT_WEIGHT_MULTIPLIER
+	return 1.0
 
 
 func _roll_tier_cost() -> int:
@@ -240,3 +378,7 @@ func _on_request_buy_shop_slot(slot_index: int) -> void:
 
 func _on_request_refresh_shop() -> void:
 	_emit_action_result(&"refresh", refresh_shop())
+
+
+func _on_request_toggle_shop_lock(slot_index: int) -> void:
+	_emit_action_result(&"lock", try_toggle_lock_slot(slot_index))
