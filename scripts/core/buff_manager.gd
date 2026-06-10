@@ -101,17 +101,25 @@ func _covenant_presence() -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null or not run_state.has_method("get_owned_operators"):
 		return presence
-	var seen_units: Dictionary = {}
+	var counted_units_by_covenant: Dictionary = {}
 	for operator in run_state.get_owned_operators():
-		var unit_id := StringName((operator as Dictionary).get("unit_id", ""))
-		if unit_id == StringName() or seen_units.has(unit_id):
+		var operator_dict := operator as Dictionary
+		var unit_id := StringName(operator_dict.get("unit_id", ""))
+		if unit_id == StringName():
 			continue
-		seen_units[unit_id] = true
-		var unit_cfg: Dictionary = data_repo.get_unit_cfg(unit_id)
-		for raw_covenant: Variant in unit_cfg.get("covenants", []):
+		var covenants: Array = run_state.get_operator_covenants(StringName(operator_dict.get("key", ""))) \
+				if run_state.has_method("get_operator_covenants") else data_repo.get_unit_cfg(unit_id).get("covenants", [])
+		for raw_covenant: Variant in covenants:
 			var covenant := StringName(raw_covenant)
-			if covenant != StringName():
-				presence[covenant] = int(presence.get(covenant, 0)) + 1
+			if covenant == StringName():
+				continue
+			if not counted_units_by_covenant.has(covenant):
+				counted_units_by_covenant[covenant] = {}
+			var counted: Dictionary = counted_units_by_covenant[covenant]
+			if counted.has(unit_id):
+				continue
+			counted[unit_id] = true
+			presence[covenant] = int(presence.get(covenant, 0)) + 1
 	return presence
 
 

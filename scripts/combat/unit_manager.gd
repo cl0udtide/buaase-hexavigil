@@ -71,6 +71,11 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 		return ActionResult.err(&"WORLD_NOT_READY", "操作失败：战场节点尚未就绪")
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var effective_cfg := OperatorProgression.make_effective_unit_cfg(cfg, star)
+	# 干员实例级盟约（祭坛灌注等）合入战场 cfg，盟约结算与遗物过滤随之生效。
+	if run_state.has_method("get_operator_covenants"):
+		var merged_covenants: Array = run_state.get_operator_covenants(operator_key)
+		if not merged_covenants.is_empty():
+			effective_cfg["covenants"] = merged_covenants
 	var actor: Node = scene.instantiate()
 	_unit_root.add_child(actor)
 	actor.runtime_id = _next_runtime_id
