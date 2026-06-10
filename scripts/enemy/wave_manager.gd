@@ -213,6 +213,9 @@ func get_night_preview(template_ids: Array, affix_ids: Array = []) -> Dictionary
 			"name": String(wave_preview.get("name", "")),
 			"desc": String(wave_preview.get("desc", "")),
 			"total_count": int(wave_preview.get("total_count", 0)),
+			"main_gate": String(wave_preview.get("main_gate", "")),
+			"spawn_order": wave_preview.get("spawn_order", []),
+			"entries": wave_preview.get("entries", []),
 		})
 		for raw_enemy: Variant in wave_preview.get("key_enemies", []):
 			var key_enemy := StringName(raw_enemy)
@@ -290,6 +293,7 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 		if not entries_by_key.has(aggregate_key):
 			entries_by_key[aggregate_key] = {
 				"spawn_key": spawn_key,
+				"lane": StringName(String(entry.get("lane", ""))),
 				"enemy_id": enemy_id,
 				"enemy_name": String(enemy_cfg.get("name", enemy_id)),
 				"enemy_cfg": enemy_cfg,
@@ -331,7 +335,8 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 		"key_enemies": _normalize_key_enemies(cfg.get("key_enemies", []), entries),
 		"entries": entries,
 		"spawn_order": spawn_order,
-		"total_count": total_count
+		"main_gate": _main_gate_for_wave(wave_index, _active_spawn_keys()),
+		"total_count": total_count,
 	}
 	return preview
 
@@ -362,18 +367,28 @@ func _make_expanded_spawn_entries(entry: Dictionary) -> Array[Dictionary]:
 	return entries
 
 
-## 一波的最终条目：enemy_choices 解析 -> 词缀条目级变换。运行时与预览共用，保证公示诚实。
+## 一波的最终条目：groups/entries 读取 -> enemy_choices 解析 -> lane 落口分配 -> 词缀条目级变换。
+## 运行时与预览共用，保证公示诚实。lane 解析必须在词缀 transform 之前（spawn_surge 等按 spawn_key 结算）。
 func _build_resolved_entries(cfg: Dictionary, template_id: StringName, wave_index: int, affix_cfgs: Array) -> Array[Dictionary]:
 	var resolved: Array[Dictionary] = []
-	var raw_entries: Array = cfg.get("entries", [])
+	var raw_entries: Array = cfg.get("groups", cfg.get("entries", []))
 	var seed_day := _seed_day_for(template_id)
+	var active_gates: Array = _active_spawn_keys()
+	var main_gate := _main_gate_for_wave(wave_index, active_gates)
+	var run_state = AppRefs.run_state()
+	var run_seed := int(run_state.random_seed) if run_state != null else 0
+	var day := int(run_state.day) if run_state != null else 0
 	for entry_index in range(raw_entries.size()):
 		var entry_variant: Variant = raw_entries[entry_index]
 		if typeof(entry_variant) != TYPE_DICTIONARY:
 			continue
 		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
-		if StringName(entry.get("enemy_id", "")) != StringName():
-			resolved.append(entry)
+		if StringName(entry.get("enemy_id", "")) == StringName():
+			continue
+		if String(entry.get("spawn_key", "")).is_empty():
+			var lane := StringName(String(entry.get("lane", "any")))
+			entry["spawn_key"] = NightTemplateResolver.resolve_lane_gate(lane, entry_index, main_gate, active_gates, run_seed, day, wave_index)
+		resolved.append(entry)
 	if affix_cfgs.is_empty():
 		return resolved
 	var spawn_keys: Array = _collect_spawn_keys(resolved)
@@ -390,6 +405,19 @@ func _collect_spawn_keys(entries: Array) -> Array:
 			keys.append(key)
 	keys.sort()
 	return keys
+
+
+func _active_spawn_keys() -> Array:
+	if _map_manager != null and _map_manager.has_method("get_spawn_keys"):
+		return _map_manager.get_spawn_keys()
+	return []
+
+
+func _main_gate_for_wave(wave_index: int, active_gates: Array) -> String:
+	var run_state = AppRefs.run_state()
+	var run_seed := int(run_state.random_seed) if run_state != null else 0
+	var day := int(run_state.day) if run_state != null else 0
+	return NightTemplateResolver.resolve_main_gate(active_gates, run_seed, day, wave_index)
 
 
 func _entry_transform_seed(template_id: StringName, wave_index: int) -> int:
