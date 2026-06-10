@@ -1,5 +1,6 @@
 extends Control
 
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
@@ -36,6 +37,8 @@ signal sell_requested(operator_key: StringName)
 @onready var _skill_label: Label = %SkillLabel
 @onready var _purchase_button: Button = %PurchaseButton
 @onready var _purchase_button_icon: TextureRect = %PurchaseButtonIcon
+@onready var _star_up_button: Button = %StarUpButton
+@onready var _star_up_button_icon: TextureRect = %StarUpButtonIcon
 @onready var _sell_button: Button = %SellButton
 @onready var _sell_button_icon: TextureRect = %SellButtonIcon
 @onready var _cast_button: Button = %CastSkillButton
@@ -48,6 +51,7 @@ var _hp_ratio := 0.0
 var _sp_ratio := 0.0
 var _shop_slot_index := -1
 var _preview_operator_key := StringName()
+var _preview_operator_state := StringName()
 
 
 func _ready() -> void:
@@ -82,12 +86,21 @@ func _ready() -> void:
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
 	_style_action_button(_retreat_button, GameUiStyle.STROKE_SOFT)
 	_style_action_button(_purchase_button, GameUiStyle.AMBER)
+	_style_action_button(_star_up_button, GameUiStyle.AMBER)
 	_style_action_button(_sell_button, GameUiStyle.STROKE_SOFT)
 	_ensure_stat_icon_rows()
 	_cast_button.pressed.connect(func() -> void: cast_skill_requested.emit())
 	_retreat_button.pressed.connect(func() -> void: retreat_requested.emit())
 	_purchase_button.pressed.connect(_on_purchase_pressed)
+	_star_up_button.pressed.connect(_on_star_up_pressed)
 	_sell_button.pressed.connect(_on_sell_pressed)
+	# 定向升星走 EventBus 请求链路（出售仍走 combat_hud 转发的旧链路）。
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.operator_star_upgrade_result.connect(_on_operator_star_upgrade_result)
+		event_bus.materials_changed.connect(_on_materials_changed_for_star_up)
+		event_bus.prestige_changed.connect(_on_prestige_changed_for_star_up)
+		event_bus.phase_changed.connect(_on_phase_changed_for_star_up)
 	clear_unit()
 	call_deferred("_refresh_skill_text_scroll_size")
 
@@ -155,6 +168,7 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
 	_shop_slot_index = -1
 	_preview_operator_key = StringName(operator_info.get("key", ""))
+	_preview_operator_state = state
 	var display_name := String(operator_info.get("name", unit_cfg.get("name", operator_info.get("unit_id", ""))))
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var skill_status_text := status_text.strip_edges()
@@ -164,6 +178,7 @@ func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, stat
 	var can_sell := state == &"ready"
 	var sell_reason := "" if can_sell else "该干员当前不能出售"
 	_set_action_mode(&"preview", false, "", 0, can_sell, sell_reason)
+	_refresh_star_up_button()
 
 
 func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
@@ -264,6 +279,10 @@ func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, pric
 	_sell_button.disabled = not can_sell
 	_sell_button.tooltip_text = sell_reason if is_preview and not sell_reason.strip_edges().is_empty() else ""
 	_sell_button.text = "出售 1 声望"
+	_star_up_button.visible = is_preview
+	if not is_preview:
+		_star_up_button.disabled = true
+		_star_up_button.tooltip_text = ""
 	_cast_button.visible = is_deployed or mode == &"empty"
 	_retreat_button.visible = is_deployed or mode == &"empty"
 	_refresh_action_icons()
@@ -277,6 +296,87 @@ func _on_purchase_pressed() -> void:
 func _on_sell_pressed() -> void:
 	if _preview_operator_key != StringName():
 		sell_requested.emit(_preview_operator_key)
+
+
+func _on_star_up_pressed() -> void:
+	if _preview_operator_key == StringName():
+		return
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.request_upgrade_operator_star.emit(_preview_operator_key)
+
+
+## 按当前预览干员重算升星按钮：价格文案、满星/非后备/非白天/资源不足时禁用并给原因。
+func _refresh_star_up_button() -> void:
+	if not _star_up_button.visible or _preview_operator_key == StringName():
+		return
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_owned_operator") or not run_state.has_method("get_operator_star_up_cost"):
+		_star_up_button.disabled = true
+		return
+	var operator_info: Dictionary = run_state.get_owned_operator(_preview_operator_key)
+	if operator_info.is_empty():
+		_star_up_button.disabled = true
+		_refresh_action_icons()
+		return
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	var cost: Dictionary = run_state.get_operator_star_up_cost(star)
+	if cost.is_empty():
+		_star_up_button.text = "已满星"
+		_star_up_button.disabled = true
+		_star_up_button.tooltip_text = "该干员已达星级上限"
+		_refresh_action_icons()
+		return
+	var cost_mana := int(cost.get("mana", 0))
+	var cost_prestige := int(cost.get("prestige", 0))
+	_star_up_button.text = "升星 %d魔力矿+%d声望" % [cost_mana, cost_prestige]
+	var reason := ""
+	if _preview_operator_state != &"ready":
+		reason = "该干员当前不能升星"
+	elif int(run_state.phase) != GameEnums.PHASE_DAY:
+		reason = "只有白天可以升星"
+	elif int(run_state.mana) < cost_mana:
+		reason = "魔力矿不足"
+	elif int(run_state.prestige) < cost_prestige:
+		reason = "声望不足"
+	_star_up_button.disabled = not reason.is_empty()
+	_star_up_button.tooltip_text = reason
+	_refresh_action_icons()
+
+
+## 升星成功后按 RunState 重渲染预览（星级、数值、按钮价格）；UnitManager 回发的失败结果只刷新按钮状态。
+func _on_operator_star_upgrade_result(operator_key: StringName, result: Dictionary) -> void:
+	if _preview_operator_key == StringName() or operator_key != _preview_operator_key:
+		return
+	if bool(result.get("ok", false)):
+		_refresh_owned_operator_preview_from_state()
+	else:
+		_refresh_star_up_button()
+
+
+func _refresh_owned_operator_preview_from_state() -> void:
+	var run_state = AppRefs.run_state()
+	var data_repo = AppRefs.data_repo()
+	if run_state == null or data_repo == null or not run_state.has_method("get_owned_operator"):
+		return
+	var operator_info: Dictionary = run_state.get_owned_operator(_preview_operator_key)
+	if operator_info.is_empty():
+		return
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	var unit_cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator_info.get("unit_id", "")))
+	show_operator_preview(operator_info, OperatorProgression.make_effective_unit_cfg(unit_cfg, star), _preview_operator_state)
+
+
+func _on_materials_changed_for_star_up(_wood: int, _stone: int, _mana: int) -> void:
+	_refresh_star_up_button()
+
+
+func _on_prestige_changed_for_star_up(_value: int) -> void:
+	_refresh_star_up_button()
+
+
+func _on_phase_changed_for_star_up(_old_phase: int, _new_phase: int) -> void:
+	_refresh_star_up_button()
 
 
 func _refresh_skill_text_scroll_size() -> void:
@@ -338,6 +438,7 @@ func _refresh_action_icons() -> void:
 	_set_button_icon(_cast_button, _cast_button_icon, UiArtRegistry.get_catalog_icon(&"skill_locked" if _cast_button.disabled else &"skill_ready"))
 	_set_button_icon(_retreat_button, _retreat_button_icon, UiArtRegistry.get_catalog_icon(&"combat_retreat"))
 	_set_button_icon(_purchase_button, _purchase_button_icon, UiArtRegistry.get_catalog_icon(&"button_cancel" if _purchase_button.disabled else &"button_confirm"))
+	_set_button_icon(_star_up_button, _star_up_button_icon, UiArtRegistry.get_catalog_icon(&"button_cancel" if _star_up_button.disabled else &"button_confirm"))
 	_set_button_icon(_sell_button, _sell_button_icon, UiArtRegistry.get_catalog_icon(&"button_cancel"))
 
 
