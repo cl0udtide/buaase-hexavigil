@@ -216,6 +216,14 @@ func _test_game_boot() -> void:
 				if StringName(wave_entry.get("lane", "")) == &"flank" and active_gate_keys.size() >= 2:
 					_expect(String(wave_entry.get("spawn_key", "")) != main_gate, "flank entry avoids main gate")
 
+		# --- 标记穿透迷雾：格子保持未探索（探索约束与事件前沿落点依赖此不变式） ---
+		if map_manager != null and map_manager.has_method("get_spawn_cells"):
+			var spawn_cells: Array = map_manager.get_spawn_cells()
+			_expect(not spawn_cells.is_empty(), "map has spawn cells")
+			for raw_cell: Variant in spawn_cells:
+				var spawn_cell: Vector2i = raw_cell
+				_expect(not map_manager.is_discovered(spawn_cell), "spawn cell stays undiscovered at start")
+
 	game.queue_free()
 	await process_frame
 
