@@ -100,14 +100,18 @@ func get_current_phase() -> int:
 
 
 func _resolve_night_template_for_day(run_state: Node, day: int) -> void:
-	if _wave_manager == null or not _wave_manager.has_method("resolve_night_template"):
-		run_state.night_template_id = StringName()
+	var empty_plan: Array[StringName] = []
+	run_state.night_wave_template_ids = empty_plan
+	run_state.night_template_id = StringName()
+	if _wave_manager == null or not _wave_manager.has_method("resolve_night_plan"):
 		return
-	var tier: StringName = _wave_manager.tier_for_day(day) if _wave_manager.has_method("tier_for_day") else StringName()
-	var template_id: StringName = _wave_manager.resolve_night_template(tier, int(run_state.random_seed), day, run_state.used_template_ids)
-	run_state.night_template_id = template_id
-	if template_id != StringName() and not run_state.used_template_ids.has(template_id):
-		run_state.used_template_ids.append(template_id)
+	var plan: Array[StringName] = _wave_manager.resolve_night_plan(int(run_state.random_seed), day, run_state.used_template_ids)
+	run_state.night_wave_template_ids = plan
+	if not plan.is_empty():
+		run_state.night_template_id = plan[0]
+	for template_id in plan:
+		if template_id != StringName() and not run_state.used_template_ids.has(template_id):
+			run_state.used_template_ids.append(template_id)
 
 
 func _bootstrap_run_if_needed() -> void:
