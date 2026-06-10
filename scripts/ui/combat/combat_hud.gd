@@ -525,7 +525,11 @@ func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 	_wave_level_name_label.text = name
 	_wave_desc_label.text = desc
 	_wave_desc_label.visible = not desc.is_empty()
-	_wave_summary_label.text = "合计来袭 %d · 活跃出怪口 %d" % [total_count, active_spawn_count]
+	var wave_count := int(data.get("wave_count", 1))
+	if wave_count > 1:
+		_wave_summary_label.text = "共 %d 波 · 合计来袭 %d · 活跃出怪口 %d" % [wave_count, total_count, active_spawn_count]
+	else:
+		_wave_summary_label.text = "合计来袭 %d · 活跃出怪口 %d" % [total_count, active_spawn_count]
 	_rebuild_wave_spawn_cards(spawn_order, entries, data.get("key_enemies", []))
 	_wave_warning_label.text = _format_wave_warning_text(data)
 	_wave_warning_row.visible = not _wave_warning_label.text.strip_edges().is_empty()
@@ -972,6 +976,15 @@ func _key_enemy_lookup(raw_key_enemies: Variant) -> Dictionary:
 func _format_wave_warning_text(data: Dictionary) -> String:
 	var routes: Array = data.get("routes", [])
 	var warnings := PackedStringArray()
+	for raw_affix: Variant in data.get("affixes", []):
+		if typeof(raw_affix) != TYPE_DICTIONARY:
+			continue
+		var affix: Dictionary = raw_affix
+		var affix_name := String(affix.get("name", "")).strip_edges()
+		var affix_desc := String(affix.get("desc", "")).strip_edges()
+		if affix_name.is_empty():
+			continue
+		warnings.append("夜晚词缀【%s】%s" % [affix_name, affix_desc])
 	for route_variant: Variant in routes:
 		if typeof(route_variant) != TYPE_DICTIONARY:
 			continue

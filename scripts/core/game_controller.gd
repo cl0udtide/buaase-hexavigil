@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
 
 
 @onready var _day_manager: Node = get_node_or_null("../DayManager")
