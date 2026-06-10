@@ -2,11 +2,23 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
+const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
 
+
+# 波间喘息时长：上一波清场后到下一波开始的间隔。
+const WAVE_LULL_SEC := 12.0
+# 上一波刷怪完毕后若残敌迟迟未清，强制开下一波的等待上限（防拖延/卡死）。
+const WAVE_FORCE_NEXT_SEC := 45.0
 
 var _elapsed := 0.0
 var _pending_spawns: Array[Dictionary] = []
 var _running := false
+var _wave_template_ids: Array[StringName] = []
+var _affix_cfgs: Array[Dictionary] = []
+var _wave_index := -1
+var _wave_spawns_done_at := -1.0
+var _next_wave_at := -1.0
+var _enemy_cfg_override_cache: Dictionary = {}
 
 @onready var _enemy_manager: Node = get_node_or_null("../EnemyManager")
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
@@ -26,8 +38,11 @@ func _process(delta: float) -> void:
 	while not _pending_spawns.is_empty() and float(_pending_spawns[0].get("time", 0.0)) <= _elapsed:
 		var entry: Dictionary = _pending_spawns.pop_front()
 		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(StringName(entry.get("spawn_key", "")))
-		_enemy_manager.spawn_enemy(StringName(entry.get("enemy_id", "")), spawn_cell)
-	_check_finish()
+		var enemy_id := StringName(entry.get("enemy_id", ""))
+		_enemy_manager.spawn_enemy(enemy_id, spawn_cell, _affixed_enemy_cfg_override(enemy_id))
+	if _pending_spawns.is_empty() and _wave_spawns_done_at < 0.0:
+		_wave_spawns_done_at = _elapsed
+	_update_wave_flow()
 
 
 func tier_for_day(day: int) -> StringName:
@@ -53,42 +68,104 @@ func resolve_night_plan(run_seed: int, day: int, used_ids: Array) -> Array[Strin
 	return NightTemplateResolver.resolve_night_plan(pools, used_ids, run_seed, day)
 
 
-func start_wave_for_template(template_id: StringName) -> void:
-	var data_repo = AppRefs.data_repo()
-	if data_repo == null or template_id == StringName():
-		_pending_spawns.clear()
-		_running = false
-		return
-	var cfg: Dictionary = data_repo.get_wave_template_cfg(template_id) if data_repo.has_method("get_wave_template_cfg") else {}
-	if cfg.is_empty():
-		_pending_spawns.clear()
-		_running = false
-		return
-	_pending_spawns.clear()
-	var raw_entries: Array = cfg.get("entries", [])
-	var seed_day := _seed_day_for(template_id)
-	for entry_index in range(raw_entries.size()):
-		var entry_variant: Variant = raw_entries[entry_index]
-		if typeof(entry_variant) == TYPE_DICTIONARY:
-			var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
-			if StringName(entry.get("enemy_id", "")) != StringName():
-				_pending_spawns.append_array(_make_expanded_spawn_entries(entry))
-	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
+## 启动整夜战斗：按计划顺序播放多个波次模板，并应用当晚词缀。
+func start_night(template_ids: Array, affix_ids: Array = []) -> void:
+	stop_wave()
+	for raw_id: Variant in template_ids:
+		var id := StringName(raw_id)
+		if id != StringName():
+			_wave_template_ids.append(id)
+	_affix_cfgs = _load_affix_cfgs(affix_ids)
+	_enemy_cfg_override_cache.clear()
 	_elapsed = 0.0
+	if _wave_template_ids.is_empty():
+		return
 	_running = true
+	_start_wave(0)
+
+
+## 单波兼容入口（沙盒/旧调用路径）。
+func start_wave_for_template(template_id: StringName) -> void:
+	if template_id == StringName():
+		stop_wave()
+		return
+	start_night([template_id], [])
 
 
 func stop_wave() -> void:
 	_pending_spawns.clear()
+	_wave_template_ids.clear()
+	_affix_cfgs.clear()
+	_enemy_cfg_override_cache.clear()
+	_wave_index = -1
+	_wave_spawns_done_at = -1.0
+	_next_wave_at = -1.0
 	_running = false
 
 
+## 整夜是否结束：所有波放完且场上无敌人。
 func is_wave_finished() -> bool:
-	return _running and _pending_spawns.is_empty() and _enemy_manager.get_alive_enemy_count() == 0
+	return _running and _pending_spawns.is_empty() and not _has_more_waves() and _enemy_manager.get_alive_enemy_count() == 0
 
 
 func has_pending_spawn() -> bool:
 	return not _pending_spawns.is_empty()
+
+
+func get_current_wave_index() -> int:
+	return _wave_index
+
+
+func get_wave_count() -> int:
+	return _wave_template_ids.size()
+
+
+func get_current_wave_template_id() -> StringName:
+	if _wave_index >= 0 and _wave_index < _wave_template_ids.size():
+		return _wave_template_ids[_wave_index]
+	return StringName()
+
+
+func _start_wave(index: int) -> void:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or index < 0 or index >= _wave_template_ids.size():
+		_check_finish()
+		return
+	_wave_index = index
+	_wave_spawns_done_at = -1.0
+	_next_wave_at = -1.0
+	_pending_spawns.clear()
+	var template_id: StringName = _wave_template_ids[index]
+	var cfg: Dictionary = data_repo.get_wave_template_cfg(template_id) if data_repo.has_method("get_wave_template_cfg") else {}
+	var wave_start_time := _elapsed
+	for entry in _build_resolved_entries(cfg, template_id, index, _affix_cfgs):
+		for spawn_entry in _make_expanded_spawn_entries(entry):
+			spawn_entry["time"] = wave_start_time + float(spawn_entry.get("time", 0.0))
+			_pending_spawns.append(spawn_entry)
+	_pending_spawns.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("time", 0.0)) < float(b.get("time", 0.0)))
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.night_wave_started.emit(index, _wave_template_ids.size())
+
+
+func _has_more_waves() -> bool:
+	return _wave_index + 1 < _wave_template_ids.size()
+
+
+func _update_wave_flow() -> void:
+	if not _running or not _pending_spawns.is_empty():
+		return
+	if not _has_more_waves():
+		_check_finish()
+		return
+	var alive_count: int = _enemy_manager.get_alive_enemy_count() if _enemy_manager != null else 0
+	if _next_wave_at < 0.0:
+		if alive_count == 0:
+			_next_wave_at = _elapsed + WAVE_LULL_SEC
+		elif _wave_spawns_done_at >= 0.0 and _elapsed - _wave_spawns_done_at >= WAVE_FORCE_NEXT_SEC:
+			_next_wave_at = _elapsed
+	if _next_wave_at >= 0.0 and _elapsed >= _next_wave_at:
+		_start_wave(_wave_index + 1)
 
 
 func get_wave_preview_for_template(template_id: StringName) -> Dictionary:
@@ -196,6 +273,67 @@ func _make_expanded_spawn_entries(entry: Dictionary) -> Array[Dictionary]:
 		spawn_entry["count"] = 1
 		entries.append(spawn_entry)
 	return entries
+
+
+## 一波的最终条目：enemy_choices 解析 -> 词缀条目级变换。运行时与预览共用，保证公示诚实。
+func _build_resolved_entries(cfg: Dictionary, template_id: StringName, wave_index: int, affix_cfgs: Array) -> Array[Dictionary]:
+	var resolved: Array[Dictionary] = []
+	var raw_entries: Array = cfg.get("entries", [])
+	var seed_day := _seed_day_for(template_id)
+	for entry_index in range(raw_entries.size()):
+		var entry_variant: Variant = raw_entries[entry_index]
+		if typeof(entry_variant) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
+		if StringName(entry.get("enemy_id", "")) != StringName():
+			resolved.append(entry)
+	if affix_cfgs.is_empty():
+		return resolved
+	var spawn_keys: Array = _collect_spawn_keys(resolved)
+	return NightAffixService.transform_entries(resolved, affix_cfgs, spawn_keys, _entry_transform_seed(template_id, wave_index))
+
+
+func _collect_spawn_keys(entries: Array) -> Array:
+	var keys: Array = []
+	for raw_entry: Variant in entries:
+		if typeof(raw_entry) != TYPE_DICTIONARY:
+			continue
+		var key := String((raw_entry as Dictionary).get("spawn_key", ""))
+		if not key.is_empty() and not keys.has(key):
+			keys.append(key)
+	keys.sort()
+	return keys
+
+
+func _entry_transform_seed(template_id: StringName, wave_index: int) -> int:
+	var run_state = AppRefs.run_state()
+	var run_seed := int(run_state.random_seed) if run_state != null else 0
+	var day := int(run_state.day) if run_state != null else 0
+	return abs(("%d|%d|%d|%s" % [run_seed, day, wave_index, String(template_id)]).hash())
+
+
+func _load_affix_cfgs(affix_ids: Array) -> Array[Dictionary]:
+	var cfgs: Array[Dictionary] = []
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_night_affix_cfg"):
+		return cfgs
+	for raw_id: Variant in affix_ids:
+		var cfg: Dictionary = data_repo.get_night_affix_cfg(StringName(raw_id))
+		if not cfg.is_empty():
+			cfgs.append(cfg)
+	return cfgs
+
+
+func _affixed_enemy_cfg_override(enemy_id: StringName) -> Dictionary:
+	if _affix_cfgs.is_empty() or enemy_id == StringName():
+		return {}
+	if _enemy_cfg_override_cache.has(enemy_id):
+		return _enemy_cfg_override_cache[enemy_id]
+	var data_repo = AppRefs.data_repo()
+	var base_cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id) if data_repo != null else {}
+	var override: Dictionary = NightAffixService.apply_to_enemy_cfg(base_cfg, _affix_cfgs)
+	_enemy_cfg_override_cache[enemy_id] = override
+	return override
 
 
 func _resolve_wave_entry(entry: Dictionary, day: int, entry_index: int) -> Dictionary:

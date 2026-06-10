@@ -11,12 +11,18 @@ func start_night(_day: int) -> void:
 	if _wave_manager == null:
 		return
 	var run_state = get_node_or_null("/root/RunState")
-	var template_id: StringName = StringName(run_state.night_template_id) if run_state != null else StringName()
-	if template_id == StringName():
-		push_warning("Night started without a resolved wave template.")
+	var template_ids: Array = []
+	var affix_ids: Array = []
+	if run_state != null:
+		template_ids = (run_state.night_wave_template_ids as Array).duplicate()
+		affix_ids = (run_state.night_affix_ids as Array).duplicate()
+		if template_ids.is_empty() and StringName(run_state.night_template_id) != StringName():
+			template_ids = [StringName(run_state.night_template_id)]
+	if template_ids.is_empty():
+		push_warning("Night started without a resolved wave plan.")
 		return
-	if _wave_manager.has_method("start_wave_for_template"):
-		_wave_manager.start_wave_for_template(template_id)
+	if _wave_manager.has_method("start_night"):
+		_wave_manager.start_night(template_ids, affix_ids)
 
 
 func finish_night() -> void:
