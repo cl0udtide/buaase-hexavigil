@@ -121,6 +121,8 @@ var _wave_spawn_card_template: PanelContainer
 var _wave_enemy_card_template: PanelContainer
 var _wave_warning_row: Control
 var _wave_warning_label: Label
+var _night_affix_row: PanelContainer
+var _night_affix_label: Label
 var _wave_preview_available := false
 var _right_detail_active := false
 var _level_intro_banner: Control
@@ -836,12 +838,11 @@ func _rebuild_wave_spawn_cards_by_wave(waves: Array, merged_spawn_order: Array, 
 	var key_enemies := _key_enemy_lookup(raw_key_enemies)
 	for wave_info in usable_waves:
 		var main_gate := String(wave_info.get("main_gate", ""))
-		var header := Label.new()
+		var header := _make_wave_label("WaveHeader", 13, GameUiStyle.AMBER, false)
 		var header_text := "第 %d 波 · %s" % [int(wave_info.get("wave_index", 0)) + 1, String(wave_info.get("name", ""))]
 		if not main_gate.is_empty():
 			header_text += " · 主攻 %s" % main_gate
 		header.text = header_text
-		header.add_theme_color_override("font_color", GameUiStyle.AMBER)
 		_wave_spawn_cards_box.add_child(header)
 		var wave_entries: Array = wave_info.get("entries", [])
 		var spawn_order: Array = wave_info.get("spawn_order", [])
@@ -1050,6 +1051,54 @@ func _format_wave_warning_text(data: Dictionary) -> String:
 	if hover_cell != Vector2i(-9999, -9999):
 		warnings.append("预览阻挡：%s" % str(hover_cell))
 	return "；".join(warnings)
+
+
+## 夜间常显的当晚词缀清单（含事件临时追加项）。白天隐藏，由 controller 驱动。
+func set_night_affixes(affixes: Array) -> void:
+	_ensure_night_affix_row()
+	if _night_affix_row == null:
+		return
+	var parts := PackedStringArray()
+	var tips := PackedStringArray()
+	for raw_affix: Variant in affixes:
+		if typeof(raw_affix) != TYPE_DICTIONARY:
+			continue
+		var affix: Dictionary = raw_affix
+		var affix_name := String(affix.get("name", "")).strip_edges()
+		if affix_name.is_empty():
+			continue
+		parts.append(affix_name)
+		tips.append("【%s】%s" % [affix_name, String(affix.get("desc", "")).strip_edges()])
+	_night_affix_label.text = "夜晚词缀：%s" % " · ".join(parts)
+	_night_affix_row.tooltip_text = "\n".join(tips)
+	_night_affix_row.visible = not parts.is_empty()
+
+
+func hide_night_affixes() -> void:
+	if _night_affix_row != null:
+		_night_affix_row.visible = false
+
+
+func _ensure_night_affix_row() -> void:
+	if _night_affix_row != null:
+		return
+	_night_affix_row = PanelContainer.new()
+	_night_affix_row.name = "NightAffixRow"
+	_night_affix_row.visible = false
+	_night_affix_row.z_index = 40
+	_night_affix_row.mouse_filter = Control.MOUSE_FILTER_STOP
+	_night_affix_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_night_affix_row.offset_top = 72.0
+	add_child(_night_affix_row)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	_night_affix_row.add_child(margin)
+	_night_affix_label = Label.new()
+	_night_affix_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	margin.add_child(_night_affix_label)
 
 
 func _ensure_level_intro_banner() -> void:
