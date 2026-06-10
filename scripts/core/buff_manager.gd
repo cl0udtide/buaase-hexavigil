@@ -51,10 +51,16 @@ func get_random_blessing_choices(count: int = 0) -> Array[StringName]:
 
 	var day: int = int(run_state.day) if run_state != null else 1
 	var allowed_rarities := _allowed_rarities_for_day(day)
+	var presence := _covenant_presence()
+	# 未持有（不同干员数 < 2）盟约的钥匙件是死卡，整体不进入抽取池。
 	var rarity_pool: Array[Dictionary] = []
 	for cfg in unowned:
-		if allowed_rarities.has(int(cfg.get("rarity", 1))):
-			rarity_pool.append(cfg)
+		if not allowed_rarities.has(int(cfg.get("rarity", 1))):
+			continue
+		if StringName(cfg.get("category", "")) == &"covenant" \
+				and int(presence.get(StringName(cfg.get("covenant", "")), 0)) < COVENANT_PRESENCE_MIN:
+			continue
+		rarity_pool.append(cfg)
 	if rarity_pool.is_empty():
 		rarity_pool = unowned
 
@@ -63,12 +69,9 @@ func get_random_blessing_choices(count: int = 0) -> Array[StringName]:
 		if ECONOMY_SLOT_CATEGORIES.has(StringName(cfg.get("category", "generic"))):
 			economy_pool.append(cfg)
 
-	var presence := _covenant_presence()
 	var covenant_pool: Array[Dictionary] = []
 	for cfg in rarity_pool:
-		if StringName(cfg.get("category", "")) != &"covenant":
-			continue
-		if int(presence.get(StringName(cfg.get("covenant", "")), 0)) >= COVENANT_PRESENCE_MIN:
+		if StringName(cfg.get("category", "")) == &"covenant":
 			covenant_pool.append(cfg)
 
 	var result: Array[StringName] = []
