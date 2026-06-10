@@ -99,6 +99,19 @@ func _run() -> void:
 	_expect((run_state.night_affix_ids as Array).size() == affixes_before + 1, "wager adds a night affix")
 	_expect(bool(run_state.night_wager_active), "wager flag is active")
 
+	# 今晚词缀横幅在白天也要可见：事件追加词缀后（random_event_triggered）立即刷新显示。
+	var banner_bus = root.get_node_or_null("EventBus")
+	_expect(banner_bus != null, "EventBus exists for banner refresh")
+	if banner_bus != null:
+		banner_bus.random_event_triggered.emit(&"event_war_wager", Vector2i(-1, -1))
+		await process_frame
+	var hud_for_banner := game.get_node_or_null("UI/ScreenLayout/CombatHudSlot/CombatHud") as Control
+	var affix_row: Control = hud_for_banner.get_node_or_null("NightAffixRow") as Control if hud_for_banner != null else null
+	_expect(affix_row != null and affix_row.visible, "affix banner visible during day after event adds affix")
+	var banner_event_panel := game.get_node_or_null("UI/ModalLayer/EventPanelSlot/EventPanel")
+	if banner_event_panel != null and banner_event_panel.has_method("hide_event"):
+		banner_event_panel.hide_event()
+
 	# 赌约结算：未失血时累计额外三选一。
 	run_state.night_core_damaged = false
 	run_state.pending_extra_blessings = 0

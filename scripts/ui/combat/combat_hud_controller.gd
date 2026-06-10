@@ -266,7 +266,7 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 		_clear_detail_selection()
 	if _new_phase != GameEnums.PHASE_DAY and _selected_shop_slot_index >= 0:
 		_clear_detail_selection()
-	if _new_phase != GameEnums.PHASE_NIGHT and _combat_hud != null and _combat_hud.has_method("hide_night_affixes"):
+	if _new_phase != GameEnums.PHASE_NIGHT and _new_phase != GameEnums.PHASE_DAY and _combat_hud != null and _combat_hud.has_method("hide_night_affixes"):
 		_combat_hud.hide_night_affixes()
 	_refresh_top_hud()
 	_refresh_time_controls()
@@ -278,6 +278,7 @@ func _on_day_started(day: int) -> void:
 	_refresh_top_hud()
 	_force_wave_preview_refresh()
 	_play_level_intro(day)
+	_show_night_affix_banner()
 
 
 func _on_night_started(_day: int) -> void:
@@ -1090,10 +1091,11 @@ func _play_level_intro(day: int) -> void:
 	_combat_hud.play_level_intro(day, intro_name, String(preview.get("desc", "")))
 
 
-## 事件可能改写当晚词缀（战争赌局等），立即刷新敌情预览。
+## 事件可能改写当晚词缀（战争赌局等），立即刷新敌情预览与词缀横幅。
 func _on_random_event_triggered(_event_id: StringName, _cell: Vector2i) -> void:
 	_force_wave_preview_refresh()
 	_refresh_wave_preview()
+	_show_night_affix_banner()
 
 
 func _on_night_wave_started(wave_index: int, wave_count: int) -> void:

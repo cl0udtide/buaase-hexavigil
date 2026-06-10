@@ -1056,7 +1056,8 @@ func _format_wave_warning_text(data: Dictionary) -> String:
 	return "；".join(warnings)
 
 
-## 夜间常显的当晚词缀清单（含事件临时追加项）。白天隐藏，由 controller 驱动。
+## 当晚词缀清单（含事件临时追加项），白天与夜间常显，由 controller 驱动；
+## 仅在菜单/三选一/结算等非昼夜阶段隐藏。
 func set_night_affixes(affixes: Array) -> void:
 	_ensure_night_affix_row()
 	if _night_affix_row == null:
@@ -1072,7 +1073,7 @@ func set_night_affixes(affixes: Array) -> void:
 			continue
 		parts.append(affix_name)
 		tips.append("【%s】%s" % [affix_name, String(affix.get("desc", "")).strip_edges()])
-	_night_affix_label.text = "夜晚词缀：%s" % " · ".join(parts)
+	_night_affix_label.text = "今晚词缀：%s" % " · ".join(parts)
 	_night_affix_row.tooltip_text = "\n".join(tips)
 	_night_affix_row.visible = not parts.is_empty()
 
