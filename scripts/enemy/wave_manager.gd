@@ -185,11 +185,17 @@ func get_night_preview(template_ids: Array, affix_ids: Array = []) -> Dictionary
 	if data_repo == null or template_ids.is_empty():
 		return {}
 	var affix_cfgs: Array[Dictionary] = _load_affix_cfgs(affix_ids)
+	# 与 start_night 的压缩规则保持一致，保证两侧 wave_index 对位。
+	var clean_template_ids: Array[StringName] = []
+	for raw_id: Variant in template_ids:
+		var clean_id := StringName(raw_id)
+		if clean_id != StringName():
+			clean_template_ids.append(clean_id)
+	if clean_template_ids.is_empty():
+		return {}
 	var wave_previews: Array[Dictionary] = []
-	for wave_index in range(template_ids.size()):
-		var template_id := StringName(template_ids[wave_index])
-		if template_id == StringName():
-			continue
+	for wave_index in range(clean_template_ids.size()):
+		var template_id := clean_template_ids[wave_index]
 		var cfg: Dictionary = data_repo.get_wave_template_cfg(template_id) if data_repo.has_method("get_wave_template_cfg") else {}
 		if cfg.is_empty():
 			continue
