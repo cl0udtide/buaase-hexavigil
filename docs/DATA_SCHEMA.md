@@ -423,9 +423,11 @@ Boss 多阶段规则：
     "desc": "第一声警铃响起时，地缝里先钻出黏滑的虫群。它们不懂恐惧，只顺着灯光往核心涌来。",
     "tier": "early",
     "key_enemies": ["hound"],
-    "entries": [
-      { "time": 0.0, "enemy_id": "slime", "spawn_key": "S1", "count": 8, "interval": 0.45 },
-      { "time": 3.0, "enemy_id": "hound", "spawn_key": "S2", "count": 8, "interval": 0.55 }
+    "groups": [
+      { "time": 0.0, "enemy_id": "slime", "lane": "any", "count": 8, "interval": 0.45 },
+      { "time": 3.0, "enemy_id": "hound", "lane": "main", "count": 8, "interval": 0.55 },
+      { "time": 8.0, "enemy_id": "hound_pro", "lane": "main", "count": 2, "interval": 1.2 },
+      { "time": 13.0, "enemy_id": "lumberjack_veteran", "lane": "flank", "count": 1, "interval": 0.0 }
     ]
   },
   {
@@ -434,10 +436,10 @@ Boss 多阶段规则：
     "desc": "鼓点从黑暗深处传来，奶龙酋长被一队披甲护卫簇拥上场。它像在赴宴，沿途却只留下被踩碎的路。",
     "tier": "boss",
     "key_enemies": ["milk_dragon_chief"],
-    "entries": [
+    "groups": [
       {
         "time": 8.0,
-        "spawn_key": "S2",
+        "lane": "main",
         "count": 1,
         "interval": 0.0,
         "enemy_id": "milk_dragon_chief"
@@ -456,23 +458,23 @@ Boss 多阶段规则：
 | `desc` | `String` | 关卡预览文案，显示在右上角敌情面板和开局横幅中 |
 | `tier` | `String` | 模板分层。当前允许 `early`、`mid`、`late`、`boss` |
 | `key_enemies` | `Array[String]` | 关键敌人 ID，用于预览面板优先展示威胁点 |
-| `entries` | `Array` | 本模板的刷怪条目列表 |
+| `groups` | `Array` | 本模板的刷怪分组列表 |
 
-`entries` 中每条记录基础字段：
+`groups` 中每条记录基础字段：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `time` | `float` | 从夜晚开始后的触发时间 |
 | `enemy_id` | `String` | 敌人配置 ID；当 `enemy_choices` 有有效候选时可省略 |
-| `spawn_key` | `String` | 刷怪点逻辑名 |
+| `lane` | `String` | 进攻角色：`main`（该波主攻口）/ `flank`（非主攻口，单口时回退）/ `any`（活跃口随机）。落口由 `night_template_resolver.gd` 清晨 seeded 结算 |
 | `count` | `int` | 生成数量 |
 | `interval` | `float` | 同组敌人之间的生成间隔 |
 
-`entries` 中每条记录常用可选字段：
+`groups` 中每条记录常用可选字段：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、模板 ID 和条目序号确定选择，白天预览与夜晚实际刷怪保持一致 |
+| `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、模板 ID 和组序号确定选择，白天预览与夜晚实际刷怪保持一致 |
 
 ---
 
@@ -482,7 +484,7 @@ Boss 多阶段规则：
 
 - 定义夜晚词缀池。每晚白天开始时由 `GameController` 按 `RunState.random_seed` 与天数确定性抽取，存入 `RunState.night_affix_ids` 并在敌情预览中公示。
 - 每晚词缀数量由 `scripts/enemy/night_affix_service.gd` 的 `AFFIX_COUNT_BY_DAY` 维护（当前：第 1 夜 0 条，2-3 夜 1 条，4-5 夜 2 条，第 6 夜 1 条）。
-- 词缀只通过两个挂点生效：条目级（波次 entries 展开前变换）与个体级（`spawn_enemy` 的 `cfg_override`），结算逻辑集中在 `night_affix_service.gd`。
+- 词缀只通过两个挂点生效：条目级（波次 groups 展开前变换）与个体级（`spawn_enemy` 的 `cfg_override`），结算逻辑集中在 `night_affix_service.gd`。
 
 记录示例：
 
@@ -812,9 +814,9 @@ Boss 多阶段规则：
 ### 11.4 夜晚关卡模板
 
 - `wave_templates.json[].key_enemies[]` 引用 `enemies.json[].id`
-- `wave_templates.json[].entries[].enemy_id` 引用 `enemies.json[].id`
-- `wave_templates.json[].entries[].enemy_choices[].enemy_id` 引用 `enemies.json[].id`
-- `wave_templates.json[].entries[].spawn_key` 引用地图中的刷怪点逻辑名
+- `wave_templates.json[].groups[].enemy_id` 引用 `enemies.json[].id`
+- `wave_templates.json[].groups[].enemy_choices[].enemy_id` 引用 `enemies.json[].id`
+- `wave_templates.json[].groups[].lane` 取值 main/flank/any（见 docs/superpowers/specs/2026-06-10-dynamic-spawn-gates-design.md）
 
 ### 11.5 Buff 与事件
 
