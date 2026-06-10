@@ -55,6 +55,25 @@ func _run() -> void:
 			if event_panel.has_method("hide_event"):
 				event_panel.hide_event()
 
+	# CombatHud 侧同族泄漏：弹出/交互/悬停层必须默认可见，设置与遗物面板打开后必须真实渲染。
+	var combat_hud := game.get_node_or_null("UI/ScreenLayout/CombatHudSlot/CombatHud") as Control
+	_expect(combat_hud != null, "CombatHud exists")
+	if combat_hud != null:
+		for layer_path: String in ["PopupLayer", "InteractionLayer", "TooltipLayer", "PopupLayer/RelicPanelSlot", "PopupLayer/RelicPanelSlot/RelicPanelCenter"]:
+			var layer := combat_hud.get_node_or_null(layer_path) as Control
+			_expect(layer != null and layer.visible, "%s visible by default" % layer_path)
+		var settings_panel := combat_hud.get_node_or_null("PopupLayer/SettingsPanelSlot/AudioSettingsPanel") as Control
+		var relic_panel := combat_hud.get_node_or_null("PopupLayer/RelicPanelSlot/RelicPanelCenter/RelicPanel") as Control
+		_expect(settings_panel != null and relic_panel != null, "overlay panels exist")
+		if settings_panel != null and combat_hud.has_method("toggle_settings_panel"):
+			combat_hud.toggle_settings_panel()
+			_expect(settings_panel.is_visible_in_tree(), "settings panel renders when opened")
+			combat_hud.toggle_settings_panel()
+		if relic_panel != null and combat_hud.has_method("toggle_relic_panel"):
+			combat_hud.toggle_relic_panel()
+			_expect(relic_panel.is_visible_in_tree(), "relic panel renders when opened")
+			combat_hud.toggle_relic_panel()
+
 	# 黑市：先结算核心上限 -2，再获得一件稀有遗物；遗物可能再次影响核心上限。
 	var relics_before: int = (run_state.buffs as Array).size()
 	var deal: Dictionary = event_manager.apply_event(&"event_black_market_deal")
