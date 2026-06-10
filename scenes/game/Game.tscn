@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://b0k5dly1dtppo" path="res://scripts/core/audio_manager.gd" id="19_audio_manager"]
 [ext_resource type="Script" uid="uid://du5fca5ikd0i2" path="res://scripts/combat/covenant_manager.gd" id="20_covenant"]
 [ext_resource type="PackedScene" uid="uid://ea07qr350arq" path="res://scenes/ui/ActionPanel.tscn" id="21_ipajp"]
+[ext_resource type="Script" uid="uid://35bp8k53g7ig" path="res://scripts/core/tutorial_manager.gd" id="22_tutorial_manager"]
 [ext_resource type="PackedScene" uid="uid://b2yodajglfar0" path="res://scenes/ui/BuildPanel.tscn" id="23_esr4c"]
 [ext_resource type="PackedScene" uid="uid://c0oceoqeshmf3" path="res://scenes/ui/EventPanel.tscn" id="29_rpato"]
 [ext_resource type="PackedScene" uid="uid://d2uqqs7dick5f" path="res://scenes/ui/BlessingPanel.tscn" id="31_nqblw"]
@@ -35,6 +36,7 @@
 [ext_resource type="Texture2D" uid="uid://bve40fshc4erx" path="res://assets/ui/generated/icon_confirm.png" id="46_popup_confirm_icon"]
 [ext_resource type="Texture2D" uid="uid://776t8mbum45w" path="res://assets/ui/generated/icon_cancel.png" id="47_popup_cancel_icon"]
 [ext_resource type="Texture2D" uid="uid://roaig4s8xpiy" path="res://assets/ui/generated/icon_refresh.png" id="48_popup_refresh_icon"]
+[ext_resource type="PackedScene" uid="uid://dks4jlf2r1x6h" path="res://scenes/ui/TutorialOverlay.tscn" id="49_tutorial_overlay"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_event_choice_button_base_fit_108x32.tres" id="fit_frame_event_choice_button_base_108x32"]
 
 [node name="Game" type="Node" unique_id=327017779]
@@ -112,6 +114,9 @@ script = ExtResource("18_23kg2")
 [node name="AudioManager" type="Node" parent="Managers" unique_id=513908185]
 script = ExtResource("19_audio_manager")
 
+[node name="TutorialManager" type="Node" parent="Managers"]
+script = ExtResource("22_tutorial_manager")
+
 [node name="UI" type="CanvasLayer" parent="." unique_id=1627445374]
 
 [node name="UiAudioBinder" type="Node" parent="UI" unique_id=1862532224]
@@ -167,6 +172,10 @@ mouse_filter = 2
 
 [node name="CombatHud" parent="UI/ScreenLayout/CombatHudSlot" unique_id=298156043 instance=ExtResource("35_combat_hud")]
 z_index = 30
+layout_mode = 1
+
+[node name="TutorialOverlay" parent="UI" instance=ExtResource("49_tutorial_overlay")]
+z_index = 110
 layout_mode = 1
 
 [node name="FloatingLayer" type="Control" parent="UI" unique_id=808469509]
