@@ -21,6 +21,9 @@ var _refreshing_predeployed_units_for_night := false
 
 func _ready() -> void:
 	set_process(true)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.request_upgrade_operator_star.connect(_on_request_upgrade_operator_star)
 
 
 func _process(delta: float) -> void:
@@ -168,6 +171,27 @@ func try_sell_operator(operator_key: StringName) -> Dictionary:
 	if not run_state.has_method("sell_owned_operator"):
 		return ActionResult.err(&"SELL_UNAVAILABLE", "出售失败：运行状态不支持出售")
 	return run_state.sell_owned_operator(operator_key, _foresight_sell_refund(run_state, operator_key))
+
+
+# v1 取舍：定向升星与出售同门控，只对未部署、未冷却（ready）的干员开放。
+func try_upgrade_operator_star(operator_key: StringName) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "操作失败：运行状态不可用")
+	if is_operator_deployed(operator_key):
+		return ActionResult.err(&"OPERATOR_DEPLOYED", "升星失败：请先撤回已部署干员")
+	if is_operator_redeploying(operator_key):
+		return ActionResult.err(&"OPERATOR_COOLDOWN", "升星失败：干员正在再部署冷却中")
+	if not run_state.has_method("upgrade_owned_operator_star"):
+		return ActionResult.err(&"UPGRADE_UNAVAILABLE", "升星失败：运行状态不支持升星")
+	return run_state.upgrade_owned_operator_star(operator_key)
+
+
+func _on_request_upgrade_operator_star(operator_key: StringName) -> void:
+	var result := try_upgrade_operator_star(operator_key)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.operator_star_upgrade_result.emit(operator_key, result)
 
 
 # 远见 3 人且层数达标时，出售价改为基础价折半；否则返回 -1 用默认出售价。

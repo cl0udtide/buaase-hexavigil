@@ -9,6 +9,11 @@ const DEFAULT_CORE_HP := 10
 const DEFAULT_DEPLOY_LIMIT := 4
 const DEPLOY_LIMIT_INCREASE_DAYS := 2
 const OPERATOR_SELL_PRESTIGE := 1
+# 定向升星价目（按当前星级索引）。占位定价，刻意高于商店合成期望：应急定向通道，不是合成主路径。
+const OPERATOR_STAR_UP_COSTS := {
+	1: {"mana": 3, "prestige": 4},
+	2: {"mana": 6, "prestige": 8}
+}
 const RUN_MODE_STANDARD := &"standard"
 const RUN_MODE_TUTORIAL := &"tutorial"
 
@@ -253,6 +258,45 @@ func sell_owned_operator(operator_key: StringName, refund_override: int = -1) ->
 		"operator_key": operator_key,
 		"refund_prestige": refund
 	}, "已出售 %s，获得 %d 声望" % [display_name, refund])
+
+
+## 定向升星价格；满星（或更高）时返回空字典。
+func get_operator_star_up_cost(star: int) -> Dictionary:
+	var cost: Variant = OPERATOR_STAR_UP_COSTS.get(OperatorProgression.normalize_star(star))
+	if typeof(cost) != TYPE_DICTIONARY:
+		return {}
+	return (cost as Dictionary).duplicate()
+
+
+## 定向升星：白天消耗魔力矿+声望，把指定干员 +1 星。部署/冷却门控由 UnitManager 负责。
+func upgrade_owned_operator_star(operator_key: StringName) -> Dictionary:
+	if phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天可以升星干员")
+	var operator_info := get_owned_operator(operator_key)
+	if operator_info.is_empty():
+		return ActionResult.err(&"OPERATOR_NOT_OWNED", "升星失败：未拥有该干员")
+	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
+	var cost := get_operator_star_up_cost(star)
+	if cost.is_empty():
+		return ActionResult.err(&"STAR_MAXED", "升星失败：该干员已满星")
+	var cost_mana := int(cost.get("mana", 0))
+	var cost_prestige := int(cost.get("prestige", 0))
+	# 两种资源先整体校验再分别扣，避免只扣一半。
+	if mana < cost_mana:
+		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "升星失败：魔力矿不足")
+	if prestige < cost_prestige:
+		return ActionResult.err(&"NOT_ENOUGH_PRESTIGE", "升星失败：声望不足")
+	spend_materials(0, 0, cost_mana)
+	spend_prestige(cost_prestige)
+	_set_owned_operator_star_no_emit(operator_key, star + 1)
+	_emit_owned_roster()
+	return ActionResult.ok({
+		"operator_key": operator_key,
+		"from_star": star,
+		"to_star": star + 1,
+		"cost_mana": cost_mana,
+		"cost_prestige": cost_prestige
+	}, "%s 升至 %s" % [String(operator_info.get("name", operator_key)), OperatorProgression.format_star_label(star + 1)])
 
 
 func auto_merge_operators_for_unit(unit_id: StringName, before_merge: Callable = Callable()) -> Dictionary:
