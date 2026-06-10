@@ -266,6 +266,8 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 		_clear_detail_selection()
 	if _new_phase != GameEnums.PHASE_DAY and _selected_shop_slot_index >= 0:
 		_clear_detail_selection()
+	if _new_phase != GameEnums.PHASE_NIGHT and _combat_hud != null and _combat_hud.has_method("hide_night_affixes"):
+		_combat_hud.hide_night_affixes()
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_update_operator_cards()
@@ -280,6 +282,22 @@ func _on_day_started(day: int) -> void:
 
 func _on_night_started(_day: int) -> void:
 	_refresh_top_hud()
+	_show_night_affix_banner()
+
+
+func _show_night_affix_banner() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_night_affixes"):
+		return
+	var run_state = AppRefs.run_state()
+	var data_repo = AppRefs.data_repo()
+	if run_state == null or data_repo == null or not data_repo.has_method("get_night_affix_cfg"):
+		return
+	var affixes: Array[Dictionary] = []
+	for raw_id: Variant in (run_state.night_affix_ids as Array):
+		var cfg: Dictionary = data_repo.get_night_affix_cfg(StringName(raw_id))
+		if not cfg.is_empty():
+			affixes.append({"name": String(cfg.get("name", "")), "desc": String(cfg.get("desc", ""))})
+	_combat_hud.set_night_affixes(affixes)
 
 
 func _on_operator_card_pressed(operator_key: StringName) -> void:
