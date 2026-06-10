@@ -2,18 +2,21 @@
 
 ## 文档
 
-- [ARCHITECTURE.md](e:\资料\课程资料\大三下\软工\BUAASE-HexaVigil\docs\ARCHITECTURE.md)
+- [AGENTS.md](AGENTS.md)
+  AI 协作规范：工作原则、Git 工作流、Godot/GDScript 规范与验证命令。
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md)
   项目骨架、`Game.tscn` 运行结构、模块划分、数据归属、模块协作方式。
-- [INTERFACE.md](e:\资料\课程资料\大三下\软工\BUAASE-HexaVigil\docs\INTERFACE.md)
+- [INTERFACE.md](docs/INTERFACE.md)
   公开方法接口、`EventBus` 信号接口、UI 请求出口、模块监听关系。
-- [DATA_SCHEMA.md](e:\资料\课程资料\大三下\软工\BUAASE-HexaVigil\docs\DATA_SCHEMA.md)
+- [DATA_SCHEMA.md](docs/DATA_SCHEMA.md)
   `data/` 目录下各 JSON 配置表的结构、字段定义和引用关系。
+- [玩法循环与模块分工](docs/玩法循环与模块分工.markdown)
+  单局玩法循环（白天运营 / 夜间塔防 / 肉鸽结算）与模块分工说明。
+- [肉鸽构筑与战斗优化方案](docs/肉鸽构筑与战斗优化方案.md)
+  构筑与战斗系统的优化路线图（含 P2/P3 待办与平衡方法论）。
 - [UI_SYSTEM.md](docs/UI_SYSTEM.md)
   作战 HUD 目标风格、UI 分层规范、场景与脚本职责边界、后续重构清单。
-- [UI_ASSET_GENERATION_PROMPTS.md](docs/UI_ASSET_GENERATION_PROMPTS.md)
-  UI 资产生图提示词、源图命名、裁剪顺序与纠偏提示。
-- [UI_ASSET_REMEDIATION_GUIDE.md](docs/UI_ASSET_REMEDIATION_GUIDE.md)
-  UI 残边、青绿色廉价感、边框拉伸和安全区问题的集中对策。
+- 美术生图提示词库：[UI](docs/UI_ASSET_GENERATION_PROMPTS.md) / [角色](docs/CHARACTER_ASSET_GENERATION_PROMPTS.md) / [特效](docs/EFFECT_ASSET_GENERATION_PROMPTS.md) / [地图](docs/MAP_ASSET_GENERATION_PROMPTS.md)
 
 ## Git 协作规范
 

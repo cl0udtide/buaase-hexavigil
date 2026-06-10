@@ -638,3 +638,17 @@ Boss 特效要比普通敌人更有重量，但仍然保持战术读图：范围
 ```text
 请强化真银斩的方向性和命中反馈：主剑气是横向银白风刃，命中是银白碎裂火花。第一阶段不要生成真银斩专属攻击范围格或完整范围图，范围边界复用通用描边材质并由代码调色。保持低饱和，不要巨大白色光幕，不要真实风暴，不要角色或武器本体。
 ```
+
+## 附录：运行时特效入口
+
+接入新特效资产时，先确认走哪个入口（原 EFFECT_IMPLEMENTATION_STATUS.md 仅保留此表，逐资产实装状态以代码为准）：
+
+| 入口 | 文件 | 当前用途 |
+|---|---|---|
+| 通用一次性/循环特效节点 | `scripts/effects/one_shot_effect.gd` | 读取 `texture_path`，支持序列帧、循环、跟随目标、世界坐标、旋转和缩放；跟随目标失效时自动销毁 |
+| 干员特效接口 | `scripts/combat/unit_actor.gd` | `spawn_one_shot_effect()`、`play_follow_effect()`、`spawn_world_effect()`、投射物配置透传 |
+| 敌人特效接口 | `scripts/enemy/enemy_actor.gd` | 命中、状态、DOT、护盾、死亡、推拉、自回复、Boss/敌人技能反馈 |
+| 建筑特效接口 | `scripts/building/building_actor.gd` | 建筑受击、修复反馈 |
+| 投射物显示 | `scripts/combat/projectile.gd` | 读取 `texture_path` / `projectile_texture_path` 和尺寸配置，默认按伤害类型选贴图 |
+| 通用技能启动/结束 | `scripts/combat/skills/unit_skill_behavior.gd` | 技能成功启动和自然/主动结束时播放短反馈 |
+| 地图范围描边 | `scripts/map/map_root_view.gd` | `set_range_outline()` 按格集合计算外边界，并按 style 拼接 `assets/effects/range/` 的边线、角点、节点素材 |

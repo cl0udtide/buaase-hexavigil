@@ -211,6 +211,12 @@ UI 必须通过 `UiArtRegistry` 读取图标，读取优先级为：显式路径
 | `skill_icon_path` | `String` | 技能图标路径，优先用于技能展示 |
 | `portrait_path` | `String` | 头像路径；当前没有头像资产时可省略 |
 | `icon_text` | `String` | 图片缺失时的文本兜底 |
+| `covenants` | `Array[String]` | 该单位静态携带的盟约 tag（中文盟约名，见 `covenant_defs.gd` 的 `ORDER`）；运行时有效盟约 = 此字段 + 本局祭坛追加（`RunState.get_unit_covenants`） |
+
+为新干员分配 `covenants` 时的原则（沿自盟约系统最初设计）：
+
+- 一个干员可带 1-2 个盟约 tag，保证每个盟约的成员数量适中，不要太容易或太难凑满 2/3 人档位；
+- 结合干员特点分配：精准只给远程、坚守偏向重装、突袭给适合空降单切的干员、萨尔贡无限制；但不要一满足条件就滥发，例如不要把所有远程干员都给精准。
 
 ### 3.1 运行时干员槽位
 

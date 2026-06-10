@@ -112,7 +112,9 @@ UI 重构目标以参考图的战术 HUD 信息结构为准，但后续资产风
 
 ## 6. UI 资产生成规范
 
-具体的残边清理、色板修正、九宫格与边框拆分对策见 `docs/UI_ASSET_REMEDIATION_GUIDE.md`。本节只保留总规则；批量生图提示词和裁剪顺序见 `docs/UI_ASSET_GENERATION_PROMPTS.md`。
+残边清理、色板修正与九宫格边框拆分的历史整改已随资产管线落地（`#FF00FF` 色键、`UiFrameSpec` 九宫格切片、`UiArtRegistry` 统一解析）。本节只保留总规则；批量生图提示词和裁剪顺序见 `docs/UI_ASSET_GENERATION_PROMPTS.md`。
+
+遗留待办：遗物 UI 尚未完成视觉微调，当前在实际界面中处于隐藏状态。
 
 ### 6.1 通用要求
 
