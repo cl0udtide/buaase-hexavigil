@@ -32,6 +32,7 @@ var _current_phase := GameEnums.PHASE_MENU
 @onready var _aura_button: Button = %AuraCategoryButton
 @onready var _block_button: Button = %BlockCategoryButton
 @onready var _refresh_shop_button: Button = %RefreshShopButton
+@onready var _lock_shop_button: Button = %LockShopButton
 @onready var _message_label: Label = %PanelMessageLabel
 
 
@@ -76,6 +77,7 @@ func _bind_buttons() -> void:
 	_aura_button.pressed.connect(_select_category.bind(CATEGORY_AURA))
 	_block_button.pressed.connect(_select_category.bind(CATEGORY_BLOCK))
 	_refresh_shop_button.pressed.connect(_on_refresh_shop_pressed)
+	_lock_shop_button.pressed.connect(_on_lock_shop_pressed)
 
 
 func _select_mode(mode: StringName) -> void:
@@ -131,7 +133,19 @@ func _refresh_bottom_controls() -> void:
 	var refresh_cost := _get_shop_refresh_cost()
 	_refresh_shop_button.text = "刷新 %d 声望" % refresh_cost
 	_refresh_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY or _current_prestige < refresh_cost
+	_refresh_lock_button()
 	_refresh_category_buttons()
+
+
+func _refresh_lock_button() -> void:
+	_lock_shop_button.visible = _current_mode == MODE_SHOP
+	var slot := _get_shop_slot(_selected_shop_slot_index)
+	var locked := bool(slot.get("locked", false))
+	_lock_shop_button.text = "解锁槽位" if locked else "锁定槽位"
+	_lock_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY \
+			or slot.is_empty() \
+			or bool(slot.get("sold", false)) \
+			or StringName(slot.get("unit_id", "")) == StringName()
 
 
 func _rebuild_cards() -> void:
@@ -235,6 +249,7 @@ func _build_card_lack_reason(cfg: Dictionary) -> String:
 func _make_shop_card(slot: Dictionary) -> Control:
 	var unit_id := StringName(slot.get("unit_id", ""))
 	var sold := bool(slot.get("sold", false))
+	var locked := bool(slot.get("locked", false))
 	var slot_index := int(slot.get("slot_index", -1))
 	var cfg := _get_unit_cfg(unit_id)
 	var base_cost := int(cfg.get("cost_prestige", 0))
@@ -251,6 +266,8 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		detail = UiDisplayText.tier_label(base_cost)
 		if sold:
 			state = "已购买"
+		elif locked:
+			state = "已锁定"
 		elif _current_prestige < cost:
 			state = "声望不足"
 	var card := BuildListCardScene.instantiate() as Control
@@ -427,6 +444,14 @@ func _on_refresh_shop_pressed() -> void:
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.request_refresh_shop.emit()
+
+
+func _on_lock_shop_pressed() -> void:
+	if _selected_shop_slot_index < 0:
+		return
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.request_toggle_shop_lock.emit(_selected_shop_slot_index)
 
 
 func _refresh_selection_label() -> void:
