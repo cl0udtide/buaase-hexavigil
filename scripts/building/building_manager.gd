@@ -204,6 +204,11 @@ func try_demolish_building(building_runtime_id: int) -> Dictionary:
 		return ActionResult.err(&"BUILDING_NOT_FOUND", "操作失败：找不到目标建筑")
 	var building_id: StringName = actor.building_id
 	var cell: Vector2i = actor.get_current_cell()
+	# 高台占用保护：上面站着干员时禁止拆除，先撤回再拆。
+	if _map_manager != null and _map_manager.has_method("get_cell_data"):
+		var demolish_data: CellData = _map_manager.get_cell_data(cell)
+		if demolish_data != null and int(demolish_data.unit_runtime_id) >= 0:
+			return ActionResult.err(&"BUILDING_OCCUPIED", "无法拆除：先撤回上面的干员")
 	remove_building(building_runtime_id)
 	_debug_log("拆除建筑 %s#%d" % [String(building_id), building_runtime_id])
 	return ActionResult.ok({"runtime_id": building_runtime_id, "building_id": building_id, "cell": cell}, "建筑已拆除")
@@ -370,6 +375,12 @@ func _mark_building_destroyed(actor: Node) -> void:
 		_path_service.set_cell_blocked(cell, false)
 	_refresh_map_layers()
 	_refresh_wall_connections_around(cell)
+	# 塌台死人：摧毁时同格干员走 UNIT_REMOVE_DEAD（再部署冷却 + unit_died 事件，与战斗阵亡同语义）。
+	if _map_manager != null and _map_manager.has_method("get_cell_data"):
+		var occupant_data: CellData = _map_manager.get_cell_data(cell)
+		if occupant_data != null and int(occupant_data.unit_runtime_id) >= 0:
+			if _unit_manager != null and _unit_manager.has_method("remove_unit"):
+				_unit_manager.remove_unit(int(occupant_data.unit_runtime_id), GameEnums.UNIT_REMOVE_DEAD)
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.building_destroyed.emit(int(actor.get_runtime_id()), actor.building_id, cell)
