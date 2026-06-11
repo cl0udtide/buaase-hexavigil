@@ -8,6 +8,7 @@ const IntNoise = preload("res://scripts/map/generation/int_noise.gd")
 const MapGeneratorScript = preload("res://scripts/map/map_generator.gd")
 const CellDataRef = preload("res://scripts/map/cell_data.gd")
 const SkeletonGen = preload("res://scripts/map/generation/skeleton.gd")
+const LaneGen = preload("res://scripts/map/generation/lanes.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
@@ -23,6 +24,7 @@ func _run() -> void:
 	_test_detour_repair()
 	_test_cards_archetypes_wind()
 	_test_sector_geometry()
+	_test_lanes_protected()
 	_finish()
 
 
@@ -405,6 +407,97 @@ func _test_sector_geometry() -> void:
 	var twin_a: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][1], gates, core, _new_rng(11))
 	var twin_b: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][1], gates, core, _new_rng(11))
 	_expect(str(twin_a) == str(twin_b), "place_confluences deterministic")
+
+
+func _make_plain_cells() -> Dictionary:
+	var cells: Dictionary = MapGeneratorScript._create_plain_cells(30, 30)
+	MapGeneratorScript._setup_core_and_initial_fog(cells, Vector2i(15, 15))
+	return cells
+
+
+func _path_is_connected(path: Array[Vector2i]) -> bool:
+	for i in range(1, path.size()):
+		if absi(path[i].x - path[i - 1].x) + absi(path[i].y - path[i - 1].y) != 1:
+			return false
+	return true
+
+
+func _test_lanes_protected() -> void:
+	var cfg := _v2_cfg()
+	var core := Vector2i(15, 15)
+	var gates := _fixture_gate_cells()
+	var cells := _make_plain_cells()
+	# 车道：连通、贴图内、决定性；带检版比值上限硬、下限统计（下限硬保障在 B2-7 spur）。
+	var in_band: int = 0
+	var cases: int = 0
+	for seed_value in range(10):
+		for i in range(gates.size()):
+			var noise_seed: int = IntNoise.derive_seed(seed_value, 0, 13) + i
+			var empty_waypoints: Array[Vector2i] = []
+			var path: Array[Vector2i] = LaneGen.trace_lane_checked(cells, gates[i], empty_waypoints, core, 0.5, noise_seed)
+			cases += 1
+			_expect(not path.is_empty() and path[0] == gates[i] and path[path.size() - 1] == core, "lane endpoints (seed %d gate %d)" % [seed_value, i])
+			_expect(_path_is_connected(path), "lane 4-connected (seed %d gate %d)" % [seed_value, i])
+			var all_walkable := true
+			for raw_cell: Variant in path:
+				var data: CellData = (cells.get(raw_cell) as CellData)
+				if data == null or not data.walkable:
+					all_walkable = false
+			_expect(all_walkable, "lane cells walkable-eligible (seed %d gate %d)" % [seed_value, i])
+			var ratio: float = LaneGen.lane_ratio(path, gates[i], core)
+			_expect(ratio <= 1.6 + 0.0001, "lane ratio %.3f <= 1.6 (seed %d gate %d)" % [ratio, seed_value, i])
+			if ratio >= 1.15:
+				in_band += 1
+	# 注：plain 全通格 A* 始终取最短步数（噪声成本差不足以抵一步代价），
+	# 比值硬下限由 B2-7 spur 保证；此处仅统计打印，不做硬断言。
+	print("  lane ratio in-band: %d/%d (plain grid, floor guarantee deferred to B2-7)" % [in_band, cases])
+	var empty_wp: Array[Vector2i] = []
+	var path_a: Array[Vector2i] = LaneGen.trace_lane(cells, gates[0], empty_wp, core, 0.5, 777)
+	var path_b: Array[Vector2i] = LaneGen.trace_lane(cells, gates[0], empty_wp, core, 0.5, 777)
+	_expect(str(path_a) == str(path_b), "trace_lane deterministic")
+	# 途径点：汇流点在路径上。
+	var conf_wp: Array[Vector2i] = [Vector2i(18, 9)]
+	var via: Array[Vector2i] = LaneGen.trace_lane(cells, gates[0], conf_wp, core, 0.35, 778)
+	_expect(via.has(Vector2i(18, 9)), "waypoint on lane path")
+	# aperture 窗：尺寸 = pass_width × depth、含锚格。
+	var window: Array[Vector2i] = LaneGen.aperture_window(Vector2i(15, 8), gates[0], core, 2, 2)
+	_expect(window.size() == 4, "aperture window 2x2 cells")
+	_expect(window.has(Vector2i(15, 8)), "aperture window contains anchor")
+	# protected：车道/核心/围裙/aperture/口袋全员入集 + 类别正确 + 决定性。
+	var lanes: Dictionary = {}
+	var anchors: Dictionary = {}
+	for i in range(gates.size()):
+		var key := "S%d" % (i + 1)
+		var anchor: Vector2i = SkeletonGen.place_pass_anchor(gates[i], core, cfg["sector_cards"]["bastion"], _new_rng(40 + i))
+		var aperture: Array[Vector2i] = LaneGen.aperture_window(anchor, gates[i], core, 2, 2)
+		anchors[key] = {"cell": anchor, "pass_width": 2, "aperture": aperture}
+		var wp: Array[Vector2i] = [anchor]
+		lanes[key] = LaneGen.trace_lane_checked(cells, gates[i], wp, core, 0.35, 900 + i)
+	var protected: Dictionary = LaneGen.build_protected(lanes, core, gates, anchors, cfg)
+	for raw_key: Variant in lanes.keys():
+		for raw_cell: Variant in lanes[raw_key]:
+			_expect(protected.has(raw_cell), "lane cell protected (%s)" % str(raw_cell))
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			_expect(protected.has(core + Vector2i(dx, dy)), "core cheb<=3 protected")
+	_expect(StringName(protected.get(core, &"")) == &"core", "core category wins")
+	for i in range(gates.size()):
+		for dy in range(-2, 3):
+			for dx in range(-2, 3):
+				var apron_cell: Vector2i = gates[i] + Vector2i(dx, dy)
+				if apron_cell.x >= 0 and apron_cell.x < 30 and apron_cell.y >= 0 and apron_cell.y < 30:
+					_expect(protected.has(apron_cell), "gate apron protected (gate %d)" % i)
+	for raw_key: Variant in anchors.keys():
+		var entry: Dictionary = anchors[raw_key]
+		for raw_cell: Variant in entry["aperture"]:
+			_expect(protected.has(raw_cell), "aperture cell protected (%s)" % String(raw_key))
+		var pocket_count: int = 0
+		for raw_cell: Variant in protected.keys():
+			if StringName(protected[raw_cell]) == &"pocket" and _cheb(raw_cell, entry["cell"]) <= 4:
+				pocket_count += 1
+		_expect(pocket_count >= 4, "pocket core present near anchor (%s, got %d)" % [String(raw_key), pocket_count])
+	var protected_b: Dictionary = LaneGen.build_protected(lanes, core, gates, anchors, cfg)
+	_expect(str(protected) == str(protected_b), "build_protected deterministic")
 
 
 func _finish() -> void:
