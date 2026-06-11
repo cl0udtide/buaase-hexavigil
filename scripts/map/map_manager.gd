@@ -1,6 +1,8 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const SPAWN_POINT_SCENE := preload("res://scenes/world/SpawnPoint.tscn")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 
 const CELL_SIZE := 64.0
@@ -15,6 +17,18 @@ var _core_cell := Vector2i.ZERO
 @onready var _spawn_root: Node = get_node_or_null("../../World/SpawnRoot")
 @onready var _core_root: Node = get_node_or_null("../../World/CoreRoot")
 @onready var _random_event_manager: Node = get_node_or_null("../RandomEventManager")
+
+
+func _ready() -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus == null:
+		return
+	event_bus.day_started.connect(_on_day_started_refresh_markers)
+	event_bus.night_gate_overrides_changed.connect(_refresh_world_markers)
+
+
+func _on_day_started_refresh_markers(_day: int) -> void:
+	_refresh_world_markers()
 
 
 func generate_new_map(seed: int) -> void:
@@ -395,15 +409,49 @@ func _refresh_world_markers() -> void:
 				(child as Node2D).global_position = cell_to_world(_core_cell)
 	if _spawn_root == null:
 		return
+	var keys: Array[String] = get_spawn_keys()
+	var views_by_key: Dictionary = {}
 	for child in _spawn_root.get_children():
 		if not (child is Node2D):
 			continue
-		var spawn_key: StringName = child.get("spawn_key") if child.get("spawn_key") != null else StringName()
-		var spawn_cell := get_spawn_cell_by_key(spawn_key)
-		(child as Node2D).global_position = cell_to_world(spawn_cell)
+		var child_key := String(child.get("spawn_key")) if child.get("spawn_key") != null else ""
+		views_by_key[child_key] = child
+	for key in keys:
+		var view: Node2D = views_by_key.get(key)
+		if view == null:
+			# Game.tscn 仅预置 3 个标记节点，5 口需要动态补齐。
+			view = SPAWN_POINT_SCENE.instantiate() as Node2D
+			view.set("spawn_key", StringName(key))
+			_spawn_root.add_child(view)
+			views_by_key[key] = view
 		# 出怪口标记穿透迷雾常显（设计稿 §3.3）：格子保持未探索，仅标记可见，
 		# 探索扩展约束与事件前沿落点都依赖 discovered，不得把出怪格置为已探索。
-		(child as Node2D).visible = true
+		view.visible = true
+		view.global_position = cell_to_world(get_spawn_cell_by_key(StringName(key)))
+	for stale_key_variant: Variant in views_by_key.keys():
+		var stale_key := String(stale_key_variant)
+		if not keys.has(stale_key):
+			(views_by_key[stale_key] as Node2D).visible = false
+	_refresh_gate_marker_states(keys, views_by_key)
+
+
+func _refresh_gate_marker_states(keys: Array[String], views_by_key: Dictionary) -> void:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return
+	var closed: Array = run_state.night_gate_closed_keys
+	var extra: Array = run_state.night_gate_extra_open_keys
+	var active: Array = NightTemplateResolver.resolve_active_gates(keys, int(run_state.random_seed), int(run_state.day), closed, extra)
+	for key in keys:
+		var view: Node2D = views_by_key.get(key)
+		if view == null or not view.has_method("set_gate_state"):
+			continue
+		var badge := ""
+		if closed.has(key):
+			badge = "封"
+		elif extra.has(key):
+			badge = "开"
+		view.set_gate_state(active.has(String(key)), badge)
 
 
 func _apply_debug_spawns(spawn_defs: Dictionary) -> void:

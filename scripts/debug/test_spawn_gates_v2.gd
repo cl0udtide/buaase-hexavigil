@@ -20,6 +20,7 @@ func _run() -> void:
 	await _test_active_set_consumption()
 	await _test_player_seal()
 	await _test_gate_events()
+	await _test_markers()
 	_finish()
 
 
@@ -256,6 +257,49 @@ func _test_gate_events() -> void:
 	var opened := String(run_state.night_gate_extra_open_keys[0])
 	_expect(not active.has(opened), "wager opens a previously silent gate")
 	_expect(int(run_state.prestige) == prestige_before + 3, "wager pays prestige reward")
+	run_state.clear_night_gate_overrides()
+	game.queue_free()
+	await process_frame
+
+
+func _test_markers() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	var spawn_root := game.get_node_or_null("World/SpawnRoot")
+	if run_state == null or map_manager == null or spawn_root == null:
+		_expect(false, "boot ok for marker test")
+		game.queue_free()
+		await process_frame
+		return
+	var keys: Array = map_manager.get_spawn_keys()
+	var visible_markers: Dictionary = {}
+	for child in spawn_root.get_children():
+		if child is Node2D and (child as Node2D).visible:
+			visible_markers[String(child.get("spawn_key"))] = child
+	for raw_key: Variant in keys:
+		_expect(visible_markers.has(String(raw_key)), "marker visible for gate %s" % String(raw_key))
+	var active: Array = ResolverScript.resolve_active_gates(keys, int(run_state.random_seed), int(run_state.day), [], [])
+	for raw_key2: Variant in keys:
+		var key := String(raw_key2)
+		var marker: Node2D = visible_markers.get(key)
+		if marker == null:
+			continue
+		if active.has(key):
+			_expect(marker.modulate.a > 0.9, "active marker bright: %s" % key)
+		else:
+			_expect(marker.modulate.a < 0.9, "silent marker dimmed: %s" % key)
+	var victim := String(active[0])
+	run_state.add_night_gate_closed(victim)
+	await process_frame
+	var victim_marker: Node2D = visible_markers.get(victim)
+	_expect(victim_marker != null and victim_marker.modulate.a < 0.9, "sealed marker dimmed")
+	var label := victim_marker.get_node_or_null("%SpawnLabel") as Label
+	_expect(label != null and label.text.contains("封"), "sealed marker badge")
 	run_state.clear_night_gate_overrides()
 	game.queue_free()
 	await process_frame
