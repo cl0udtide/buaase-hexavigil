@@ -124,11 +124,15 @@ static func _place_spawns(cells: Dictionary, width: int, height: int, _core_cell
 			if _is_near_corner(cell, width, height, corner_margin):
 				continue
 			options.append(cell)
+		# 回退窗用半开区间扫整段弧（不含弧界），主窗用含端点的中部窗。
 		if options.is_empty():
 			for index in range(int(ceil(arc_start)), int(floor(arc_start + arc_len))):
 				var fallback_cell: Vector2i = perimeter[(index + phase) % total]
 				if not _is_near_corner(fallback_cell, width, height, corner_margin):
 					options.append(fallback_cell)
+		if options.is_empty():
+			push_warning("spawn arc %d has no candidates; map yields fewer gates" % arc_index)
+			continue
 		var pick: Vector2i = options[rng.randi_range(0, options.size() - 1)]
 		var spawn_data: CellData = cells[pick]
 		spawn_data.spawn_key = StringName("S%d" % (spawn_cells.size() + 1))

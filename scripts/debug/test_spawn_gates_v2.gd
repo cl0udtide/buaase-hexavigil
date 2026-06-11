@@ -4,7 +4,6 @@ extends SceneTree
 ## 运行：Godot --headless --path . --script scripts/debug/test_spawn_gates_v2.gd
 
 const MapGeneratorScript = preload("res://scripts/map/map_generator.gd")
-const ResolverScript = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
 
@@ -54,7 +53,7 @@ func _test_arc_placement() -> void:
 				gap = indices[i + 1] - indices[i]
 			else:
 				gap = perimeter_total - indices[i] + indices[0]
-			_expect(gap >= 8, "seed %d: perimeter gap %d >= 8" % [seed_value, gap])
+			_expect(gap >= 9, "seed %d: perimeter gap %d >= 9" % [seed_value, gap])
 	var first: Dictionary = MapGeneratorScript.generate(30, 30, 4242, cfg, [])
 	var second: Dictionary = MapGeneratorScript.generate(30, 30, 4242, cfg, [])
 	_expect(str(first.get("spawn_cells")) == str(second.get("spawn_cells")), "same seed same gates")
