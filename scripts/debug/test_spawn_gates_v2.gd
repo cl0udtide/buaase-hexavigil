@@ -16,6 +16,7 @@ func _init() -> void:
 func _run() -> void:
 	_test_arc_placement()
 	_test_activation()
+	await _test_overrides_lifecycle()
 	_finish()
 
 
@@ -98,6 +99,34 @@ func _test_activation() -> void:
 	var all_closed: Array = ResolverScript.resolve_active_gates(gates, 777, 1, gates)
 	_expect(all_closed.size() == 1 and String(all_closed[0]) == String(order_a[0]), "min one gate kept (order head)")
 	_expect((ResolverScript.resolve_active_gates([], 777, 1) as Array).is_empty(), "empty gates -> empty")
+
+
+func _test_overrides_lifecycle() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var game_controller := game.get_node_or_null("Managers/GameController")
+	_expect(run_state != null and game_controller != null, "boot ok for overrides test")
+	if run_state == null or game_controller == null:
+		game.queue_free()
+		await process_frame
+		return
+	run_state.add_night_gate_closed("S1")
+	run_state.add_night_gate_extra_open("S5")
+	run_state.night_gate_seals_today = 1
+	_expect((run_state.night_gate_closed_keys as Array).has("S1"), "closed recorded")
+	_expect((run_state.night_gate_extra_open_keys as Array).has("S5"), "extra recorded")
+	run_state.add_night_gate_closed("S1")
+	_expect((run_state.night_gate_closed_keys as Array).size() == 1, "closed deduped")
+	game_controller.enter_day(int(run_state.day) + 1)
+	_expect((run_state.night_gate_closed_keys as Array).is_empty(), "closed cleared at dawn")
+	_expect((run_state.night_gate_extra_open_keys as Array).is_empty(), "extra cleared at dawn")
+	_expect(int(run_state.night_gate_seals_today) == 0, "seal counter cleared at dawn")
+	game.queue_free()
+	await process_frame
 
 
 func _expect(cond: bool, msg: String) -> void:
