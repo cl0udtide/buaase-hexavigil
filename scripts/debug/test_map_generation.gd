@@ -18,6 +18,7 @@ func _init() -> void:
 func _run() -> void:
 	_test_int_noise()
 	_test_stage_stream_isolation()
+	_test_detour_repair()
 	_finish()
 
 
@@ -120,6 +121,64 @@ func _test_stage_stream_isolation() -> void:
 	var f: Dictionary = MapGeneratorScript.generate(30, 30, 9001, no_obstacles_alt, [])
 	_expect(str(e.get("spawn_cells")) == str(f.get("spawn_cells")), "obstacle cfg change keeps spawn placement")
 	_expect(_serialize_resources_only(e) == _serialize_resources_only(f), "obstacle cfg change keeps resource layout (no-obstacle baseline)")
+
+
+func _manhattan(a: Vector2i, b: Vector2i) -> int:
+	return absi(a.x - b.x) + absi(a.y - b.y)
+
+
+func _bfs_path_length(cells: Dictionary, width: int, height: int, from_cell: Vector2i, to_cell: Vector2i) -> int:
+	var queue: Array[Vector2i] = [from_cell]
+	var dist: Dictionary = {from_cell: 0}
+	var head: int = 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		if current == to_cell:
+			return int(dist[current])
+		for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+			var neighbor: Vector2i = current + direction
+			if neighbor.x < 0 or neighbor.x >= width or neighbor.y < 0 or neighbor.y >= height:
+				continue
+			if dist.has(neighbor):
+				continue
+			var data: CellData = cells.get(neighbor)
+			if data == null or not data.walkable:
+				continue
+			dist[neighbor] = int(dist[current]) + 1
+			queue.append(neighbor)
+	return -1
+
+
+func _test_detour_repair() -> void:
+	var cfg := {
+		"spawn_count": 5,
+		"resources_per_type": 12,
+		"event_point_count": 0,
+		"obstacle_ratio": 0.24,
+		"min_obstacle_count": 190,
+		"max_obstacle_count": 220,
+		"detour_cap": 1.6,
+		"max_repair_rounds": 3,
+	}
+	var worst_ratio: float = 0.0
+	for seed_value in range(7000, 7015):
+		var generated: Dictionary = MapGeneratorScript.generate(30, 30, seed_value, cfg, [])
+		var cells: Dictionary = generated.get("cells", {})
+		var core_cell: Vector2i = generated.get("core_cell", Vector2i.ZERO)
+		for raw_spawn: Variant in generated.get("spawn_cells", []):
+			var spawn_cell: Vector2i = raw_spawn
+			var path_len: int = _bfs_path_length(cells, 30, 30, spawn_cell, core_cell)
+			_expect(path_len > 0, "seed %d: gate connected" % seed_value)
+			if path_len <= 0:
+				continue
+			var ratio: float = float(path_len) / float(maxi(_manhattan(spawn_cell, core_cell), 1))
+			worst_ratio = maxf(worst_ratio, ratio)
+			_expect(ratio <= 1.6 + 0.0001, "seed %d: detour ratio %.3f <= 1.6" % [seed_value, ratio])
+	print("  detour worst ratio: %.3f" % worst_ratio)
+	var a: Dictionary = MapGeneratorScript.generate(30, 30, 7000, cfg, [])
+	var b: Dictionary = MapGeneratorScript.generate(30, 30, 7000, cfg, [])
+	_expect(_serialize_terrain(a) == _serialize_terrain(b), "repair keeps determinism")
 
 
 func _finish() -> void:

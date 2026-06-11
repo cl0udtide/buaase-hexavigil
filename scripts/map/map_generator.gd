@@ -62,6 +62,7 @@ static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = 
 	_setup_core_and_initial_fog(cells, core_cell)
 	var spawn_cells := _place_spawns(cells, width, height, core_cell, _stage_rng(actual_seed, STAGE_SPAWNS), cfg)
 	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, _stage_rng(actual_seed, STAGE_OBSTACLES), cfg)
+	_repair_gate_detours(cells, width, height, spawn_cells, core_cell, cfg)
 	_place_resources(cells, width, height, spawn_cells, core_cell, _stage_rng(actual_seed, STAGE_RESOURCES), cfg)
 	var event_points := _place_event_points(cells, width, height, spawn_cells, core_cell, _stage_rng(actual_seed, STAGE_EVENTS), cfg, event_ids)
 
@@ -619,3 +620,72 @@ static func _shuffle_cells(cells: Array[Vector2i], rng: RandomNumberGenerator) -
 		var temp: Vector2i = cells[i]
 		cells[i] = cells[swap_index]
 		cells[swap_index] = temp
+
+
+## 绕路上限修复（设计稿 S6②）：每口真实 BFS 路长 / 曼哈顿 > detour_cap 时，
+## 双 BFS 选最优破墙格开凿（min(邻 dist_gate)+1+min(邻 dist_core) 最小、并列取 (y,x) 序）。
+## 每口 ≤ max_repair_rounds 轮；开凿格恢复平原，读作天然垭口。纯确定性，无 RNG。
+static func _repair_gate_detours(cells: Dictionary, width: int, height: int, spawn_cells: Array[Vector2i], core_cell: Vector2i, cfg: Dictionary) -> void:
+	var detour_cap: float = float(cfg.get("detour_cap", 1.6))
+	var max_rounds: int = maxi(int(cfg.get("max_repair_rounds", 3)), 0)
+	for spawn_cell in spawn_cells:
+		for _round in range(max_rounds):
+			var dist_gate: Dictionary = _bfs_distances(cells, width, height, spawn_cell)
+			var path_len: int = int(dist_gate.get(core_cell, -1))
+			var manhattan_len: int = maxi(absi(spawn_cell.x - core_cell.x) + absi(spawn_cell.y - core_cell.y), 1)
+			if path_len > 0 and float(path_len) / float(manhattan_len) <= detour_cap:
+				break
+			var dist_core: Dictionary = _bfs_distances(cells, width, height, core_cell)
+			var best_cell := Vector2i(-1, -1)
+			var best_score: int = 1 << 30
+			for y in range(height):
+				for x in range(width):
+					var cell := Vector2i(x, y)
+					var data: CellData = cells.get(cell)
+					if data == null or data.walkable or data.spawn_key != StringName() or data.is_core or data.resource_type != StringName():
+						continue
+					var gate_side: int = _min_neighbor_distance(dist_gate, cell)
+					var core_side: int = _min_neighbor_distance(dist_core, cell)
+					if gate_side < 0 or core_side < 0:
+						continue
+					var score: int = gate_side + 1 + core_side
+					if score < best_score:
+						best_score = score
+						best_cell = cell
+			if best_cell.x < 0:
+				break
+			var carved: CellData = cells[best_cell]
+			carved.set_base_terrain(CellData.TERRAIN_PLAIN)
+
+
+static func _bfs_distances(cells: Dictionary, width: int, height: int, origin: Vector2i) -> Dictionary:
+	var dist: Dictionary = {origin: 0}
+	var queue: Array[Vector2i] = [origin]
+	var head: int = 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		for direction in CARDINAL_DIRECTIONS:
+			var neighbor: Vector2i = current + direction
+			if neighbor.x < 0 or neighbor.x >= width or neighbor.y < 0 or neighbor.y >= height:
+				continue
+			if dist.has(neighbor):
+				continue
+			var data: CellData = cells.get(neighbor)
+			if data == null or not data.walkable:
+				continue
+			dist[neighbor] = int(dist[current]) + 1
+			queue.append(neighbor)
+	return dist
+
+
+static func _min_neighbor_distance(dist: Dictionary, cell: Vector2i) -> int:
+	var best: int = -1
+	for direction in CARDINAL_DIRECTIONS:
+		var neighbor: Vector2i = cell + direction
+		if not dist.has(neighbor):
+			continue
+		var value: int = int(dist[neighbor])
+		if best < 0 or value < best:
+			best = value
+	return best
