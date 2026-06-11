@@ -9,6 +9,7 @@ const MapGeneratorScript = preload("res://scripts/map/map_generator.gd")
 const CellDataRef = preload("res://scripts/map/cell_data.gd")
 const SkeletonGen = preload("res://scripts/map/generation/skeleton.gd")
 const LaneGen = preload("res://scripts/map/generation/lanes.gd")
+const FleshGen = preload("res://scripts/map/generation/flesh.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
@@ -25,6 +26,7 @@ func _run() -> void:
 	_test_cards_archetypes_wind()
 	_test_sector_geometry()
 	_test_lanes_protected()
+	_test_ridge_growth()
 	_finish()
 
 
@@ -498,6 +500,113 @@ func _test_lanes_protected() -> void:
 		_expect(pocket_count >= 4, "pocket core present near anchor (%s, got %d)" % [String(raw_key), pocket_count])
 	var protected_b: Dictionary = LaneGen.build_protected(lanes, core, gates, anchors, cfg)
 	_expect(str(protected) == str(protected_b), "build_protected deterministic")
+
+
+## 跑真实模块组装 skeleton 上下文（编排器-lite，B2-10 的可执行规格）。
+## cards: gate_key→card_id 直接指定（绕过发牌，便于按牌构造场景）。
+func _build_skeleton_fixture(seed_value: int, cards: Dictionary) -> Dictionary:
+	var cfg := _v2_cfg()
+	var cells := _make_plain_cells()
+	var core := Vector2i(15, 15)
+	var gate_cells := _fixture_gate_cells()
+	var spawn_cells: Array[Vector2i] = []
+	var gate_map: Dictionary = {}
+	var gate_keys: Array = []
+	for i in range(gate_cells.size()):
+		var key := "S%d" % (i + 1)
+		var data: CellData = cells[gate_cells[i]]
+		data.spawn_key = StringName(key)
+		data.buildable = false
+		spawn_cells.append(gate_cells[i])
+		gate_map[key] = gate_cells[i]
+		gate_keys.append(key)
+	var sector_of: Dictionary = SkeletonGen.assign_sectors(30, 30, gate_cells)
+	var anchors: Dictionary = {}
+	var lanes: Dictionary = {}
+	var geom_rng := _new_rng(IntNoise.derive_seed(seed_value, 0, 12))
+	var lane_seed: int = IntNoise.derive_seed(seed_value, 0, 13)
+	for i in range(gate_cells.size()):
+		var key := "S%d" % (i + 1)
+		var card_cfg: Dictionary = cfg["sector_cards"][String(cards.get(key, "bastion"))]
+		var anchor: Vector2i = SkeletonGen.place_pass_anchor(gate_map[key], core, card_cfg, geom_rng)
+		var aperture: Array[Vector2i] = LaneGen.aperture_window(anchor, gate_map[key], core, int(card_cfg.get("pass_width", 2)), int(cfg["pass"]["aperture_depth"]))
+		anchors[key] = {"cell": anchor, "pass_width": int(card_cfg.get("pass_width", 2)), "aperture": aperture}
+		var waypoints: Array[Vector2i] = [anchor]
+		lanes[key] = LaneGen.trace_lane_checked(cells, gate_map[key], waypoints, core, float(card_cfg.get("jitter_amp", 0.35)), IntNoise.squirrel3(i, lane_seed))
+	var protected: Dictionary = LaneGen.build_protected(lanes, core, gate_cells, anchors, cfg)
+	return {
+		"cells": cells,
+		"protected": protected,
+		"skeleton": {
+			"width": 30, "height": 30, "core": core,
+			"gate_keys": gate_keys, "gate_cells": gate_map, "spawn_cells": spawn_cells,
+			"cards": cards, "card_cfgs": cfg["sector_cards"],
+			"archetype": {"id": "fixture", "ratio_band": [0.20, 0.26]},
+			"wind": Vector2i(1, 0), "sector_of": sector_of,
+			"anchors": anchors, "confluences": [], "lanes": lanes, "fords": {},
+			"conservative": false, "cfg": cfg,
+		},
+	}
+
+
+func _count_terrain(cells: Dictionary, terrain: StringName) -> int:
+	var count: int = 0
+	for raw_cell: Variant in cells.keys():
+		if (cells[raw_cell] as CellData).terrain == terrain:
+			count += 1
+	return count
+
+
+func _test_ridge_growth() -> void:
+	var carded := {"S1": "bastion", "S2": "canyon", "S3": "steppe", "S4": "riverlands", "S5": "bastion"}
+	var fx := _build_skeleton_fixture(2024, carded)
+	var cells: Dictionary = fx["cells"]
+	var skeleton: Dictionary = fx["skeleton"]
+	var protected: Dictionary = fx["protected"]
+	var ledger: Dictionary = FleshGen.make_ledger(skeleton["cfg"], skeleton["archetype"], carded, 30, 30)
+	_expect(int(ledger.get("target", 0)) >= 180 and int(ledger.get("target", 0)) <= 230, "ledger target ~= band mid x cells (got %d)" % int(ledger.get("target", 0)))
+	_expect((ledger.get("sector_quota", {}) as Dictionary).size() == 5, "per-sector quota present")
+	FleshGen.grow_ridges(cells, skeleton, protected, _new_rng(IntNoise.derive_seed(2024, 0, 14)), ledger)
+	var mountains: int = _count_terrain(cells, CellDataRef.TERRAIN_MOUNTAIN)
+	_expect(mountains >= 20, "carded borders grew ridges (mountains=%d)" % mountains)
+	# protected/aperture 不被触碰。
+	for raw_cell: Variant in protected.keys():
+		var data: CellData = cells[raw_cell]
+		_expect(data.terrain != CellDataRef.TERRAIN_MOUNTAIN, "protected cell %s untouched" % str(raw_cell))
+	# 连通不变式（_try_apply 保证）。
+	_expect(MapGeneratorScript._are_all_spawns_connected(cells, 30, 30, skeleton["spawn_cells"], skeleton["core"]), "all gates connected after ridges")
+	# 台账：applied 与实际山数一致、requested ≥ applied。
+	_expect(int(ledger.get("applied", -1)) == mountains, "ledger applied == painted mountains")
+	_expect(int(ledger.get("requested", 0)) >= int(ledger.get("applied", 0)), "ledger requested >= applied")
+	# 峡谷双脊：canyon 扇区车道走廊段两侧均有山。
+	var canyon_gate: Vector2i = skeleton["gate_cells"]["S2"]
+	var axis: Vector2i = skeleton["core"] - canyon_gate
+	var left: int = 0
+	var right: int = 0
+	for raw_cell: Variant in cells.keys():
+		var cell: Vector2i = raw_cell
+		if String(skeleton["sector_of"].get(cell, "")) != "S2":
+			continue
+		if (cells[cell] as CellData).terrain != CellDataRef.TERRAIN_MOUNTAIN:
+			continue
+		var rel: Vector2i = cell - canyon_gate
+		var cross: int = axis.x * rel.y - axis.y * rel.x
+		if cross > 0:
+			left += 1
+		elif cross < 0:
+			right += 1
+	_expect(left >= 3 and right >= 3, "canyon double ridge flanks lane (L=%d R=%d)" % [left, right])
+	# 全开阔/河谷 → 零边界山。
+	var soft := {"S1": "steppe", "S2": "steppe", "S3": "steppe", "S4": "riverlands", "S5": "riverlands"}
+	var fx2 := _build_skeleton_fixture(2025, soft)
+	var ledger2: Dictionary = FleshGen.make_ledger(fx2["skeleton"]["cfg"], fx2["skeleton"]["archetype"], soft, 30, 30)
+	FleshGen.grow_ridges(fx2["cells"], fx2["skeleton"], fx2["protected"], _new_rng(1), ledger2)
+	_expect(_count_terrain(fx2["cells"], CellDataRef.TERRAIN_MOUNTAIN) == 0, "no carded sector -> no border ridges")
+	# 决定性。
+	var fx3 := _build_skeleton_fixture(2024, carded)
+	var ledger3: Dictionary = FleshGen.make_ledger(fx3["skeleton"]["cfg"], fx3["skeleton"]["archetype"], carded, 30, 30)
+	FleshGen.grow_ridges(fx3["cells"], fx3["skeleton"], fx3["protected"], _new_rng(IntNoise.derive_seed(2024, 0, 14)), ledger3)
+	_expect(_serialize_obstacles_only({"cells": fx3["cells"]}) == _serialize_obstacles_only({"cells": cells}), "grow_ridges deterministic")
 
 
 func _finish() -> void:
