@@ -194,6 +194,7 @@ func _connect_events() -> void:
 		event_bus.covenants_changed.connect(_on_covenants_changed)
 		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
 		event_bus.night_gate_overrides_changed.connect(_refresh_active_gates_line)
+		event_bus.night_gate_overrides_changed.connect(_queue_wave_preview_refresh)
 		event_bus.path_grid_changed.connect(_on_path_grid_changed)
 		event_bus.building_placed.connect(_on_building_changed)
 		event_bus.building_destroyed.connect(_on_building_changed)
