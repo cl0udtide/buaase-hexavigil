@@ -624,8 +624,27 @@ static func slider_fill() -> StyleBox:
 	return frame_box(UiFrameSpec.SLIDER_FILL, ACCENT_SOFT, ACCENT, false)
 
 
+# HSlider 的 grabber 图标按纹理原生尺寸绘制，无法经主题缩放；
+# 原始拖柄素材为 236x119，必须降采样到与轨道协调的高度后再交给主题。
+const SLIDER_HANDLE_HEIGHT := 26
+
+static var _slider_handle_scaled: Texture2D = null
+
+
 static func slider_handle() -> Texture2D:
-	return UiArtRegistry.get_frame_texture(UiFrameSpec.SLIDER_HANDLE)
+	if _slider_handle_scaled != null:
+		return _slider_handle_scaled
+	var texture := UiArtRegistry.get_frame_texture(UiFrameSpec.SLIDER_HANDLE)
+	if texture == null:
+		return null
+	var image := texture.get_image()
+	if image == null or image.get_height() <= SLIDER_HANDLE_HEIGHT:
+		_slider_handle_scaled = texture
+		return _slider_handle_scaled
+	var target_width := maxi(1, int(round(image.get_width() * SLIDER_HANDLE_HEIGHT / float(image.get_height()))))
+	image.resize(target_width, SLIDER_HANDLE_HEIGHT, Image.INTERPOLATE_LANCZOS)
+	_slider_handle_scaled = ImageTexture.create_from_image(image)
+	return _slider_handle_scaled
 
 
 static func apply_scroll_style(scroll: ScrollContainer) -> void:

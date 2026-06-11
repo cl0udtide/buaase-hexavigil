@@ -1,6 +1,7 @@
 extends Control
 
 const GameplaySettings = preload("res://scripts/core/gameplay_settings.gd")
+const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 signal close_requested
@@ -25,6 +26,7 @@ func _ready() -> void:
 	_audio_manager = _resolve_audio_manager()
 	if _close_button != null:
 		_close_button.pressed.connect(func() -> void: close_requested.emit())
+	_apply_slider_handles()
 	_bind_sliders()
 	_bind_auto_skill_toggle()
 	refresh_from_audio_manager()
@@ -74,6 +76,18 @@ func toggle_panel() -> void:
 		hide_panel()
 	else:
 		show_panel()
+
+
+## 场景里 grabber 直接引用了原始素材（236x119），grabber 图标按纹理原生尺寸绘制；
+## 这里统一换成 GameUiStyle 降采样后的手柄，避免拖柄盖住整行。
+func _apply_slider_handles() -> void:
+	var handle := GameUiStyle.slider_handle()
+	if handle == null:
+		return
+	for slider in [_master_slider, _music_slider, _sfx_slider]:
+		slider.add_theme_icon_override("grabber", handle)
+		slider.add_theme_icon_override("grabber_highlight", handle)
+		slider.add_theme_icon_override("grabber_pressed", handle)
 
 
 func _bind_sliders() -> void:

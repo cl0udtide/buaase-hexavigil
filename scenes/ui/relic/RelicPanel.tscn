@@ -6,7 +6,7 @@
 
 [node name="RelicPanel" type="Control" unique_id=1252642806]
 visible = false
-custom_minimum_size = Vector2(668, 430)
+custom_minimum_size = Vector2(900, 640)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_fyr10")
@@ -28,10 +28,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
 [node name="Content" type="VBoxContainer" parent="ContentMargin" unique_id=290667162]
 unique_name_in_owner = true

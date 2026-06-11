@@ -120,7 +120,7 @@ func _refresh_detail() -> void:
 	var data_repo = AppRefs.data_repo()
 	var cfg: Dictionary = data_repo.get_buff_cfg(_selected_buff_id) if data_repo != null else {}
 	_detail_title_label.text = UiDisplayText.config_name(cfg, _selected_buff_id)
-	_detail_meta_label.text = "%s 路 %s" % [
+	_detail_meta_label.text = "%s · %s" % [
 		UiDisplayText.relic_rarity_label(int(cfg.get("rarity", 1))),
 		UiDisplayText.relic_tag_text(cfg)
 	]
