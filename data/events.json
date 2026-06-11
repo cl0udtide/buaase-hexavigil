@@ -351,5 +351,67 @@
       "mana": 0,
       "prestige": 4
     }
+  },
+  {
+    "id": "event_landslide_contract",
+    "name": "塌方契约",
+    "desc": "工兵头目敲了敲手里的爆破筒：“看见那些口子了吗？给点魔力矿当工钱，今晚我让其中一个塌得严严实实。”",
+    "effect_type": "contract",
+    "choices": []
+  },
+  {
+    "id": "event_landslide_leave",
+    "name": "塌方契约",
+    "desc": "你婉拒了。工兵耸耸肩，收起了家伙。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true
+  },
+  {
+    "id": "event_gate_wager",
+    "name": "开口赌约",
+    "desc": "斥候压低声音：“东面有条暗道，敌人还没发现。要是我们故意把它捅开，今晚会更难——但乱中取利，报酬丰厚。”",
+    "effect_type": "contract",
+    "max_day": 6,
+    "choices": [
+      {
+        "id": "accept",
+        "text": "捅开暗道",
+        "kind": "primary",
+        "event_id": "event_gate_wager_accept",
+        "effect_desc": "今晚一个沉默出怪口提前开放；立即获得 3 声望与 2 魔力矿。"
+      },
+      {
+        "id": "decline",
+        "text": "保持隐蔽",
+        "kind": "secondary",
+        "event_id": "event_gate_wager_decline",
+        "effect_desc": "不冒这个险。"
+      }
+    ]
+  },
+  {
+    "id": "event_gate_wager_accept",
+    "name": "开口赌约",
+    "desc": "巨石滚落，暗道洞开。远处传来兴奋的嚎叫。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "payload": {
+      "wood": 0,
+      "stone": 0,
+      "mana": 2,
+      "prestige": 3
+    },
+    "effects": [
+      {
+        "type": "gate_open_extra_tonight"
+      }
+    ]
+  },
+  {
+    "id": "event_gate_wager_decline",
+    "name": "开口赌约",
+    "desc": "斥候点点头，把地图塞回了怀里。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true
   }
 ]
