@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_stage_stream_isolation()
 	_test_detour_repair()
 	_test_cards_archetypes_wind()
+	_test_sector_geometry()
 	_finish()
 
 
@@ -329,6 +330,81 @@ func _test_cards_archetypes_wind() -> void:
 	var wind: Vector2i = SkeletonGen.roll_wind(_new_rng(5))
 	_expect(wind != Vector2i.ZERO and absi(wind.x) <= 1 and absi(wind.y) <= 1, "wind is one of 8 compass dirs")
 	_expect(SkeletonGen.roll_wind(_new_rng(5)) == wind, "roll_wind deterministic")
+
+
+func _fixture_gate_cells() -> Array[Vector2i]:
+	# 30×30 合成门位（角度互异、贴边、非角落）；S1..S5 = 下标+1。
+	var gates: Array[Vector2i] = [Vector2i(15, 0), Vector2i(29, 9), Vector2i(24, 29), Vector2i(6, 29), Vector2i(0, 13)]
+	return gates
+
+
+func _cheb(a: Vector2i, b: Vector2i) -> int:
+	return maxi(absi(a.x - b.x), absi(a.y - b.y))
+
+
+func _sector_component_ratio(sector_of: Dictionary, gate: Vector2i, key: String) -> float:
+	var total: int = 0
+	for raw_cell: Variant in sector_of.keys():
+		if String(sector_of[raw_cell]) == key:
+			total += 1
+	var queue: Array[Vector2i] = [gate]
+	var seen: Dictionary = {gate: true}
+	var head: int = 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+			var nb: Vector2i = current + direction
+			if seen.has(nb) or not sector_of.has(nb):
+				continue
+			if String(sector_of[nb]) != key:
+				continue
+			seen[nb] = true
+			queue.append(nb)
+	return float(seen.size()) / float(maxi(total, 1))
+
+
+func _test_sector_geometry() -> void:
+	var cfg := _v2_cfg()
+	var core := Vector2i(15, 15)
+	var gates := _fixture_gate_cells()
+	var sector_of: Dictionary = SkeletonGen.assign_sectors(30, 30, gates)
+	_expect(sector_of.size() == 900, "every cell assigned a sector")
+	for i in range(gates.size()):
+		var key := "S%d" % (i + 1)
+		_expect(String(sector_of.get(gates[i], "")) == key, "gate %s lies in own sector" % key)
+		var ratio := _sector_component_ratio(sector_of, gates[i], key)
+		_expect(ratio >= 0.95, "sector %s contiguous (gate component %.2f)" % [key, ratio])
+	_expect(str(SkeletonGen.assign_sectors(30, 30, gates)) == str(sector_of), "assign_sectors deterministic")
+	# 隘口锚：环带内 + 本扇区内 + 决定性。
+	for seed_value in range(40):
+		for i in range(gates.size()):
+			for card_id in ["bastion", "steppe", "riverlands", "canyon"]:
+				var card_cfg: Dictionary = cfg["sector_cards"][card_id]
+				var anchor: Vector2i = SkeletonGen.place_pass_anchor(gates[i], core, card_cfg, _new_rng(seed_value * 100 + i))
+				var ring: int = _cheb(anchor, core)
+				var band: Array = card_cfg["pass_ring"]
+				_expect(ring >= int(band[0]) and ring <= int(band[1]), "anchor ring %d in band %s (seed %d card %s)" % [ring, str(band), seed_value, card_id])
+				_expect(String(sector_of.get(anchor, "")) == "S%d" % (i + 1), "anchor in own sector (seed %d gate %d card %s)" % [seed_value, i, card_id])
+	var anchor_a: Vector2i = SkeletonGen.place_pass_anchor(gates[0], core, cfg["sector_cards"]["bastion"], _new_rng(3))
+	var anchor_b: Vector2i = SkeletonGen.place_pass_anchor(gates[0], core, cfg["sector_cards"]["bastion"], _new_rng(3))
+	_expect(anchor_a == anchor_b, "place_pass_anchor deterministic")
+	# 汇流点：拓扑数量 + 环带 5-7 + 决定性。
+	for seed_value in range(20):
+		var none: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][0], gates, core, _new_rng(seed_value))
+		_expect(none.is_empty(), "five_fingers has no confluence (seed %d)" % seed_value)
+		var twin: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][1], gates, core, _new_rng(seed_value))
+		_expect(twin.size() == 2, "twin_pincers has 2 confluences (seed %d)" % seed_value)
+		var tri: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][2], gates, core, _new_rng(seed_value))
+		_expect(tri.size() == 3, "trident has 3 confluences (seed %d)" % seed_value)
+		for raw_conf: Variant in twin + tri:
+			var conf: Dictionary = raw_conf
+			var conf_ring: int = _cheb(conf.get("cell", core), core)
+			_expect(conf_ring >= 5 and conf_ring <= 7, "confluence ring %d in [5,7] (seed %d)" % [conf_ring, seed_value])
+			_expect((conf.get("gate_cells", []) as Array).size() >= 1, "confluence carries gate mapping (seed %d)" % seed_value)
+	var twin_a: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][1], gates, core, _new_rng(11))
+	var twin_b: Array[Dictionary] = SkeletonGen.place_confluences(cfg["archetypes"][1], gates, core, _new_rng(11))
+	_expect(str(twin_a) == str(twin_b), "place_confluences deterministic")
 
 
 func _finish() -> void:
