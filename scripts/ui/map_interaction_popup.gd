@@ -2,8 +2,11 @@ extends PanelContainer
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 const EVENT_TRIGGER_AP_COST := 2
+const GATE_SEAL_STONE_COST := 4
+const GATE_SEAL_AP_COST := 6
 const RESOURCE_COLLECT_AP_COST := 1
 const WOOD_RESOURCE_COLLECT_AMOUNT := 2
 const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
@@ -13,6 +16,9 @@ const INVALID_CELL := Vector2i(-1, -1)
 
 var _current_cell := INVALID_CELL
 var _current_phase := GameEnums.PHASE_MENU
+var _gate_section: VBoxContainer = null
+var _gate_info_label: Label = null
+var _gate_seal_button: Button = null
 
 @onready var _title_label: Label = %TitleLabel
 @onready var _event_section: VBoxContainer = %EventSection
@@ -94,7 +100,22 @@ func _refresh_content() -> bool:
 	var map_manager := _get_map_manager()
 	if map_manager == null or not map_manager.has_method("get_cell_data"):
 		return false
-	if not map_manager.is_inside(_current_cell) or not map_manager.is_discovered(_current_cell):
+	if not map_manager.is_inside(_current_cell):
+		return false
+	# 出怪口格永不探索但标记常显，封堵入口必须先于 discovered 检查。
+	var gate_key := StringName()
+	if map_manager.has_method("get_spawn_key_at_cell"):
+		gate_key = map_manager.get_spawn_key_at_cell(_current_cell)
+	if gate_key != StringName():
+		_title_label.text = "出怪口 %s" % String(gate_key)
+		_event_section.visible = false
+		_resource_section.visible = false
+		_building_section.visible = false
+		_clear_building_range_preview()
+		_refresh_gate_section(String(gate_key))
+		return true
+	_set_gate_section_visible(false)
+	if not map_manager.is_discovered(_current_cell):
 		return false
 	var data: CellData = map_manager.get_cell_data(_current_cell)
 	if data == null:
@@ -163,6 +184,81 @@ func _refresh_building_section(building: Node) -> void:
 	_toggle_button.disabled = _current_phase != GameEnums.PHASE_DAY
 	if _building_action_flow != null:
 		_building_action_flow.visible = _repair_button.visible or _demolish_button.visible or _toggle_button.visible
+
+
+func _ensure_gate_section() -> void:
+	if _gate_section != null:
+		return
+	var content := get_node_or_null("ContentMargin/VBoxContainer") as VBoxContainer
+	if content == null:
+		return
+	_gate_section = VBoxContainer.new()
+	_gate_section.name = "GateSection"
+	_gate_info_label = Label.new()
+	_gate_info_label.name = "GateInfoLabel"
+	_gate_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_gate_section.add_child(_gate_info_label)
+	_gate_seal_button = Button.new()
+	_gate_seal_button.name = "GateSealButton"
+	_gate_seal_button.text = "封堵一晚（石 %d · 行动力 %d）" % [GATE_SEAL_STONE_COST, GATE_SEAL_AP_COST]
+	_gate_seal_button.pressed.connect(_on_seal_gate_pressed)
+	_gate_section.add_child(_gate_seal_button)
+	content.add_child(_gate_section)
+	content.move_child(_gate_section, 1)
+
+
+func _set_gate_section_visible(value: bool) -> void:
+	if _gate_section != null:
+		_gate_section.visible = value
+
+
+func _refresh_gate_section(gate_key: String) -> void:
+	_ensure_gate_section()
+	if _gate_section == null:
+		return
+	_gate_section.visible = true
+	var run_state = AppRefs.run_state()
+	var day_manager := _get_day_manager()
+	var status_lines: Array[String] = []
+	var can_seal := false
+	var reason := ""
+	if run_state == null or day_manager == null or not day_manager.has_method("try_seal_spawn_gate"):
+		reason = "封堵功能不可用"
+	else:
+		var map_manager := _get_map_manager()
+		var keys: Array = map_manager.get_spawn_keys() if map_manager != null and map_manager.has_method("get_spawn_keys") else []
+		var active: Array = NightTemplateResolver.resolve_active_gates(keys, int(run_state.random_seed), int(run_state.day), run_state.night_gate_closed_keys, run_state.night_gate_extra_open_keys)
+		var is_active: bool = active.has(gate_key)
+		status_lines.append("今晚状态：%s" % ("活跃" if is_active else "沉默"))
+		if (run_state.night_gate_closed_keys as Array).has(gate_key):
+			status_lines.append("已封堵一晚，黎明解封")
+		if not is_active:
+			reason = "沉默口无需封堵"
+		elif active.size() <= 1:
+			reason = "至少保留一个活跃口"
+		elif int(run_state.night_gate_seals_today) >= 1:
+			reason = "今天已封堵过出怪口"
+		elif int(run_state.stone) < GATE_SEAL_STONE_COST:
+			reason = "石材不足"
+		elif int(run_state.action_points) < GATE_SEAL_AP_COST:
+			reason = "行动力不足"
+		else:
+			can_seal = true
+	status_lines.append("封堵后总刷怪量不变，怪物改道其他活跃口。")
+	if not reason.is_empty():
+		status_lines.append(reason)
+	_gate_info_label.text = "\n".join(status_lines)
+	_gate_seal_button.disabled = not can_seal or _current_phase != GameEnums.PHASE_DAY
+	_gate_seal_button.visible = true
+
+
+func _on_seal_gate_pressed() -> void:
+	var day_manager := _get_day_manager()
+	if day_manager == null or not day_manager.has_method("try_seal_spawn_gate"):
+		return
+	var result: Dictionary = day_manager.try_seal_spawn_gate(_current_cell)
+	_message_label.text = String(result.get("message", ""))
+	_refresh_or_hide()
 
 
 func _make_title(data: CellData, building: Node) -> String:

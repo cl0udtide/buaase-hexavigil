@@ -123,6 +123,7 @@ var _wave_warning_row: Control
 var _wave_warning_label: Label
 var _night_affix_row: PanelContainer
 var _night_affix_label: Label
+var _active_gates_line: Label = null
 var _wave_preview_available := false
 var _right_detail_active := false
 var _level_intro_banner: Control
@@ -1081,6 +1082,21 @@ func set_night_affixes(affixes: Array) -> void:
 func hide_night_affixes() -> void:
 	if _night_affix_row != null:
 		_night_affix_row.visible = false
+
+
+## 今晚活跃口一行（含已封堵后缀），挂在波次卡片容器的父节点上，重建卡片不会清掉它。
+func set_active_gates_line(text: String) -> void:
+	if _active_gates_line == null:
+		if _wave_spawn_cards_box == null:
+			return
+		var host := _wave_spawn_cards_box.get_parent() as Control
+		if host == null:
+			return
+		_active_gates_line = _make_wave_label("ActiveGatesLine", 13, GameUiStyle.AMBER, true)
+		host.add_child(_active_gates_line)
+		host.move_child(_active_gates_line, 0)
+	_active_gates_line.text = text
+	_active_gates_line.visible = not text.is_empty()
 
 
 func _ensure_night_affix_row() -> void:
