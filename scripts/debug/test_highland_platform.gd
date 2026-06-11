@@ -17,6 +17,7 @@ func _run() -> void:
 	await _test_debug_roundtrip()
 	await _test_highland_deploy()
 	await _test_artificial_platform()
+	await _test_reveal_skips_gates()
 	_finish()
 
 
@@ -177,6 +178,34 @@ func _test_artificial_platform() -> void:
 	await process_frame
 	_expect(map_manager.get_cell_data(platform_cell).unit_runtime_id < 0, "occupant removed when platform destroyed")
 	_expect(unit_manager.is_operator_redeploying(sniper_key), "occupant died into redeploy cooldown")
+	game.queue_free()
+	await process_frame
+
+
+func _test_reveal_skips_gates() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	if map_manager == null:
+		_expect(false, "boot ok for reveal test")
+		game.queue_free()
+		await process_frame
+		return
+	var gate_cell: Vector2i = (map_manager.get_spawn_cells() as Array)[0]
+	map_manager.reveal_area(gate_cell, 1)
+	_expect(not map_manager.is_discovered(gate_cell), "reveal_area never discovers gate cells")
+	var revealed_any := false
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			var neighbor := gate_cell + Vector2i(dx, dy)
+			if neighbor == gate_cell or not map_manager.is_inside(neighbor):
+				continue
+			if map_manager.is_discovered(neighbor):
+				revealed_any = true
+	_expect(revealed_any, "non-gate neighbors still revealed")
 	game.queue_free()
 	await process_frame
 
