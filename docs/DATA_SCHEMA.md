@@ -490,7 +490,7 @@ Boss 多阶段规则：
 |---|---|
 | `night_gate_extra_open_keys` | 今晚额外追加为活跃的口 |
 | `night_gate_closed_keys` | 今晚封堵的口（由塌方契约写入，不得使活跃口低于 1） |
-| `night_gate_seals_today` | 今晚封堵口的 key 集合（与 closed_keys 同步） |
+| `night_gate_seals_today` | 玩家今日主动封口的使用次数（int，上限 1 次/天，黎明清零；塌方契约不写入此字段） |
 
 **最终活跃集** = (日程表前 N 口 ∪ extra_open) − closed，且至少保留 1 口。
 
@@ -667,7 +667,7 @@ Boss 多阶段规则：
 **塌方契约（`event_landslide_contract`）**
 
 - 根事件，动态生成选项：每个当前活跃出怪口对应一个"封堵该口（消耗 3 魔力矿）"的选项 + 一个"拒绝"选项，类似祭坛的动态选项模式。
-- 选择封堵后执行隐藏子事件，效果为将该口写入 `RunState.night_gate_seals_today`（今晚封堵，黎明清空）。
+- 选择封堵后执行隐藏子事件，效果为将该口写入 `RunState.night_gate_closed_keys`（今晚封堵，黎明清空）。
 - 封堵后活跃口不得低于 1；口数 = 1 时无可选封堵项，塌方契约实质上为空选项。
 
 隐藏子事件（均设 `hidden_in_map_pool: true`）：
@@ -761,7 +761,7 @@ Boss 多阶段规则：
 | `height` | `int` | 地图高度 |
 | `spawn_count` | `int` | 刷怪候选口数量；spawn gates v2 起固定为 5，由 `map_generator.gd` 按等弧算法放置 |
 | `spawn_corner_margin` | `int` | 等弧放置时距地图角落的最小格数，防止出怪口卡在角落 |
-| `spawn_arc_center_ratio` | `float` | 等弧放置时弧段中心采样点的相对位置比例（0-1），微调口的偏向分布 |
+| `spawn_arc_center_ratio` | `float` | 等弧放置时每段弧的中央窗口宽度比例（0-1）；门格从该弧段中央的此比例范围内随机抽取（0.6 = 中间 60% 范围），数值越大分布越均匀，越小越向弧段中点集中 |
 | `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
 | `event_point_count` | `int` | 旧地图生成期事件点数量；当前配置为 0，正式事件由 `RandomEventManager` 每日刷新 |
@@ -814,7 +814,7 @@ Boss 多阶段规则：
 - 障碍数量先按 `width * height * obstacle_ratio` 估算，再被 `min_obstacle_count` 与 `max_obstacle_count` 限制。
 - 障碍优先生成若干连续地貌簇：水域偏块状湖泊，山地偏带状山脉；随后按 `scattered_obstacle_ratio` 补少量零散障碍，避免地图过于规则。
 - 障碍放置后会校验刷怪点到核心仍存在地面路径，失败的地貌簇或散点会回滚，避免随机地图把夜晚路径彻底堵死。
-- 刷怪点（spawn gates v2）按等弧算法沿地图边缘均匀放置：将边缘划分为 `spawn_count` 段等长弧，每段取 `spawn_arc_center_ratio` 处一点，并跳过距角落不足 `spawn_corner_margin` 格的位置。此方案取代了旧的 `min_spawn_core_distance` / `min_spawn_distance` 随机筛选策略。
+- 刷怪点（spawn gates v2）按等弧算法沿地图边缘均匀放置：将边缘划分为 `spawn_count` 段等长弧，每段在中央 `spawn_arc_center_ratio` 比例的窗口内随机抽取一个格作为门格，并跳过距角落不足 `spawn_corner_margin` 格的位置。此方案取代了旧的 `min_spawn_core_distance` / `min_spawn_distance` 随机筛选策略。
 
 事件点说明：
 
