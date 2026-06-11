@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
@@ -192,6 +193,7 @@ func _connect_events() -> void:
 		event_bus.unit_removed.connect(_on_unit_removed)
 		event_bus.covenants_changed.connect(_on_covenants_changed)
 		event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+		event_bus.night_gate_overrides_changed.connect(_refresh_active_gates_line)
 		event_bus.path_grid_changed.connect(_on_path_grid_changed)
 		event_bus.building_placed.connect(_on_building_changed)
 		event_bus.building_destroyed.connect(_on_building_changed)
@@ -279,11 +281,52 @@ func _on_day_started(day: int) -> void:
 	_force_wave_preview_refresh()
 	_play_level_intro(day)
 	_show_night_affix_banner()
+	_refresh_active_gates_line()
+	_announce_gate_expansion(day)
 
 
 func _on_night_started(_day: int) -> void:
 	_refresh_top_hud()
 	_show_night_affix_banner()
+	_refresh_active_gates_line()
+
+
+## 预览面板顶部"今晚活跃口"一行：日程解析 + 当晚覆盖项（封堵/额外开启）。
+func _refresh_active_gates_line() -> void:
+	var run_state = AppRefs.run_state()
+	if run_state == null or _combat_hud == null or not _combat_hud.has_method("set_active_gates_line"):
+		return
+	if _map_manager == null or not _map_manager.has_method("get_spawn_keys"):
+		return
+	var keys: Array = _map_manager.get_spawn_keys()
+	var active: Array = NightTemplateResolver.resolve_active_gates(keys, int(run_state.random_seed), int(run_state.day), run_state.night_gate_closed_keys, run_state.night_gate_extra_open_keys)
+	var closed: Array = run_state.night_gate_closed_keys
+	var parts: PackedStringArray = PackedStringArray()
+	for raw_gate: Variant in active:
+		parts.append(String(raw_gate))
+	var text := "今晚活跃口：%s" % " ".join(parts)
+	if not closed.is_empty():
+		var closed_parts: PackedStringArray = PackedStringArray()
+		for raw_closed: Variant in closed:
+			closed_parts.append(String(raw_closed))
+		text += "（%s 已封堵）" % " ".join(closed_parts)
+	_combat_hud.set_active_gates_line(text)
+
+
+## 黎明扩张公告：仅比较日程（不含覆盖项），昨天未活跃、今天加入的口逐个提示。
+func _announce_gate_expansion(day: int) -> void:
+	if day <= 1:
+		return
+	var run_state = AppRefs.run_state()
+	if run_state == null or _map_manager == null or not _map_manager.has_method("get_spawn_keys"):
+		return
+	var keys: Array = _map_manager.get_spawn_keys()
+	var seed_value := int(run_state.random_seed)
+	var today: Array = NightTemplateResolver.resolve_active_gates(keys, seed_value, day)
+	var yesterday: Array = NightTemplateResolver.resolve_active_gates(keys, seed_value, day - 1)
+	for raw_gate: Variant in today:
+		if not yesterday.has(String(raw_gate)):
+			_show_message("战线扩张：%s 今晚加入进攻" % String(raw_gate))
 
 
 func _show_night_affix_banner() -> void:

@@ -21,6 +21,7 @@ func _run() -> void:
 	await _test_player_seal()
 	await _test_gate_events()
 	await _test_markers()
+	await _test_gate_ui()
 	_finish()
 
 
@@ -300,6 +301,46 @@ func _test_markers() -> void:
 	_expect(victim_marker != null and victim_marker.modulate.a < 0.9, "sealed marker dimmed")
 	var label := victim_marker.get_node_or_null("%SpawnLabel") as Label
 	_expect(label != null and label.text.contains("封"), "sealed marker badge")
+	run_state.clear_night_gate_overrides()
+	game.queue_free()
+	await process_frame
+
+
+func _test_gate_ui() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	var event_bus = root.get_node_or_null("EventBus")
+	var popup := game.find_child("MapInteractionPopup", true, false) as Control
+	if run_state == null or map_manager == null or event_bus == null or popup == null:
+		_expect(false, "boot ok for gate ui test (popup node name?)")
+		game.queue_free()
+		await process_frame
+		return
+	var keys: Array = map_manager.get_spawn_keys()
+	var active: Array = ResolverScript.resolve_active_gates(keys, int(run_state.random_seed), int(run_state.day), [], [])
+	var gate_cell: Vector2i = map_manager.get_spawn_cell_by_key(StringName(String(active[0])))
+	event_bus.map_cell_clicked.emit(gate_cell)
+	await process_frame
+	_expect(popup.is_visible_in_tree(), "popup opens on undiscovered gate cell")
+	var seal_button := popup.find_child("GateSealButton", true, false) as Button
+	_expect(seal_button != null and seal_button.visible, "seal button present for active gate")
+	run_state.stone = 10
+	run_state.reset_action_points(30)
+	if seal_button != null:
+		seal_button.pressed.emit()
+		await process_frame
+		_expect((run_state.night_gate_closed_keys as Array).has(String(active[0])), "popup seal button seals the gate")
+	var hud := game.get_node_or_null("UI/ScreenLayout/CombatHudSlot/CombatHud")
+	_expect(hud != null and hud.has_method("set_active_gates_line"), "hud exposes active gates line")
+	if hud != null and hud.has_method("set_active_gates_line"):
+		hud.set_active_gates_line("今晚活跃口：S1 S2")
+		var line := (hud as Node).find_child("ActiveGatesLine", true, false) as Label
+		_expect(line != null and line.visible and line.text.contains("活跃口"), "active gates line renders")
 	run_state.clear_night_gate_overrides()
 	game.queue_free()
 	await process_frame
