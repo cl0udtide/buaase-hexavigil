@@ -19,5 +19,6 @@
   "spawn_corner_margin": 3,
   "spawn_arc_center_ratio": 0.6,
   "detour_cap": 1.6,
-  "max_repair_rounds": 3
+  "max_repair_rounds": 3,
+  "repair": { "carve_costs": { "water": 6, "mountain": 12 } }
 }
