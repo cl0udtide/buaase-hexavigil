@@ -159,6 +159,13 @@ func _run() -> void:
 	_expect((run_state.get_operator_covenants(future_key) as Array).has(target_covenant), "future same-unit operator inherits covenant")
 	_expect(event_manager.get_event_id_at_cell(altar_cell) == StringName(), "altar consumed after infusion")
 
+	# 祭坛：离开选项是动态生成的，不在静态配置里；必须映射到隐藏空事件并消耗事件点。
+	var altar_leave_cell := Vector2i(6, 5)
+	event_manager._events_by_cell[altar_leave_cell] = &"event_altar"
+	var altar_leave: Dictionary = event_manager.apply_event_for_cell(altar_leave_cell, &"leave")
+	_expect(altar_leave.get("ok", false), "altar leave applies")
+	_expect(event_manager.get_event_id_at_cell(altar_leave_cell) == StringName(), "altar consumed after leave")
+
 	game.queue_free()
 	await process_frame
 	_finish()
