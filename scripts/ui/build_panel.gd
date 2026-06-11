@@ -46,6 +46,8 @@ func _ready() -> void:
 	_bind_buttons()
 	_sync_shop_stock_from_manager()
 	refresh_from_state()
+	# 没有消息时不渲染空底条(数据驱动,有消息即恢复)
+	_message_strip.visible = not _message_label.text.strip_edges().is_empty()
 
 
 func _apply_local_styles() -> void:
@@ -531,6 +533,7 @@ func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 	if action == &"refresh" and result.get("ok", false):
 		_message_label.text = "商店已刷新"
 		_selected_shop_slot_index = -1
+	_message_strip.visible = not _message_label.text.strip_edges().is_empty()
 	if action == &"buy":
 		_emit_selected_shop_preview()
 

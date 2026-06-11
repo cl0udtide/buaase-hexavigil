@@ -24,7 +24,7 @@ const LEVEL_INTRO_MIN_WIDTH := 560.0
 const LEVEL_INTRO_MAX_WIDTH := 820.0
 const LEVEL_INTRO_HEIGHT := 178.0
 const LEVEL_INTRO_TOP_RATIO := 0.15
-const LEVEL_INTRO_MIN_TOP := 124.0
+const LEVEL_INTRO_MIN_TOP := 196.0  # 让开 y146 起的夜晚词缀横幅带,避免开场播报与其叠印
 
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
@@ -409,8 +409,8 @@ func _ensure_covenant_row() -> void:
 	# 独立定位条：紧贴顶栏下方，与 TopHudSlot 左边缘对齐。
 	var slot := Control.new()
 	slot.name = "CovenantSlot"
-	# 落在 RelicStripSlot(底 140)下方 8px,避免盟约名称行被遗物链整条盖死。
-	slot.position = Vector2(66, 148)
+	# 与遗物链同带、置于其右(链 66..880):既不被链盖死,也不下压左侧面板顶框。
+	slot.position = Vector2(888, 96)
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(slot)
 	_covenant_row = HBoxContainer.new()
@@ -1421,6 +1421,8 @@ func _style_top_button(button: Button, _selected: bool) -> void:
 	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
 	# TEXT_MUTED 在暗底上对比约 3.4:1,白天禁用态像空插槽,提亮一档。
 	button.add_theme_color_override("font_disabled_color", Color(0.55, 0.62, 0.66))
+	# 键盘焦点框会越出顶栏金属板带;选中态已由 SpeedActiveOverlay 表达
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
 func _place_speed_active_overlay(_button: Button) -> void:

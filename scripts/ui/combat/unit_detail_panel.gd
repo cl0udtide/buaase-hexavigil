@@ -552,7 +552,8 @@ func _refresh_action_icons() -> void:
 
 func _set_button_icon(button: Button, icon_rect: TextureRect, texture: Texture2D) -> void:
 	if button != null:
-		GameUiStyle.set_button_texture_icon(button, texture, &"center", 8.0)
+		# left=图标在文字左侧成组居中;center 会让图标与文字各自居中而互相叠印
+		GameUiStyle.set_button_texture_icon(button, texture, &"left", 8.0)
 	if icon_rect == null:
 		return
 	# 图标改由 Button.icon 跟随文字居中;场景里钉死的左缘 TextureRect 失效但保留引用

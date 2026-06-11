@@ -56,7 +56,7 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 
 
 func _refresh() -> void:
-	_entry_button.text = "遗物" if _relic_ids.is_empty() else "遗物 %d" % _relic_ids.size()
+	_entry_button.text = "遗物 %d" % _relic_ids.size()
 	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_catalog_icon(&"relic_bag"), &"left", 7.0)
 	_entry_button.tooltip_text = "点击或按 R 查看全部遗物"
 	for child in _icon_row.get_children():
@@ -79,9 +79,11 @@ func _refresh() -> void:
 	_overflow_label.visible = overflow > 0
 	_overflow_label.text = "+%d" % overflow
 	_icon_row.visible = visible_count > 0
+	# 空态隐藏空轨道(数据驱动,拿到遗物即恢复),避免端帽透过幽灵徽章显示
+	_strip_base.visible = visible_count > 0
 	_apply_content_width(visible_count, overflow > 0)
-	# 空态幽灵化但保留 R 键/点击入口,禁用 visible=false(防"该显示的被藏"回归)
-	modulate.a = 0.35 if _relic_ids.is_empty() else 1.0
+	# 空态幽灵化但保留 R 键/点击入口,禁用根节点 visible=false(防"该显示的被藏"回归)
+	modulate.a = 0.45 if _relic_ids.is_empty() else 1.0
 
 
 func _on_resized() -> void:

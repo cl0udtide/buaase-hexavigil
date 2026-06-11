@@ -65,9 +65,13 @@ func show_step(step_index: int, total_steps: int, title: String, body: String, h
 func set_panel_position(position_id: StringName, force := false) -> void:
 	if _user_moved and not force:
 		return
-	var panel_size := _panel.get_combined_minimum_size()
-	if panel_size.x <= 0.0 or panel_size.y <= 0.0:
-		panel_size = Vector2(430.0, 254.0)
+	_apply_panel_position(position_id)
+	# fit_content 的 RichTextLabel 在文本写入同帧给出的最小高不可靠,布局后再校一次
+	_apply_panel_position.call_deferred(position_id)
+
+
+func _apply_panel_position(position_id: StringName) -> void:
+	var panel_size := _sane_panel_size()
 	var margin := Vector2(22.0, 118.0)
 	var target := Vector2(size.x - panel_size.x - margin.x, margin.y)
 	match position_id:
@@ -76,6 +80,15 @@ func set_panel_position(position_id: StringName, force := false) -> void:
 		_:
 			target = Vector2(size.x - panel_size.x - margin.x, margin.y)
 	_set_panel_top_left(target)
+
+
+func _sane_panel_size() -> Vector2:
+	var panel_size := _panel.get_combined_minimum_size()
+	# 布局未稳定时 fit_content 会报出 0 或整屏级的病态最小高,回退既定尺寸
+	if panel_size.x <= 0.0 or panel_size.y <= 0.0 \
+			or panel_size.y > size.y * 0.6 or panel_size.x > size.x * 0.5:
+		panel_size = Vector2(430.0, 254.0)
+	return panel_size
 
 
 func hide_tutorial() -> void:
@@ -101,9 +114,7 @@ func _on_panel_gui_input(event: InputEvent) -> void:
 
 
 func _set_panel_top_left(top_left: Vector2) -> void:
-	var panel_size := _panel.get_combined_minimum_size()
-	if panel_size.x <= 0.0 or panel_size.y <= 0.0:
-		panel_size = Vector2(430.0, 254.0)
+	var panel_size := _sane_panel_size()
 	var clamped := Vector2(
 		clampf(top_left.x, 8.0, maxf(8.0, size.x - panel_size.x - 8.0)),
 		clampf(top_left.y, 8.0, maxf(8.0, size.y - panel_size.y - 8.0))

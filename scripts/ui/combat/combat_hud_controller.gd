@@ -921,9 +921,9 @@ func _refresh_top_hud() -> void:
 			&"mana": _make_resource_item(&"mana", "M", str(int(run_state.mana)), "魔力矿", int(material_delta.get("mana", 0)))
 		}
 		resource_tooltip = _format_resource_tooltip(buff_ids)
-		phase_text = "DAY %d · %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
+		phase_text = "DAY %d·%s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
 	var enemy_count: int = int(_enemy_manager.get_alive_enemy_count()) if _enemy_manager != null and _enemy_manager.has_method("get_alive_enemy_count") else 0
-	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s    敌人 %d" % [phase_text, enemy_count])
+	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s  敌 %d" % [phase_text, enemy_count])
 	if _combat_hud.has_method("set_core_hp"):
 		_combat_hud.set_core_hp(core_hp_current, core_hp_max)
 	if _combat_hud.has_method("set_resource_items"):
