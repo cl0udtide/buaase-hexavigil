@@ -19,6 +19,7 @@ func _run() -> void:
 	await _test_overrides_lifecycle()
 	await _test_active_set_consumption()
 	await _test_player_seal()
+	await _test_gate_events()
 	_finish()
 
 
@@ -215,6 +216,46 @@ func _test_player_seal() -> void:
 	var second_cell: Vector2i = map_manager.get_spawn_cell_by_key(StringName(second_gate))
 	var second: Dictionary = day_manager.try_seal_spawn_gate(second_cell)
 	_expect(not second.get("ok", false), "daily seal limit enforced (also guards min-1)")
+	run_state.clear_night_gate_overrides()
+	game.queue_free()
+	await process_frame
+
+
+func _test_gate_events() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var event_manager := game.get_node_or_null("Managers/RandomEventManager")
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	if run_state == null or event_manager == null or map_manager == null:
+		_expect(false, "boot ok for gate events test")
+		game.queue_free()
+		await process_frame
+		return
+	var all_gates: Array = map_manager.get_spawn_keys()
+	var active: Array = ResolverScript.resolve_active_gates(all_gates, int(run_state.random_seed), int(run_state.day), [], [])
+	var landslide_cell := Vector2i(7, 7)
+	event_manager._events_by_cell[landslide_cell] = &"event_landslide_contract"
+	var cfg: Dictionary = event_manager.get_event_cfg_at_cell(landslide_cell)
+	var choices: Array = cfg.get("choices", [])
+	_expect(choices.size() == active.size() + 1, "landslide offers one choice per active gate plus leave")
+	run_state.mana = 10
+	var target_gate := String(active[0])
+	var seal_result: Dictionary = event_manager.apply_event_for_cell(landslide_cell, StringName("seal_%s" % target_gate))
+	_expect(seal_result.get("ok", false), "landslide seal applies")
+	_expect(int(run_state.mana) == 7, "landslide costs 3 mana")
+	_expect((run_state.night_gate_closed_keys as Array).has(target_gate), "landslide closes gate tonight")
+	_expect(event_manager.get_event_id_at_cell(landslide_cell) == StringName(), "landslide consumed after seal")
+	var prestige_before: int = int(run_state.prestige)
+	var wager_result: Dictionary = event_manager.apply_event(&"event_gate_wager_accept")
+	_expect(wager_result.get("ok", false), "gate wager applies")
+	_expect((run_state.night_gate_extra_open_keys as Array).size() == 1, "gate wager opens one extra gate")
+	var opened := String(run_state.night_gate_extra_open_keys[0])
+	_expect(not active.has(opened), "wager opens a previously silent gate")
+	_expect(int(run_state.prestige) == prestige_before + 3, "wager pays prestige reward")
 	run_state.clear_night_gate_overrides()
 	game.queue_free()
 	await process_frame

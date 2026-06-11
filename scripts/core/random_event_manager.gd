@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const CovenantDefs = preload("res://scripts/combat/covenant_defs.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 # --- 每日事件刷新 ---
 # 开局保底 2 个事件点，此后每天 1-2 个；囤而不触发的活跃上限 4 个。
@@ -18,6 +19,10 @@ const SPAWN_SAFE_RADIUS := 2
 const ALTAR_EVENT_ID: StringName = &"event_altar"
 const ALTAR_OFFER_COUNT := 3
 const ALTAR_MANA_COST := 2
+
+# --- 塌方契约事件 ---
+const LANDSLIDE_EVENT_ID: StringName = &"event_landslide_contract"
+const LANDSLIDE_MANA_COST := 3
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _buff_manager: Node = get_node_or_null("../BuffManager")
@@ -88,6 +93,8 @@ func get_event_cfg_at_cell(cell: Vector2i) -> Dictionary:
 	var cfg := get_event_cfg(event_id)
 	if event_id == ALTAR_EVENT_ID:
 		cfg["choices"] = _build_altar_choices(cell)
+	elif event_id == LANDSLIDE_EVENT_ID:
+		cfg["choices"] = _build_landslide_choices()
 	return cfg
 
 
@@ -173,6 +180,23 @@ func _apply_contract_effects(cfg: Dictionary, run_state: Node) -> PackedStringAr
 				else:
 					run_state.add_prestige(3)
 					summary_lines.append("营地空无一人，改为获得 3 声望")
+			&"gate_open_extra_tonight":
+				var gate_ctx := _gate_context()
+				var opened := ""
+				if not gate_ctx.is_empty():
+					var order: Array = NightTemplateResolver.resolve_activation_order(gate_ctx.get("all_gates", []), int(run_state.random_seed))
+					var active_now: Array = gate_ctx.get("active", [])
+					var closed_now: Array = run_state.night_gate_closed_keys
+					for raw_gate: Variant in order:
+						var gate := String(raw_gate)
+						if not active_now.has(gate) and not closed_now.has(gate):
+							opened = gate
+							break
+				if opened.is_empty():
+					summary_lines.append("所有出怪口都已活跃，只剩报酬")
+				else:
+					run_state.add_night_gate_extra_open(opened)
+					summary_lines.append("今晚 %s 提前开放" % opened)
 			&"night_affix_add":
 				var fixed_affix := StringName(effect.get("affix_id", ""))
 				if fixed_affix != StringName() and not (run_state.night_affix_ids as Array).has(fixed_affix):
@@ -231,8 +255,14 @@ func apply_event_for_cell(cell: Vector2i, choice_id: StringName = StringName()) 
 		return ActionResult.err(&"NO_EVENT", "该格子没有可触发事件")
 	if event_id == ALTAR_EVENT_ID and String(choice_id).begins_with("infuse_"):
 		return _apply_altar_infusion(cell, choice_id)
+	if event_id == LANDSLIDE_EVENT_ID and String(choice_id).begins_with("seal_"):
+		return _apply_landslide_seal(cell, String(choice_id).trim_prefix("seal_"))
 	var triggered_event_id := event_id
-	if choice_id != StringName():
+	if event_id == LANDSLIDE_EVENT_ID and choice_id == &"leave":
+		# 塌方选项是动态生成的，静态配置里没有；离开分支直接映射到隐藏空事件，
+		# 走通用流程消耗事件点（与其他事件的离开选项一致）。
+		triggered_event_id = &"event_landslide_leave"
+	elif choice_id != StringName():
 		var choice_result := _resolve_choice_event_id(event_id, choice_id)
 		if not choice_result.get("ok", false):
 			return choice_result
@@ -537,3 +567,69 @@ func _grant_random_operator(run_state: Node, unit_cost: int) -> StringName:
 	var picked: StringName = candidates.pick_random()
 	var added: Dictionary = run_state.add_owned_operator(picked)
 	return picked if not added.is_empty() else StringName()
+
+
+# ---------------------------------------------------------------------------
+# 塌方契约 / 开口赌约：当夜出怪口覆盖项（动态封口选项 + 提前开口效果）
+# ---------------------------------------------------------------------------
+func _gate_context() -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null or _map_manager == null or not _map_manager.has_method("get_spawn_keys"):
+		return {}
+	var all_gates: Array = _map_manager.get_spawn_keys()
+	var active: Array = NightTemplateResolver.resolve_active_gates(all_gates, int(run_state.random_seed), int(run_state.day), run_state.night_gate_closed_keys, run_state.night_gate_extra_open_keys)
+	return {"run_state": run_state, "all_gates": all_gates, "active": active}
+
+
+## 每个当前活跃出怪口一个封堵选项（仅当活跃口 >1，至少保留一口）+ 离开。
+func _build_landslide_choices() -> Array:
+	var choices: Array = []
+	var ctx := _gate_context()
+	var active: Array = ctx.get("active", [])
+	if active.size() > 1:
+		for raw_gate: Variant in active:
+			var gate := String(raw_gate)
+			choices.append({
+				"id": "seal_%s" % gate,
+				"text": "封堵 %s（%d 魔力矿）" % [gate, LANDSLIDE_MANA_COST],
+				"kind": "primary",
+				"effect_desc": "今晚 %s 不会出怪，怪物改道其他出怪口。" % gate,
+			})
+	choices.append({
+		"id": "leave",
+		"text": "不必了",
+		"kind": "secondary",
+		"event_id": "event_landslide_leave",
+		"effect_desc": "保持现状。",
+	})
+	return choices
+
+
+func _apply_landslide_seal(cell: Vector2i, gate_key: String) -> Dictionary:
+	var ctx := _gate_context()
+	if ctx.is_empty():
+		return ActionResult.err(&"MAP_UNAVAILABLE", "地图尚未初始化")
+	var run_state: Node = ctx.get("run_state")
+	var active: Array = ctx.get("active", [])
+	if not active.has(gate_key):
+		return ActionResult.err(&"GATE_NOT_ACTIVE", "该出怪口今晚本就沉默")
+	if active.size() <= 1:
+		return ActionResult.err(&"LAST_ACTIVE_GATE", "至少要保留一个活跃出怪口")
+	var spend_result: Dictionary = run_state.spend_materials(0, 0, LANDSLIDE_MANA_COST)
+	if not spend_result.get("ok", false):
+		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "魔力矿不足（需要 %d）" % LANDSLIDE_MANA_COST)
+	run_state.add_night_gate_closed(gate_key)
+	mark_event_triggered(cell)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.random_event_triggered.emit(LANDSLIDE_EVENT_ID, cell)
+	return ActionResult.ok({
+		"event_id": LANDSLIDE_EVENT_ID,
+		"source_event_id": LANDSLIDE_EVENT_ID,
+		"choice_id": StringName("seal_%s" % gate_key),
+		"effect_type": &"contract",
+		"effect_payload": {
+			"mana": -LANDSLIDE_MANA_COST,
+			"summary": "今晚 %s 已被塌方封堵" % gate_key,
+		},
+	})
