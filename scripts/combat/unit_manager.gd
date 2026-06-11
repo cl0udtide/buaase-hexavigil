@@ -18,6 +18,7 @@ var _redeploy_timers: Dictionary = {}
 var _refreshing_predeployed_units_for_night := false
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
+@onready var _building_manager: Node = get_node_or_null("../BuildingManager")
 @onready var _unit_root: Node = get_node_or_null("../../World/UnitRoot")
 
 
@@ -96,8 +97,7 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	return ActionResult.ok({"runtime_id": _next_runtime_id - 1, "operator_key": operator_key, "unit_id": unit_id, "star": star})
 
 
-## 部署落格校验：平地走 is_walkable 全职业；highland 地形仅远程职业（设计稿 §2.4）。
-## 人工高台建筑的放行将在后续任务加入本函数（保持单点）。
+## 部署落格校验：平地走 is_walkable 全职业；highland 地形与存活的人工高台建筑仅远程职业（设计稿 §2.4）。
 func _validate_deploy_cell(cell: Vector2i, cfg: Dictionary) -> Dictionary:
 	if _map_manager == null:
 		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
@@ -110,9 +110,28 @@ func _validate_deploy_cell(cell: Vector2i, cfg: Dictionary) -> Dictionary:
 		if not RANGED_DEPLOY_CLASSES.has(StringName(cfg.get("class", ""))):
 			return ActionResult.err(&"CLASS_NOT_ALLOWED", "无法部署：高台只能部署狙击/术师")
 		return ActionResult.ok()
+	# 人工高台建筑：存活且 ranged_deployable 时放行远程职业；损毁后是废墟不可站。
+	if cell_data != null and int(cell_data.building_runtime_id) >= 0 and _building_manager != null and _building_manager.has_method("get_building_by_runtime_id"):
+		var building: Node = _building_manager.get_building_by_runtime_id(int(cell_data.building_runtime_id))
+		if building != null and is_instance_valid(building):
+			var building_cfg_variant: Variant = building.get("cfg")
+			var building_cfg: Dictionary = building_cfg_variant if typeof(building_cfg_variant) == TYPE_DICTIONARY else {}
+			if bool(building_cfg.get("ranged_deployable", false)) and not _is_building_destroyed_for_deploy(building):
+				if int(cell_data.unit_runtime_id) >= 0:
+					return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：该格已有干员")
+				if not RANGED_DEPLOY_CLASSES.has(StringName(cfg.get("class", ""))):
+					return ActionResult.err(&"CLASS_NOT_ALLOWED", "无法部署：高台只能部署狙击/术师")
+				return ActionResult.ok()
 	if not _map_manager.is_walkable(cell):
 		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
 	return ActionResult.ok()
+
+
+func _is_building_destroyed_for_deploy(building: Node) -> bool:
+	if building.has_method("is_destroyed"):
+		return bool(building.is_destroyed())
+	var hp_variant: Variant = building.get("current_hp")
+	return hp_variant != null and int(hp_variant) <= 0
 
 
 func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dictionary:

@@ -183,5 +183,28 @@
     "place_rule": "plain_only",
     "scene_key": "building_actor",
     "icon_path": "res://assets/ui/generated/icon_building_wood_wall.png"
+  },
+  {
+    "id": "artificial_platform",
+    "name": "人工高台",
+    "desc": "可供狙击/术师站立的木石炮台。阻挡敌人路径；被摧毁时其上干员阵亡",
+    "sort_order": 220,
+    "icon_text": "台",
+    "building_type": "platform",
+    "max_hp": 500,
+    "visual_key": "inspiring_monolith",
+    "destroyed_visual_key": "generic_destroyed_building",
+    "cost_wood": 2,
+    "cost_stone": 2,
+    "cost_mana": 0,
+    "ap_cost": 2,
+    "blocks_path": true,
+    "ranged_deployable": true,
+    "effect_radius": 0,
+    "effect_type": "none",
+    "effect_value": 0,
+    "place_rule": "plain_only",
+    "scene_key": "building_actor",
+    "icon_path": "res://assets/ui/generated/icon_building_inspiring_monolith.png"
   }
 ]

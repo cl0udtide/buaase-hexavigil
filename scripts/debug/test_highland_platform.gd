@@ -16,6 +16,7 @@ func _run() -> void:
 	_test_highland_semantics()
 	await _test_debug_roundtrip()
 	await _test_highland_deploy()
+	await _test_artificial_platform()
 	_finish()
 
 
@@ -123,6 +124,59 @@ func _test_highland_deploy() -> void:
 	plain_data.set_base_terrain(CellDataScript.TERRAIN_PLAIN)
 	var plain_result: Dictionary = unit_manager.try_deploy_operator(second_sniper_key, plain_cell, Vector2i.RIGHT)
 	_expect(plain_result.get("ok", false), "ranged still deploys on plain")
+	game.queue_free()
+	await process_frame
+
+
+func _test_artificial_platform() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	var unit_manager := game.get_node_or_null("Managers/UnitManager")
+	var building_manager := game.get_node_or_null("Managers/BuildingManager")
+	if run_state == null or map_manager == null or unit_manager == null or building_manager == null:
+		_expect(false, "boot ok for platform test")
+		game.queue_free()
+		await process_frame
+		return
+	var core: Vector2i = map_manager.get_core_cell()
+	var platform_cell := Vector2i(core.x, core.y + 2)
+	var platform_data: CellData = map_manager.get_cell_data(platform_cell)
+	platform_data.resource_type = &""
+	platform_data.set_base_terrain(CellDataScript.TERRAIN_PLAIN)
+	run_state.add_materials(10, 10, 0)
+	run_state.reset_action_points(30)
+	var place_result: Dictionary = building_manager.try_place_building(platform_cell, &"artificial_platform")
+	_expect(place_result.get("ok", false), "platform places on plain")
+	var sniper_info: Dictionary = run_state.add_owned_operator(&"sniper_t1", "测试台上狙击")
+	var sniper_key := StringName(sniper_info.get("key", ""))
+	var deploy_result: Dictionary = unit_manager.try_deploy_operator(sniper_key, platform_cell, Vector2i.RIGHT)
+	_expect(deploy_result.get("ok", false), "ranged deploys onto living platform")
+	var other_cell := Vector2i(core.x, core.y - 2)
+	var other_data: CellData = map_manager.get_cell_data(other_cell)
+	other_data.resource_type = &""
+	other_data.set_base_terrain(CellDataScript.TERRAIN_PLAIN)
+	var place2: Dictionary = building_manager.try_place_building(other_cell, &"artificial_platform")
+	_expect(place2.get("ok", false), "second platform places")
+	var guard_info: Dictionary = run_state.add_owned_operator(&"guard_t1", "测试台上近卫")
+	var guard_key := StringName(guard_info.get("key", ""))
+	var guard_result: Dictionary = unit_manager.try_deploy_operator(guard_key, other_cell, Vector2i.RIGHT)
+	_expect(not guard_result.get("ok", false), "melee rejected on platform")
+	var platform_actor: Node = building_manager.get_building_by_cell(platform_cell)
+	var platform_id: int = int(platform_actor.get_runtime_id())
+	var demolish_occupied: Dictionary = building_manager.try_demolish_building(platform_id)
+	_expect(not demolish_occupied.get("ok", false), "demolish rejected while occupied")
+	# 白天移除按设计不进再部署冷却（_start_operator_redeploy 的 PHASE_DAY 早退）；
+	# 塌台实战发生在夜晚，切到夜晚再摧毁以验证战斗阵亡语义。
+	run_state.set_phase(GameEnums.PHASE_NIGHT)
+	building_manager.damage_building(platform_id, 9999, GameEnums.DAMAGE_PHYSICAL)
+	await process_frame
+	_expect(map_manager.get_cell_data(platform_cell).unit_runtime_id < 0, "occupant removed when platform destroyed")
+	_expect(unit_manager.is_operator_redeploying(sniper_key), "occupant died into redeploy cooldown")
 	game.queue_free()
 	await process_frame
 
