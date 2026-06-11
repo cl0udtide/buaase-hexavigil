@@ -179,6 +179,48 @@ func _test_detour_repair() -> void:
 	var a: Dictionary = MapGeneratorScript.generate(30, 30, 7000, cfg, [])
 	var b: Dictionary = MapGeneratorScript.generate(30, 30, 7000, cfg, [])
 	_expect(_serialize_terrain(a) == _serialize_terrain(b), "repair keeps determinism")
+	# 生产预算回归：评审实测的四个超限种子 + 50 种子统计扫。
+	# cfg 各键逐字复制自 data/map_generation.json（超限种子按现行生产配置实测验证）。
+	var prod_cfg := {
+		"spawn_count": 5,
+		"resources_per_type": 12,
+		"near_resources_per_type": 2,
+		"event_point_count": 0,
+		"obstacle_ratio": 0.13,
+		"water_obstacle_chance": 0.35,
+		"min_obstacle_count": 65,
+		"max_obstacle_count": 115,
+		"terrain_cluster_count": 5,
+		"terrain_cluster_min_size": 12,
+		"terrain_cluster_max_size": 28,
+		"terrain_cluster_attempts": 24,
+		"scattered_obstacle_ratio": 0.22,
+		"core_safe_radius": 3,
+		"spawn_safe_radius": 1,
+		"spawn_corner_margin": 3,
+		"spawn_arc_center_ratio": 0.6,
+		"detour_cap": 1.6,
+		"max_repair_rounds": 3,
+		"repair": {"carve_costs": {"water": 6, "mountain": 12}},
+	}
+	var prod_worst: float = 0.0
+	var prod_seeds: Array[int] = [97, 160, 224, 430]
+	for extra_seed in range(5000, 5046):
+		prod_seeds.append(extra_seed)
+	for prod_seed in prod_seeds:
+		var prod_map: Dictionary = MapGeneratorScript.generate(30, 30, prod_seed, prod_cfg, [])
+		var prod_cells: Dictionary = prod_map.get("cells", {})
+		var prod_core: Vector2i = prod_map.get("core_cell", Vector2i.ZERO)
+		for raw_gate: Variant in prod_map.get("spawn_cells", []):
+			var gate_cell: Vector2i = raw_gate
+			var prod_len: int = _bfs_path_length(prod_cells, 30, 30, gate_cell, prod_core)
+			_expect(prod_len > 0, "prod seed %d: gate connected" % prod_seed)
+			if prod_len <= 0:
+				continue
+			var prod_ratio: float = float(prod_len) / float(maxi(_manhattan(gate_cell, prod_core), 1))
+			prod_worst = maxf(prod_worst, prod_ratio)
+			_expect(prod_ratio <= 1.6 + 0.0001, "prod seed %d: ratio %.3f <= 1.6" % [prod_seed, prod_ratio])
+	print("  prod budget worst ratio: %.3f" % prod_worst)
 
 
 func _finish() -> void:

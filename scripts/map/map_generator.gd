@@ -7,7 +7,7 @@ const STAGE_SPAWNS := 1
 const STAGE_OBSTACLES := 2
 const STAGE_RESOURCES := 3
 const STAGE_EVENTS := 4
-const STAGE_REPAIR := 5  # reserved for next task
+const STAGE_REPAIR := 5  # 修复 pass 当前纯确定性无 RNG；保留给 B2 随机化修复
 
 const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.RIGHT,
@@ -623,8 +623,8 @@ static func _shuffle_cells(cells: Array[Vector2i], rng: RandomNumberGenerator) -
 
 
 ## 绕路上限修复（设计稿 S6②）：每口真实 BFS 路长 / 曼哈顿 > detour_cap 时，
-## 双 BFS 选最优破墙格开凿（min(邻 dist_gate)+1+min(邻 dist_core) 最小、并列取 (y,x) 序）。
-## 每口 ≤ max_repair_rounds 轮；开凿格恢复平原，读作天然垭口。纯确定性，无 RNG。
+## 鞍部软代价 A* 取门→核心最小代价路径，凿穿其上全部阻挡格（恢复平原），
+## 任意墙厚一次贯通。每口 ≤ max_repair_rounds 轮；纯确定性，无 RNG。
 static func _repair_gate_detours(cells: Dictionary, width: int, height: int, spawn_cells: Array[Vector2i], core_cell: Vector2i, cfg: Dictionary) -> void:
 	var detour_cap: float = float(cfg.get("detour_cap", 1.6))
 	var max_rounds: int = maxi(int(cfg.get("max_repair_rounds", 3)), 0)
@@ -635,27 +635,20 @@ static func _repair_gate_detours(cells: Dictionary, width: int, height: int, spa
 			var manhattan_len: int = maxi(absi(spawn_cell.x - core_cell.x) + absi(spawn_cell.y - core_cell.y), 1)
 			if path_len > 0 and float(path_len) / float(manhattan_len) <= detour_cap:
 				break
-			var dist_core: Dictionary = _bfs_distances(cells, width, height, core_cell)
-			var best_cell := Vector2i(-1, -1)
-			var best_score: int = 1 << 30
-			for y in range(height):
-				for x in range(width):
-					var cell := Vector2i(x, y)
-					var data: CellData = cells.get(cell)
-					if data == null or data.walkable or data.spawn_key != StringName() or data.is_core or data.resource_type != StringName():
-						continue
-					var gate_side: int = _min_neighbor_distance(dist_gate, cell)
-					var core_side: int = _min_neighbor_distance(dist_core, cell)
-					if gate_side < 0 or core_side < 0:
-						continue
-					var score: int = gate_side + 1 + core_side
-					if score < best_score:
-						best_score = score
-						best_cell = cell
-			if best_cell.x < 0:
+			var carve_path: Array[Vector2i] = _soft_cost_path(cells, width, height, spawn_cell, core_cell, cfg)
+			if carve_path.is_empty():
 				break
-			var carved: CellData = cells[best_cell]
-			carved.set_base_terrain(CellData.TERRAIN_PLAIN)
+			var carved_any := false
+			for path_cell in carve_path:
+				var data: CellData = cells.get(path_cell)
+				if data == null or data.walkable:
+					continue
+				if data.spawn_key != StringName() or data.is_core or data.resource_type != StringName():
+					continue
+				data.set_base_terrain(CellData.TERRAIN_PLAIN)
+				carved_any = true
+			if not carved_any:
+				break
 
 
 static func _bfs_distances(cells: Dictionary, width: int, height: int, origin: Vector2i) -> Dictionary:
@@ -679,13 +672,57 @@ static func _bfs_distances(cells: Dictionary, width: int, height: int, origin: V
 	return dist
 
 
-static func _min_neighbor_distance(dist: Dictionary, cell: Vector2i) -> int:
-	var best: int = -1
-	for direction in CARDINAL_DIRECTIONS:
-		var neighbor: Vector2i = cell + direction
-		if not dist.has(neighbor):
-			continue
-		var value: int = int(dist[neighbor])
-		if best < 0 or value < best:
-			best = value
-	return best
+## 鞍部软代价 A*（设计稿 S6①）：字典序代价 = 步数主序 + carve_costs 次序（水 6/山 12）。
+## 步数优先保证凿后路长≈曼哈顿（detour_cap 硬达标）；同步数路径间按开凿代价取最小，
+## 天然偏向薄壁与水面（渡口/垭口），任意墙厚一次贯通。纯加性软代价会被既有绕路
+##（全可走、零开凿代价）压过而拒绝开凿，无法压绕路比，故步数必须为主序。
+static func _soft_cost_path(cells: Dictionary, width: int, height: int, start_cell: Vector2i, end_cell: Vector2i, cfg: Dictionary) -> Array[Vector2i]:
+	var repair_cfg: Dictionary = cfg.get("repair", {}) if typeof(cfg.get("repair", {})) == TYPE_DICTIONARY else {}
+	var carve_costs: Dictionary = repair_cfg.get("carve_costs", {}) if typeof(repair_cfg.get("carve_costs", {})) == TYPE_DICTIONARY else {}
+	var water_cost: int = maxi(int(carve_costs.get("water", 6)), 1)
+	var mountain_cost: int = maxi(int(carve_costs.get("mountain", 12)), 1)
+	# 步数单元 > 全图开凿代价总和上界，确保字典序严格成立。
+	var step_unit: int = width * height * maxi(water_cost, mountain_cost) + 1
+	var dist: Dictionary = {start_cell: 0}
+	var came_from: Dictionary = {}
+	var frontier: Array[Vector2i] = [start_cell]
+	while not frontier.is_empty():
+		var best_index: int = 0
+		var best_cell: Vector2i = frontier[0]
+		var best_cost: int = int(dist.get(best_cell, 1 << 30))
+		for i in range(1, frontier.size()):
+			var candidate: Vector2i = frontier[i]
+			var cost: int = int(dist.get(candidate, 1 << 30))
+			if cost < best_cost or (cost == best_cost and (candidate.y < best_cell.y or (candidate.y == best_cell.y and candidate.x < best_cell.x))):
+				best_index = i
+				best_cell = candidate
+				best_cost = cost
+		frontier.remove_at(best_index)
+		if best_cell == end_cell:
+			break
+		for direction in CARDINAL_DIRECTIONS:
+			var neighbor: Vector2i = best_cell + direction
+			if neighbor.x < 0 or neighbor.x >= width or neighbor.y < 0 or neighbor.y >= height:
+				continue
+			var data: CellData = cells.get(neighbor)
+			if data == null:
+				continue
+			var step_cost: int = step_unit
+			if not data.walkable:
+				if data.spawn_key != StringName() or data.is_core or data.resource_type != StringName():
+					continue
+				step_cost = step_unit + (water_cost if data.terrain == CellData.TERRAIN_WATER else mountain_cost)
+			var next_cost: int = best_cost + step_cost
+			if next_cost < int(dist.get(neighbor, 1 << 30)):
+				dist[neighbor] = next_cost
+				came_from[neighbor] = best_cell
+				if not frontier.has(neighbor):
+					frontier.append(neighbor)
+	if not dist.has(end_cell):
+		return []
+	var path: Array[Vector2i] = [end_cell]
+	var current: Vector2i = end_cell
+	while came_from.has(current):
+		current = came_from[current]
+		path.push_front(current)
+	return path
