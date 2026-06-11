@@ -1,6 +1,7 @@
 {
   "width": 30,
   "height": 30,
+  "generator": "legacy",
   "spawn_count": 5,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
@@ -15,10 +16,49 @@
   "terrain_cluster_attempts": 24,
   "scattered_obstacle_ratio": 0.22,
   "core_safe_radius": 3,
-  "spawn_safe_radius": 1,
+  "spawn_safe_radius": 2,
   "spawn_corner_margin": 3,
   "spawn_arc_center_ratio": 0.6,
-  "detour_cap": 1.6,
+  "max_retries": 5,
   "max_repair_rounds": 3,
-  "repair": { "carve_costs": { "water": 6, "mountain": 12 } }
+  "detour_cap": 1.6,
+  "detour_floor": 1.15,
+  "lane_jitter_base": 0.35,
+  "corridor_slack": 3,
+  "gate_slide_jitter": 2,
+  "repair": {
+    "carve_costs": { "water": 6, "mountain": 12 },
+    "intrusion_max_per_map": 0.15,
+    "intrusion_max_mean": 0.10,
+    "dual_pass_ratio_cap": 0.25
+  },
+  "pass": { "aperture_depth": 2, "pocket_core_w": 3, "pocket_core_h": 2, "pocket_min_plain": 6, "pocket_flood_limit": 12 },
+  "mesa": {
+    "count_min": 4, "count_max": 6, "count_floor_degraded": 3,
+    "cells_min": 14, "cells_max": 24,
+    "size_weights": { "3": 0.30, "4": 0.35, "5": 0.20, "6": 0.15 },
+    "max_corridor_dist": 2, "min_covered_ratio": 0.6,
+    "starter": { "ring_min": 4, "ring_max": 5, "size_min": 3, "size_max": 4, "max_corridor_dist": 2 }
+  },
+  "economy": {
+    "resource_affinity": { "wood": "moist_plain", "stone": "foothill", "mana": "water_adjacent" },
+    "risk_reward_bias": 0.5
+  },
+  "moisture_gradient_strength": 0.2,
+  "sector_cards": {
+    "bastion":    { "pass_width": 2, "pass_ring": [6, 8],  "density": 1.3, "mesa_quota": 1, "jitter_amp": 0.5,  "resource_mult": 1.0 },
+    "steppe":     { "pass_width": 5, "pass_ring": [7, 10], "density": 0.6, "mesa_quota": 0, "jitter_amp": 0.3,  "resource_mult": 1.5, "lake": [1, 2] },
+    "riverlands": { "pass_width": 2, "pass_ring": [6, 9],  "density": 0.9, "mesa_quota": 1, "jitter_amp": 0.4,  "resource_mult": 1.1, "river": true, "ford_width": 2 },
+    "canyon":     { "pass_width": 3, "pass_ring": [6, 10], "density": 1.2, "mesa_quota": 1, "jitter_amp": 0.35, "resource_mult": 0.9, "corridor_len": [6, 9] }
+  },
+  "archetypes": [
+    { "id": "highland_run", "weight": 1.0, "deck": { "bastion": 2, "canyon": 2, "steppe": 1 },
+      "confluence": "five_fingers", "ratio_band": [0.24, 0.28] },
+    { "id": "riverine_run", "weight": 1.0, "deck": { "riverlands": 3, "steppe": 1, "bastion": 1 },
+      "confluence": "twin_pincers", "ratio_band": [0.20, 0.24] },
+    { "id": "open_run", "weight": 1.0, "deck": { "steppe": 3, "bastion": 1, "riverlands": 1 },
+      "confluence": "trident", "ratio_band": [0.20, 0.22] }
+  ],
+  "day1_card_constraint": "no_double_steppe",
+  "bias_cards_by_activation": false
 }

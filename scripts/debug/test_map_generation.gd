@@ -7,6 +7,8 @@ extends SceneTree
 const IntNoise = preload("res://scripts/map/generation/int_noise.gd")
 const MapGeneratorScript = preload("res://scripts/map/map_generator.gd")
 const CellDataRef = preload("res://scripts/map/cell_data.gd")
+const SkeletonGen = preload("res://scripts/map/generation/skeleton.gd")
+const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
 
@@ -19,7 +21,63 @@ func _run() -> void:
 	_test_int_noise()
 	_test_stage_stream_isolation()
 	_test_detour_repair()
+	_test_cards_archetypes_wind()
 	_finish()
+
+
+## v2 配置字面量（密封测试用，不读 json；数值=设计稿 §4.4，平衡占位可自由取整）。
+func _v2_cfg() -> Dictionary:
+	return {
+		"width": 30, "height": 30, "spawn_count": 5,
+		"resources_per_type": 12, "near_resources_per_type": 2, "event_point_count": 0,
+		"core_safe_radius": 3, "spawn_safe_radius": 2,
+		"spawn_corner_margin": 3, "spawn_arc_center_ratio": 0.6,
+		"generator": "skeleton_v2",
+		"max_retries": 5, "max_repair_rounds": 3,
+		"detour_cap": 1.6, "detour_floor": 1.15,
+		"lane_jitter_base": 0.35, "corridor_slack": 3, "gate_slide_jitter": 2,
+		"repair": {
+			"carve_costs": {"water": 6, "mountain": 12},
+			"intrusion_max_per_map": 0.15, "intrusion_max_mean": 0.10,
+			"dual_pass_ratio_cap": 0.25,
+		},
+		"pass": {"aperture_depth": 2, "pocket_core_w": 3, "pocket_core_h": 2,
+			"pocket_min_plain": 6, "pocket_flood_limit": 12},
+		"mesa": {
+			"count_min": 4, "count_max": 6, "count_floor_degraded": 3,
+			"cells_min": 14, "cells_max": 24,
+			"size_weights": {"3": 0.30, "4": 0.35, "5": 0.20, "6": 0.15},
+			"max_corridor_dist": 2, "min_covered_ratio": 0.6,
+			"starter": {"ring_min": 4, "ring_max": 5, "size_min": 3, "size_max": 4, "max_corridor_dist": 2},
+		},
+		"economy": {
+			"resource_affinity": {"wood": "moist_plain", "stone": "foothill", "mana": "water_adjacent"},
+			"risk_reward_bias": 0.5,
+		},
+		"moisture_gradient_strength": 0.2,
+		"sector_cards": {
+			"bastion": {"pass_width": 2, "pass_ring": [6, 8], "density": 1.3, "mesa_quota": 1, "jitter_amp": 0.5, "resource_mult": 1.0},
+			"steppe": {"pass_width": 5, "pass_ring": [7, 10], "density": 0.6, "mesa_quota": 0, "jitter_amp": 0.3, "resource_mult": 1.5, "lake": [1, 2]},
+			"riverlands": {"pass_width": 2, "pass_ring": [6, 9], "density": 0.9, "mesa_quota": 1, "jitter_amp": 0.4, "resource_mult": 1.1, "river": true, "ford_width": 2},
+			"canyon": {"pass_width": 3, "pass_ring": [6, 10], "density": 1.2, "mesa_quota": 1, "jitter_amp": 0.35, "resource_mult": 0.9, "corridor_len": [6, 9]},
+		},
+		"archetypes": [
+			{"id": "highland_run", "weight": 1.0, "deck": {"bastion": 2, "canyon": 2, "steppe": 1},
+				"confluence": "five_fingers", "ratio_band": [0.24, 0.28]},
+			{"id": "riverine_run", "weight": 1.0, "deck": {"riverlands": 3, "steppe": 1, "bastion": 1},
+				"confluence": "twin_pincers", "ratio_band": [0.20, 0.24]},
+			{"id": "open_run", "weight": 1.0, "deck": {"steppe": 3, "bastion": 1, "riverlands": 1},
+				"confluence": "trident", "ratio_band": [0.20, 0.22]},
+		],
+		"day1_card_constraint": "no_double_steppe",
+		"bias_cards_by_activation": false,
+	}
+
+
+func _new_rng(seed_value: int) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	return rng
 
 
 func _test_int_noise() -> void:
@@ -196,7 +254,7 @@ func _test_detour_repair() -> void:
 		"terrain_cluster_attempts": 24,
 		"scattered_obstacle_ratio": 0.22,
 		"core_safe_radius": 3,
-		"spawn_safe_radius": 1,
+		"spawn_safe_radius": 2,
 		"spawn_corner_margin": 3,
 		"spawn_arc_center_ratio": 0.6,
 		"detour_cap": 1.6,
@@ -221,6 +279,56 @@ func _test_detour_repair() -> void:
 			prod_worst = maxf(prod_worst, prod_ratio)
 			_expect(prod_ratio <= 1.6 + 0.0001, "prod seed %d: ratio %.3f <= 1.6" % [prod_seed, prod_ratio])
 	print("  prod budget worst ratio: %.3f" % prod_worst)
+
+
+func _test_cards_archetypes_wind() -> void:
+	var cfg := _v2_cfg()
+	# json 已扩 schema（值与 _v2_cfg 同源；generator 在 B2-11 前保持 legacy）。
+	var file := FileAccess.open("res://data/map_generation.json", FileAccess.READ)
+	_expect(file != null, "map_generation.json readable")
+	var parsed: Dictionary = JSON.parse_string(file.get_as_text())
+	for key in ["generator", "sector_cards", "archetypes", "day1_card_constraint",
+			"moisture_gradient_strength", "pass", "mesa", "economy",
+			"detour_floor", "lane_jitter_base", "corridor_slack", "gate_slide_jitter", "max_retries"]:
+		_expect(parsed.has(key), "json has key %s" % key)
+	_expect(["legacy", "skeleton_v2"].has(String(parsed.get("generator", ""))), "generator value sane")
+	_expect(int(parsed.get("spawn_safe_radius", 0)) == 2, "spawn_safe_radius raised to 2 (spec 4.4)")
+	_expect((parsed.get("sector_cards", {}) as Dictionary).size() == 4, "4 sector cards in json")
+	_expect((parsed.get("archetypes", []) as Array).size() == 3, "3 archetypes in json")
+	# archetype 抽取：分布覆盖 + 决定性。
+	var seen: Dictionary = {}
+	for seed_value in range(60):
+		var arch: Dictionary = SkeletonGen.draw_archetype(cfg, _new_rng(seed_value))
+		seen[String(arch.get("id", ""))] = true
+	for arch_id in ["highland_run", "riverine_run", "open_run"]:
+		_expect(seen.has(arch_id), "archetype %s drawn within 60 seeds" % arch_id)
+	_expect(str(SkeletonGen.draw_archetype(cfg, _new_rng(7))) == str(SkeletonGen.draw_archetype(cfg, _new_rng(7))), "draw_archetype deterministic")
+	# 发牌：牌面=牌组多重集、day1 约束 100 个种子零违反、决定性。
+	var gate_keys: Array = ["S1", "S2", "S3", "S4", "S5"]
+	for seed_value in range(100):
+		var arch: Dictionary = SkeletonGen.draw_archetype(cfg, _new_rng(seed_value))
+		var day1: Array = NightResolverRef.resolve_active_gates(gate_keys, seed_value, 1)
+		var cards: Dictionary = SkeletonGen.deal_cards(arch, gate_keys, day1, _new_rng(seed_value * 31 + 1), cfg)
+		_expect(cards.size() == 5, "seed %d: 5 cards dealt" % seed_value)
+		var counts: Dictionary = {}
+		for raw_key: Variant in cards.keys():
+			var card_id := String(cards[raw_key])
+			counts[card_id] = int(counts.get(card_id, 0)) + 1
+		var deck: Dictionary = arch.get("deck", {})
+		for raw_card: Variant in deck.keys():
+			_expect(int(counts.get(String(raw_card), 0)) == int(deck[raw_card]), "seed %d: deck multiset preserved for %s" % [seed_value, String(raw_card)])
+		var steppe_on_day1: int = 0
+		for raw_gate: Variant in day1:
+			if String(cards.get(String(raw_gate), "")) == "steppe":
+				steppe_on_day1 += 1
+		_expect(steppe_on_day1 < day1.size(), "seed %d: no_double_steppe holds (day1 gates=%s)" % [seed_value, str(day1)])
+	var cards_a: Dictionary = SkeletonGen.deal_cards(cfg["archetypes"][2], gate_keys, ["S1", "S2"], _new_rng(99), cfg)
+	var cards_b: Dictionary = SkeletonGen.deal_cards(cfg["archetypes"][2], gate_keys, ["S1", "S2"], _new_rng(99), cfg)
+	_expect(str(cards_a) == str(cards_b), "deal_cards deterministic")
+	# 风向：八向之一 + 决定性。
+	var wind: Vector2i = SkeletonGen.roll_wind(_new_rng(5))
+	_expect(wind != Vector2i.ZERO and absi(wind.x) <= 1 and absi(wind.y) <= 1, "wind is one of 8 compass dirs")
+	_expect(SkeletonGen.roll_wind(_new_rng(5)) == wind, "roll_wind deterministic")
 
 
 func _finish() -> void:
