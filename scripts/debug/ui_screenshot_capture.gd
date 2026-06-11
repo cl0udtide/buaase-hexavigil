@@ -110,7 +110,6 @@ func _capture_game_states() -> void:
 	if _errors > 0:
 		game.queue_free()
 		return
-	_force_overlay_layers_visible(game)
 
 	# --- 典型态：开局白天 1，空卡组、初始资源 ---
 	controller.start_new_run(RUN_SEED, &"standard")
@@ -285,21 +284,6 @@ func _capture_dialog_panel() -> void:
 	dialog.queue_free()
 	backdrop.queue_free()
 	await process_frame
-
-
-## 弹窗/设置/遗物的容器层在场景里被 visible=false 藏住（"UI 点不开"，另一会话修复中）。
-## 这里仅在运行时强制显示容器层以便审计面板内容，不改动场景文件；面板自身仍按
-## 各自 _ready 的默认隐藏逻辑工作。等修复 PR 合入后此函数自然变为幂等无副作用。
-func _force_overlay_layers_visible(game: Node) -> void:
-	for layer_path in [
-		"UI/ModalLayer",
-		"UI/ScreenLayout/CombatHudSlot/CombatHud/PopupLayer",
-		"UI/ScreenLayout/CombatHudSlot/CombatHud/PopupLayer/RelicPanelSlot",
-		"UI/ScreenLayout/CombatHudSlot/CombatHud/PopupLayer/RelicPanelSlot/RelicPanelCenter",
-	]:
-		var layer := game.get_node_or_null(layer_path) as CanvasItem
-		if layer != null:
-			layer.visible = true
 
 
 func _settle() -> void:

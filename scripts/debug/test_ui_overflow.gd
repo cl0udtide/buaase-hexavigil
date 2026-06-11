@@ -11,21 +11,18 @@ extends SceneTree
 ## 4. 容器(Container)子节点 rect 越出父容器 rect。
 ## 5. 关键 HUD 模块两两重叠；敌情预览与右侧详情互斥同屏。
 ##
-## 分级：WARN_PATHS 命中的节点只警告不计失败（并行分支占用区域：UnitDetailPanel、
-## WavePreviewPanel/右上敌情归 issue #211）；WHITELIST 命中的为有意为之，直接跳过。
+## 分级：WARN_PATHS 命中的节点只警告不计失败；WHITELIST 命中的为有意为之，直接跳过。
 ## 同构问题（动态列表里每张卡报一遍）按"去实例号路径+检查类型"去重，输出 xN 计数。
 
 ## 有意为之的节点（路径子串匹配），附原因注释。
 const WHITELIST: Array[String] = [
 	"DragGhost",  # 跟随鼠标的拖拽虚影，未拖拽时停在原点，允许越界
+	"WavePreviewPanel x LegendPanel",  # 右列 VBox separation=-10 有意叠框互锁
+	"UnitDetailPanel x LegendPanel",  # 同上，详情面板替换敌情预览时的同一交界
 ]
 
-## 并行分支占用区域：问题写入审计报告但不算失败。
-const WARN_PATHS: Array[String] = [
-	"UnitDetailPanel",  # 并行会话改造中（定向升星按钮）
-	"WavePreviewPanel",  # 右上敌情承载归 issue #211 / fix/map-popup-floating-layer
-	"WavePreviewScroll",
-]
+## 降级为警告的区域（当前为空；并行开发占用某面板时把路径子串加进来）。
+const WARN_PATHS: Array[String] = []
 
 const VIEWPORT_SIZE := Vector2(1920.0, 1080.0)
 const RUN_SEED := 20260611
@@ -64,8 +61,6 @@ func _run() -> void:
 		printerr("FAIL: missing game nodes")
 		quit(1)
 		return
-
-	_force_overlay_layers_visible()
 
 	# --- 状态 A：白天 1 默认 ---
 	controller.start_new_run(RUN_SEED, &"standard")
@@ -137,20 +132,6 @@ func _run() -> void:
 	_game.queue_free()
 	await process_frame
 	_finish()
-
-
-## 弹窗/设置/遗物的容器层在场景里被 visible=false 藏住（"UI 点不开"，另一会话修复中）。
-## 运行时强制显示容器层，使面板布局可被本测试度量；修复 PR 合入后此调用幂等无副作用。
-func _force_overlay_layers_visible() -> void:
-	for layer_path in [
-		"UI/ModalLayer",
-		"UI/ScreenLayout/CombatHudSlot/CombatHud/PopupLayer",
-		"UI/ScreenLayout/CombatHudSlot/CombatHud/PopupLayer/RelicPanelSlot",
-		"UI/ScreenLayout/CombatHudSlot/CombatHud/PopupLayer/RelicPanelSlot/RelicPanelCenter",
-	]:
-		var layer := _game.get_node_or_null(layer_path) as CanvasItem
-		if layer != null:
-			layer.visible = true
 
 
 func _settle() -> void:
