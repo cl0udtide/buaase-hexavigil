@@ -27,12 +27,12 @@ const TERRAIN_CLUSTER_ATTEMPTS := 24
 const SCATTERED_OBSTACLE_RATIO := 0.22
 const CORE_SAFE_RADIUS := 3
 const SPAWN_SAFE_RADIUS := 1
-const SPAWN_COUNT := 3
+const SPAWN_COUNT := 5
 const RESOURCES_PER_TYPE := 12
 const NEAR_RESOURCES_PER_TYPE := 2
 const EVENT_POINT_COUNT := 8
-const MIN_SPAWN_CORE_DISTANCE := 12
-const MIN_SPAWN_DISTANCE := 10
+const SPAWN_CORNER_MARGIN := 3
+const SPAWN_ARC_CENTER_RATIO := 0.6
 const WATER_OBSTACLE_CHANCE := 0.35
 
 
@@ -85,43 +85,58 @@ static func _setup_core_and_initial_fog(cells: Dictionary, core_cell: Vector2i) 
 				reveal_data.discovered = true
 
 
-static func _place_spawns(cells: Dictionary, width: int, height: int, core_cell: Vector2i, rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Vector2i]:
-	var candidates := _get_edge_candidates(width, height)
-	_shuffle_cells(candidates, rng)
+static func _get_perimeter_cells(width: int, height: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for x in range(0, width):
+		cells.append(Vector2i(x, 0))
+	for y in range(1, height):
+		cells.append(Vector2i(width - 1, y))
+	for x in range(width - 2, -1, -1):
+		cells.append(Vector2i(x, height - 1))
+	for y in range(height - 2, 0, -1):
+		cells.append(Vector2i(0, y))
+	return cells
+
+
+static func _is_near_corner(cell: Vector2i, width: int, height: int, margin: int) -> bool:
+	var near_x: bool = cell.x < margin or cell.x > width - 1 - margin
+	var near_y: bool = cell.y < margin or cell.y > height - 1 - margin
+	return near_x and near_y
+
+
+## 等弧放置：周长均分为 spawn_count 段，每段只在中部 arc_center_ratio 内抽取，
+## 方向分散由构造保证；相位随机让弧界不固定在 (0,0)。
+static func _place_spawns(cells: Dictionary, width: int, height: int, _core_cell: Vector2i, rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Vector2i]:
+	var perimeter := _get_perimeter_cells(width, height)
+	var spawn_count: int = maxi(int(cfg.get("spawn_count", SPAWN_COUNT)), 1)
+	var corner_margin: int = maxi(int(cfg.get("spawn_corner_margin", SPAWN_CORNER_MARGIN)), 0)
+	var center_ratio: float = clampf(float(cfg.get("spawn_arc_center_ratio", SPAWN_ARC_CENTER_RATIO)), 0.1, 1.0)
+	var total: int = perimeter.size()
+	var phase: int = rng.randi() % total
 	var spawn_cells: Array[Vector2i] = []
-	var spawn_count: int = int(cfg.get("spawn_count", SPAWN_COUNT))
-	var min_core_distance: int = int(cfg.get("min_spawn_core_distance", MIN_SPAWN_CORE_DISTANCE))
-	var min_spawn_distance: int = int(cfg.get("min_spawn_distance", MIN_SPAWN_DISTANCE))
-	for candidate in candidates:
-		if spawn_cells.size() >= spawn_count:
-			break
-		if _manhattan(candidate, core_cell) < min_core_distance:
-			continue
-		var far_from_existing: bool = true
-		for spawn_cell in spawn_cells:
-			if _manhattan(candidate, spawn_cell) < min_spawn_distance:
-				far_from_existing = false
-				break
-		if not far_from_existing:
-			continue
-		var spawn_data: CellData = cells[candidate]
+	for arc_index in range(spawn_count):
+		var arc_start: float = float(total) * float(arc_index) / float(spawn_count)
+		var arc_len: float = float(total) / float(spawn_count)
+		var margin: float = arc_len * (1.0 - center_ratio) * 0.5
+		var options: Array[Vector2i] = []
+		for index in range(int(ceil(arc_start + margin)), int(floor(arc_start + arc_len - margin)) + 1):
+			var cell: Vector2i = perimeter[(index + phase) % total]
+			if _is_near_corner(cell, width, height, corner_margin):
+				continue
+			options.append(cell)
+		if options.is_empty():
+			for index in range(int(ceil(arc_start)), int(floor(arc_start + arc_len))):
+				var fallback_cell: Vector2i = perimeter[(index + phase) % total]
+				if not _is_near_corner(fallback_cell, width, height, corner_margin):
+					options.append(fallback_cell)
+		var pick: Vector2i = options[rng.randi_range(0, options.size() - 1)]
+		var spawn_data: CellData = cells[pick]
 		spawn_data.spawn_key = StringName("S%d" % (spawn_cells.size() + 1))
 		spawn_data.set_base_terrain(CellData.TERRAIN_PLAIN)
 		spawn_data.discovered = false
 		spawn_data.buildable = false
-		spawn_cells.append(candidate)
+		spawn_cells.append(pick)
 	return spawn_cells
-
-
-static func _get_edge_candidates(width: int, height: int) -> Array[Vector2i]:
-	var candidates: Array[Vector2i] = []
-	for x in range(width):
-		candidates.append(Vector2i(x, 0))
-		candidates.append(Vector2i(x, height - 1))
-	for y in range(1, height - 1):
-		candidates.append(Vector2i(0, y))
-		candidates.append(Vector2i(width - 1, y))
-	return candidates
 
 
 static func _place_resources(
@@ -586,7 +601,3 @@ static func _shuffle_cells(cells: Array[Vector2i], rng: RandomNumberGenerator) -
 		var temp: Vector2i = cells[i]
 		cells[i] = cells[swap_index]
 		cells[swap_index] = temp
-
-
-static func _manhattan(from_cell: Vector2i, to_cell: Vector2i) -> int:
-	return absi(from_cell.x - to_cell.x) + absi(from_cell.y - to_cell.y)
