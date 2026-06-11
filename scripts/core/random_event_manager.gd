@@ -262,6 +262,9 @@ func apply_event_for_cell(cell: Vector2i, choice_id: StringName = StringName()) 
 		# 塌方选项是动态生成的，静态配置里没有；离开分支直接映射到隐藏空事件，
 		# 走通用流程消耗事件点（与其他事件的离开选项一致）。
 		triggered_event_id = &"event_landslide_leave"
+	elif event_id == ALTAR_EVENT_ID and choice_id == &"leave":
+		# 祭坛选项同为动态生成，离开分支同样映射到隐藏空事件。
+		triggered_event_id = &"event_altar_leave"
 	elif choice_id != StringName():
 		var choice_result := _resolve_choice_event_id(event_id, choice_id)
 		if not choice_result.get("ok", false):
