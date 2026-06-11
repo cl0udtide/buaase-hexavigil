@@ -124,3 +124,60 @@ static func resolve_lane_gate(lane: StringName, group_index: int, main_gate: Str
 			var rng_any := RandomNumberGenerator.new()
 			rng_any.seed = abs(("lane|%d|%d|%d|%d|any" % [run_seed, day, wave_index, group_index]).hash())
 			return gates[rng_any.randi() % gates.size()]
+
+
+## ---- 激活序与当日活跃集 ----
+
+## 活跃口数量日程表（占位值）：阶梯取 <= day 的最大键。
+const ACTIVE_COUNT_BY_DAY := {1: 2, 3: 3, 5: 4, 7: 5}
+
+
+static func active_gate_count_for_day(day: int) -> int:
+	var best_key: int = -1
+	for raw_key: Variant in ACTIVE_COUNT_BY_DAY.keys():
+		var key := int(raw_key)
+		if key <= day and key > best_key:
+			best_key = key
+	if best_key < 0:
+		return int(ACTIVE_COUNT_BY_DAY.get(1, 2))
+	return int(ACTIVE_COUNT_BY_DAY.get(best_key, 2))
+
+
+## 激活序：每局固定的口激活顺序。无存档状态，任意一天可由 seed 重算。
+static func resolve_activation_order(all_gates: Array, run_seed: int) -> Array[String]:
+	var gates := _sorted_gates(all_gates)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = abs(("gate_order|%d" % run_seed).hash())
+	for i in range(gates.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp := gates[i]
+		gates[i] = gates[j]
+		gates[j] = tmp
+	return gates
+
+
+## 当日有效活跃集 = (激活序前 N ∪ extra_open) − closed，下限 1（保激活序第一位）。
+## closed/extra_open 是一夜覆盖项（RunState 持有，黎明清空）。返回值升序。
+static func resolve_active_gates(all_gates: Array, run_seed: int, day: int, closed: Array = [], extra_open: Array = []) -> Array[String]:
+	var order := resolve_activation_order(all_gates, run_seed)
+	if order.is_empty():
+		return []
+	var closed_keys: Array[String] = []
+	for raw_closed: Variant in closed:
+		closed_keys.append(String(raw_closed))
+	var count: int = mini(active_gate_count_for_day(day), order.size())
+	var active: Array[String] = []
+	for i in range(count):
+		active.append(order[i])
+	for raw_extra: Variant in extra_open:
+		var extra_gate := String(raw_extra)
+		if order.has(extra_gate) and not active.has(extra_gate):
+			active.append(extra_gate)
+	var result: Array[String] = []
+	for gate in active:
+		if not closed_keys.has(gate):
+			result.append(gate)
+	if result.is_empty():
+		result.append(order[0])
+	result.sort()
+	return result
