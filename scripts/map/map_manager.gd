@@ -295,6 +295,10 @@ func reveal_area(center: Vector2i, radius: int) -> Array[Vector2i]:
 			var data := get_cell_data(cell)
 			if data == null or data.discovered:
 				continue
+			# 出怪口格永不探索（设计稿 §3.3 不变式）：标记常显但格子保持未探索，
+			# 否则玩家可从地图边缘的口格继续邻接探索，绕开探索经济。
+			if data.spawn_key != StringName():
+				continue
 			data.discovered = true
 			revealed.append(cell)
 	if not revealed.is_empty():
