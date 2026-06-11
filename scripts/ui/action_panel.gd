@@ -96,6 +96,8 @@ func _can_auto_explore_cell(cell: Vector2i) -> bool:
 		return false
 	if not _map_manager.is_inside(cell) or _map_manager.is_discovered(cell):
 		return false
+	if _map_manager.has_method("get_spawn_key_at_cell") and _map_manager.get_spawn_key_at_cell(cell) != StringName():
+		return false
 	if not _map_manager.has_method("has_discovered_neighbor"):
 		return false
 	return bool(_map_manager.has_discovered_neighbor(cell))

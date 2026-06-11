@@ -206,6 +206,14 @@ func _test_reveal_skips_gates() -> void:
 			if map_manager.is_discovered(neighbor):
 				revealed_any = true
 	_expect(revealed_any, "non-gate neighbors still revealed")
+	var run_state = root.get_node_or_null("RunState")
+	if run_state != null:
+		var day_manager := game.get_node_or_null("Managers/DayManager")
+		if day_manager != null:
+			run_state.reset_action_points(30)
+			var explore_result: Dictionary = day_manager.try_explore(gate_cell)
+			_expect(not explore_result.get("ok", false), "explore rejects gate cell")
+			_expect(int(run_state.action_points) == 30, "gate explore attempt costs no ap")
 	game.queue_free()
 	await process_frame
 
