@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_arc_placement()
 	_test_activation()
 	await _test_overrides_lifecycle()
+	await _test_active_set_consumption()
 	_finish()
 
 
@@ -125,6 +126,48 @@ func _test_overrides_lifecycle() -> void:
 	_expect((run_state.night_gate_closed_keys as Array).is_empty(), "closed cleared at dawn")
 	_expect((run_state.night_gate_extra_open_keys as Array).is_empty(), "extra cleared at dawn")
 	_expect(int(run_state.night_gate_seals_today) == 0, "seal counter cleared at dawn")
+	game.queue_free()
+	await process_frame
+
+
+func _test_active_set_consumption() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var wave_manager := game.get_node_or_null("Managers/WaveManager")
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	_expect(run_state != null and wave_manager != null and map_manager != null, "boot ok for active set test")
+	if run_state == null or wave_manager == null or map_manager == null:
+		game.queue_free()
+		await process_frame
+		return
+	var all_gates: Array = map_manager.get_spawn_keys()
+	_expect(all_gates.size() == 5, "five gates registered")
+	var expected: Array = ResolverScript.resolve_active_gates(all_gates, int(run_state.random_seed), int(run_state.day), run_state.night_gate_closed_keys, run_state.night_gate_extra_open_keys)
+	_expect(expected.size() == 2, "day1 two active gates")
+	var preview: Dictionary = wave_manager.get_night_preview(run_state.night_wave_template_ids, run_state.night_affix_ids)
+	var preview_gates: Array = preview.get("active_gates", [])
+	_expect(str(preview_gates) == str(expected), "preview exposes active gates")
+	for raw_summary: Variant in preview.get("waves", []):
+		var summary: Dictionary = raw_summary
+		_expect(expected.has(String(summary.get("main_gate", ""))), "main gate within active set")
+		for raw_entry: Variant in summary.get("entries", []):
+			var entry: Dictionary = raw_entry
+			_expect(expected.has(String(entry.get("spawn_key", ""))), "entry gate within active set")
+	# 封口后冻结契约：预览与解析共用同一活跃集。
+	var victim := String(expected[0])
+	run_state.add_night_gate_closed(victim)
+	var preview2: Dictionary = wave_manager.get_night_preview(run_state.night_wave_template_ids, run_state.night_affix_ids)
+	var gates2: Array = preview2.get("active_gates", [])
+	_expect(not gates2.has(victim), "sealed gate absent from preview")
+	for raw_summary2: Variant in preview2.get("waves", []):
+		var summary2: Dictionary = raw_summary2
+		for raw_entry2: Variant in summary2.get("entries", []):
+			_expect(String((raw_entry2 as Dictionary).get("spawn_key", "")) != victim, "no entry spawns at sealed gate")
+	run_state.clear_night_gate_overrides()
 	game.queue_free()
 	await process_frame
 

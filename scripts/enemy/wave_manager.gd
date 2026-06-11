@@ -275,6 +275,7 @@ func get_night_preview(template_ids: Array, affix_ids: Array = []) -> Dictionary
 		"wave_count": wave_previews.size(),
 		"waves": wave_summaries,
 		"affixes": affixes,
+		"active_gates": _active_spawn_keys(),
 	}
 
 
@@ -416,9 +417,20 @@ func _collect_spawn_keys(entries: Array) -> Array:
 
 
 func _active_spawn_keys() -> Array:
-	if _map_manager != null and _map_manager.has_method("get_spawn_keys"):
-		return _map_manager.get_spawn_keys()
-	return []
+	if _map_manager == null or not _map_manager.has_method("get_spawn_keys"):
+		return []
+	var all_gates: Array = _map_manager.get_spawn_keys()
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return all_gates
+	# 有效活跃集 =（按天日程 ∪ 事件加开）− 封堵；预览与运行时共用本函数（公示即契约）。
+	return NightTemplateResolver.resolve_active_gates(
+		all_gates,
+		int(run_state.random_seed),
+		int(run_state.day),
+		run_state.night_gate_closed_keys,
+		run_state.night_gate_extra_open_keys
+	)
 
 
 func _main_gate_for_wave(wave_index: int, active_gates: Array) -> String:
