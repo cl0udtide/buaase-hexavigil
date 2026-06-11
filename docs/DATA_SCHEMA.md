@@ -395,12 +395,13 @@ Boss 多阶段规则：
 | `wall_visual_prefix` | `String` | 木墙连接变体前缀；运行时组合为 `<prefix>_0001_n` 等 16 种四邻接贴图名 |
 | `visual_display_size` | `float` | 建筑贴图在地图上的显示尺寸，默认 `72`，用于让 128px 贴图覆盖 64px 逻辑格并减少连接缝 |
 | `hidden_in_build_panel` | `bool` | 是否从建筑面板隐藏，适合未开放或调试建筑 |
+| `ranged_deployable` | `bool` | 机制标志：建筑存活时，该格视同高台，允许狙击/术师（`RANGED_DEPLOY_CLASSES`）部署；建筑被摧毁时同格占驻干员立即阵亡（夜间触发再部署冷却，白昼直接移除）；未配置默认 `false` |
 
 `BuildPanel` 不维护独立建筑清单。建筑是否出现在某个标签页，由 `building_type` 决定：
 
 - `resource`：资源建筑。
 - `aura`：增益/光环建筑。
-- `block`：防御/路径阻挡建筑。
+- `block`：防御/路径阻挡建筑（木墙、人工高台等）。
 
 ---
 
@@ -825,7 +826,37 @@ Boss 多阶段规则：
 - 事件具体内容、效果和结算参数仍由 `events.json` 与 `RandomEventManager` 负责。
 - 地图侧只负责“这个格子是否有事件”；探索发现后的展示和事件效果结算属于白天流程与随机事件模块。
 
-### 10.1 `ui_icons.json`
+### 10.1 地形类型与调试地图序列化
+
+运行时每个格由 `cell_data.gd` 的 `terrain` 字段区分地形类别（`StringName`）。当前定义的类型：
+
+| 地形值 | 显示名 | 敌人可走 | 可建造 | 部署规则 | 渲染说明 |
+|---|---|---|---|---|---|
+| `plain` | 平地 | 可通行 | 可建造 | 全职业可部署 | `tile_plain.png` |
+| `mountain` | 山地 | 阻挡 | 不可建造 | 不可部署 | `tile_mountain.png`（概括化岩块） |
+| `water` | 水域 | 阻挡（飞行可过） | 不可建造 | 不可部署 | `tile_water.png` |
+| `highland` | 高台 | 阻挡 | 不可建造 | **仅远程（狙击/术师）**可部署 | `tile_mountain.png` 暖黄 modulate 占位，`tile_highland.png` 待阶段 B 美术 |
+
+`highland` 与 `mountain` 的关键区别：`cell_data.allows_ranged_deploy()` 对 highland 返回 `true`，对 mountain/water 返回 `false`。`is_terrain_blocking()` 对两者均返回 `true`（敌人无法穿越）。
+
+**调试地图状态序列化**（`map_manager.get_debug_map_state` / `apply_debug_map_state`）：
+
+```json
+{
+  "width": 10,
+  "height": 10,
+  "core": [5, 5],
+  "mountain": [[2, 3], [2, 4]],
+  "highland": [[6, 3]],
+  "spawn_defs": {}
+}
+```
+
+`"highland"` 键保存所有高台格坐标，缺省时回退 `[]`（旧存档不带此键不会出错）。`apply_debug_map_state` 会把 highland 列表一同传给 `generate_debug_map`，全量重建地图后由 `_apply_debug_highland_cells` 写入地形。出怪口格不会被 `reveal_area` 揭开（`map_manager.reveal_area` 内有口格跳过逻辑）。
+
+---
+
+### 10.2 `ui_icons.json`
 
 作用：
 
