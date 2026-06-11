@@ -190,7 +190,7 @@
     "desc": "可供狙击/术师站立的木石炮台。阻挡敌人路径；被摧毁时其上干员阵亡",
     "sort_order": 220,
     "icon_text": "台",
-    "building_type": "platform",
+    "building_type": "block",
     "max_hp": 500,
     "visual_key": "inspiring_monolith",
     "destroyed_visual_key": "generic_destroyed_building",
