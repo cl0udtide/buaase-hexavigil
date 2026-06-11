@@ -48,6 +48,8 @@ func enter_day(day: int) -> void:
 	run_state.set_phase(GameEnums.PHASE_DAY)
 	run_state.night_wager_active = false
 	run_state.night_core_damaged = false
+	if run_state.has_method("clear_night_gate_overrides"):
+		run_state.clear_night_gate_overrides()
 	_resolve_night_template_for_day(run_state, day)
 	_resolve_night_affixes_for_day(run_state, day)
 	run_state.reset_action_points(run_state.DEFAULT_ACTION_POINTS)

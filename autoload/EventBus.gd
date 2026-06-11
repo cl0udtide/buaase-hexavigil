@@ -112,3 +112,6 @@ signal blessing_choices_ready(choice_ids: Array[StringName])
 signal audio_cue_requested(cue_key: StringName)
 @warning_ignore("unused_signal")
 signal core_destroyed()
+
+@warning_ignore("unused_signal")
+signal night_gate_overrides_changed()

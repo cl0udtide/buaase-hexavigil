@@ -39,6 +39,10 @@ var night_affix_ids: Array[StringName] = []
 var night_wager_active := false
 var night_core_damaged := false
 var pending_extra_blessings := 0
+# 一夜覆盖项：玩家当晚手动封闭/额外开启的出怪口 key 列表，黎明由 clear_night_gate_overrides 清空。
+var night_gate_closed_keys: Array[String] = []
+var night_gate_extra_open_keys: Array[String] = []
+var night_gate_seals_today: int = 0
 var used_template_ids: Array[StringName] = []
 var owned_units: Array[StringName] = []
 # 干员槽位是真正的拥有列表；owned_units 只作为旧 UI / 旧调用路径的兼容视图。
@@ -71,6 +75,7 @@ func reset_for_new_run(seed: int, mode: StringName = RUN_MODE_STANDARD) -> void:
 	night_wager_active = false
 	night_core_damaged = false
 	pending_extra_blessings = 0
+	clear_night_gate_overrides()
 	used_template_ids.clear()
 	_day_deploy_limit_bonus = 0
 	owned_units.clear()
@@ -180,6 +185,30 @@ func set_core_max_hp_to_one() -> void:
 	core_hp_max = 1
 	core_hp = 1
 	EventBus.core_hp_changed.emit(core_hp, core_hp_max)
+
+
+## 清空当晚所有出怪口覆盖项（黎明由 game_controller 调用；new_run 也调用）。
+func clear_night_gate_overrides() -> void:
+	night_gate_closed_keys = []
+	night_gate_extra_open_keys = []
+	night_gate_seals_today = 0
+	EventBus.night_gate_overrides_changed.emit()
+
+
+## 玩家封闭一个出怪口（当晚有效，去重）。
+func add_night_gate_closed(gate_key: String) -> void:
+	if gate_key.is_empty() or night_gate_closed_keys.has(gate_key):
+		return
+	night_gate_closed_keys.append(gate_key)
+	EventBus.night_gate_overrides_changed.emit()
+
+
+## 玩家额外开启一个出怪口（当晚有效，去重）。
+func add_night_gate_extra_open(gate_key: String) -> void:
+	if gate_key.is_empty() or night_gate_extra_open_keys.has(gate_key):
+		return
+	night_gate_extra_open_keys.append(gate_key)
+	EventBus.night_gate_overrides_changed.emit()
 
 
 func add_owned_operator(unit_id: StringName, display_name: String = "", star: int = OperatorProgression.DEFAULT_STAR) -> Dictionary:
