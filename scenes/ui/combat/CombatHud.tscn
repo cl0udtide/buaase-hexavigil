@@ -993,7 +993,6 @@ text_overrun_behavior = 3
 
 [node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 0
 offset_left = 66.0
 offset_top = 96.0
@@ -1007,7 +1006,6 @@ layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
 offset_right = 126.0
-offset_bottom = 40.0
 grow_vertical = 2
 
 [node name="RightColumnSlot" type="Control" parent="HudChromeLayer" unique_id=1176662936]
@@ -1309,7 +1307,6 @@ size_flags_vertical = 3
 
 [node name="LegendPanel" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox" unique_id=1482391782]
 unique_name_in_owner = true
-visible = false
 custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
 size_flags_horizontal = 3

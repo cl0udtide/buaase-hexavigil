@@ -1379,7 +1379,7 @@ func _format_operator_drag_text(operator_key: StringName) -> String:
 	if operator_info.is_empty():
 		return String(operator_key)
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
-	return "%s %s\n%s" % [String(operator_info.get("name", operator_key)), OperatorProgression.format_star_label(star), String(operator_info.get("unit_id", ""))]
+	return "%s %s" % [String(operator_info.get("name", operator_key)), OperatorProgression.format_star_label(star)]
 
 
 func _format_resource_tooltip(buff_ids: Array[StringName]) -> String:

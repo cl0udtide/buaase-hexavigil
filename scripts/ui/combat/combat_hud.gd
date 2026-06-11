@@ -1330,7 +1330,9 @@ func _refresh_deploy_deck_scroll_content() -> void:
 	var visible_card_count := 0
 	for child in _deck_container.get_children():
 		var card := child as Control
-		if card == null or not card.visible:
+		# set_operators() 用 queue_free 清旧卡后立即重建并 deferred 刷新；
+		# 刷新执行时垂死卡仍在子节点列表里，不跳过会把滚动宽度算成约两倍。
+		if card == null or not card.visible or card.is_queued_for_deletion():
 			continue
 		var minimum := card.get_combined_minimum_size()
 		if minimum == Vector2.ZERO:
