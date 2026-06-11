@@ -470,3 +470,50 @@ generic_destroyed_building：小型通用建筑残骸。破碎木板、低矮石
 ```text
 请保持所有木墙变体相同高度、厚度、颜色和锚点。连接端必须统一对齐到 N/E/S/W 四个方向，连续摆放时形成一条完整墙线。不要每个变体重新设计不同墙体。
 ```
+
+## 11. 第三阶段：高台地形与人工高台（TODO，地形包迭代用）
+
+> **状态：TODO**——本节资产服务于"地形包"迭代（设计稿：动态地图生成终案），实装由 AI 完成，生成工具使用 gpt-image-2。生成与裁剪约定同第 2 节。**资产未就绪前的占位方案**：`tile_highland` 由代码侧复制 `tile_mountain` 加暖黄 modulate 占位；人工高台建筑暂用 `inspiring_monolith.png` + 建筑列表 icon_text"台"占位。
+
+### 11.1 资产清单
+
+| 资产 key | 输出路径 | 用途 | 视觉目标 |
+|---|---|---|---|
+| `tile_highland` | `assets/map/CommandMap/tile_highland.png` | 高台地形格（敌不可走、仅远程干员可部署） | 卡通化平顶台地/崖缘平台，暖赭色调与山地冷灰明确区分 |
+| `artificial_platform` | `assets/sprites/buildings/artificial_platform.png` | 人工高台建筑（玩家建造的木石炮台基座，可载干员） | 低矮木石结构平台，看得出"上面能站人" |
+| `tile_ford` | `assets/map/CommandMap/tile_ford.png` | 渡口浅滩格（v1.5 可选） | 水面中的可通行浅滩/碎石滩 |
+
+### 11.2 第 9 轮：高台地形格
+
+保存源图为：`map_source_sheet_05_highland.png`，裁剪顺序：1. `tile_highland` 2. `tile_ford`
+
+```text
+（先复制第 1 节全局提示词，再追加本段）
+
+请生成一张地图地块源图，纯色背景 #79C7B6，包含 2 个独立正方形俯视地块，按从左到右排列。每个地块建议 256x256，最终缩放到 64x64。风格与已有地块一致：低饱和半卡通手绘。不要文字、数字、UI 边框、粗网格线。
+
+1. tile_highland：高台地形格。卡通化平顶台地：边缘是清晰的崖缘/石阶剪影表示与平地的高差，顶面是干净开阔的平台面（之后会有干员单位站在上面，中心必须留白可叠放）。主色用暖赭/土黄与浅岩灰，与 tile_mountain 的冷灰岩块、tile_plain 的暗绿灰都拉开明确色相差。远看一眼能读出"这是一块高起来的可站立平台"，不是山、不是墙。不要画梯子、旗帜、建筑、人物，不要画成悬浮岛或祭坛。
+2. tile_ford：渡口浅滩格。在 tile_water 同款暗青蓝水面中，有一条由碎石/沙洲构成的可通行浅滩带，水纹在浅滩两侧断开，浅滩本体颜色接近平地土面表示可以走。不要画桥（木桥是建筑感）、不要画完整道路，保持自然浅滩感。
+
+两格必须与现有 tile_plain / tile_mountain / tile_water 同一画风，铺在一起无违和。保持 top-down orthographic square cartoon game map tiles, readable at 64x64。
+```
+
+### 11.3 第 10 轮：人工高台建筑 Sprite
+
+保存源图为：`building_source_sheet_05_artificial_platform.png`，裁剪顺序：1. `artificial_platform`
+
+```text
+（先复制第 10.1 节建筑全局提示词，再追加本段）
+
+请生成一张地图建筑 sprite 源图，纯色背景 #79C7B6，只包含 1 个建筑，最终裁剪为 128x128 透明 PNG，在 64x64 地图格上以约 72px 显示。风格与已有建筑（木墙、鼓舞石碑）同一套低饱和半卡通地图实体。不要文字、数字、UI 边框、底板。
+
+artificial_platform：人工高台。玩家用木材和石材搭建的低矮方形炮台基座：木桩框架 + 石块基础 + 顶面平整的木板平台，可以看出顶面是留给干员站立的（顶面居中留白，不要画人）。高度感克制（约半格高的伪 3D 体积），比木墙更厚重、更像"工事"而不是"栅栏"。木褐 + 冷石灰为主，少量绑绳/铆钉细节。损毁状态沿用 generic_destroyed_building，无需单独生成。不要画成箭塔/炮塔（塔身封闭无站位）、不要瞭望塔高架、不要旗帜火把。
+
+保持 readable at 72px, transparent background, bottom-center anchor, same visual family as wood_wall and inspiring_monolith。
+```
+
+### 11.4 入库检查（追加）
+
+- `tile_highland` 与 `tile_mountain` 并排铺开必须一眼可分（色相差 + 平顶 vs 岩块剪影）；与单位 sprite 叠放时顶面留白足够。
+- `artificial_platform` 顶面叠放狙击/术师单位 sprite 后，单位剪影不被平台细节淹没。
+- `tile_ford` 嵌进 tile_water 河道中段时，水纹衔接自然、浅滩可读为"能走"。
