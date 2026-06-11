@@ -1,6 +1,14 @@
 class_name MapGenerator
 extends RefCounted
 
+const IntNoise = preload("res://scripts/map/generation/int_noise.gd")
+
+const STAGE_SPAWNS := 1
+const STAGE_OBSTACLES := 2
+const STAGE_RESOURCES := 3
+const STAGE_EVENTS := 4
+const STAGE_REPAIR := 5  # reserved for next task
+
 const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.RIGHT,
 	Vector2i.DOWN,
@@ -36,20 +44,26 @@ const SPAWN_ARC_CENTER_RATIO := 0.6
 const WATER_OBSTACLE_CHANCE := 0.35
 
 
+static func _stage_rng(run_seed: int, stage_id: int) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = IntNoise.derive_seed(run_seed, 0, stage_id)
+	return rng
+
+
 static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = {}, event_ids: Array[StringName] = []) -> Dictionary:
 	var cells := _create_plain_cells(width, height)
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	if seed >= 0:
-		rng.seed = seed
-	else:
-		rng.randomize()
+	var actual_seed: int = seed
+	if actual_seed < 0:
+		var boot_rng := RandomNumberGenerator.new()
+		boot_rng.randomize()
+		actual_seed = int(boot_rng.randi())
 
 	var core_cell: Vector2i = Vector2i(width / 2, height / 2)
 	_setup_core_and_initial_fog(cells, core_cell)
-	var spawn_cells := _place_spawns(cells, width, height, core_cell, rng, cfg)
-	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, rng, cfg)
-	_place_resources(cells, width, height, spawn_cells, core_cell, rng, cfg)
-	var event_points := _place_event_points(cells, width, height, spawn_cells, core_cell, rng, cfg, event_ids)
+	var spawn_cells := _place_spawns(cells, width, height, core_cell, _stage_rng(actual_seed, STAGE_SPAWNS), cfg)
+	_place_random_obstacles(cells, width, height, spawn_cells, core_cell, _stage_rng(actual_seed, STAGE_OBSTACLES), cfg)
+	_place_resources(cells, width, height, spawn_cells, core_cell, _stage_rng(actual_seed, STAGE_RESOURCES), cfg)
+	var event_points := _place_event_points(cells, width, height, spawn_cells, core_cell, _stage_rng(actual_seed, STAGE_EVENTS), cfg, event_ids)
 
 	return {
 		"cells": cells,

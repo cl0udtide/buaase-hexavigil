@@ -34,7 +34,7 @@ static func _mul32(a: int, b: int) -> int:
 	var hi: int = (a >> 16) & 0xFFFF
 	# lo * b fits in 2^16 * 2^32 = 2^48 — safe.
 	# hi * b fits in 2^16 * 2^32 = 2^48, shifted << 16 = 2^64 — would overflow!
-	# Instead keep only the low 32 bits of hi*b before shifting.
+	# 取 hi*b 的低 16 位（高位在 <<16 后超出 mod 2^32 范围自然消失）
 	return ((lo * b) + (((hi * b) & 0xFFFF) << 16)) & MASK_32
 
 
