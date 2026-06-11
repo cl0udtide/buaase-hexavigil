@@ -1,7 +1,7 @@
 {
   "width": 30,
   "height": 30,
-  "spawn_count": 3,
+  "spawn_count": 5,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
   "event_point_count": 0,
@@ -16,6 +16,6 @@
   "scattered_obstacle_ratio": 0.22,
   "core_safe_radius": 3,
   "spawn_safe_radius": 1,
-  "min_spawn_core_distance": 12,
-  "min_spawn_distance": 10
+  "spawn_corner_margin": 3,
+  "spawn_arc_center_ratio": 0.6
 }
