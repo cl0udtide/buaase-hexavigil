@@ -3,10 +3,9 @@ extends PanelContainer
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
+const DayManagerScript = preload("res://scripts/core/day_manager.gd")
 
 const EVENT_TRIGGER_AP_COST := 2
-const GATE_SEAL_STONE_COST := 4
-const GATE_SEAL_AP_COST := 6
 const RESOURCE_COLLECT_AP_COST := 1
 const WOOD_RESOURCE_COLLECT_AMOUNT := 2
 const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
@@ -200,7 +199,7 @@ func _ensure_gate_section() -> void:
 	_gate_section.add_child(_gate_info_label)
 	_gate_seal_button = Button.new()
 	_gate_seal_button.name = "GateSealButton"
-	_gate_seal_button.text = "封堵一晚（石 %d · 行动力 %d）" % [GATE_SEAL_STONE_COST, GATE_SEAL_AP_COST]
+	_gate_seal_button.text = "封堵一晚（石 %d · 行动力 %d）" % [DayManagerScript.GATE_SEAL_STONE_COST, DayManagerScript.GATE_SEAL_AP_COST]
 	_gate_seal_button.pressed.connect(_on_seal_gate_pressed)
 	_gate_section.add_child(_gate_seal_button)
 	content.add_child(_gate_section)
@@ -236,11 +235,11 @@ func _refresh_gate_section(gate_key: String) -> void:
 			reason = "沉默口无需封堵"
 		elif active.size() <= 1:
 			reason = "至少保留一个活跃口"
-		elif int(run_state.night_gate_seals_today) >= 1:
+		elif int(run_state.night_gate_seals_today) >= DayManagerScript.GATE_SEALS_PER_DAY:
 			reason = "今天已封堵过出怪口"
-		elif int(run_state.stone) < GATE_SEAL_STONE_COST:
+		elif int(run_state.stone) < DayManagerScript.GATE_SEAL_STONE_COST:
 			reason = "石材不足"
-		elif int(run_state.action_points) < GATE_SEAL_AP_COST:
+		elif int(run_state.action_points) < DayManagerScript.GATE_SEAL_AP_COST:
 			reason = "行动力不足"
 		else:
 			can_seal = true
