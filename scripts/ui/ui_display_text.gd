@@ -115,13 +115,24 @@ static func relic_rarity_label(rarity: int) -> String:
 
 
 static func relic_rarity_color(rarity: int) -> Color:
+	# 与 GameUiStyle.relic_rarity_color 重复定义,两处必须同步
 	match rarity:
 		3:
 			return Color(0.950, 0.650, 0.220, 1.0)
 		2:
 			return Color(0.260, 0.760, 0.920, 1.0)
 		_:
-			return Color(0.290, 0.700, 0.430, 1.0)
+			return Color(0.700, 0.740, 0.760, 1.0)
+
+
+## 技能描述 BBCode 装饰:数值→橙金,伤害类型→青。顺序固定:先数字后类型词,
+## 避免类型词替换引入的 hex 颜色码被数字正则二次命中。
+static func decorate_skill_description(text: String) -> String:
+	var number_re := RegEx.create_from_string("(\\d+(?:\\.\\d+)?%?)")
+	var result := number_re.sub(text, "[color=#F2A638]$1[/color]", true)
+	for word in ["物理", "法术", "真实"]:
+		result = result.replace(word, "[color=#42C2EB]%s[/color]" % word)
+	return result
 
 
 static func relic_category_label(category: StringName) -> String:

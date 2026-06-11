@@ -20,7 +20,12 @@ const SPACE_XL := 16.0
 const RADIUS_SM := 4.0
 const RADIUS_MD := 6.0
 
-const FONT_XS := 12
+const BUTTON_H_LG := 56.0   # 主 CTA(菜单/结算)
+const BUTTON_H_MD := 40.0   # 面板内动作按钮(锁定/刷新/购买/升星等)
+const CHIP_H := 30.0        # 徽章/小签
+const POPUP_BUTTON_HEIGHT := 44.0  # 地图弹窗/事件弹窗动作按钮统一高
+
+const FONT_XS := 13  # 字号下限;13 以下禁止用于任何可读文本
 const FONT_SM := 13
 const FONT_MD := 15
 const FONT_LG := 16

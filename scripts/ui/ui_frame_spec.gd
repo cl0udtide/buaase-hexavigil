@@ -33,6 +33,7 @@ const OPERATOR_PORTRAIT_SLOT := &"frame_operator_portrait_backplate"
 const OPERATOR_COST_BADGE := &"frame_operator_cost_badge"
 const OPERATOR_STAT_ROW := &"frame_operator_stat_row"
 const BUTTON := &"frame_button_base"
+const BUTTON_PRIMARY := &"frame_button_primary_base"
 const BUTTON_HOVER := &"frame_button_primary_overlay"
 const BUTTON_PRESSED := &"frame_button_primary_overlay"
 const BUTTON_DISABLED := &"frame_button_disabled_overlay"
@@ -51,7 +52,7 @@ const RELIC_ICON_BACKPLATE := &"frame_relic_icon_backplate"
 const RELIC_ICON_COMMON := &"frame_relic_rarity_common_overlay"
 const RELIC_ICON_UNCOMMON := &"frame_relic_rarity_uncommon_overlay"
 const RELIC_ICON_RARE := &"frame_relic_rarity_rare_overlay"
-const RELIC_PANEL := &"frame_relic_panel_base"
+const RELIC_PANEL := &"frame_relic_panel_base_fit_900x640"  # 等宽变体:九宫格只纵向拉伸,顶/底纹章不再被横向抹平
 const RELIC_CARD := &"frame_relic_card_base"
 const RELIC_CARD_COMMON := &"frame_relic_rarity_common_overlay"
 const RELIC_CARD_UNCOMMON := &"frame_relic_rarity_uncommon_overlay"
@@ -61,7 +62,7 @@ const RELIC_FILTER_TAB := &"frame_relic_filter_tab_base"
 const RELIC_FILTER_SELECTED := &"frame_relic_filter_selected_overlay"
 const SETTINGS_PANEL := &"frame_settings_panel_base"
 const SETTINGS_ROW := &"frame_settings_row_base"
-const BLESSING_PANEL := &"frame_blessing_panel_base"
+const BLESSING_PANEL := &"frame_blessing_panel_base_fit_600x380"  # 等宽变体,同 RELIC_PANEL
 const BLESSING_CHOICE_CARD := &"frame_blessing_choice_card_base"
 const LEGEND_PANEL := &"frame_legend_panel_base"
 const LEGEND_ROW := &"frame_legend_row_base"
@@ -116,7 +117,7 @@ const SPECS := {
 	HUD_CELL: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
 	HUD_CELL_SELECTED: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
 	RIGHT_DETAIL_SIDEBAR: {"content": Vector4(20.0, 18.0, 20.0, 20.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	BUILD_SIDE_PANEL: {"content": Vector4(24.0, 20.0, 24.0, 28.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
+	BUILD_SIDE_PANEL: {"content": Vector4(24.0, 48.0, 24.0, 28.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	DECK_PANEL: {"content": Vector4(24.0, 10.0, 24.0, 10.0)},
 	HUD_BOTTOM_RAIL: {"content": ZERO_INSETS},
 	DETAIL_SECTION: {"content": Vector4(14.0, 10.0, 14.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
@@ -132,6 +133,7 @@ const SPECS := {
 	OPERATOR_COST_BADGE: {"content": Vector4(6.0, 4.0, 6.0, 4.0)},
 	OPERATOR_STAT_ROW: {"content": Vector4(6.0, 2.0, 6.0, 2.0)},
 	BUTTON: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
+	BUTTON_PRIMARY: {"content": Vector4(10.0, 6.0, 10.0, 6.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
 	BUTTON_HOVER: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
 	BUTTON_DISABLED: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
 	SETTINGS_BUTTON: {"content": Vector4(4.0, 4.0, 4.0, 4.0)},
@@ -145,12 +147,12 @@ const SPECS := {
 	RELIC_ICON_COMMON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	RELIC_ICON_UNCOMMON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	RELIC_ICON_RARE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
-	RELIC_PANEL: {"content": Vector4(32.0, 40.0, 32.0, 32.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
+	RELIC_PANEL: {"content": Vector4(32.0, 48.0, 36.0, 32.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	RELIC_CARD: {"content": Vector4(16.0, 10.0, 16.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	RELIC_CARD_HOVER: {"content": ZERO_INSETS, "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	RELIC_FILTER_TAB: {"content": Vector4(12.0, 5.0, 12.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
 	RELIC_FILTER_SELECTED: {"content": Vector4(12.0, 5.0, 12.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
-	SETTINGS_PANEL: {"content": Vector4(24.0, 30.0, 24.0, 24.0)},
+	SETTINGS_PANEL: {"content": Vector4(24.0, 18.0, 24.0, 24.0)},
 	BLESSING_PANEL: {"content": Vector4(18.0, 40.0, 18.0, 16.0)},
 	BLESSING_CHOICE_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
 	LEGEND_PANEL: {"content": Vector4(14.0, 12.0, 14.0, 12.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
@@ -170,6 +172,8 @@ const SPECS := {
 	ACTION_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	UNDO_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUTTON_DANGER: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
+	SLIDER_TRACK: {"content": Vector4(0.0, 4.0, 0.0, 4.0)},
+	SLIDER_FILL: {"content": Vector4(0.0, 4.0, 0.0, 4.0)},
 	PROGRESS_TRACK: {"content": ZERO_INSETS},
 	PROGRESS_BLUE: {"content": ZERO_INSETS},
 	PROGRESS_AMBER: {"content": ZERO_INSETS},

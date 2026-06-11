@@ -30,6 +30,14 @@ UNIT_DETAIL_PROGRESS_TRACK_SIZE = (210, 30)
 COMBAT_CORE_FILL_MIN_SIZE = (1, 21)
 UNIT_DETAIL_FILL_MIN_SIZE = (1, 30)
 
+# Gradient strips must be resampled to the exact reference size; the uniform
+# min-scale would collapse a 1372x86 bar into a single pixel and lose the
+# vertical gradient entirely (see repair_ui_fit_assets.py for the one-shot fix).
+STRIP_PREFIXES = ("bar_progress_fill",)
+# These plates carry transparent padding and a center "tongue" ornament; crop
+# to the opaque bbox before scaling so small fit variants keep plate height.
+BBOX_CROP_PREFIXES = ("frame_button_base", "frame_button_primary")
+
 
 @dataclass(frozen=True)
 class StyleUse:
@@ -320,10 +328,14 @@ def variant_for_reference(style: StyleTexture, original: tuple[int, int], refere
     scale = min(1.0, width / original[0], height / original[1])
     if scale >= 0.999:
         return None
+    target_size = (max(1, round(original[0] * scale)), max(1, round(original[1] * scale)))
+    if style_name(style.style_path).startswith(STRIP_PREFIXES):
+        target_size = (width, height)
+        scale = height / original[1]
     return FitVariant(
         style=style,
         original_size=original,
-        target_size=(max(1, round(original[0] * scale)), max(1, round(original[1] * scale))),
+        target_size=target_size,
         reference_size=reference_size,
         scale=scale,
         suffix=suffix,
@@ -400,6 +412,10 @@ def write_variant(variant: FitVariant) -> None:
     source = res_to_path(variant.style.texture_path)
     texture_target = variant_texture_path(variant)
     with Image.open(source).convert("RGBA") as image:
+        if style_name(variant.style.style_path).startswith(BBOX_CROP_PREFIXES):
+            bbox = image.getbbox()
+            if bbox is not None:
+                image = image.crop(bbox)
         resized = image.resize(variant.target_size, Image.Resampling.LANCZOS)
         texture_target.parent.mkdir(parents=True, exist_ok=True)
         resized.save(texture_target)

@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/relic/relic_panel.gd" id="1_fyr10"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_panel_base.tres" id="2_panel"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_panel_base_fit_900x640.tres" id="2_panel"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail"]
 
 [node name="RelicPanel" type="Control" unique_id=1252642806]
