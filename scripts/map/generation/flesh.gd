@@ -13,6 +13,17 @@ const WIDEN_THRESHOLD := 192       # 噪声八位 >= 192 ≈ 25% 峡谷偶发加
 const SPINDLE_EDGE := 0.2          # 纺锤剖面：折线两端 20% 收窄到宽 1
 const QUOTA_SLACK := 1.5           # 扇区配额超额容忍系数
 const RIDGE_NOISE_SCALE := 4       # 脊噪声网格边长（§2.1）
+const ELEV_DIST_CAP := 12          # 伪高程山距截断（§2.2）
+const RIVER_RING_MIN := 9          # 河源环带（扇区外缘）
+const RIVER_RING_MAX := 13
+const RIVER_STEP_LIMIT := 200      # 梯度下降步数硬上限（防御）
+const POND_MIN := 3                # 卡坑小湖尺寸（§2.2 3-5 格）
+const POND_MAX := 5
+const LAKE_RING_MIN := 8           # 湖心最小核心环（§2.3）
+const LAKE_LANE_CLEARANCE := 4     # 湖心距本扇区车道最小切比雪夫距离
+const LAKE_SIZE_MIN := 15          # blob 湖目标尺寸（§2.3 15-30 格）
+const LAKE_SIZE_MAX := 30
+const CARDINALS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 
 
 static func _mg() -> GDScript:
@@ -293,3 +304,339 @@ static func _walk_segment(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vecto
 	for s in range(steps + 1):
 		pts.append(from_cell + Vector2i(SkeletonGen.round_div(delta.x * s, steps), SkeletonGen.round_div(delta.y * s, steps)))
 	return pts
+
+
+## 伪高程场（§2.2）：elev = max(0, 12 − 最近山距) × 1024 + 噪声八位。
+## 多源 BFS 自全部山格起（含不可走格的几何距离）；无山 → 距离恒 12（纯噪声场）。
+static func build_elevation(cells: Dictionary, width: int, height: int, seed_value: int) -> Dictionary:
+	var dist: Dictionary = {}
+	var queue: Array[Vector2i] = []
+	for y in range(height):
+		for x in range(width):
+			var cell := Vector2i(x, y)
+			if (cells[cell] as CellData).terrain == CellData.TERRAIN_MOUNTAIN:
+				dist[cell] = 0
+				queue.append(cell)
+	var head: int = 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		for direction in CARDINALS:
+			var nb: Vector2i = current + direction
+			if not cells.has(nb) or dist.has(nb):
+				continue
+			dist[nb] = int(dist[current]) + 1
+			queue.append(nb)
+	var elevation: Dictionary = {}
+	for y in range(height):
+		for x in range(width):
+			var cell := Vector2i(x, y)
+			var d: int = mini(int(dist.get(cell, ELEV_DIST_CAP)), ELEV_DIST_CAP)
+			var noise_q: int = int(IntNoise.value_noise(x, y, seed_value, RIDGE_NOISE_SCALE) * 256.0)
+			elevation[cell] = (ELEV_DIST_CAP - d) * 1024 + noise_q
+	return elevation
+
+
+## 河湖计划（§2.3 湿度梯度）：每口固定消费 3 次 rng，分支不改变流位置。
+static func roll_water_plans(skeleton: Dictionary, wind_dir: Vector2i, rng: RandomNumberGenerator, cfg: Dictionary) -> Dictionary:
+	var strength: float = float(cfg.get("moisture_gradient_strength", 0.2))
+	var plans: Dictionary = {}
+	var keys: Array = (skeleton.get("gate_keys", []) as Array).duplicate()
+	keys.sort()
+	for raw_key: Variant in keys:
+		var key := String(raw_key)
+		var card_id := String((skeleton.get("cards", {}) as Dictionary).get(key, "bastion"))
+		var card_cfg: Dictionary = (skeleton.get("card_cfgs", {}) as Dictionary).get(card_id, {})
+		var gate: Vector2i = (skeleton.get("gate_cells", {}) as Dictionary).get(key, Vector2i.ZERO)
+		var core: Vector2i = skeleton.get("core", Vector2i.ZERO)
+		var rel := gate - core
+		var dot: int = rel.x * wind_dir.x + rel.y * wind_dir.y
+		var moist: float = strength * float(signi(dot))
+		var roll_lake: float = rng.randf()
+		var roll_extra: float = rng.randf()
+		var lake_base: int = rng.randi_range(1, 2)        # 三连掷固定消费
+		var plan := {"river": false, "lakes": 0}
+		if bool(card_cfg.get("river", false)):
+			plan["river"] = true                           # 河谷结构性必有河（渡口=牌面隘口）
+		elif roll_extra < moist:
+			plan["river"] = true                           # 湿侧加成河
+		if card_cfg.has("lake"):
+			plan["lakes"] = lake_base
+			if roll_lake < absf(moist):
+				plan["lakes"] = clampi(lake_base + signi(dot), 1, 3)
+		elif bool(card_cfg.get("river", false)):
+			plan["lakes"] = 1 if roll_lake < clampf(0.35 + moist, 0.0, 1.0) else 0
+		if bool(skeleton.get("conservative", false)):
+			plan["river"] = false                          # 保守剖面：无河（设计稿 §5）
+		plans[key] = plan
+	return plans
+
+
+## 河流走线（§2.2）：扇区外缘最高格起梯度下降至边缘，卡坑就地成 3-5 格小湖；
+## 落水前预演与本口当前 BFS 最短路的交点，恰保留 1 个 2 格渡口窗（多交点收敛
+## 为一窗，其余照常落水，强制车道走渡口）。&"lane" 类保护格允许淹，其余保护格
+## 不可落水亦不可流经——视作盆沿，河行至即卡坑成湖（apron/core 等永不进水）。
+## rng 消费序：起点选取 0 次 + pond 尺寸至多 1 次（固定在 stuck 分支）。
+static func trace_river(cells: Dictionary, skeleton: Dictionary, gate_key: String, elevation: Dictionary, protected: Dictionary, rng: RandomNumberGenerator, ledger: Dictionary) -> Dictionary:
+	var result := {"river_cells": [], "pond_cells": [], "ford_cells": []}
+	var width: int = int(skeleton.get("width", 30))
+	var height: int = int(skeleton.get("height", 30))
+	var core: Vector2i = skeleton.get("core", Vector2i.ZERO)
+	var start: Vector2i = _river_start(cells, skeleton, gate_key, elevation, protected, core)
+	if start.x < 0:
+		ledger_note(ledger, "rivers", 0, 0, 0)
+		return result
+	# 梯度下降折线；卡坑 → pond 收尾（此处掷唯一一次 rng）。
+	var polyline: Array[Vector2i] = [start]
+	var visited: Dictionary = {start: true}
+	var pond: Array[Vector2i] = []
+	var current: Vector2i = start
+	for _step in range(RIVER_STEP_LIMIT):
+		if current.x == 0 or current.y == 0 or current.x == width - 1 or current.y == height - 1:
+			break
+		var best := Vector2i(-1, -1)
+		var best_elev: int = 0
+		for direction in CARDINALS:
+			var nb: Vector2i = current + direction
+			if visited.has(nb) or not _water_paintable(cells, protected, nb):
+				continue
+			var nb_elev: int = int(elevation.get(nb, 0))
+			if best.x < 0 or _elev_less(nb_elev, nb, best_elev, best):
+				best = nb
+				best_elev = nb_elev
+		if best.x < 0 or best_elev >= int(elevation.get(current, 0)):
+			pond = _collect_pond(cells, elevation, protected, visited, current, rng.randi_range(POND_MIN, POND_MAX))
+			break
+		current = best
+		polyline.append(best)
+		visited[best] = true
+	# 渡口预规划（落水前）。
+	var ford: Array[Vector2i] = _plan_ford(cells, skeleton, gate_key, polyline)
+	var ford_lookup: Dictionary = {}
+	for cell in ford:
+		ford_lookup[cell] = true
+	# 落水批：折线 ∪ pond − 渡口窗 − 非 lane 类保护格。
+	var batch: Array[Vector2i] = []
+	var batch_river: Dictionary = {}
+	var batch_pond: Dictionary = {}
+	for cell in polyline:
+		if ford_lookup.has(cell) or not _water_paintable(cells, protected, cell):
+			continue
+		batch_river[cell] = true
+		batch.append(cell)
+	for cell in pond:
+		if ford_lookup.has(cell) or batch_river.has(cell):
+			continue
+		batch_pond[cell] = true
+		batch.append(cell)
+	if batch.is_empty():
+		ledger_note(ledger, "rivers", 0, 0, 0)
+		return result
+	var spawn_cells: Array[Vector2i] = []
+	for raw_cell: Variant in (skeleton.get("spawn_cells", []) as Array):
+		spawn_cells.append(raw_cell)
+	var cfg: Dictionary = skeleton.get("cfg", {})
+	var applied: int = _mg()._try_apply_obstacle_cells(cells, batch, CellData.TERRAIN_WATER, width, height, spawn_cells, core, cfg)
+	ledger_note(ledger, "rivers", batch.size(), applied, batch.size() - applied)
+	if applied <= 0:
+		return result                                      # 整批回滚 → 空 ford
+	var river_cells: Array = result["river_cells"]
+	var pond_cells: Array = result["pond_cells"]
+	for cell in batch:
+		var data: CellData = cells.get(cell) as CellData
+		if data == null or data.terrain != CellData.TERRAIN_WATER:
+			continue
+		if batch_pond.has(cell):
+			pond_cells.append(cell)
+		else:
+			river_cells.append(cell)
+	result["ford_cells"] = ford
+	return result
+
+
+## 湖泊放置（§2.3）：候选中心 = 本扇区、ring ≥ 8、距本扇区车道 cheb ≥ 4、
+## 非 protected、可走（(y,x) 序收集）；中心/尺寸各掷一次后复用 _build_lake_cluster
+## walker 长 blob，剔除 protected 格整批落水（连通回滚）并记账。候选空 → 记 0 跳过。
+static func place_lakes(cells: Dictionary, skeleton: Dictionary, gate_key: String, lake_count: int, protected: Dictionary, rng: RandomNumberGenerator, ledger: Dictionary) -> void:
+	var width: int = int(skeleton.get("width", 30))
+	var height: int = int(skeleton.get("height", 30))
+	var core: Vector2i = skeleton.get("core", Vector2i.ZERO)
+	var cfg: Dictionary = skeleton.get("cfg", {})
+	var sector_of: Dictionary = skeleton.get("sector_of", {})
+	var lane: Array = (skeleton.get("lanes", {}) as Dictionary).get(gate_key, [])
+	var spawn_cells: Array[Vector2i] = []
+	for raw_cell: Variant in (skeleton.get("spawn_cells", []) as Array):
+		spawn_cells.append(raw_cell)
+	for _i in range(lake_count):
+		var candidates: Array[Vector2i] = []
+		for y in range(height):
+			for x in range(width):
+				var cell := Vector2i(x, y)
+				if String(sector_of.get(cell, "")) != gate_key:
+					continue
+				if maxi(absi(cell.x - core.x), absi(cell.y - core.y)) < LAKE_RING_MIN:
+					continue
+				if protected.has(cell):
+					continue
+				var data: CellData = cells.get(cell) as CellData
+				if data == null or not data.walkable:
+					continue
+				if _min_cheb_to_lane(cell, lane) < LAKE_LANE_CLEARANCE:
+					continue
+				candidates.append(cell)
+		if candidates.is_empty():
+			ledger_note(ledger, "lakes", 0, 0, 0)
+			continue
+		var center: Vector2i = candidates[rng.randi_range(0, candidates.size() - 1)]
+		var target_size: int = rng.randi_range(LAKE_SIZE_MIN, LAKE_SIZE_MAX)
+		var cluster: Array[Vector2i] = _mg()._build_lake_cluster(cells, width, height, spawn_cells, core, cfg, rng, center, target_size)
+		var batch: Array[Vector2i] = []
+		for cell in cluster:
+			if protected.has(cell):
+				continue
+			batch.append(cell)
+		var applied: int = 0
+		if not batch.is_empty():
+			applied = _mg()._try_apply_obstacle_cells(cells, batch, CellData.TERRAIN_WATER, width, height, spawn_cells, core, cfg)
+		ledger_note(ledger, "lakes", batch.size(), applied, batch.size() - applied)
+
+
+## 河源：本扇区 ring ∈ [9,13]、非 protected、可走格中 elev 最大者；
+## 平局 (y,x) 小者（y/x 升序扫描 + 严格大于即天然成立）。无候选 → (-1,-1)。
+static func _river_start(cells: Dictionary, skeleton: Dictionary, gate_key: String, elevation: Dictionary, protected: Dictionary, core: Vector2i) -> Vector2i:
+	var width: int = int(skeleton.get("width", 30))
+	var height: int = int(skeleton.get("height", 30))
+	var sector_of: Dictionary = skeleton.get("sector_of", {})
+	var best := Vector2i(-1, -1)
+	var best_elev: int = -1
+	for y in range(height):
+		for x in range(width):
+			var cell := Vector2i(x, y)
+			if String(sector_of.get(cell, "")) != gate_key:
+				continue
+			var ring: int = maxi(absi(cell.x - core.x), absi(cell.y - core.y))
+			if ring < RIVER_RING_MIN or ring > RIVER_RING_MAX:
+				continue
+			if protected.has(cell):
+				continue
+			var data: CellData = cells.get(cell) as CellData
+			if data == null or not data.walkable:
+				continue
+			var e: int = int(elevation.get(cell, 0))
+			if e > best_elev:
+				best = cell
+				best_elev = e
+	return best
+
+
+## 卡坑成湖：自 stuck 格按 (elev, y, x) 升序区域生长收 target 格（stuck 格本身
+## 已在折线内，不计入）；只收落水过滤可过的格，保证 pond 计数即可落水计数。
+static func _collect_pond(cells: Dictionary, elevation: Dictionary, protected: Dictionary, visited: Dictionary, center: Vector2i, target: int) -> Array[Vector2i]:
+	var pond: Array[Vector2i] = []
+	var lookup: Dictionary = {center: true}
+	while pond.size() < target:
+		var best := Vector2i(-1, -1)
+		var best_elev: int = 0
+		for raw_seed: Variant in lookup.keys():
+			var seed_cell: Vector2i = raw_seed
+			for direction in CARDINALS:
+				var nb: Vector2i = seed_cell + direction
+				if lookup.has(nb) or visited.has(nb):
+					continue
+				if not _water_paintable(cells, protected, nb):
+					continue
+				var nb_elev: int = int(elevation.get(nb, 0))
+				if best.x < 0 or _elev_less(nb_elev, nb, best_elev, best):
+					best = nb
+					best_elev = nb_elev
+		if best.x < 0:
+			break
+		lookup[best] = true
+		pond.append(best)
+	return pond
+
+
+## 渡口预规划（§2.2）：dist_gate BFS + 「dist 递减且 (y,x) 最小邻」自核心回溯重建
+## 本口当前真实最短路 P；crossings = 河折线 ∩ P；chosen = 距本扇区锚格切比雪夫
+## 最近者（平局 (y,x)）；窗 = [chosen, chosen + 河向]（chosen 为折线末格时取上一格
+## 方向延伸；延伸格出图则回退 [上一格, chosen]）。无交点/折线过短 → 空（锚窗承担）。
+static func _plan_ford(cells: Dictionary, skeleton: Dictionary, gate_key: String, polyline: Array[Vector2i]) -> Array[Vector2i]:
+	var ford: Array[Vector2i] = []
+	if polyline.size() < 2:
+		return ford
+	var width: int = int(skeleton.get("width", 30))
+	var height: int = int(skeleton.get("height", 30))
+	var core: Vector2i = skeleton.get("core", Vector2i.ZERO)
+	var gate: Vector2i = (skeleton.get("gate_cells", {}) as Dictionary).get(gate_key, core)
+	var dist: Dictionary = _mg()._bfs_distances(cells, width, height, gate)
+	if not dist.has(core):
+		return ford
+	var path_set: Dictionary = {core: true}
+	var cursor: Vector2i = core
+	while int(dist.get(cursor, 0)) > 0:
+		var next_cell := Vector2i(-1, -1)
+		for direction in CARDINALS:
+			var nb: Vector2i = cursor + direction
+			if not dist.has(nb) or int(dist[nb]) != int(dist[cursor]) - 1:
+				continue
+			if next_cell.x < 0 or _yx_less(nb, next_cell):
+				next_cell = nb
+		if next_cell.x < 0:
+			return ford                                    # 防御：BFS 场必有递减邻
+		cursor = next_cell
+		path_set[cursor] = true
+	var anchor_entry: Dictionary = (skeleton.get("anchors", {}) as Dictionary).get(gate_key, {})
+	var anchor_cell: Vector2i = anchor_entry.get("cell", core)
+	var chosen_idx: int = -1
+	var chosen_d: int = 0
+	for idx in range(polyline.size()):
+		if not path_set.has(polyline[idx]):
+			continue
+		var d: int = maxi(absi(polyline[idx].x - anchor_cell.x), absi(polyline[idx].y - anchor_cell.y))
+		if chosen_idx < 0 or d < chosen_d or (d == chosen_d and _yx_less(polyline[idx], polyline[chosen_idx])):
+			chosen_idx = idx
+			chosen_d = d
+	if chosen_idx < 0:
+		return ford
+	var chosen: Vector2i = polyline[chosen_idx]
+	if chosen_idx + 1 < polyline.size():
+		ford.append(chosen)
+		ford.append(polyline[chosen_idx + 1])
+		return ford
+	var extended: Vector2i = chosen + (chosen - polyline[chosen_idx - 1])
+	if cells.has(extended):
+		ford.append(chosen)
+		ford.append(extended)
+	else:
+		ford.append(polyline[chosen_idx - 1])
+		ford.append(chosen)
+	return ford
+
+
+## 河水可落格：图内、可走、非 protected——唯一豁免 &"lane" 类（§2.2 车道允许被淹）。
+static func _water_paintable(cells: Dictionary, protected: Dictionary, cell: Vector2i) -> bool:
+	var data: CellData = cells.get(cell) as CellData
+	if data == null or not data.walkable:
+		return false
+	if protected.has(cell) and StringName(protected[cell]) != &"lane":
+		return false
+	return true
+
+
+## (elev, y, x) 升序全序：决定性平局裁决。
+static func _elev_less(elev_a: int, cell_a: Vector2i, elev_b: int, cell_b: Vector2i) -> bool:
+	if elev_a != elev_b:
+		return elev_a < elev_b
+	return _yx_less(cell_a, cell_b)
+
+
+static func _yx_less(a: Vector2i, b: Vector2i) -> bool:
+	return a.y < b.y or (a.y == b.y and a.x < b.x)
+
+
+static func _min_cheb_to_lane(cell: Vector2i, lane: Array) -> int:
+	var best: int = 1 << 30
+	for raw_cell: Variant in lane:
+		var lane_cell: Vector2i = raw_cell
+		best = mini(best, maxi(absi(cell.x - lane_cell.x), absi(cell.y - lane_cell.y)))
+	return best
