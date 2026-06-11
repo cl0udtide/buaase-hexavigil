@@ -67,9 +67,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 18
+theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 14
+theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 4
 
 [node name="TitleRow" type="HBoxContainer" parent="CardContent/VBox/TitleStrip/TitleMargin" unique_id=1970096828]
@@ -109,7 +109,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(66, 0)
 layout_mode = 2
-text = "READY"
+text = "待部署"
 horizontal_alignment = 1
 
 [node name="StatRows" type="VBoxContainer" parent="CardContent/VBox" unique_id=1580391540]
@@ -180,7 +180,7 @@ offset_right = -8.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "CD READY"
+text = "CD 就绪"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3

@@ -40,14 +40,14 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
+theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
 [node name="Row" type="HBoxContainer" parent="ContentMargin" unique_id=2103387909]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = -3
+theme_override_constants/separation = 0
 
 [node name="IconStack" type="Control" parent="ContentMargin/Row" unique_id=2012463023]
 unique_name_in_owner = true
@@ -116,7 +116,7 @@ size_flags_horizontal = 3
 theme_override_constants/margin_top = 4
 
 [node name="TextColumn" type="VBoxContainer" parent="ContentMargin/Row/TextMargin" unique_id=1058986093]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(124, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 0
@@ -199,4 +199,4 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.02, 0.03, 0.035, 0.32)
+color = Color(0.02, 0.03, 0.035, 0.45)

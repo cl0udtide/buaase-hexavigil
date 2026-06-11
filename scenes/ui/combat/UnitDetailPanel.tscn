@@ -60,7 +60,7 @@ theme_override_constants/margin_bottom = 21
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 0
+theme_override_constants/separation = 12
 
 [node name="Header" type="Control" parent="ContentMargin/MainVBox" unique_id=693785272]
 unique_name_in_owner = true
@@ -114,7 +114,7 @@ text_overrun_behavior = 3
 
 [node name="LevelLabel" type="Label" parent="ContentMargin/MainVBox/Header/HeaderMargin/HeaderVBox/TitleRow" unique_id=1740080164]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(60, 0)
+custom_minimum_size = Vector2(76, 0)
 layout_mode = 2
 text = "#--"
 vertical_alignment = 1
@@ -130,8 +130,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_right = -14.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -142,15 +140,12 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 7.0
-offset_right = -20.0
-offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 8
 
 [node name="VitalsRow" type="HBoxContainer" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin" unique_id=1238328425]
 layout_mode = 2
@@ -233,7 +228,7 @@ theme_override_styles/panel = ExtResource("fit_frame_unit_portrait_frame_96x96")
 [node name="VitalsColumn" type="VBoxContainer" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow" unique_id=987401178]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = -6
+theme_override_constants/separation = 2
 
 [node name="HpValueLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=471523324]
 unique_name_in_owner = true
@@ -243,7 +238,7 @@ text_overrun_behavior = 3
 
 [node name="HpBar" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=1560407174]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -253,13 +248,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 5.999999
-offset_top = 7.0
-offset_right = 6.0
-offset_bottom = 7.0
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(0.88, 0.63999873)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_progress_track")
 
@@ -278,7 +268,7 @@ text_overrun_behavior = 3
 
 [node name="SpBar" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=413069968]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -288,13 +278,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 5.999999
-offset_top = 4.0
-offset_right = 6.0
-offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(0.88, 0.63999873)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_progress_track")
 
@@ -307,7 +292,7 @@ theme_override_styles/panel = ExtResource("fit_bar_progress_fill_sp_1x30")
 
 [node name="StatsSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1724440287]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 129)
+custom_minimum_size = Vector2(0, 164)
 layout_mode = 2
 
 [node name="StatsSectionBase" type="Panel" parent="ContentMargin/MainVBox/StatsSection" unique_id=123499350]
@@ -316,10 +301,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 19.0
-offset_top = -6.0
-offset_right = -17.0
-offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -330,96 +311,96 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 22.0
-offset_top = 3.0
-offset_right = -13.0
-offset_bottom = 18.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 11
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 8
 
-[node name="StatRows" type="GridContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin" unique_id=1289660169]
-custom_minimum_size = Vector2(0, 92)
+[node name="StatsColumn" type="VBoxContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin" unique_id=1289661771]
 layout_mode = 2
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = -2
+theme_override_constants/separation = 6
+
+[node name="StatRows" type="GridContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn" unique_id=1289660169]
+custom_minimum_size = Vector2(0, 104)
+layout_mode = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 4
 columns = 2
 
-[node name="AtkStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1312812221]
-custom_minimum_size = Vector2(132, 30)
+[node name="AtkStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows" unique_id=1312812221]
+custom_minimum_size = Vector2(132, 32)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
 
-[node name="AtkStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/AtkStatRow" unique_id=345724679]
+[node name="AtkStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows/AtkStatRow" unique_id=345724679]
 unique_name_in_owner = true
 layout_mode = 2
 text = "攻击 --"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="DefStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1729132832]
-custom_minimum_size = Vector2(132, 30)
+[node name="DefStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows" unique_id=1729132832]
+custom_minimum_size = Vector2(132, 32)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
 
-[node name="DefStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/DefStatRow" unique_id=2032588346]
+[node name="DefStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows/DefStatRow" unique_id=2032588346]
 unique_name_in_owner = true
 layout_mode = 2
 text = "防御 --"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="ResStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=410505669]
-custom_minimum_size = Vector2(132, 30)
+[node name="ResStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows" unique_id=410505669]
+custom_minimum_size = Vector2(132, 32)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
 
-[node name="ResStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/ResStatRow" unique_id=801542100]
+[node name="ResStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows/ResStatRow" unique_id=801542100]
 unique_name_in_owner = true
 layout_mode = 2
 text = "法抗 --"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="BlockStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=279448192]
-custom_minimum_size = Vector2(132, 30)
+[node name="BlockStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows" unique_id=279448192]
+custom_minimum_size = Vector2(132, 32)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
 
-[node name="BlockStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/BlockStatRow" unique_id=524157900]
+[node name="BlockStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows/BlockStatRow" unique_id=524157900]
 unique_name_in_owner = true
 layout_mode = 2
 text = "阻挡 --"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="AspdStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1066944862]
-custom_minimum_size = Vector2(132, 30)
+[node name="AspdStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows" unique_id=1066944862]
+custom_minimum_size = Vector2(132, 32)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
 
-[node name="AspdStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/AspdStatRow" unique_id=336823004]
+[node name="AspdStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/StatRows/AspdStatRow" unique_id=336823004]
 unique_name_in_owner = true
 layout_mode = 2
 text = "攻速 --"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="CovenantStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1066944900]
-custom_minimum_size = Vector2(132, 40)
+[node name="CovenantStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn" unique_id=1066944900]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
 
-[node name="CovenantStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/CovenantStatRow" unique_id=336823100]
+[node name="CovenantStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatsColumn/CovenantStatRow" unique_id=336823100]
 unique_name_in_owner = true
 layout_mode = 2
 text = "盟约 --"
@@ -430,6 +411,7 @@ text_overrun_behavior = 3
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 210)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="SkillSectionBase" type="Panel" parent="ContentMargin/MainVBox/SkillSection" unique_id=1951818056]
 unique_name_in_owner = true
@@ -437,10 +419,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 19.0
-offset_top = -11.0
-offset_right = -20.0
-offset_bottom = 10.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -451,21 +429,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 14.0
-offset_top = -0.5
-offset_right = -13.0
-offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
+theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 23
+theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 12
 
 [node name="SkillVBox" type="VBoxContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin" unique_id=227690351]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = -6
+theme_override_constants/separation = 4
 
 [node name="SkillHeaderRow" type="HBoxContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=966195898]
 layout_mode = 2
@@ -600,23 +574,25 @@ grow_vertical = 2
 mouse_filter = 0
 horizontal_scroll_mode = 0
 
-[node name="SkillLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillDescFrame/SkillTextMargin/SkillClipArea/SkillScroll" unique_id=1682618284]
+[node name="SkillLabel" type="RichTextLabel" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillDescFrame/SkillTextMargin/SkillClipArea/SkillScroll" unique_id=1682618284]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 1)
 layout_mode = 2
 size_flags_horizontal = 3
+bbcode_enabled = true
 text = "技能信息"
-autowrap_mode = 3
+fit_content = true
+scroll_active = false
 
 [node name="Actions" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=267080745]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = -7
+theme_override_constants/separation = 8
 
 [node name="PurchaseButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1503553436]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(280, 20)
+custom_minimum_size = Vector2(312, 46)
 layout_mode = 2
 size_flags_horizontal = 6
 focus_mode = 0
@@ -647,7 +623,7 @@ stretch_mode = 5
 [node name="StarUpButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1144770331]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(280, 20)
+custom_minimum_size = Vector2(312, 46)
 layout_mode = 2
 size_flags_horizontal = 6
 focus_mode = 0
@@ -678,7 +654,7 @@ stretch_mode = 5
 [node name="SellButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=748260025]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(280, 20)
+custom_minimum_size = Vector2(312, 46)
 layout_mode = 2
 size_flags_horizontal = 6
 focus_mode = 0
@@ -708,7 +684,7 @@ stretch_mode = 5
 
 [node name="CastSkillButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1282514617]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 20)
+custom_minimum_size = Vector2(312, 46)
 layout_mode = 2
 size_flags_horizontal = 6
 focus_mode = 0
@@ -738,7 +714,7 @@ stretch_mode = 5
 
 [node name="RetreatButton" type="Button" parent="ContentMargin/MainVBox/Actions" unique_id=1465338668]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 20)
+custom_minimum_size = Vector2(312, 46)
 layout_mode = 2
 size_flags_horizontal = 6
 focus_mode = 0

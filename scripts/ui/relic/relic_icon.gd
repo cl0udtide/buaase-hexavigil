@@ -63,7 +63,8 @@ func _apply_config() -> void:
 func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, _highlighted))
-	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_rarity_overlay(rarity, _highlighted, true))
+	# 稀有度已由 IconFrame 边框色编码,挂链上整块淡色底板读作渲染脏块
+	_rarity_overlay.visible = false
 	_new_highlight_overlay.visible = _highlighted
 
 

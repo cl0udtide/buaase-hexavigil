@@ -2,6 +2,7 @@ extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 
@@ -25,7 +26,9 @@ var _current_phase := GameEnums.PHASE_MENU
 
 @onready var _build_mode_button: Button = %BuildModeButton
 @onready var _shop_mode_button: Button = %ShopModeButton
-@onready var _selection_label: Label = %BuildSelectionLabel
+@onready var _selection_strip: PanelContainer = %SelectionStrip
+@onready var _selection_label: RichTextLabel = %BuildSelectionLabel
+@onready var _message_strip: PanelContainer = %MessageStrip
 @onready var _card_list: VBoxContainer = %BuildCardList
 @onready var _category_tabs: HBoxContainer = %CategoryTabs
 @onready var _resource_button: Button = %ResourceCategoryButton
@@ -38,10 +41,20 @@ var _current_phase := GameEnums.PHASE_MENU
 
 func _ready() -> void:
 	AppTheme.apply(self)
+	_apply_local_styles()
 	_bind_events()
 	_bind_buttons()
 	_sync_shop_stock_from_manager()
 	refresh_from_state()
+
+
+func _apply_local_styles() -> void:
+	_selection_strip.add_theme_stylebox_override("panel", GameUiStyle.operator_title_strip())
+	_message_strip.add_theme_stylebox_override("panel", GameUiStyle.operator_title_strip())
+	for button: Button in [_lock_shop_button, _refresh_shop_button]:
+		# 禁用态不再用透明 overlay 当底,否则按钮退化成裸文字
+		button.add_theme_stylebox_override("disabled", GameUiStyle.flat_box(GameUiStyle.BG_DISABLED, GameUiStyle.STROKE_SOFT, 1.0, 6.0))
+		button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_DIM)
 
 
 func _bind_events() -> void:
@@ -81,6 +94,9 @@ func _bind_buttons() -> void:
 
 
 func _select_mode(mode: StringName) -> void:
+	# 页签不再走 disabled 通道,重复点击当前页不得清空已选中项
+	if mode == _current_mode:
+		return
 	_current_mode = mode
 	_selected_building_id = &""
 	_selected_shop_slot_index = -1
@@ -90,6 +106,8 @@ func _select_mode(mode: StringName) -> void:
 
 
 func _select_category(category: StringName) -> void:
+	if category == _current_category:
+		return
 	_current_category = category
 	_selected_building_id = &""
 	_selected_shop_slot_index = -1
@@ -117,14 +135,23 @@ func _sync_runtime_state() -> void:
 
 
 func _refresh_mode_buttons() -> void:
-	_build_mode_button.disabled = _current_mode == MODE_BUILD
-	_shop_mode_button.disabled = _current_mode == MODE_SHOP
+	_style_tab_button(_build_mode_button, _current_mode == MODE_BUILD)
+	_style_tab_button(_shop_mode_button, _current_mode == MODE_SHOP)
 
 
 func _refresh_category_buttons() -> void:
-	_resource_button.disabled = _current_category == CATEGORY_RESOURCE
-	_aura_button.disabled = _current_category == CATEGORY_AURA
-	_block_button.disabled = _current_category == CATEGORY_BLOCK
+	_style_tab_button(_resource_button, _current_category == CATEGORY_RESOURCE)
+	_style_tab_button(_aura_button, _current_category == CATEGORY_AURA)
+	_style_tab_button(_block_button, _current_category == CATEGORY_BLOCK)
+
+
+func _style_tab_button(button: Button, selected: bool) -> void:
+	button.add_theme_stylebox_override("normal", GameUiStyle.tab(selected))
+	button.add_theme_stylebox_override("hover", GameUiStyle.tab(selected))
+	button.add_theme_stylebox_override("pressed", GameUiStyle.tab(true))
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT if selected else GameUiStyle.TEXT_DIM)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT)
 
 
 func _refresh_bottom_controls() -> void:
@@ -141,11 +168,14 @@ func _refresh_lock_button() -> void:
 	_lock_shop_button.visible = _current_mode == MODE_SHOP
 	var slot := _get_shop_slot(_selected_shop_slot_index)
 	var locked := bool(slot.get("locked", false))
-	_lock_shop_button.text = "解锁槽位" if locked else "锁定槽位"
-	_lock_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY \
-			or slot.is_empty() \
-			or bool(slot.get("sold", false)) \
-			or StringName(slot.get("unit_id", "")) == StringName()
+	var lockable := not slot.is_empty() \
+			and not bool(slot.get("sold", false)) \
+			and StringName(slot.get("unit_id", "")) != StringName()
+	if lockable:
+		_lock_shop_button.text = "解锁槽位" if locked else "锁定槽位"
+	else:
+		_lock_shop_button.text = "先选中槽位"
+	_lock_shop_button.disabled = _current_phase != GameEnums.PHASE_DAY or not lockable
 
 
 func _rebuild_cards() -> void:
@@ -262,10 +292,12 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		title = "空槽位"
 	else:
 		title = UiDisplayText.config_name(cfg, unit_id)
-		subtitle = UiDisplayText.class_label(str(cfg.get("class", "")))
-		detail = UiDisplayText.tier_label(base_cost)
+		subtitle = "%s · %s" % [
+			UiDisplayText.class_label(str(cfg.get("class", ""))),
+			UiDisplayText.tier_label(base_cost),
+		]
 		if sold:
-			state = "已购买"
+			detail = "已购买"
 		elif locked:
 			state = "已锁定"
 		elif _current_prestige < cost:
@@ -279,8 +311,10 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"icon_text": _unit_icon_text(unit_id),
 		"fallback_icon_key": StringName("class_%s" % String(cfg.get("class", ""))),
 		"source_cfg": cfg,
-		"cost_badge_text": str(cost) if unit_id != StringName() else "",
+		"cost_badge_text": ("✓" if sold else str(cost)) if unit_id != StringName() else "",
 		"selected": slot_index == _selected_shop_slot_index,
+		"locked": locked,
+		"dimmed": sold,
 		"disabled": sold or unit_id == StringName() or _current_phase != GameEnums.PHASE_DAY or _current_prestige < cost,
 		"pressable_when_disabled": unit_id != StringName(),
 		"audio_cue": &"ui_card_select",
@@ -303,11 +337,14 @@ func _make_empty_state(text_value: String) -> Control:
 func _format_building_cost(cfg: Dictionary) -> String:
 	if cfg.is_empty():
 		return "配置未加载"
-	return "木 %d   石 %d   魔 %d" % [
-		BuildValidator.get_building_material_cost(cfg, &"wood"),
-		BuildValidator.get_building_material_cost(cfg, &"stone"),
-		BuildValidator.get_building_material_cost(cfg, &"mana")
-	]
+	var parts: PackedStringArray = []
+	for entry in [["木", &"wood"], ["石", &"stone"], ["魔", &"mana"]]:
+		var amount := int(BuildValidator.get_building_material_cost(cfg, entry[1]))
+		if amount > 0:
+			parts.append("%s %d" % [entry[0], amount])
+	if parts.is_empty():
+		return "无材料消耗"
+	return "   ".join(parts)
 
 
 func _format_building_detail(cfg: Dictionary) -> String:
@@ -455,14 +492,23 @@ func _on_lock_shop_pressed() -> void:
 
 
 func _refresh_selection_label() -> void:
+	var label_hex := GameUiStyle.TEXT_DIM.to_html(false)
+	var value_hex := GameUiStyle.TEXT.to_html(false)
 	if _current_mode == MODE_SHOP:
-		_selection_label.text = "招募商店：%d 声望" % _current_prestige
+		_selection_label.text = "[color=#%s]招募商店：[/color][color=#%s]%d[/color][color=#%s] 声望[/color]" % [
+			label_hex, GameUiStyle.AMBER.to_html(false), _current_prestige, value_hex,
+		]
+		_selection_label.modulate.a = 1.0
 		return
 	if _selected_building_id == StringName():
-		_selection_label.text = "当前选择：无"
+		_selection_label.text = "[color=#%s]当前选择：未选择[/color]" % GameUiStyle.TEXT_MUTED.to_html(false)
+		_selection_label.modulate.a = 0.85
 		return
 	var cfg := _get_building_cfg(_selected_building_id)
-	_selection_label.text = "当前选择：%s" % UiDisplayText.config_name(cfg, _selected_building_id)
+	_selection_label.text = "[color=#%s]当前选择：[/color][color=#%s]%s[/color]" % [
+		label_hex, value_hex, UiDisplayText.config_name(cfg, _selected_building_id),
+	]
+	_selection_label.modulate.a = 1.0
 
 
 func _on_shop_stock_changed(stock_slots: Array[Dictionary]) -> void:

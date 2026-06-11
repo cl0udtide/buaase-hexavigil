@@ -49,7 +49,9 @@
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base_fit_160x82.tres" id="fit_frame_top_status_chip_base_160x82"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base_fit_210x82.tres" id="fit_frame_top_status_chip_base_210x82"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base_fit_220x82.tres" id="fit_frame_top_status_chip_base_220x82"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base_fit_264x82.tres" id="fit_frame_top_status_chip_base_264x82"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base_fit_300x82.tres" id="fit_frame_top_status_chip_base_300x82"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_settings_button_base_fit_36x32.tres" id="fit_frame_settings_button_base_36x32"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_preview_base_fit_384x156.tres" id="fit_frame_wave_preview_base_384x156"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_route_toggle_base_fit_64x36.tres" id="fit_frame_wave_route_toggle_base_64x36"]
 
@@ -102,10 +104,10 @@ color = Color(0.025, 0.105, 0.135, 0.22)
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 7.0
+offset_bottom = 5.0
 grow_horizontal = 2
 mouse_filter = 2
-color = Color(0.28, 0.86, 1, 0.62)
+color = Color(0.28, 0.86, 1, 0.24)
 
 [node name="BulletTimeBottomBand" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay" unique_id=1327113308]
 layout_mode = 1
@@ -113,11 +115,11 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -7.0
+offset_top = -5.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
-color = Color(0.28, 0.86, 1, 0.62)
+color = Color(0.28, 0.86, 1, 0.24)
 
 [node name="BulletTimeLeftEdge" type="ColorRect" parent="HudChromeLayer/BulletTimeOverlay" unique_id=149399213]
 layout_mode = 1
@@ -294,7 +296,7 @@ stretch_mode = 5
 
 [node name="CoreChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup" unique_id=64737828]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(210, 72)
+custom_minimum_size = Vector2(240, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=508976087]
@@ -305,7 +307,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_top_status_chip_base_210x82")
+theme_override_styles/panel = ExtResource("fit_frame_top_status_chip_base_264x82")
 
 [node name="CoreLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=2005078692]
 unique_name_in_owner = true
@@ -328,10 +330,10 @@ unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 61.0
-offset_top = 39.0
-offset_right = -35.0
-offset_bottom = 64.0
+offset_left = 44.0
+offset_top = 46.0
+offset_right = -24.0
+offset_bottom = 58.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("fit_bar_progress_track_130x25")
@@ -411,7 +413,7 @@ stretch_mode = 5
 
 [node name="MessageChip" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup" unique_id=1120363777]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 72)
+custom_minimum_size = Vector2(260, 72)
 layout_mode = 2
 
 [node name="ChipBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/MessageChip" unique_id=987633476]
@@ -429,7 +431,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 59.0
+offset_left = 48.0
 offset_top = 30.5
 offset_right = -25.0
 offset_bottom = -32.5
@@ -446,9 +448,9 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 41.0
+offset_left = 24.0
 offset_top = -14.0
-offset_right = 65.0
+offset_right = 48.0
 offset_bottom = 14.0
 grow_vertical = 2
 mouse_filter = 2
@@ -464,7 +466,7 @@ alignment = 1
 
 [node name="TimeControls" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup" unique_id=1610632498]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(216, 72)
+custom_minimum_size = Vector2(232, 72)
 layout_mode = 2
 
 [node name="SpeedToggleBase" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1931574895]
@@ -505,7 +507,7 @@ theme_override_constants/margin_bottom = 0
 
 [node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
-theme_override_constants/separation = -4
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
@@ -742,7 +744,7 @@ offset_bottom = -0.3888874
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 10
 text = "--"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -835,7 +837,7 @@ offset_bottom = -0.3888874
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 10
 text = "--"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -928,7 +930,7 @@ offset_bottom = -0.3888874
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 7
+theme_override_font_sizes/font_size = 10
 text = "--"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -996,7 +998,7 @@ unique_name_in_owner = true
 anchors_preset = 0
 offset_left = 66.0
 offset_top = 96.0
-offset_right = 1166.0
+offset_right = 880.0
 offset_bottom = 140.0
 mouse_filter = 2
 
@@ -1078,12 +1080,25 @@ size_flags_horizontal = 3
 text = "        今晚敌情"
 vertical_alignment = 1
 
-[node name="WaveRouteToggle" type="Button" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1668780302]
+[node name="WaveNameRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WaveLevelNameLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WaveNameRow" unique_id=928858071]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+text = "今夜"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="WaveRouteToggle" type="Button" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WaveNameRow" unique_id=1668780302]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 40)
 layout_mode = 2
 size_flags_horizontal = 8
-size_flags_vertical = 8
+size_flags_vertical = 4
 focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 14
@@ -1094,15 +1109,6 @@ theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_
 toggle_mode = true
 text = "路线"
 icon = ExtResource("43_iconmaprange")
-
-[node name="WaveLevelNameLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=928858071]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
-text = "今夜"
-vertical_alignment = 1
-autowrap_mode = 3
 
 [node name="WaveLevelDescLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1733825288]
 unique_name_in_owner = true
@@ -1201,13 +1207,13 @@ theme_override_constants/separation = 4
 
 [node name="EnemyNameLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox" unique_id=74265915]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 text = "敌人"
 text_overrun_behavior = 3
 
 [node name="EnemyCountLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox" unique_id=2120620707]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 12
 text = "×0 · 0s"
 text_overrun_behavior = 3
 
@@ -1218,31 +1224,31 @@ theme_override_constants/separation = 1
 
 [node name="StatLabel1" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox/WaveEnemyStats" unique_id=292724745]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 12
 text = "HP 0  攻 0"
 text_overrun_behavior = 3
 
 [node name="StatLabel2" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox/WaveEnemyStats" unique_id=1722751104]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 12
 text = "防 0  抗 0"
 text_overrun_behavior = 3
 
 [node name="StatLabel3" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox/WaveEnemyStats" unique_id=1610402583]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "速 0.00  近战"
+theme_override_font_sizes/font_size = 12
+text = "速 0.00"
 text_overrun_behavior = 3
 
 [node name="StatLabel4" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox/WaveEnemyStats" unique_id=113969429]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 12
 text = "核 1  声 0"
 text_overrun_behavior = 3
 
 [node name="EnemyTagLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody/EnemyInfoBox" unique_id=743013085]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 12
 text = "物理"
 text_overrun_behavior = 3
 
@@ -1307,7 +1313,7 @@ size_flags_vertical = 3
 
 [node name="LegendPanel" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox" unique_id=1482391782]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 144)
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8
@@ -1329,7 +1335,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
@@ -1482,9 +1488,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 14
+theme_override_constants/margin_top = 44
 theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="ScrollContainer" type="ScrollContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck/DeckMargin" unique_id=725690026]
 layout_mode = 2
@@ -1513,7 +1519,7 @@ mouse_filter = 2
 [node name="DragGhost" type="Control" parent="InteractionLayer" unique_id=1505984650]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(154, 126)
+custom_minimum_size = Vector2(150, 44)
 anchors_preset = 0
 mouse_filter = 2
 
@@ -1586,7 +1592,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 30
+theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
@@ -1611,25 +1617,26 @@ vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header" unique_id=1600475914]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 28)
+custom_minimum_size = Vector2(36, 32)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("fit_frame_button_base_30x28")
+theme_override_styles/normal = ExtResource("fit_frame_settings_button_base_36x32")
 theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_30x28")
 theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_30x28")
 theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_30x28")
 icon_alignment = 1
 
 [node name="FittedIcon" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=849751617]
+self_modulate = Color(2, 1.8, 1.8, 1)
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -7.0
-offset_top = -7.0
-offset_right = 7.0
-offset_bottom = 7.0
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

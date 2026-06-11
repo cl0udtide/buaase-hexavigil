@@ -921,7 +921,7 @@ func _refresh_top_hud() -> void:
 			&"mana": _make_resource_item(&"mana", "M", str(int(run_state.mana)), "魔力矿", int(material_delta.get("mana", 0)))
 		}
 		resource_tooltip = _format_resource_tooltip(buff_ids)
-		phase_text = "Day %d %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
+		phase_text = "DAY %d · %s" % [int(run_state.day), UiDisplayText.phase_label(int(run_state.phase))]
 	var enemy_count: int = int(_enemy_manager.get_alive_enemy_count()) if _enemy_manager != null and _enemy_manager.has_method("get_alive_enemy_count") else 0
 	_combat_hud.set_top_values(core_text, deploy_text, "当前阶段\n%s    敌人 %d" % [phase_text, enemy_count])
 	if _combat_hud.has_method("set_core_hp"):
@@ -1084,11 +1084,10 @@ func _play_level_intro(day: int) -> void:
 	var preview: Dictionary = _build_night_preview_data(run_state)
 	if preview.is_empty():
 		return
+	# 中央横幅只示标题(与侧栏 _wave_level_name_label 同源);
+	# flavor 长文与"共X波"统计只留在侧栏头部,避免同屏逐字重复。
 	var intro_name := String(preview.get("name", "今夜"))
-	var waves: Array = preview.get("waves", [])
-	if waves.size() > 1 and typeof(waves[0]) == TYPE_DICTIONARY:
-		intro_name = "%s · 共 %d 波" % [String((waves[0] as Dictionary).get("name", "今夜")), waves.size()]
-	_combat_hud.play_level_intro(day, intro_name, String(preview.get("desc", "")))
+	_combat_hud.play_level_intro(day, intro_name, "")
 
 
 ## 事件可能改写当晚词缀（战争赌局等），立即刷新敌情预览与词缀横幅。
@@ -1232,7 +1231,7 @@ func _format_route_enemy_summary(route: Dictionary) -> String:
 
 func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], hover_cell: Vector2i) -> String:
 	var lines := PackedStringArray()
-	lines.append("Day %d  合计 %d" % [int(preview.get("day", 0)), int(preview.get("total_count", 0))])
+	lines.append("DAY %d  合计 %d" % [int(preview.get("day", 0)), int(preview.get("total_count", 0))])
 	var enemy_counts: Dictionary = {}
 	var entries: Array = preview.get("entries", [])
 	for entry_variant: Variant in entries:
@@ -1337,27 +1336,28 @@ func _format_operator_card_text(operator_info: Dictionary, state: StringName) ->
 	var unit_id := StringName(operator_info.get("unit_id", ""))
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var cfg := _get_effective_unit_cfg(unit_id, star)
-	var name := "%s %s" % [str(operator_info.get("name", cfg.get("name", operator_key))), OperatorProgression.format_star_label(star)]
-	var class_text := UiDisplayText.class_label(str(cfg.get("class", "")))
+	# 名字行只留 name(78px 名牌放不下 4 字名+星级),星级并入职业 meta 行。
+	var name := str(operator_info.get("name", cfg.get("name", operator_key)))
+	var class_text := "%s %s" % [UiDisplayText.class_label(str(cfg.get("class", ""))), OperatorProgression.format_star_label(star)]
 	var hp_text := "HP %d" % int(cfg.get("max_hp", 0))
 	var sp_text := "SP 0/%d" % int(cfg.get("sp_max", 0))
-	var cd_text := "CD READY"
+	var cd_text := "CD 就绪"
 	if state == &"deployed":
 		var unit = _unit_manager.get_unit_by_operator_key(operator_key) if _unit_manager != null and _unit_manager.has_method("get_unit_by_operator_key") else null
 		if unit != null:
 			hp_text = "HP %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
 			sp_text = "SP %.0f/%.0f" % [float(unit.sp), float(unit.cfg.get("sp_max", 0.0))]
-			cd_text = "CD 在场"
+			cd_text = "在场"
 			var ammo_text := _format_unit_ammo_status(unit)
 			if not ammo_text.is_empty():
 				sp_text = "%s  %s" % [sp_text, ammo_text]
 		else:
-			cd_text = "CD 在场"
+			cd_text = "在场"
 	elif state == &"cooldown":
 		var remain := float(_unit_manager.get_operator_redeploy_remaining(operator_key)) if _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining") else 0.0
 		hp_text = "HP --"
 		sp_text = "SP --"
-		cd_text = "CD %.1f秒" % remain
+		cd_text = "冷却 %.1f秒" % remain
 	elif not _can_deploy_now():
 		cd_text = "CD 阶段限制"
 	return "%s\n%s COST %s\n%s\n%s\n%s" % [name, class_text, str(cfg.get("cost_prestige", "-")), hp_text, sp_text, cd_text]
@@ -1377,7 +1377,8 @@ func _format_unit_ammo_status(unit: Node) -> String:
 func _format_operator_drag_text(operator_key: StringName) -> String:
 	var operator_info := _get_operator_info(operator_key)
 	if operator_info.is_empty():
-		return String(operator_key)
+		# 信息缺失时返回空串:show_drag_ghost 对空文案不显示名牌,避免泄漏裸 id。
+		return ""
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	return "%s %s" % [String(operator_info.get("name", operator_key)), OperatorProgression.format_star_label(star)]
 

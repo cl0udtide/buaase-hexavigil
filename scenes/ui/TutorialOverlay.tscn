@@ -12,6 +12,11 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_tutorial_overlay")
 
+[node name="PanelShadow" type="Panel" parent="."]
+unique_name_in_owner = true
+z_index = 119
+mouse_filter = 2
+
 [node name="Panel" type="PanelContainer" parent="."]
 unique_name_in_owner = true
 z_index = 120
@@ -25,15 +30,15 @@ anchor_bottom = 0.0
 offset_left = -462.0
 offset_top = 118.0
 offset_right = -22.0
-offset_bottom = 372.0
+offset_bottom = 118.0
 grow_horizontal = 0
-grow_vertical = 2
+grow_vertical = 1
 mouse_filter = 0
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 16
 
@@ -61,11 +66,15 @@ theme_override_font_sizes/font_size = 15
 text = "正文"
 autowrap_mode = 3
 
-[node name="HintLabel" type="Label" parent="Panel/Margin/Stack"]
+[node name="HintLabel" type="RichTextLabel" parent="Panel/Margin/Stack"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+mouse_filter = 2
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
 text = "提示"
+fit_content = true
+scroll_active = false
 autowrap_mode = 3
 
 [node name="ButtonRow" type="HBoxContainer" parent="Panel/Margin/Stack"]
@@ -74,7 +83,7 @@ theme_override_constants/separation = 8
 
 [node name="SkipButton" type="Button" parent="Panel/Margin/Stack/ButtonRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(104, 34)
+custom_minimum_size = Vector2(128, 34)
 layout_mode = 2
 focus_mode = 0
 text = "跳过"
@@ -85,7 +94,7 @@ size_flags_horizontal = 3
 
 [node name="NextButton" type="Button" parent="Panel/Margin/Stack/ButtonRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(112, 34)
+custom_minimum_size = Vector2(128, 34)
 layout_mode = 2
 focus_mode = 0
 text = "下一步"

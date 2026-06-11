@@ -55,10 +55,11 @@ mouse_filter = 2
 [node name="Row" type="HBoxContainer" parent="ContentMargin/CenterContainer/StartNightButton/Content" unique_id=304717659]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="Icon" type="TextureRect" parent="ContentMargin/CenterContainer/StartNightButton/Content/Row" unique_id=1719938186]
-custom_minimum_size = Vector2(24, 24)
+self_modulate = Color(0.78, 0.92, 1, 1)
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("2_phase_night")
@@ -67,4 +68,6 @@ stretch_mode = 5
 
 [node name="Text" type="Label" parent="ContentMargin/CenterContainer/StartNightButton/Content/Row" unique_id=2132586819]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 18
 text = "开始夜晚"

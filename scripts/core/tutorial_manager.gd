@@ -206,8 +206,9 @@ func _should_skip_map_focus(step_id: StringName) -> bool:
 	return step_id == STEP_BUILD or step_id == STEP_DEPLOY or step_id == STEP_SKILL or step_id == STEP_BLESSING or step_id == STEP_WAVE
 
 
-func _get_overlay_position(step_id: StringName) -> StringName:
-	return &"top_center" if step_id == STEP_WAVE else &"top_right"
+func _get_overlay_position(_step_id: StringName) -> StringName:
+	# top_right 会整列压住右侧栏敌情预告,统一走地图上方留白区
+	return &"top_center"
 
 
 func _get_explorable_cells() -> Array[Vector2i]:

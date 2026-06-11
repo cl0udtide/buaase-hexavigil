@@ -7,6 +7,8 @@ const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
 signal pressed(buff_id: StringName)
 
+static var _stat_wrap_regex: RegEx = null
+
 var buff_id := StringName()
 var _cfg: Dictionary = {}
 var _selectable := true
@@ -55,7 +57,19 @@ func _ready() -> void:
 	_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_apply_content_margins()
 	_apply_config()
+
+
+func _apply_content_margins() -> void:
+	var content_margin := get_node_or_null("ContentMargin") as MarginContainer
+	if content_margin != null:
+		content_margin.add_theme_constant_override("margin_top", 12)
+		content_margin.add_theme_constant_override("margin_bottom", 12)
+		content_margin.add_theme_constant_override("margin_right", 24)
+	var text_column := get_node_or_null("ContentMargin/Row/TextColumn") as VBoxContainer
+	if text_column != null:
+		text_column.add_theme_constant_override("separation", 6)
 
 
 func configure(new_buff_id: StringName, cfg: Dictionary, options: Dictionary = {}) -> void:
@@ -95,12 +109,36 @@ func _apply_config() -> void:
 	_name_label.text = UiDisplayText.config_name(_cfg, buff_id)
 	_rarity_label.text = UiDisplayText.relic_rarity_label(rarity)
 	_rarity_label.add_theme_color_override("font_color", UiDisplayText.relic_rarity_color(rarity))
-	_desc_label.text = UiDisplayText.relic_effect_text(_cfg) if _show_effect else ""
+	_apply_rarity_badge(UiDisplayText.relic_rarity_color(rarity))
+	_desc_label.text = _join_stat_wraps(UiDisplayText.relic_effect_text(_cfg)) if _show_effect else ""
 	_desc_label.visible = _show_effect
 	_tag_label.text = UiDisplayText.relic_tag_text(_cfg)
 	tooltip_text = UiDisplayText.relic_tooltip_text(buff_id, _cfg)
 	_apply_density()
 	_apply_style()
+
+
+func _apply_rarity_badge(rarity_color: Color) -> void:
+	# 品质字若裸贴在卡框角饰上会被金属高光吃掉,垫一层稀有度色徽板
+	var badge := StyleBoxFlat.new()
+	badge.bg_color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.18)
+	badge.border_color = rarity_color
+	badge.set_border_width_all(1)
+	badge.set_corner_radius_all(3)
+	badge.content_margin_left = 6.0
+	badge.content_margin_right = 6.0
+	badge.content_margin_top = 2.0
+	badge.content_margin_bottom = 2.0
+	_rarity_label.add_theme_stylebox_override("normal", badge)
+	_rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+static func _join_stat_wraps(text: String) -> String:
+	# U+2060 WORD JOINER 防止「攻击 +100%」在数值前折行出孤行
+	if _stat_wrap_regex == null:
+		_stat_wrap_regex = RegEx.new()
+		_stat_wrap_regex.compile("(攻击|攻速|防御|生命|法抗) \\+")
+	return _stat_wrap_regex.sub(text, "$1 \u2060+", true)
 
 
 func _apply_density() -> void:

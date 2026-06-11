@@ -29,8 +29,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 40
-theme_override_constants/margin_right = 32
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 36
 theme_override_constants/margin_bottom = 32
 
 [node name="Content" type="VBoxContainer" parent="ContentMargin" unique_id=290667162]
@@ -43,6 +43,11 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="HeaderIndent" type="Control" parent="ContentMargin/Content/Header"]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+mouse_filter = 2
+
 [node name="TitleLabel" type="Label" parent="ContentMargin/Content/Header" unique_id=2083928132]
 unique_name_in_owner = true
 layout_mode = 2
@@ -52,7 +57,7 @@ vertical_alignment = 1
 
 [node name="CountLabel" type="Label" parent="ContentMargin/Content/Header" unique_id=160351734]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(88, 0)
 layout_mode = 2
 text = "0 件"
 horizontal_alignment = 2
@@ -60,10 +65,10 @@ vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="ContentMargin/Content/Header" unique_id=1192909759]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(34, 30)
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 focus_mode = 0
-text = "×"
+text = "✕"
 
 [node name="FilterBar" type="HFlowContainer" parent="ContentMargin/Content" unique_id=1340319699]
 unique_name_in_owner = true
@@ -73,7 +78,7 @@ theme_override_constants/v_separation = 8
 
 [node name="AllFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 32)
+custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 focus_mode = 0
 text = "全部"
@@ -82,7 +87,7 @@ metadata/audio_cue = &"ui_tab_switch"
 
 [node name="UnitFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 32)
+custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 focus_mode = 0
 text = "单位"
@@ -91,7 +96,7 @@ metadata/audio_cue = &"ui_tab_switch"
 
 [node name="BuildingFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 32)
+custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 focus_mode = 0
 text = "建筑"
@@ -100,7 +105,7 @@ metadata/audio_cue = &"ui_tab_switch"
 
 [node name="EconomyFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 32)
+custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 focus_mode = 0
 text = "经济"
@@ -109,7 +114,7 @@ metadata/audio_cue = &"ui_tab_switch"
 
 [node name="CoreFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 32)
+custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 focus_mode = 0
 text = "核心"
@@ -118,7 +123,7 @@ metadata/audio_cue = &"ui_tab_switch"
 
 [node name="RiskFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 32)
+custom_minimum_size = Vector2(92, 34)
 layout_mode = 2
 focus_mode = 0
 text = "风险"
@@ -132,11 +137,13 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="CardGrid" type="VBoxContainer" parent="ContentMargin/Content/CardScroll" unique_id=651644470]
+[node name="CardGrid" type="GridContainer" parent="ContentMargin/Content/CardScroll" unique_id=651644470]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 10
+columns = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 10
 
 [node name="EmptyLabel" type="Label" parent="ContentMargin/Content" unique_id=1019742990]
 unique_name_in_owner = true
@@ -147,7 +154,7 @@ horizontal_alignment = 1
 
 [node name="DetailPanel" type="Panel" parent="ContentMargin/Content" unique_id=1240667341]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 132)
+custom_minimum_size = Vector2(0, 108)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
@@ -160,10 +167,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 36
-theme_override_constants/margin_top = 19
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_bottom = 10
 
 [node name="DetailColumn" type="VBoxContainer" parent="ContentMargin/Content/DetailPanel/DetailMargin" unique_id=1588518841]
 layout_mode = 2

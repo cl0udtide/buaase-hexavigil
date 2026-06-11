@@ -72,9 +72,21 @@ func _ready() -> void:
 	_add_label_shadow(_cd_stat_label)
 	_prepare_class_icon_texture()
 	_prepare_cooldown_icon_texture()
+	_flatten_inner_frames()
 	_sync_state_overlays()
 	_apply_density()
 	_apply_card_style()
+
+
+func _flatten_inner_frames() -> void:
+	# 框层级降档:卡面只留最外层 CardBase 金属框;名牌与 HP/SP 行改平底,
+	# CdStatRow 保留胶囊贴图作强调。runtime override 优先于场景资源,可随时回退。
+	%TitleStrip.add_theme_stylebox_override("panel", GameUiStyle.flat_box(Color(0.0, 0.0, 0.0, 0.35), Color.TRANSPARENT, 0.0, 3.0))
+	%HpStatRow.add_theme_stylebox_override("panel", GameUiStyle.flat_stat_pill())
+	%SpStatRow.add_theme_stylebox_override("panel", GameUiStyle.flat_stat_pill())
+	var stat_rows := %HpStatRow.get_parent() as VBoxContainer
+	if stat_rows != null:
+		stat_rows.add_theme_constant_override("separation", 0)
 
 
 func setup(new_operator_key: StringName, operator_info: Dictionary = {}) -> void:
@@ -125,7 +137,7 @@ func _parse_display_text(text_value: String) -> void:
 	_state_label.text = _state_label_text()
 	_hp_stat_label.text = lines[2] if lines.size() > 2 else "HP --"
 	_sp_stat_label.text = lines[3] if lines.size() > 3 else "SP --"
-	_cd_stat_label.text = lines[4] if lines.size() > 4 else "CD READY"
+	_cd_stat_label.text = lines[4] if lines.size() > 4 else "CD 就绪"
 
 
 func _update_cooldown_overlay(state: StringName) -> void:
@@ -152,7 +164,7 @@ func _format_cooldown_overlay_text(status: String) -> String:
 
 
 func _normalize_meta_without_cost(meta: String) -> void:
-	for token in ["READY", "DEPLOYED", "CD"]:
+	for token in ["READY", "DEPLOYED", "CD", "就绪"]:
 		var token_index := meta.find(token)
 		if token_index > 0:
 			_class_label.text = meta.substr(0, token_index).strip_edges()
@@ -207,10 +219,10 @@ func _apply_density() -> void:
 	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_name_label.add_theme_font_size_override("font_size", 14 if _compact else 15)
-	_class_label.add_theme_font_size_override("font_size", 12 if _compact else 13)
-	_state_label.add_theme_font_size_override("font_size", 12)
+	_class_label.add_theme_font_size_override("font_size", 13)
+	_state_label.add_theme_font_size_override("font_size", 13)
 	for label in [_hp_stat_label, _sp_stat_label, _cd_stat_label]:
-		label.add_theme_font_size_override("font_size", 10 if _compact else 11)
+		label.add_theme_font_size_override("font_size", 12)
 	_cooldown_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
 
 

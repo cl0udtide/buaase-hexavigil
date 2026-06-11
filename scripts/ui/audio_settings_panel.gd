@@ -26,7 +26,11 @@ func _ready() -> void:
 	_audio_manager = _resolve_audio_manager()
 	if _close_button != null:
 		_close_button.pressed.connect(func() -> void: close_requested.emit())
+	_apply_row_styles()
 	_apply_slider_handles()
+	_tighten_row_columns()
+	_style_close_button()
+	_style_auto_skill_button()
 	_bind_sliders()
 	_bind_auto_skill_toggle()
 	refresh_from_audio_manager()
@@ -78,16 +82,89 @@ func toggle_panel() -> void:
 		show_panel()
 
 
+## 行框从面板同款八角厚金属框降级为 flat 内凹板;
+## RowMargin 左距 29 是给旧厚框侧夹扣留的,随之收窄到 12。
+func _apply_row_styles() -> void:
+	var row_style := GameUiStyle.settings_row()
+	for row_name in ["MasterRow", "MusicRow", "SfxRow", "AutoSkillRow"]:
+		var row := get_node_or_null("%" + row_name)
+		if row == null:
+			continue
+		var row_base := row.get_node_or_null("RowBase") as Panel
+		if row_base != null:
+			row_base.add_theme_stylebox_override("panel", row_style)
+		var row_margin := row.get_node_or_null("RowMargin") as MarginContainer
+		if row_margin != null:
+			row_margin.add_theme_constant_override("margin_left", 12)
+
+
 ## 场景里 grabber 直接引用了原始素材（236x119），grabber 图标按纹理原生尺寸绘制；
 ## 这里统一换成 GameUiStyle 降采样后的手柄，避免拖柄盖住整行。
+## 轨道贴图细节在 8px 高下糊死,凹槽与已填充段改走 flat 样式。
 func _apply_slider_handles() -> void:
+	var groove := GameUiStyle.flat_box(GameUiStyle.BG_DARK, Color(0, 0, 0, 0.7), 1.0, 4.0)
+	var filled := GameUiStyle.flat_box(GameUiStyle.ACCENT_SOFT, GameUiStyle.ACCENT, 1.0, 4.0)
+	for style: StyleBoxFlat in [groove, filled]:
+		# HSlider 按样式盒最小高度画轨道,content 上下 4 撑出 8px 可见凹槽
+		style.content_margin_left = 0.0
+		style.content_margin_top = 4.0
+		style.content_margin_right = 0.0
+		style.content_margin_bottom = 4.0
 	var handle := GameUiStyle.slider_handle()
-	if handle == null:
-		return
 	for slider in [_master_slider, _music_slider, _sfx_slider]:
-		slider.add_theme_icon_override("grabber", handle)
-		slider.add_theme_icon_override("grabber_highlight", handle)
-		slider.add_theme_icon_override("grabber_pressed", handle)
+		slider.add_theme_stylebox_override("slider", groove)
+		slider.add_theme_stylebox_override("grabber_area", filled)
+		slider.add_theme_stylebox_override("grabber_area_highlight", filled)
+		if handle != null:
+			slider.add_theme_icon_override("grabber", handle)
+			slider.add_theme_icon_override("grabber_highlight", handle)
+			slider.add_theme_icon_override("grabber_pressed", handle)
+
+
+## 标签/数值列各收一档,把行内多余空带让给滑条行程。
+func _tighten_row_columns() -> void:
+	for label_path in [
+		"%MasterRow/RowMargin/RowContent/MasterLabel",
+		"%MusicRow/RowMargin/RowContent/MusicLabel",
+		"%SfxRow/RowMargin/RowContent/SfxLabel",
+	]:
+		var label := get_node_or_null(label_path) as Label
+		if label != null:
+			label.custom_minimum_size = Vector2(56, 0)
+	for value_label in [_master_value_label, _music_value_label, _sfx_value_label]:
+		if value_label != null:
+			value_label.custom_minimum_size = Vector2(40, 0)
+
+
+## 关闭按钮:30x28 下九宫格角部缩成细线、暗红像素 X 不可辨;
+## 换齿轮同款 socket 底座并放大提亮 X(modulate 翻倍,黑描边不受影响)。
+func _style_close_button() -> void:
+	if _close_button == null:
+		return
+	_close_button.custom_minimum_size = Vector2(36, 32)
+	var socket := load("res://assets/ui/styles/frame_settings_button_base_fit_36x32.tres") as StyleBox
+	if socket != null:
+		_close_button.add_theme_stylebox_override("normal", socket)
+	var fitted_icon := _close_button.get_node_or_null("FittedIcon") as TextureRect
+	if fitted_icon != null:
+		fitted_icon.offset_left = -10.0
+		fitted_icon.offset_top = -10.0
+		fitted_icon.offset_right = 10.0
+		fitted_icon.offset_bottom = 10.0
+		fitted_icon.self_modulate = Color(2.0, 1.8, 1.8, 1.0)
+
+
+## toggle 开启时常驻 pressed 态;primary overlay 是状态叠层,
+## 单独当底用呈无框玻璃片,pressed/hover 换回与 normal 同款金属底。
+func _style_auto_skill_button() -> void:
+	if _auto_skill_button == null:
+		return
+	_auto_skill_button.custom_minimum_size = Vector2(88, 30)
+	var base := load("res://assets/ui/styles/frame_button_base_fit_30x28.tres") as StyleBox
+	if base == null:
+		return
+	_auto_skill_button.add_theme_stylebox_override("pressed", base)
+	_auto_skill_button.add_theme_stylebox_override("hover", base)
 
 
 func _bind_sliders() -> void:
@@ -143,7 +220,11 @@ func _refresh_value_labels() -> void:
 func _refresh_auto_skill_button() -> void:
 	if _auto_skill_button == null:
 		return
-	_auto_skill_button.text = "开启" if _auto_skill_button.button_pressed else "关闭"
+	var enabled := _auto_skill_button.button_pressed
+	_auto_skill_button.text = "已开启" if enabled else "已关闭"
+	var state_color := GameUiStyle.ACCENT if enabled else GameUiStyle.TEXT_MUTED
+	_auto_skill_button.add_theme_color_override("font_color", state_color)
+	_auto_skill_button.add_theme_color_override("font_pressed_color", state_color)
 	_auto_skill_button.tooltip_text = "开启后，普通手动技能会在攻击范围内有目标时自动释放"
 
 

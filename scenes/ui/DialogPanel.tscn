@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/dialog_panel.gd" id="1_dialog_panel"]
+[ext_resource type="Texture2D" path="res://assets/story/backgrounds/page_start_defense.png" id="6_backdrop_texture"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_box_base.tres" id="2_dialog_box"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_speaker_plate_base.tres" id="3_speaker_plate"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_box_base_fit_1700x238.tres" id="fit_frame_dialog_box_base_1700x238"]
@@ -26,6 +27,20 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.04, 0.052, 0.064, 1)
+
+[node name="BackdropTexture" type="TextureRect" parent="."]
+unique_name_in_owner = true
+modulate = Color(0.5, 0.55, 0.62, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_backdrop_texture")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="BackdropGrid" type="ColorRect" parent="."]
 layout_mode = 1
@@ -67,7 +82,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 110.0
-offset_top = -320.0
+offset_top = -240.0
 offset_right = -110.0
 offset_bottom = -44.0
 grow_horizontal = 2
@@ -80,7 +95,7 @@ layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="TextBox/TextMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="SpeakerPlate" type="PanelContainer" parent="TextBox/TextMargin/VBoxContainer"]
 unique_name_in_owner = true
@@ -102,10 +117,10 @@ text_overrun_behavior = 3
 
 [node name="TextLabel" type="RichTextLabel" parent="TextBox/TextMargin/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 104)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_vertical = 0
 bbcode_enabled = true
 text = "剧情文本"
 fit_content = true

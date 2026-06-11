@@ -56,7 +56,7 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 
 
 func _refresh() -> void:
-	_entry_button.text = "遗物 %d" % _relic_ids.size()
+	_entry_button.text = "遗物" if _relic_ids.is_empty() else "遗物 %d" % _relic_ids.size()
 	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_catalog_icon(&"relic_bag"), &"left", 7.0)
 	_entry_button.tooltip_text = "点击或按 R 查看全部遗物"
 	for child in _icon_row.get_children():
@@ -80,6 +80,8 @@ func _refresh() -> void:
 	_overflow_label.text = "+%d" % overflow
 	_icon_row.visible = visible_count > 0
 	_apply_content_width(visible_count, overflow > 0)
+	# 空态幽灵化但保留 R 键/点击入口,禁用 visible=false(防"该显示的被藏"回归)
+	modulate.a = 0.35 if _relic_ids.is_empty() else 1.0
 
 
 func _on_resized() -> void:
@@ -144,6 +146,7 @@ func _style_entry_button() -> void:
 	_entry_button.set_custom_minimum_size(Vector2(86.0, 30.0))
 	_entry_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	GameUiStyle.center_button_text(_entry_button)
+	_entry_button.add_theme_stylebox_override("normal", GameUiStyle.flat_chip())
 	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
 	_entry_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
 	_entry_button.add_theme_color_override("font_color", GameUiStyle.TEXT)

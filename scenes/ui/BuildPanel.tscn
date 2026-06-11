@@ -7,6 +7,7 @@
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="5_button_base"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="6_button_primary"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="7_button_disabled"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_action_button_base_fit_272x40.tres" id="fit_frame_action_button_base_272x40"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_base_fit_272x36.tres" id="fit_frame_button_base_272x36"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay_fit_272x36.tres" id="fit_frame_button_disabled_overlay_272x36"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay_fit_272x36.tres" id="fit_frame_button_primary_overlay_272x36"]
@@ -36,9 +37,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 48
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_bottom = 36
 
 [node name="MainVBox" type="VBoxContainer" parent="ContentMargin" unique_id=1504758918]
 layout_mode = 2
@@ -59,7 +60,7 @@ focus_mode = 0
 theme_override_styles/normal = ExtResource("3_tab_base")
 theme_override_styles/pressed = ExtResource("4_tab_selected")
 theme_override_styles/hover = ExtResource("4_tab_selected")
-theme_override_styles/disabled = ExtResource("4_tab_selected")
+theme_override_styles/disabled = ExtResource("3_tab_base")
 text = "建筑"
 
 [node name="ShopModeButton" type="Button" parent="ContentMargin/MainVBox/ModeTabs" unique_id=667782961]
@@ -71,15 +72,63 @@ focus_mode = 0
 theme_override_styles/normal = ExtResource("3_tab_base")
 theme_override_styles/pressed = ExtResource("4_tab_selected")
 theme_override_styles/hover = ExtResource("4_tab_selected")
-theme_override_styles/disabled = ExtResource("4_tab_selected")
+theme_override_styles/disabled = ExtResource("3_tab_base")
 text = "商店"
 
-[node name="BuildSelectionLabel" type="Label" parent="ContentMargin/MainVBox" unique_id=1493204678]
+[node name="SelectionStrip" type="PanelContainer" parent="ContentMargin/MainVBox" unique_id=1093847561]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+
+[node name="BuildSelectionLabel" type="RichTextLabel" parent="ContentMargin/MainVBox/SelectionStrip" unique_id=1493204678]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 text = "当前选择：无"
-text_overrun_behavior = 3
+
+[node name="CategoryTabs" type="HBoxContainer" parent="ContentMargin/MainVBox" unique_id=472981155]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ResourceCategoryButton" type="Button" parent="ContentMargin/MainVBox/CategoryTabs" unique_id=1568433604]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = ExtResource("3_tab_base")
+theme_override_styles/pressed = ExtResource("4_tab_selected")
+theme_override_styles/hover = ExtResource("4_tab_selected")
+theme_override_styles/disabled = ExtResource("3_tab_base")
+text = "资源"
+
+[node name="AuraCategoryButton" type="Button" parent="ContentMargin/MainVBox/CategoryTabs" unique_id=1437673208]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = ExtResource("3_tab_base")
+theme_override_styles/pressed = ExtResource("4_tab_selected")
+theme_override_styles/hover = ExtResource("4_tab_selected")
+theme_override_styles/disabled = ExtResource("3_tab_base")
+text = "增益"
+
+[node name="BlockCategoryButton" type="Button" parent="ContentMargin/MainVBox/CategoryTabs" unique_id=400981013]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_styles/normal = ExtResource("3_tab_base")
+theme_override_styles/pressed = ExtResource("4_tab_selected")
+theme_override_styles/hover = ExtResource("4_tab_selected")
+theme_override_styles/disabled = ExtResource("3_tab_base")
+text = "防御"
 
 [node name="BuildCardScroll" type="ScrollContainer" parent="ContentMargin/MainVBox" unique_id=1482125810]
 layout_mode = 2
@@ -91,61 +140,20 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="BottomControls" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=598744539]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="CategoryTabs" type="HBoxContainer" parent="ContentMargin/MainVBox/BottomControls" unique_id=472981155]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="ResourceCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1568433604]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("4_tab_selected")
-theme_override_styles/hover = ExtResource("4_tab_selected")
-theme_override_styles/disabled = ExtResource("4_tab_selected")
-text = "资源"
-
-[node name="AuraCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1437673208]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("4_tab_selected")
-theme_override_styles/hover = ExtResource("4_tab_selected")
-theme_override_styles/disabled = ExtResource("4_tab_selected")
-text = "增益"
-
-[node name="BlockCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=400981013]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("4_tab_selected")
-theme_override_styles/hover = ExtResource("4_tab_selected")
-theme_override_styles/disabled = ExtResource("4_tab_selected")
-text = "防御"
+theme_override_constants/separation = 8
 
 [node name="LockShopButton" type="Button" parent="ContentMargin/MainVBox/BottomControls" unique_id=1083921660]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("fit_frame_button_base_272x36")
+theme_override_styles/normal = ExtResource("fit_frame_action_button_base_272x40")
 theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_272x36")
 theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_272x36")
 theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_272x36")
@@ -153,17 +161,21 @@ text = "锁定槽位"
 
 [node name="RefreshShopButton" type="Button" parent="ContentMargin/MainVBox/BottomControls" unique_id=751463005]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("fit_frame_button_base_272x36")
+theme_override_styles/normal = ExtResource("fit_frame_action_button_base_272x40")
 theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_272x36")
 theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_272x36")
 theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_272x36")
 text = "刷新 2 声望"
 
-[node name="PanelMessageLabel" type="Label" parent="ContentMargin/MainVBox/BottomControls" unique_id=1966705849]
+[node name="MessageStrip" type="PanelContainer" parent="ContentMargin/MainVBox/BottomControls" unique_id=1267004433]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PanelMessageLabel" type="Label" parent="ContentMargin/MainVBox/BottomControls/MessageStrip" unique_id=1966705849]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13

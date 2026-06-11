@@ -607,7 +607,8 @@ func _draw_attack_range_cell(rect: Rect2) -> void:
 
 
 func _draw_deploy_range_cell(rect: Rect2) -> void:
-	_draw_cell_overlay(OVERLAY_DEPLOY_VALID, rect, DEPLOY_RANGE_FILL, DEPLOY_RANGE_BORDER, 6.0, 1.5)
+	# 范围格走软填充;角括号贴图专属落点格,避免"选框跨两格"误读
+	_draw_cell_overlay(null, rect, DEPLOY_RANGE_FILL, DEPLOY_RANGE_BORDER, 6.0, 1.5)
 
 
 func _draw_building_range_cell(rect: Rect2) -> void:
@@ -616,7 +617,7 @@ func _draw_building_range_cell(rect: Rect2) -> void:
 
 func _draw_deploy_preview_cell(rect: Rect2, is_valid: bool) -> void:
 	if is_valid:
-		_draw_cell_overlay(OVERLAY_DEPLOY_VALID, rect, DEPLOY_VALID_FILL, DEPLOY_VALID_BORDER, 5.0, 3.0)
+		_draw_cell_overlay(OVERLAY_DEPLOY_VALID, rect, DEPLOY_VALID_FILL, DEPLOY_VALID_BORDER, 5.0, 3.0, Color(1.3, 1.3, 1.3))
 	else:
 		_draw_cell_overlay(OVERLAY_DEPLOY_INVALID, rect, DEPLOY_INVALID_FILL, DEPLOY_INVALID_BORDER, 5.0, 3.0)
 
@@ -626,9 +627,9 @@ func _draw_deploy_locked_cell(rect: Rect2) -> void:
 	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_BORDER, false, 3.0)
 
 
-func _draw_cell_overlay(texture: Texture2D, rect: Rect2, fill_color: Color, border_color: Color, inset: float, border_width: float) -> void:
+func _draw_cell_overlay(texture: Texture2D, rect: Rect2, fill_color: Color, border_color: Color, inset: float, border_width: float, modulate: Color = Color.WHITE) -> void:
 	if texture != null:
-		draw_texture_rect(texture, rect, false)
+		draw_texture_rect(texture, rect, false, modulate)
 		return
 	var overlay_rect := rect.grow(-inset)
 	draw_rect(overlay_rect, fill_color)
@@ -702,24 +703,19 @@ func _draw_deploy_direction_arrow(map_manager: Node) -> void:
 		start + (direction + tangent * 0.58).normalized() * radius,
 		start + (direction - tangent * 0.58).normalized() * radius
 	])
-	draw_circle(start, radius, Color(1.0, 0.70, 0.20, 0.11))
-	draw_colored_polygon(sector_points, Color(1.0, 0.68, 0.18, 0.22))
-	draw_arc(start, radius, 0.0, TAU, 72, Color(1.0, 0.74, 0.28, 0.55), 2.0, true)
-	var center_rect := Rect2(start - Vector2.ONE * CELL_SIZE * 0.26, Vector2.ONE * CELL_SIZE * 0.52)
-	draw_rect(center_rect, Color(1.0, 0.68, 0.18, 0.30))
-	draw_rect(center_rect, DEPLOY_LOCKED_BORDER, false, 3.0)
-	draw_line(start + Vector2(-10.0, 0.0), start + Vector2(10.0, 0.0), DEPLOY_LOCKED_BORDER, 3.0, true)
-	draw_line(start + Vector2(0.0, -10.0), start + Vector2(0.0, 10.0), DEPLOY_LOCKED_BORDER, 3.0, true)
+	# 过渡参数版(终解为贴图环+楔形,见美术 TODO 第 28 轮):
+	# 同宽同头型的四支箭头,仅以颜色与长度区分选中;十字/中心方框/底圆已删降噪。
+	draw_colored_polygon(sector_points, Color(1.0, 0.68, 0.18, 0.12))
+	draw_arc(start, radius, 0.0, TAU, 72, Color(1.0, 0.74, 0.28, 0.45), 2.0, true)
 	var directions: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 	for direction_i: Vector2i in directions:
 		var arrow_direction := Vector2(direction_i)
 		var selected := direction_i == _deploy_preview_facing
-		var arrow_color := DEPLOY_LOCKED_BORDER if selected else Color(1.0, 0.82, 0.38, 0.48)
-		var line_width := 6.0 if selected else 3.0
+		var arrow_color := DEPLOY_LOCKED_BORDER if selected else Color(1.0, 0.82, 0.38, 0.45)
 		var begin := start + arrow_direction * CELL_SIZE * 0.34
 		var end := start + arrow_direction * CELL_SIZE * (0.94 if selected else 0.78)
-		draw_line(begin, end, arrow_color, line_width, true)
-		_draw_arrow_head(end, arrow_direction, arrow_color, 12.0 if selected else 8.0)
+		draw_line(begin, end, arrow_color, 5.0, true)
+		_draw_arrow_head(end, arrow_direction, arrow_color, 10.0)
 
 
 func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: float) -> void:

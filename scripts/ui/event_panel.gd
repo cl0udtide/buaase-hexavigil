@@ -17,6 +17,8 @@ var _base_desc_text := ""
 @onready var _choice_list: VBoxContainer = %ChoiceList
 @onready var _illustration: Control = %Illustration
 @onready var _event_glyph: Label = %EventGlyph
+@onready var _illustration_card: PanelContainer = %IllustrationCard
+@onready var _body_card: PanelContainer = %BodyCard
 
 
 func _ready() -> void:
@@ -95,19 +97,28 @@ func _show_event_config(event_cfg: Dictionary) -> void:
 
 
 func _build_choices(choice_defs: Array) -> void:
-	for button in _choice_buttons:
-		if button != null and is_instance_valid(button):
-			_choice_list.remove_child(button)
-			button.queue_free()
+	# 间距占位 Control 与按钮一起清,避免重复打开事件堆积空隙
+	for child in _choice_list.get_children():
+		_choice_list.remove_child(child)
+		child.queue_free()
 	_choice_buttons.clear()
+	var secondary_gap_added := false
 	for choice in choice_defs:
+		var kind := StringName(choice.get("kind", &"secondary"))
+		if kind != &"primary" and not _choice_buttons.is_empty() and not secondary_gap_added:
+			# 放弃/离开类选项与付费主选项之间加额外间距拉开层级
+			var gap := Control.new()
+			gap.custom_minimum_size = Vector2(0.0, 8.0)
+			gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_choice_list.add_child(gap)
+			secondary_gap_added = true
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(0.0, 46.0)
+		button.custom_minimum_size = Vector2(0.0, 54.0)
 		button.focus_mode = Control.FOCUS_NONE
 		button.text = String(choice.get("text", "选项"))
 		button.tooltip_text = _choice_tooltip_text(choice)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_style_choice_button(button, StringName(choice.get("kind", &"secondary")))
+		_style_choice_button(button, kind)
 		var choice_id := StringName(choice.get("id", "choice"))
 		button.pressed.connect(_on_choice_pressed.bind(choice_id))
 		_choice_list.add_child(button)
@@ -241,9 +252,8 @@ func _show_resolved_event_from_result(result: Dictionary) -> void:
 
 
 func _make_eyebrow_text() -> String:
-	if _current_cell.x < 0:
-		return "地图事件"
-	return "地图事件  X%d Y%d" % [_current_cell.x, _current_cell.y]
+	# 裸坐标对玩家无操作价值,标签行只保留类别
+	return "地图事件"
 
 
 func _on_request_open_event_panel(cell: Vector2i) -> void:
@@ -299,6 +309,13 @@ func _apply_visual_style() -> void:
 	if _event_glyph != null:
 		_event_glyph.add_theme_color_override("font_color", GameUiStyle.AMBER)
 		_event_glyph.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.65))
+	# 内层盒子降级为安静 hairline,角甲重框只留给弹窗最外层
+	if _illustration_card != null:
+		_illustration_card.add_theme_stylebox_override("panel", GameUiStyle.flat_box(Color(0.030, 0.042, 0.050, 0.85), GameUiStyle.STROKE_SOFT, 1.0, 4.0))
+	if _body_card != null:
+		_body_card.add_theme_stylebox_override("panel", GameUiStyle.flat_box(Color(0.030, 0.042, 0.050, 0.85), GameUiStyle.STROKE_SOFT, 1.0, 4.0))
+
+
 func _style_choice_button(button: Button, kind: StringName) -> void:
 	GameUiStyle.center_button_text(button)
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
@@ -306,14 +323,16 @@ func _style_choice_button(button: Button, kind: StringName) -> void:
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
 	match kind:
 		&"primary":
-			button.add_theme_stylebox_override("normal", GameUiStyle.event_choice_button())
-			button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.ACCENT))
-			button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
+			var states := GameUiStyle.popup_action_button()
+			for state in states:
+				button.add_theme_stylebox_override(state, states[state])
 		_:
-			button.add_theme_stylebox_override("normal", GameUiStyle.secondary_button())
+			# 放弃/离开类走 ghost:透明底+细描边+灰字,与主选项区分主次
+			button.add_theme_stylebox_override("normal", GameUiStyle.flat_box(Color(0.0, 0.0, 0.0, 0.0), GameUiStyle.STROKE_SOFT, 1.0, 5.0))
 			button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.STEEL))
 			button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
+			button.add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
+			button.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 
 
 func _get_event_cfg(event_id: StringName) -> Dictionary:

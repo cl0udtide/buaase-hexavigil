@@ -36,7 +36,11 @@ func _on_pressed() -> void:
 func _apply_visual_style() -> void:
 	tooltip_text = "设置"
 	var gear_texture := UiArtRegistry.get_catalog_icon(&"button_settings")
-	GameUiStyle.set_button_texture_icon(self, gear_texture, &"center")
+	# 深灰雕刻齿轮贴暗底几乎隐形,tint >1 提亮;hover/pressed 同步以免悬停反而变暗
+	var gear_tint := Color(1.55, 1.65, 1.70)
+	GameUiStyle.set_button_texture_icon(self, gear_texture, &"center", 8.0, gear_tint)
+	add_theme_color_override("icon_hover_color", gear_tint)
+	add_theme_color_override("icon_pressed_color", gear_tint)
 	var gear_label := get_node_or_null("GearIcon") as Label
 	if gear_label != null:
 		gear_label.mouse_filter = Control.MOUSE_FILTER_IGNORE

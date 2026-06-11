@@ -45,9 +45,9 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="RightUiSlot/CenterContainer" unique_id=2047200006]
-custom_minimum_size = Vector2(430, 300)
+custom_minimum_size = Vector2(430, 440)
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 22
 alignment = 1
 
 [node name="TitleLabel" type="Label" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2078786049]
@@ -58,21 +58,21 @@ vertical_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=827243283]
 layout_mode = 2
-text = "昼夜防线指挥"
+text = "— 昼夜防线指挥 —"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="StartButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2140411556]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 54)
+custom_minimum_size = Vector2(380, 56)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "开始行动"
 
 [node name="TutorialButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 86)
+custom_minimum_size = Vector2(380, 52)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-text = "新手教程\n第一天演习"
+text = "新手教程 · 第一天演习"

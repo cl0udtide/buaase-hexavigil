@@ -34,8 +34,9 @@ const MESSAGE_WARNING_OVERLAY_PATCH_MARGIN := 18
 const MESSAGE_CHIP_BASE_Z := 0
 const MESSAGE_CHIP_WARNING_Z := 1
 const MESSAGE_CHIP_CONTENT_Z := 2
-const CORE_FILL_INSET := 2.0
-const DEPLOY_SCROLLBAR_THICKNESS := 26.0
+const CORE_FILL_INSET := 3.0
+const WAVE_SCROLL_FADE_HEIGHT := 18.0
+const DEPLOY_SCROLLBAR_THICKNESS := 10.0
 const DEPLOY_SCROLLBAR_MIN_GRAB := 64
 const DEPLOY_SCROLLBAR_STEP := 48
 const RESOURCE_DELTA_GAIN_COLOR := Color(0.440, 0.650, 0.470, 1.0)
@@ -121,6 +122,11 @@ var _wave_spawn_card_template: PanelContainer
 var _wave_enemy_card_template: PanelContainer
 var _wave_warning_row: Control
 var _wave_warning_label: Label
+var _wave_affix_row: PanelContainer
+var _wave_affix_list: VBoxContainer
+var _wave_affix_count := 0
+var _wave_scroll_fade: TextureRect
+var _overlay_scrim: ColorRect
 var _night_affix_row: PanelContainer
 var _night_affix_label: Label
 var _wave_preview_available := false
@@ -194,6 +200,8 @@ func _ready() -> void:
 		resource_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_core_track.add_theme_stylebox_override("panel", GameUiStyle.bar_track())
+	_core_fill.self_modulate = Color(0.80, 0.90, 0.94)
 	_core_track.resized.connect(_refresh_core_fill)
 	_collect_resource_items()
 	_style_top_cards()
@@ -214,6 +222,10 @@ func _ready() -> void:
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
+	# 八角贴图被压进单钮矩形会拉出竖条纹,选中态改为平面青色填充+内描边。
+	_speed_active_overlay.add_theme_stylebox_override("panel", GameUiStyle.flat_box(
+		Color(GameUiStyle.ACCENT.r, GameUiStyle.ACCENT.g, GameUiStyle.ACCENT.b, 0.16),
+		GameUiStyle.ACCENT, 2.0, 5.0))
 	_bullet_time_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bullet_time_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_bullet_time_overlay.visible = false
@@ -222,7 +234,7 @@ func _ready() -> void:
 	_deck_panel.visible = _deck_container.get_child_count() > 0
 	_legend_panel.z_index = 14
 	_detail_panel.z_index = 40
-	_drag_ghost_base.add_theme_stylebox_override("panel", GameUiStyle.frame_box(GameUiStyle.FRAME_CARD, GameUiStyle.BG_CARD, GameUiStyle.AMBER, false))
+	_drag_ghost_base.add_theme_stylebox_override("panel", GameUiStyle.flat_box(Color(0.015, 0.025, 0.032, 0.72), Color.TRANSPARENT, 0.0, 6.0))
 	_drag_ghost_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
 	_speed_1_button.pressed.connect(func() -> void: speed_1_pressed.emit())
@@ -240,6 +252,8 @@ func _ready() -> void:
 	_style_top_button(_pause_button, false)
 	_style_top_button(_speed_1_button, false)
 	_style_top_button(_speed_2_button, false)
+	for time_button: Button in [_pause_button, _speed_1_button, _speed_2_button]:
+		time_button.tooltip_text = "夜晚战斗中可用"
 	_drag_ghost.visible = false
 	_refresh_core_fill()
 
@@ -358,12 +372,14 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 		if delta_text.is_empty():
 			delta_text = "--"
 			delta_sign = 0
+		# 无产量数据时整体隐藏坠饰("--"占位不展示);有实值由本函数每次刷新自愈恢复。
+		var has_delta := delta_text != "--" and delta_sign != 0
 		if delta_label != null:
 			delta_label.text = delta_text
 			_apply_resource_delta_label_style(delta_label, delta_sign)
-			delta_label.visible = true
+			delta_label.visible = has_delta
 		if delta_badge != null:
-			delta_badge.visible = true
+			delta_badge.visible = has_delta
 			delta_badge.z_index = 6
 
 
@@ -393,7 +409,8 @@ func _ensure_covenant_row() -> void:
 	# 独立定位条：紧贴顶栏下方，与 TopHudSlot 左边缘对齐。
 	var slot := Control.new()
 	slot.name = "CovenantSlot"
-	slot.position = Vector2(66, 96)
+	# 落在 RelicStripSlot(底 140)下方 8px,避免盟约名称行被遗物链整条盖死。
+	slot.position = Vector2(66, 148)
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(slot)
 	_covenant_row = HBoxContainer.new()
@@ -533,6 +550,7 @@ func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 	else:
 		_wave_summary_label.text = "合计来袭 %d · 活跃出怪口 %d" % [total_count, active_spawn_count]
 	_rebuild_wave_spawn_cards_by_wave(data.get("waves", []), spawn_order, entries, data.get("key_enemies", []))
+	_populate_wave_affix_rows(data.get("affixes", []))
 	_wave_warning_label.text = _format_wave_warning_text(data)
 	_wave_warning_row.visible = not _wave_warning_label.text.strip_edges().is_empty()
 	_apply_right_column_visibility()
@@ -581,12 +599,18 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	var pause_selected := effective_paused
 	var speed_1_selected := false
 	var speed_2_selected := false
-	if enabled and not effective_paused:
+	if not effective_paused:
 		speed_1_selected = is_equal_approx(speed, 1.0)
 		speed_2_selected = is_equal_approx(speed, 2.0)
+		# 白天禁用态仍标记当前倍速(speed 可能为 0/暂停值,兜底高亮 1X),
+		# 用半透明选中框区分"禁用但有档位",避免读作三个空插槽。
+		if not enabled and not speed_1_selected and not speed_2_selected:
+			speed_1_selected = true
+	_speed_active_overlay.modulate.a = SPEED_ACTIVE_OVERLAY_ALPHA * (1.0 if enabled else 0.4)
 	var pause_texture := UiArtRegistry.get_catalog_icon(&"top_play" if pause_selected else &"top_pause")
 	_pause_button.text = "" if pause_texture != null else "暂停"
-	GameUiStyle.set_button_texture_icon(_pause_button, pause_texture, &"center")
+	# tint 提亮深灰浮雕图标,接近 1X/2X 白字亮度。
+	GameUiStyle.set_button_texture_icon(_pause_button, pause_texture, &"center", 8.0, Color(1.55, 1.65, 1.7))
 	GameUiStyle.set_button_texture_icon(_speed_1_button, null)
 	GameUiStyle.set_button_texture_icon(_speed_2_button, null)
 	_style_top_button(_pause_button, false)
@@ -657,6 +681,10 @@ func set_operator_card_visible(operator_key: StringName, visible: bool) -> void:
 
 
 func show_drag_ghost(text_value: String) -> void:
+	# 文案为空(干员信息缺失)时不显示名牌,只保留落点高亮,避免泄漏裸 id。
+	if text_value.strip_edges().is_empty():
+		hide_drag_ghost()
+		return
 	_drag_ghost_label.text = text_value
 	_drag_ghost.visible = true
 	move_drag_ghost(get_viewport().get_mouse_position())
@@ -723,6 +751,8 @@ func _style_wave_route_toggle() -> void:
 	_wave_route_toggle.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	_wave_route_toggle.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
+	_wave_route_toggle.add_theme_font_size_override("font_size", 14)
+	_wave_route_toggle.add_theme_stylebox_override("normal", GameUiStyle.wave_route_toggle())
 
 
 func _bind_wave_preview_nodes() -> void:
@@ -743,10 +773,17 @@ func _bind_wave_preview_nodes() -> void:
 	_style_wave_preview_static_nodes()
 	if _wave_spawn_card_template != null:
 		_wave_spawn_card_template.visible = false
+		# 分组容器去框:重金属框只保留最外层面板,S 口分组靠标签行区分。
+		_wave_spawn_card_template.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	if _wave_enemy_card_template != null:
 		_wave_enemy_card_template.visible = false
+		# 敌人卡降级为轻量平底内卡,消除三层同款金属框嵌套。
+		_wave_enemy_card_template.add_theme_stylebox_override("panel", GameUiStyle.flat_box(
+			Color(0.045, 0.060, 0.068, 0.92), Color(0.16, 0.20, 0.22, 1.0), 1.0, 4.0))
 	if _wave_warning_row != null:
 		_wave_warning_row.visible = false
+	_ensure_wave_affix_row()
+	_ensure_wave_scroll_fade()
 
 
 func _set_wave_preview_v2_visible(visible: bool) -> void:
@@ -758,6 +795,8 @@ func _set_wave_preview_v2_visible(visible: bool) -> void:
 		_wave_summary_label.visible = visible
 	if _wave_spawn_cards_box != null:
 		_wave_spawn_cards_box.visible = visible
+	if _wave_affix_row != null:
+		_wave_affix_row.visible = visible and _wave_affix_count > 0
 	if _wave_warning_row != null:
 		_wave_warning_row.visible = visible and _wave_warning_label != null and not _wave_warning_label.text.strip_edges().is_empty()
 
@@ -776,7 +815,7 @@ func _style_wave_preview_static_nodes() -> void:
 	if _wave_summary_label != null:
 		_wave_summary_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	if _wave_warning_label != null:
-		_wave_warning_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+		_wave_warning_label.add_theme_color_override("font_color", GameUiStyle.DANGER_BRIGHT)
 
 
 func _make_wave_label(node_name: String, font_size: int, color: Color, autowrap: bool) -> Label:
@@ -879,6 +918,10 @@ func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dict
 	else:
 		key_label.text = spawn_key
 	key_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	# 顶对齐:避免组高时标签落在组中缝、看似不属于本组首卡。
+	key_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	key_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	key_label.tooltip_text = "主攻 = 本波主要出怪口"
 	var chips := card.get_node_or_null("SpawnCardRow/WaveEnemyCardsFlow") as HFlowContainer
 	for child in chips.get_children():
 		child.queue_free()
@@ -900,7 +943,7 @@ func _build_wave_enemy_chip(entry: Dictionary, highlighted: bool) -> Control:
 
 	var count_label := chip.get_node_or_null("EnemyCardMargin/EnemyCardBody/EnemyInfoBox/EnemyCountLabel") as Label
 	count_label.text = "×%d · %s" % [int(entry.get("count", 0)), _format_wave_enemy_timing(entry)]
-	count_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	count_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 
 	var stats := chip.get_node_or_null("EnemyCardMargin/EnemyCardBody/EnemyInfoBox/WaveEnemyStats") as VBoxContainer
 	var enemy_cfg: Dictionary = entry.get("enemy_cfg", {})
@@ -912,6 +955,9 @@ func _build_wave_enemy_chip(entry: Dictionary, highlighted: bool) -> Control:
 		stat_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 
 	var tags := _wave_enemy_tags(enemy_cfg)
+	# 近战/远程从数值行移入标签行(仅卡面展示,tooltip 文案保持不变)。
+	var attack_range := float(enemy_cfg.get("attack_range", 0.0))
+	tags.insert(mini(1, tags.size()), ("远程·距%.0f" % attack_range) if attack_range > 0.0 else "近战")
 	var tag_label := chip.get_node_or_null("EnemyCardMargin/EnemyCardBody/EnemyInfoBox/EnemyTagLabel") as Label
 	tag_label.text = " / ".join(tags)
 	tag_label.visible = not tags.is_empty()
@@ -939,21 +985,18 @@ func _fill_wave_enemy_preview(slot: Control, entry: Dictionary, enemy_cfg: Dicti
 
 
 func _wave_enemy_stat_lines(enemy_cfg: Dictionary) -> Array[String]:
+	# 左列数值固定宽度占位,使两列数值跨行近似对齐、跨卡可扫读。
 	var lines: Array[String] = []
-	lines.append("HP %d  攻 %d" % [
+	lines.append("HP %-5d 攻 %d" % [
 		int(enemy_cfg.get("max_hp", 0)),
 		int(enemy_cfg.get("atk", 0))
 	])
-	lines.append("防 %d  抗 %d" % [
+	lines.append("防 %-5d 抗 %d" % [
 		int(enemy_cfg.get("def", 0)),
 		int(enemy_cfg.get("res", 0))
 	])
-	var attack_range := float(enemy_cfg.get("attack_range", 0.0))
-	if attack_range > 0.0:
-		lines.append("速 %.2f  距 %.0f" % [float(enemy_cfg.get("move_speed", 0.0)), attack_range])
-	else:
-		lines.append("速 %.2f  近战" % float(enemy_cfg.get("move_speed", 0.0)))
-	lines.append("核 %d  声 %d" % [
+	lines.append("速 %.2f" % float(enemy_cfg.get("move_speed", 0.0)))
+	lines.append("核 %-5d 声 %d" % [
 		int(enemy_cfg.get("core_damage", 1)),
 		int(enemy_cfg.get("prestige_reward", 0))
 	])
@@ -1028,18 +1071,10 @@ func _key_enemy_lookup(raw_key_enemies: Variant) -> Dictionary:
 	return lookup
 
 
+# 仅路线异常与预览阻挡;词缀清单分流到 _populate_wave_affix_rows 的独立列表。
 func _format_wave_warning_text(data: Dictionary) -> String:
 	var routes: Array = data.get("routes", [])
 	var warnings := PackedStringArray()
-	for raw_affix: Variant in data.get("affixes", []):
-		if typeof(raw_affix) != TYPE_DICTIONARY:
-			continue
-		var affix: Dictionary = raw_affix
-		var affix_name := String(affix.get("name", "")).strip_edges()
-		var affix_desc := String(affix.get("desc", "")).strip_edges()
-		if affix_name.is_empty():
-			continue
-		warnings.append("夜晚词缀【%s】%s" % [affix_name, affix_desc])
 	for route_variant: Variant in routes:
 		if typeof(route_variant) != TYPE_DICTIONARY:
 			continue
@@ -1054,6 +1089,115 @@ func _format_wave_warning_text(data: Dictionary) -> String:
 	if hover_cell != Vector2i(-9999, -9999):
 		warnings.append("预览阻挡：%s" % str(hover_cell))
 	return "；".join(warnings)
+
+
+# 词缀块不透明平底 + 顶部 1px 分隔线,避免半透底透出被滚动裁切的敌人卡。
+func _wave_warning_panel_style() -> StyleBoxFlat:
+	var style := GameUiStyle.flat_box(Color(0.045, 0.060, 0.068, 1.0), GameUiStyle.STROKE_SOFT, 1.0, 0.0)
+	style.border_width_left = 0
+	style.border_width_right = 0
+	style.border_width_bottom = 0
+	return style
+
+
+func _ensure_wave_affix_row() -> void:
+	if _wave_affix_row != null or _wave_warning_row == null:
+		return
+	var parent := _wave_warning_row.get_parent()
+	if parent == null:
+		return
+	_wave_affix_row = PanelContainer.new()
+	_wave_affix_row.name = "WaveAffixRow"
+	_wave_affix_row.visible = false
+	_wave_affix_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_wave_affix_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wave_affix_row.add_theme_stylebox_override("panel", _wave_warning_panel_style())
+	parent.add_child(_wave_affix_row)
+	parent.move_child(_wave_affix_row, _wave_warning_row.get_index())
+	var margin := MarginContainer.new()
+	margin.name = "AffixMargin"
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_bottom", 6)
+	_wave_affix_row.add_child(margin)
+	_wave_affix_list = VBoxContainer.new()
+	_wave_affix_list.name = "AffixList"
+	_wave_affix_list.add_theme_constant_override("separation", 2)
+	margin.add_child(_wave_affix_list)
+	if _wave_warning_row is PanelContainer:
+		(_wave_warning_row as PanelContainer).add_theme_stylebox_override("panel", _wave_warning_panel_style())
+
+
+# 词缀列表:标题只写一次,每词缀一行;超过 3 条仅显名称、描述进 tooltip。
+func _populate_wave_affix_rows(affixes: Array) -> void:
+	_ensure_wave_affix_row()
+	if _wave_affix_list == null:
+		return
+	for child in _wave_affix_list.get_children():
+		child.queue_free()
+	var rows: Array[Dictionary] = []
+	for raw_affix: Variant in affixes:
+		if typeof(raw_affix) != TYPE_DICTIONARY:
+			continue
+		var affix: Dictionary = raw_affix
+		var affix_name := String(affix.get("name", "")).strip_edges()
+		if affix_name.is_empty():
+			continue
+		rows.append({"name": affix_name, "desc": String(affix.get("desc", "")).strip_edges()})
+	_wave_affix_count = rows.size()
+	if rows.is_empty():
+		_wave_affix_row.visible = false
+		return
+	var title := _make_wave_label("AffixTitleLabel", 12, GameUiStyle.TEXT_INVERTED_DIM, false)
+	title.text = "夜晚词缀"
+	_wave_affix_list.add_child(title)
+	var compact := rows.size() > 3
+	for row in rows:
+		var name_label := _make_wave_label("AffixNameLabel", 13, GameUiStyle.AMBER, false)
+		name_label.text = String(row.get("name", ""))
+		var desc_text := String(row.get("desc", ""))
+		if compact:
+			name_label.mouse_filter = Control.MOUSE_FILTER_STOP
+			name_label.tooltip_text = desc_text
+		_wave_affix_list.add_child(name_label)
+		if not compact and not desc_text.is_empty():
+			var desc_label := _make_wave_label("AffixDescLabel", 12, GameUiStyle.TEXT_INVERTED_DIM, true)
+			desc_label.text = desc_text
+			_wave_affix_list.add_child(desc_label)
+	_wave_affix_row.visible = true
+
+
+# 滚动视口底部渐隐层:缓和敌人卡被视口下沿拦腰硬切的观感。
+func _ensure_wave_scroll_fade() -> void:
+	if _wave_scroll_fade != null or _wave_preview_scroll == null or _wave_preview_panel == null:
+		return
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 1.0])
+	gradient.colors = PackedColorArray([Color(0.045, 0.060, 0.068, 0.0), Color(0.045, 0.060, 0.068, 0.95)])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill_from = Vector2(0.0, 0.0)
+	texture.fill_to = Vector2(0.0, 1.0)
+	_wave_scroll_fade = TextureRect.new()
+	_wave_scroll_fade.name = "WaveScrollFade"
+	_wave_scroll_fade.texture = texture
+	_wave_scroll_fade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_wave_scroll_fade.stretch_mode = TextureRect.STRETCH_SCALE
+	_wave_scroll_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wave_preview_panel.add_child(_wave_scroll_fade)
+	if not _wave_preview_scroll.item_rect_changed.is_connected(_update_wave_scroll_fade):
+		_wave_preview_scroll.item_rect_changed.connect(_update_wave_scroll_fade)
+	_update_wave_scroll_fade.call_deferred()
+
+
+func _update_wave_scroll_fade() -> void:
+	if _wave_scroll_fade == null or _wave_preview_scroll == null or _wave_preview_panel == null:
+		return
+	var scroll_rect := _wave_preview_scroll.get_global_rect()
+	var to_local := _wave_preview_panel.get_global_transform().affine_inverse()
+	_wave_scroll_fade.position = to_local * Vector2(scroll_rect.position.x, scroll_rect.end.y - WAVE_SCROLL_FADE_HEIGHT)
+	_wave_scroll_fade.size = Vector2(scroll_rect.size.x, WAVE_SCROLL_FADE_HEIGHT)
 
 
 ## 当晚词缀清单（含事件临时追加项），白天与夜间常显，由 controller 驱动；
@@ -1093,13 +1237,17 @@ func _ensure_night_affix_row() -> void:
 	_night_affix_row.mouse_filter = Control.MOUSE_FILTER_STOP
 	_night_affix_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_night_affix_row.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_night_affix_row.offset_top = 94.0
+	# 下移一行与遗物链垂直分带,避免轨线直插横幅左帽。
+	_night_affix_row.offset_top = 146.0
+	# 薄变体:平底+1px 金线描边,替换默认金属框,消除小横幅内的双层边框。
+	_night_affix_row.add_theme_stylebox_override("panel", GameUiStyle.flat_box(
+		Color(0.02, 0.030, 0.038, 0.80), GameUiStyle.STROKE_STRONG, 1.0, 4.0))
 	add_child(_night_affix_row)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
 	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 4)
-	margin.add_theme_constant_override("margin_bottom", 4)
+	margin.add_theme_constant_override("margin_top", 9)
+	margin.add_theme_constant_override("margin_bottom", 9)
 	_night_affix_row.add_child(margin)
 	_night_affix_label = Label.new()
 	_night_affix_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
@@ -1164,7 +1312,8 @@ func _collect_resource_items() -> void:
 			continue
 		var projected_delta_badge := item_root.get_node_or_null("ProjectedDeltaBadge") as Control
 		if projected_delta_badge != null:
-			projected_delta_badge.visible = true
+			# 初始隐藏占位坠饰;set_resource_items 拿到实际产量后再显示。
+			projected_delta_badge.visible = false
 			projected_delta_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			projected_delta_badge.z_index = 6
 		var item := {
@@ -1270,7 +1419,8 @@ func _style_top_button(button: Button, _selected: bool) -> void:
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
 	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
+	# TEXT_MUTED 在暗底上对比约 3.4:1,白天禁用态像空插槽,提亮一档。
+	button.add_theme_color_override("font_disabled_color", Color(0.55, 0.62, 0.66))
 
 
 func _place_speed_active_overlay(_button: Button) -> void:
@@ -1386,6 +1536,12 @@ func _style_top_cards() -> void:
 	for label in [_message_label]:
 		GameUiStyle.center_label_text(label)
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+	# 提示是引导性临时信息,底板降级为半透明暗色圆角条,与数据 chip 分层;
+	# 警告态仍由 MessageWarningOverlay 危险框表达,ChipBase 保持可见。
+	var message_base := _message_chip.get_node_or_null("ChipBase") as Panel
+	if message_base != null:
+		message_base.add_theme_stylebox_override("panel", GameUiStyle.flat_box(
+			Color(0.03, 0.045, 0.055, 0.55), Color(0.18, 0.23, 0.245, 0.6), 1.0, 8.0))
 	for item in _resource_item_controls.values():
 		var item_dict := item as Dictionary
 		for label_key in ["icon", "value", "delta"]:
@@ -1503,7 +1659,13 @@ func _style_legend_panel() -> void:
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 		label.add_theme_constant_override("shadow_offset_x", 0)
 		label.add_theme_constant_override("shadow_offset_y", 0)
-		label.add_theme_font_size_override("font_size", 12)
+		label.add_theme_font_size_override("font_size", 13)
+	# 行级去框:非交互图例行不再像五个叠起来的按钮,重框只留面板自身。
+	var legend_rows := _legend_panel.get_node_or_null("LegendMargin/LegendVBox/LegendRows")
+	if legend_rows != null:
+		for row in legend_rows.get_children():
+			if row is PanelContainer:
+				(row as PanelContainer).add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	if title != null:
 		title.add_theme_font_size_override("font_size", 14)
 		title.add_theme_color_override("font_color", GameUiStyle.TEXT)
@@ -1546,6 +1708,7 @@ func _apply_legend_icon(row_name: String, icon_id: StringName) -> void:
 
 func _on_viewport_size_changed() -> void:
 	_refresh_core_fill()
+	_update_wave_scroll_fade()
 	if _level_intro_banner != null and not _level_intro_banner.visible:
 		_apply_level_intro_content_rect(_level_intro_content_rect(0.0))
 
@@ -1580,7 +1743,16 @@ func _core_title_from_text(core_text: String) -> String:
 func _format_core_hp_label() -> String:
 	if _core_hp_max <= 0:
 		return "%s --/--" % CORE_HP_TITLE
+	# 上限达 5 位数时走万缩写防截断;常态(如 10/10)原样显示,tooltip 始终保留完整值。
+	if _core_hp_max >= 10000:
+		return "%s %s/%s" % [CORE_HP_TITLE, _format_wan_value(_core_hp_current), _format_wan_value(_core_hp_max)]
 	return "%s %d/%d" % [CORE_HP_TITLE, _core_hp_current, _core_hp_max]
+
+
+func _format_wan_value(value: int) -> String:
+	if value < 10000:
+		return str(value)
+	return "%.1f万" % (float(value) / 10000.0)
 
 
 func _set_core_progress_from_text(core_text: String) -> void:
@@ -1636,6 +1808,10 @@ func _bind_overlay_panels() -> void:
 			_relic_strip.connect(&"relic_pressed", Callable(self, "_on_relic_strip_relic_pressed"))
 	if _relic_panel != null and _relic_panel.has_signal("close_requested"):
 		_relic_panel.connect(&"close_requested", Callable(self, "_on_relic_panel_close_requested"))
+	# 任一显隐路径变化都同步遮罩,防止旁路开关面板时遮罩残留/缺失。
+	for overlay_panel: Control in [_settings_panel, _relic_panel]:
+		if overlay_panel != null and not overlay_panel.visibility_changed.is_connected(_update_overlay_scrim):
+			overlay_panel.visibility_changed.connect(_update_overlay_scrim)
 
 
 func _on_settings_button_pressed() -> void:
@@ -1669,6 +1845,7 @@ func _show_overlay_panel(panel_name: StringName) -> void:
 		panel.visible = true
 	_move_control_to_front(panel)
 	_mark_panel_top(panel_name)
+	_update_overlay_scrim()
 
 
 func _hide_overlay_panel(panel_name: StringName) -> void:
@@ -1680,6 +1857,33 @@ func _hide_overlay_panel(panel_name: StringName) -> void:
 	else:
 		panel.visible = false
 	_remove_panel_from_stack(panel_name)
+	_update_overlay_scrim()
+
+
+# 遗物/设置面板共享的压暗遮罩,置于 PopupLayer 首位:盖住 HUD、不盖面板。
+func _ensure_overlay_scrim() -> void:
+	if _overlay_scrim != null and is_instance_valid(_overlay_scrim):
+		return
+	var popup_layer := get_node_or_null("PopupLayer") as Control
+	if popup_layer == null:
+		return
+	_overlay_scrim = ColorRect.new()
+	_overlay_scrim.name = "OverlayScrim"
+	_overlay_scrim.color = Color(0.0, 0.0, 0.0, 0.5)
+	_overlay_scrim.visible = false
+	_overlay_scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_overlay_scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	popup_layer.add_child(_overlay_scrim)
+	popup_layer.move_child(_overlay_scrim, 0)
+
+
+func _update_overlay_scrim() -> void:
+	_ensure_overlay_scrim()
+	if _overlay_scrim == null:
+		return
+	var settings_open := _settings_panel != null and _settings_panel.visible
+	var relic_open := _relic_panel != null and _relic_panel.visible
+	_overlay_scrim.visible = settings_open or relic_open
 
 
 func _panel_for_name(panel_name: StringName) -> Control:

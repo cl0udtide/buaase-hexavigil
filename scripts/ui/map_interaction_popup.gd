@@ -2,17 +2,20 @@ extends PanelContainer
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiTokens = preload("res://scripts/ui/ui_tokens.gd")
 
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
 const WOOD_RESOURCE_COLLECT_AMOUNT := 2
 const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
-const POPUP_MIN_WIDTH := 300.0
+const POPUP_MIN_WIDTH := 320.0
 const POPUP_OFFSET := Vector2(14.0, 14.0)
 const INVALID_CELL := Vector2i(-1, -1)
 
 var _current_cell := INVALID_CELL
 var _current_phase := GameEnums.PHASE_MENU
+var _status_label: Label
 
 @onready var _title_label: Label = %TitleLabel
 @onready var _event_section: VBoxContainer = %EventSection
@@ -33,11 +36,51 @@ var _current_phase := GameEnums.PHASE_MENU
 func _ready() -> void:
 	AppTheme.apply(self)
 	visible = false
+	custom_minimum_size = Vector2(POPUP_MIN_WIDTH, 0.0)
+	_apply_action_button_styles()
+	_create_status_label()
 	_bind_buttons()
 	_bind_events()
 	var run_state = AppRefs.run_state()
 	if run_state != null:
 		_current_phase = int(run_state.phase)
+
+
+func _apply_action_button_styles() -> void:
+	var button_height := UiTokens.POPUP_BUTTON_HEIGHT
+	_restyle_action_button(_trigger_event_button, GameUiStyle.popup_action_button(), Vector2(160.0, button_height))
+	_trigger_event_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_restyle_action_button(_collect_button, GameUiStyle.popup_action_button(), Vector2(160.0, button_height))
+	_collect_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_restyle_action_button(_repair_button, GameUiStyle.popup_action_button(), Vector2(116.0, button_height))
+	_restyle_action_button(_toggle_button, GameUiStyle.popup_action_button(&"secondary"), Vector2(116.0, button_height))
+	# 拆除是不可逆破坏性操作:常态即危险编码,不等 hover 才提示
+	var danger_states := GameUiStyle.popup_action_button()
+	danger_states[&"normal"] = GameUiStyle.flat_box(GameUiStyle.DANGER_SOFT, GameUiStyle.DANGER, 1.0, 5.0)
+	danger_states[&"hover"] = GameUiStyle.flat_box(Color(0.30, 0.10, 0.085, 0.98), GameUiStyle.DANGER_BRIGHT, 1.0, 5.0)
+	_restyle_action_button(_demolish_button, danger_states, Vector2(116.0, button_height))
+
+
+func _restyle_action_button(button: Button, states: Dictionary, min_size: Vector2) -> void:
+	if button == null:
+		return
+	for state in states:
+		button.add_theme_stylebox_override(state, states[state])
+	button.custom_minimum_size = min_size
+	button.text = button.text.strip_edges()
+	GameUiStyle.center_button_text(button)
+	var icon_rect := button.get_node_or_null("Icon") as TextureRect
+	if icon_rect != null:
+		# 场景里手摆的 Icon 迁移为 button.icon,图文成组随文字居中;原节点由 button.icon 完整替代
+		GameUiStyle.set_button_texture_icon(button, icon_rect.texture, &"center")
+		icon_rect.visible = false
+
+
+func _create_status_label() -> void:
+	_status_label = Label.new()
+	_status_label.name = "BuildingStatusLabel"
+	_building_section.add_child(_status_label)
+	_building_section.move_child(_status_label, _building_info_label.get_index() + 1)
 
 
 func _notification(what: int) -> void:
@@ -137,11 +180,11 @@ func _refresh_resource_section(data: CellData) -> void:
 	var collected: bool = day_manager != null and day_manager.has_method("is_resource_collected_today") and day_manager.is_resource_collected_today(_current_cell)
 	var enough_ap: bool = run_state != null and int(run_state.action_points) >= RESOURCE_COLLECT_AP_COST
 	var collect_amount: int = _get_resource_collect_amount(data.resource_type)
-	_resource_info_label.text = "%s资源点\n手动采集：行动力 %d，获得 %d %s\n%s" % [
-		_resource_display_name(data.resource_type),
+	# 资源名前置、数字收尾:句子在窗宽临界处不再拆出单字孤行;名称行与标题重复,删去
+	_resource_info_label.text = "手动采集：行动力 -%d，%s +%d\n%s" % [
 		RESOURCE_COLLECT_AP_COST,
-		collect_amount,
 		_resource_unit_name(data.resource_type),
+		collect_amount,
 		"今日已采集" if collected else "今日未采集"
 	]
 	_collect_button.disabled = _current_phase != GameEnums.PHASE_DAY or collected or not enough_ap
@@ -155,6 +198,8 @@ func _refresh_building_section(building: Node) -> void:
 	var can_demolish := _can_demolish_building(building)
 	var can_toggle: bool = building.has_method("can_toggle_enabled") and building.can_toggle_enabled() and not is_destroyed
 	_building_info_label.text = _format_building_info(building)
+	_building_info_label.add_theme_color_override("font_color", _hp_ratio_color(building))
+	_refresh_status_label(building)
 	_repair_button.visible = is_destroyed
 	_demolish_button.visible = can_demolish
 	_toggle_button.visible = can_toggle
@@ -167,7 +212,8 @@ func _refresh_building_section(building: Node) -> void:
 
 func _make_title(data: CellData, building: Node) -> String:
 	if building != null:
-		return String(building.cfg.get("name", building.building_id))
+		# 实例编号并入标题,正文不再重复名称行
+		return "%s #%d" % [String(building.cfg.get("name", building.building_id)), int(building.get_runtime_id())]
 	if _has_event_at_cell(_current_cell):
 		return "随机事件"
 	if data != null and data.resource_type != StringName():
@@ -311,14 +357,8 @@ func _on_resource_collected(cell: Vector2i, _resource_type: StringName, _amount:
 
 
 func _format_building_info(building: Node) -> String:
-	var state_text := "已毁" if _is_building_destroyed(building) else "运作中"
-	var text := "%s#%d\nHP %d/%d  %s" % [
-		String(building.cfg.get("name", building.building_id)),
-		int(building.get_runtime_id()),
-		int(building.current_hp),
-		int(building.max_hp),
-		state_text
-	]
+	# 名称行并入标题、状态词拆到 _status_label 单独着色,正文只留数值信息
+	var text := "HP %d/%d" % [int(building.current_hp), int(building.max_hp)]
 	if _is_building_destroyed(building):
 		var cost := _get_destroyed_repair_cost(building)
 		text += "\n修复：木%d 石%d 魔%d" % [
@@ -326,9 +366,32 @@ func _format_building_info(building: Node) -> String:
 			int(cost.get("stone", 0)),
 			int(cost.get("mana", 0))
 		]
-	elif building.has_method("can_toggle_enabled") and building.can_toggle_enabled():
-		text += "\n状态：%s" % ("开启" if building.is_enabled() else "关闭")
 	return text
+
+
+func _refresh_status_label(building: Node) -> void:
+	if _status_label == null:
+		return
+	var status_text := "运作中"
+	var status_color := GameUiStyle.SUCCESS
+	if _is_building_destroyed(building):
+		status_text = "已毁"
+		status_color = GameUiStyle.DANGER
+	elif building.has_method("can_toggle_enabled") and building.can_toggle_enabled() and not building.is_enabled():
+		status_text = "关闭"
+		status_color = GameUiStyle.TEXT_MUTED
+	_status_label.text = status_text
+	_status_label.add_theme_color_override("font_color", status_color)
+
+
+func _hp_ratio_color(building: Node) -> Color:
+	var max_hp := int(building.max_hp)
+	var ratio := 1.0 if max_hp <= 0 else float(building.current_hp) / float(max_hp)
+	if ratio < 0.25:
+		return GameUiStyle.DANGER
+	if ratio < 0.5:
+		return GameUiStyle.AMBER
+	return GameUiStyle.TEXT_DIM
 
 
 func _format_event_result(result: Dictionary) -> String:

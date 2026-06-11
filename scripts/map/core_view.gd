@@ -3,7 +3,7 @@ extends Node2D
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 
 
-@export var label_text := "Core"
+@export var label_text := "核心"
 
 
 func _ready() -> void:

@@ -28,6 +28,9 @@ func _ready() -> void:
 	var result_panel := get_node_or_null("%ResultPanel")
 	if result_panel != null and result_panel.has_method("set_result"):
 		result_panel.call("set_result", win)
+	# 信号先接好再迁移:按钮收进面板页脚后引用与连接不受影响
+	if result_panel != null and result_panel.has_method("adopt_action_buttons"):
+		result_panel.call("adopt_action_buttons", retry_button, menu_button)
 
 
 func _on_retry_pressed() -> void:

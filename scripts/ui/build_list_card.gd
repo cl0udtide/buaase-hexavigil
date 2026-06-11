@@ -15,6 +15,8 @@ var _accent := GameUiStyle.STROKE_SOFT
 var _disabled := false
 var _pressable_when_disabled := false
 var _selected := false
+var _locked := false
+var _dimmed := false
 var _hovered := false
 var _draggable := false
 var _pressing := false
@@ -82,6 +84,8 @@ func _apply_config(config: Dictionary) -> void:
 	_pressable_when_disabled = bool(config.get("pressable_when_disabled", false))
 	_draggable = bool(config.get("draggable", false))
 	_selected = bool(config.get("selected", false))
+	_locked = bool(config.get("locked", false))
+	_dimmed = bool(config.get("dimmed", false))
 	tooltip_text = String(config.get("disabled_reason", ""))
 	_title_label.text = String(config.get("title", ""))
 	_subtitle_label.text = String(config.get("subtitle", ""))
@@ -95,6 +99,7 @@ func _apply_config(config: Dictionary) -> void:
 	_state_label.visible = not _state_label.text.is_empty()
 	_cost_badge.visible = not _cost_label.text.strip_edges().is_empty()
 	_state_label.add_theme_color_override("font_color", config.get("state_color", GameUiStyle.AMBER) as Color)
+	_cost_label.add_theme_color_override("font_color", GameUiStyle.TEXT_MUTED if _dimmed else GameUiStyle.AMBER)
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT if _disabled else config.get("title_color", GameUiStyle.TEXT) as Color)
 	_icon_label.add_theme_color_override("font_color", config.get("icon_color", GameUiStyle.ACCENT) as Color)
 	_apply_style()
@@ -111,10 +116,13 @@ func _apply_icon_texture(config: Dictionary) -> void:
 
 func _apply_style() -> void:
 	_card_base.add_theme_stylebox_override("panel", GameUiStyle.list_card(_selected or _hovered))
+	_icon_backplate.add_theme_stylebox_override("panel", GameUiStyle.build_icon_backplate())
 	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.build_icon_frame(_accent))
-	_selected_overlay.visible = _selected or (_hovered and not _disabled)
+	_selected_overlay.visible = _selected or _locked or (_hovered and not _disabled)
+	# 锁定槽位复用选中叠层并染琥珀,与选中态原色区分
+	_selected_overlay.modulate = GameUiStyle.AMBER if _locked and not _selected else Color(1, 1, 1, 1)
 	_disabled_overlay.visible = _disabled
-	modulate.a = 1.0
+	modulate.a = 0.55 if _dimmed else 1.0
 
 
 func _add_label_shadow(label: Label) -> void:

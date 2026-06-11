@@ -5,7 +5,7 @@
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_result_panel_base_fit_520x260.tres" id="fit_frame_result_panel_base_520x260"]
 
 [node name="ResultPanel" type="Control" unique_id=1556218185]
-custom_minimum_size = Vector2(520, 260)
+custom_minimum_size = Vector2(520, 380)
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,13 +33,13 @@ layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/ResultCard/ContentMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="ResultLabel" type="Label" parent="CenterContainer/ResultCard/ContentMargin/VBoxContainer" unique_id=946391865]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "结果"

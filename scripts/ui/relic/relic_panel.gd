@@ -19,7 +19,7 @@ var _selected_buff_id := StringName()
 @onready var _close_button: Button = %CloseButton
 @onready var _filter_bar: Container = %FilterBar
 @onready var _card_scroll: ScrollContainer = %CardScroll
-@onready var _card_grid: VBoxContainer = %CardGrid
+@onready var _card_grid: GridContainer = %CardGrid
 @onready var _empty_label: Label = %EmptyLabel
 @onready var _detail_panel: Panel = %DetailPanel
 @onready var _detail_title_label: Label = %DetailTitleLabel
@@ -33,6 +33,8 @@ func _ready() -> void:
 	visible = false
 	_style_labels()
 	GameUiStyle.apply_scroll_style(_card_scroll)
+	_card_scroll.get_v_scroll_bar().custom_minimum_size.x = 8.0
+	_detail_panel.add_theme_stylebox_override("panel", GameUiStyle.relic_detail_section())
 	_bind_filter_buttons()
 	_close_button.pressed.connect(func() -> void: close_requested.emit())
 	_style_close_button()
@@ -93,6 +95,7 @@ func _refresh_cards() -> void:
 	for buff_id in visible_ids:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
 		var card = RELIC_CARD_SCENE.instantiate()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.configure(buff_id, cfg, {
 			"selectable": true,
 			"selected": buff_id == _selected_buff_id,
@@ -135,7 +138,7 @@ func _on_card_pressed(buff_id: StringName) -> void:
 func _bind_filter_buttons() -> void:
 	for button in _filter_buttons():
 		button.focus_mode = Control.FOCUS_NONE
-		button.set_custom_minimum_size(Vector2(86.0, 32.0))
+		button.set_custom_minimum_size(Vector2(92.0, 34.0))
 		if not button.has_meta("audio_cue"):
 			button.set_meta("audio_cue", &"ui_tab_switch")
 		var category := StringName(button.get_meta("category", &"all"))
@@ -168,10 +171,10 @@ func _style_labels() -> void:
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
 		label.add_theme_constant_override("shadow_offset_x", 0)
 		label.add_theme_constant_override("shadow_offset_y", 0)
-	_title_label.add_theme_font_size_override("font_size", 22)
+	_title_label.add_theme_font_size_override("font_size", 28)
 	_detail_title_label.add_theme_font_size_override("font_size", 15)
-	_detail_meta_label.add_theme_font_size_override("font_size", 12)
-	_detail_effect_label.add_theme_font_size_override("font_size", 12)
+	_detail_meta_label.add_theme_font_size_override("font_size", 13)
+	_detail_effect_label.add_theme_font_size_override("font_size", 13)
 	_detail_effect_label.add_theme_constant_override("line_spacing", 0)
 	_count_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_empty_label.add_theme_color_override("font_color", GameUiStyle.TEXT_MUTED)
@@ -181,20 +184,22 @@ func _style_labels() -> void:
 
 func _style_filter_button(button: Button, selected: bool) -> void:
 	GameUiStyle.center_button_text(button)
-	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(StringName("filter_%s" % String(button.get_meta("category", &"all")))), &"left", 7.0)
+	GameUiStyle.set_button_texture_icon(button, UiArtRegistry.get_catalog_icon(StringName("filter_%s" % String(button.get_meta("category", &"all")))), &"left", 8.0)
 	button.add_theme_stylebox_override("normal", GameUiStyle.relic_filter_tab(selected, false))
 	button.add_theme_stylebox_override("hover", GameUiStyle.relic_filter_tab(selected, true))
 	button.add_theme_stylebox_override("pressed", GameUiStyle.relic_filter_tab(true, true))
 	button.add_theme_color_override("font_color", GameUiStyle.TEXT if selected else GameUiStyle.TEXT_DIM)
 	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT)
-	button.add_theme_font_size_override("font_size", 12)
+	button.add_theme_font_size_override("font_size", 13)
 
 
 func _style_close_button() -> void:
-	_close_button.set_custom_minimum_size(Vector2(34.0, 30.0))
-	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), &"center")
+	# 弃用孤例红叉贴图,改 ✕ 字形,hover 才转红
+	_close_button.set_custom_minimum_size(Vector2(40.0, 40.0))
 	GameUiStyle.center_button_text(_close_button)
 	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
 	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
 	_close_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
 	_close_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	_close_button.add_theme_color_override("font_hover_color", GameUiStyle.DANGER)
+	_close_button.add_theme_font_size_override("font_size", 18)

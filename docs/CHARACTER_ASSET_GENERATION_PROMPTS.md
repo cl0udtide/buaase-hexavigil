@@ -1,6 +1,6 @@
 # Character and Enemy Asset Generation Prompts
 
-本文档用于生成或重绘游戏内角色、干员和敌人 sprite。它不是 UI 头像、技能图标、遗物图标或战斗特效提示词库；UI 资产继续参考 `docs/UI_ASSET_GENERATION_PROMPTS.md`，地图建筑参考 `docs/MAP_ASSET_GENERATION_PROMPTS.md`，战斗特效参考 `docs/EFFECT_ASSET_GENERATION_PROMPTS.md`。
+本文档用于生成或重绘游戏内角色、干员和敌人 sprite。它不是技能图标、遗物图标或战斗特效提示词库；UI 资产继续参考 `docs/UI_ASSET_GENERATION_PROMPTS.md`，地图建筑参考 `docs/MAP_ASSET_GENERATION_PROMPTS.md`，战斗特效参考 `docs/EFFECT_ASSET_GENERATION_PROMPTS.md`。例外：干员 UI 胸像批次按 R3 评审决议收录在本文档第 7 节（它走 UI 头像规范，不走第 1 节地图 sprite 全局风格）。
 
 当前运行时入口以代码为准：
 
@@ -228,3 +228,97 @@ low-saturation hand-painted cartoon boss sprite, top-down tactical fantasy, clea
 ```bash
 /Applications/Godot.app/Contents/MacOS/Godot --headless --import --path . --quit
 ```
+
+## 7. 干员 UI 胸像批次（R3 评审批次 ⑥：`portrait_unit_<unit_id>`，28 张）
+
+来源评审条目（`tmp/ui_round3_findings.json`）：`avatar-placeholder-glyph`、`unit-identity-three-styles`、`operator-portrait-missing`。现状：「data/units.json 28 个干员无 portrait_path/ui_portrait_path 字段（UiArtRegistry.get_portrait_texture 只认这两个），unit_detail_panel.gd:118 回落 _icon_text(cfg) 首字汉字，部署卡只有 class_icon」——详情页用 44px 首字 monogram 占位、商店卡/部署卡/详情页三处身份表达互不一致。
+
+### 7.1 范围与规范
+
+- 本批是本文档「只做地图 sprite」总则的显式例外：生成时**不要复制第 1 节全局风格**（俯视地图 sprite 规范与胸像构图冲突），改用 7.3 的胸像全局提示词；并遵守 `docs/UI_ASSET_GENERATION_PROMPTS.md` §27——「头像单独开对话生成，不混 UI 框架批次」（avatar-placeholder-glyph 原话：「严格走 docs/UI_ASSET_GENERATION_PROMPTS.md §27」）。
+- 目标尺寸：单张 256x256（triage 给出 192x192 与 256x256 两档口径，统一取大者；显示端：详情页头像窗内容区约 80-96px、部署卡 32-48px，均有 2x 余量）。
+- 分层类型：独立内容图，运行时夹在既有 `frame_unit_portrait_backplate` 与 `frame_unit_portrait_frame` 之间，无 `_base/_overlay` 后缀；#FF00FF 纯底抠图，无边框、无卡牌、无文字。
+- 源图组织：按职业分 4 张源图、每张 7 个（triage 口径「一图 8 个（28 干员共 4 图）」，按职业整除取 7）；裁切后入库 `assets/ui/generated/portrait_unit_<unit_id>.png`，连 `.png.import` 一起提交。
+- 身份依据：每个干员上传其现有地图 sprite `assets/sprites/units/<visual_key>/idle/<visual_key>_idle_000.png` 作参考图，继承配色与关键识别点；不要自创外貌设定。
+
+### 7.2 资产清单（28 张，key 按 data/units.json 的 id）
+
+| # | asset key | 干员 | 职业 | 参考 visual_key |
+|---|---|---|---|---|
+| 1 | `portrait_unit_guard_t1` | 斯卡蒂 | guard | skadi |
+| 2 | `portrait_unit_guard_01` | 煌 | guard | blaze |
+| 3 | `portrait_unit_guard_t3` | 银灰 | guard | silverash |
+| 4 | `portrait_unit_mountain` | 山 | guard | mountain |
+| 5 | `portrait_unit_zuo_le` | 左乐 | guard | zuo_le |
+| 6 | `portrait_unit_degenbrecher` | 锏 | guard | degenbrecher |
+| 7 | `portrait_unit_surtr` | 史尔特尔 | guard | surtr |
+| 8 | `portrait_unit_sniper_t1` | 鸿雪 | sniper | pozyomka |
+| 9 | `portrait_unit_sniper_t2` | 能天使 | sniper | exusiai |
+| 10 | `portrait_unit_archer_basic` | 菲亚梅塔 | sniper | fiammetta |
+| 11 | `portrait_unit_narantuya` | 娜仁图亚 | sniper | narantuya |
+| 12 | `portrait_unit_ray` | 莱伊 | sniper | ray |
+| 13 | `portrait_unit_typhon` | 提丰 | sniper | typhon |
+| 14 | `portrait_unit_wisadel` | 维什戴尔 | sniper | wisadel |
+| 15 | `portrait_unit_caster_t1` | 刻俄柏 | caster | ceobe |
+| 16 | `portrait_unit_caster_t2` | 艾雅法拉 | caster | eyjafjalla |
+| 17 | `portrait_unit_caster_t3` | 异客 | caster | passenger |
+| 18 | `portrait_unit_ifrit` | 伊芙利特 | caster | ifrit |
+| 19 | `portrait_unit_nymph` | 妮芙 | caster | nymph |
+| 20 | `portrait_unit_goldenglow` | 澄闪 | caster | goldenglow |
+| 21 | `portrait_unit_logos` | 逻各斯 | caster | logos |
+| 22 | `portrait_unit_defender_t1` | 森蚺 | defender | eunectes |
+| 23 | `portrait_unit_defender_t2` | 年 | defender | nian |
+| 24 | `portrait_unit_defender_t3` | 星熊 | defender | hoshiguma |
+| 25 | `portrait_unit_saria` | 塞雷娅 | defender | saria |
+| 26 | `portrait_unit_penance` | 斥罪 | defender | penance |
+| 27 | `portrait_unit_jessica_alter` | 涤火杰西卡 | defender | jessica_the_liberated |
+| 28 | `portrait_unit_shu` | 黍 | defender | shu |
+
+### 7.3 胸像全局提示词
+
+每张源图先复制本段，再追加 7.4 的分批清单：
+
+```text
+我们要为 Godot 塔防游戏生成干员 UI 胸像。胸像运行时显示在头像背板之上、头像覆盖框之下，显示尺寸约 80-96px（详情页）与 32-48px（部署卡）。
+
+整体风格：
+- 低饱和轻奇幻、柔光、冷钢 + teal 调，与游戏现有 UI、地图 sprite 同族；1:1 胸像剪影风，深底亮缘光。
+- 方形构图适配头像窗：头肩部为主体，主体占画面约 70-85%，居中，不被裁切。
+- 以上传的地图 sprite 参考图为唯一身份依据，继承配色、发型/头部识别点与武器或服装关键元素；不要添加参考图没有的设定。
+
+必要工程要求：
+- 背景必须是完全纯净的 #FF00FF 实色，人物边缘干净，无半透明像素。
+- 不要 UI 边框、卡牌、徽章、按钮、头像框，不要文字、数字、水印、签名。
+- 多个胸像同一张源图时：同一视角、同一光照、同一裁切基准，互不接触，留足 #FF00FF 间距。
+```
+
+### 7.4 分批生成提示词（4 张源图）
+
+每张源图按下表逐项上传对应 `idle_000` 参考图，并在 7.3 全局提示词后追加：
+
+```text
+请生成一张干员胸像源图，纯色背景 #FF00FF，包含 7 个独立胸像，按从左到右、从上到下排列，每个最终裁切为 256x256。
+
+裁切顺序与对应参考图：
+<按 7.2 清单中本职业 7 人的顺序，逐行列出「portrait_unit_<id>：<干员名>，参考 assets/sprites/units/<visual_key>/idle/<visual_key>_idle_000.png」>
+```
+
+- 源图 1（guard 7 人）：`assets/sprites/units/raw/portrait_source_sheet_guard.png`，对应清单 #1-#7。
+- 源图 2（sniper 7 人）：`assets/sprites/units/raw/portrait_source_sheet_sniper.png`，对应清单 #8-#14。
+- 源图 3（caster 7 人）：`assets/sprites/units/raw/portrait_source_sheet_caster.png`，对应清单 #15-#21。
+- 源图 4（defender 7 人）：`assets/sprites/units/raw/portrait_source_sheet_defender.png`，对应清单 #22-#28。
+
+### 7.5 验收要点
+
+- 方形构图适配头像窗，#FF00FF 抠图后边缘干净无残色（洋红羽边在 32px 下会糊成脏边）。
+- 96px（详情页）与 32px（部署卡）双尺寸目检：身份可辨，与同名地图 sprite 配色/识别点对得上。
+- 同批 28 张视角、光照、裁切基准一致；不含 UI 边框、文字、卡牌元素（§27 规范）。
+- 「portrait 资产同时被部署卡 OPERATOR_PORTRAIT 槽位复用，落图后两处都要目检」（avatar-placeholder-glyph）；落图后重跑出界 lint（unit-identity-three-styles 风险项）。
+
+### 7.6 实装接线
+
+- 入库路径：`assets/ui/generated/portrait_unit_<unit_id>.png`（连 `.png.import` 提交，跑一次 headless import）。
+- 数据接线（data-only，零代码）：`data/units.json` 每条加 `portrait_path` 字段。triage 原话：「入库后 units.json 每单位补 `"portrait_path": "res://assets/ui/generated/portrait_unit_<id>.png"`，UiArtRegistry.get_portrait_texture 即自动生效于详情页」（unit-identity-three-styles）。`get_portrait_texture` 只读 `portrait_path`/`ui_portrait_path` 两个 cfg 字段（已核实 scripts/ui/ui_art_registry.gd:49-53），字段落上即生效，无需改任何脚本。
+- 可选配套（场景侧，非本批工作）：部署卡加头像位——「OperatorCard.tscn TitleStrip 上方加 48px TextureRect 用同一 portrait_path（operator_card.gd `_apply_unit_art()` 已有 cfg，可直接扩展）」；注意「部署卡 164x184 已被名牌+3 条 stat 占满，塞 48px 头像位需与 metal-pill 条目的内部扁平化一起做才有空间」（unit-identity-three-styles）。
+- 等图期间过渡（场景侧，可先行）：「_show_cfg_preview/show_unit 里 portrait 为 null 时改用 UiArtRegistry.get_class_icon_texture(cfg)（方法已存在）+ ACCENT_SOFT 底，摆脱首字占位」（avatar-placeholder-glyph）。
+- 干员数量提示：「干员数量多……整批生成工作量大，建议先做过渡方案」；可按本期卡池优先级分源图逐张落地，单张落地单条生效，互不阻塞。

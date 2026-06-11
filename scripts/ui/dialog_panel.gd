@@ -27,6 +27,7 @@ var _active_side := StringName()
 var _fade_tween: Tween
 
 @onready var _background: ColorRect = %Background
+@onready var _backdrop_texture: TextureRect = %BackdropTexture
 @onready var _left_portrait: TextureRect = %LeftPortrait
 @onready var _right_portrait: TextureRect = %RightPortrait
 @onready var _text_box: PanelContainer = %TextBox
@@ -165,7 +166,7 @@ func _show_line(line: Dictionary) -> void:
 	_visible_chars_float = 0.0
 	_line_finished_emitted = false
 	_typing = _line_char_count > 0 and _type_speed > 0.0
-	_prompt_label.text = "点击继续"
+	_prompt_label.text = "▼ 点击继续"
 	line_started.emit(_current_index)
 	if not _typing:
 		_finish_typing()
@@ -175,7 +176,7 @@ func _finish_typing() -> void:
 	_typing = false
 	_text_label.visible_characters = -1
 	_visible_chars_float = float(_line_char_count)
-	_prompt_label.text = "再次点击进入下一句"
+	_prompt_label.text = "▼ 再次点击进入下一句"
 	if not _line_finished_emitted:
 		_line_finished_emitted = true
 		line_finished.emit(_current_index)
@@ -257,10 +258,22 @@ func _apply_background(background_key: StringName) -> void:
 	if typeof(raw_background) == TYPE_DICTIONARY:
 		var cfg: Dictionary = raw_background
 		_background.color = _parse_color(String(cfg.get("color", "")), fallback)
+		_apply_backdrop_texture(String(cfg.get("texture", "")))
 	elif typeof(raw_background) == TYPE_STRING:
 		_background.color = _parse_color(String(raw_background), fallback)
 	else:
 		_background.color = fallback
+
+
+func _apply_backdrop_texture(texture_path: String) -> void:
+	# 加载失败时保留场景默认底图,不留纯黑空墙
+	if _backdrop_texture == null or texture_path.is_empty():
+		return
+	if not ResourceLoader.exists(texture_path, "Texture2D"):
+		return
+	var texture := load(texture_path) as Texture2D
+	if texture != null:
+		_backdrop_texture.texture = texture
 
 
 func _get_portrait_texture(_portrait_key: StringName) -> Texture2D:
@@ -338,5 +351,6 @@ func _apply_style() -> void:
 	GameUiStyle.center_label_text(_speaker_label)
 	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT_INVERTED)
 	_text_label.add_theme_font_size_override("normal_font_size", 23)
-	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	_prompt_label.add_theme_font_size_override("font_size", 15)
+	# 续行提示降为 caption 级,不与正文抢权重
+	_prompt_label.add_theme_color_override("font_color", Color(0.62, 0.71, 0.76, 0.5))
+	_prompt_label.add_theme_font_size_override("font_size", 13)

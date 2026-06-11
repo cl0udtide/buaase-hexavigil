@@ -169,7 +169,7 @@ func _test_detail_panel_button(run_state: Node, event_bus: Node) -> void:
 	var button: Button = panel.get_node("%StarUpButton")
 	_expect(button.visible, "star up button visible in preview")
 	_expect(not button.disabled, "star up button enabled when affordable")
-	_expect(button.text == "升星 3魔力矿+4声望", "star up button shows 1->2 price")
+	_expect(button.text == "升星" and _star_cost_text(button) == "3+4", "star up button shows 1->2 price")
 	# 资源变化信号驱动按钮禁用/恢复。
 	run_state.add_materials(0, 0, -8)
 	_expect(button.disabled, "star up button disabled when mana short")
@@ -183,8 +183,8 @@ func _test_detail_panel_button(run_state: Node, event_bus: Node) -> void:
 	run_state.mana = 20
 	run_state.prestige = 40
 	event_bus.request_upgrade_operator_star.emit(key)
-	_expect((panel.get_node("%LevelLabel") as Label).text == "★2", "level label refreshed to star 2")
-	_expect(button.text == "升星 6魔力矿+8声望", "star up button shows 2->3 price after upgrade")
+	_expect((panel.get_node("%LevelLabel") as Label).text == "★★☆", "level label refreshed to star 2")
+	_expect(button.text == "升星" and _star_cost_text(button) == "6+8", "star up button shows 2->3 price after upgrade")
 	event_bus.request_upgrade_operator_star.emit(key)
 	_expect(button.text == "已满星" and button.disabled, "star up button shows maxed state")
 	panel.queue_free()
@@ -192,6 +192,18 @@ func _test_detail_panel_button(run_state: Node, event_bus: Node) -> void:
 
 func _operator_star(run_state: Node, key: StringName) -> int:
 	return OperatorProgression.normalize_star((run_state.get_owned_operator(key) as Dictionary).get("star", 0))
+
+
+## 升星价格已从按钮文案移入 CostCluster 图标簇,按 [icon, 魔力数, icon, 声望数] 结构取数。
+func _star_cost_text(button: Button) -> String:
+	var cluster := button.get_node_or_null("CostCluster")
+	if cluster == null or cluster.get_child_count() < 4:
+		return ""
+	var mana_label := cluster.get_child(1) as Label
+	var prestige_label := cluster.get_child(3) as Label
+	if mana_label == null or prestige_label == null:
+		return ""
+	return "%s+%s" % [mana_label.text, prestige_label.text]
 
 
 func _on_upgrade_result(operator_key: StringName, result: Dictionary) -> void:

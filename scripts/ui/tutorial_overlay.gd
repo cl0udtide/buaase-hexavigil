@@ -14,10 +14,11 @@ var _drag_offset := Vector2.ZERO
 var _user_moved := false
 
 @onready var _panel: PanelContainer = %Panel
+@onready var _panel_shadow: Panel = %PanelShadow
 @onready var _step_label: Label = %StepLabel
 @onready var _title_label: Label = %TitleLabel
 @onready var _body_label: Label = %BodyLabel
-@onready var _hint_label: Label = %HintLabel
+@onready var _hint_label: RichTextLabel = %HintLabel
 @onready var _next_button: Button = %NextButton
 @onready var _skip_button: Button = %SkipButton
 
@@ -28,16 +29,23 @@ func _ready() -> void:
 	resized.connect(_clamp_panel_to_view)
 	_panel.add_theme_stylebox_override("panel", GameUiStyle.event_panel())
 	_panel.gui_input.connect(_on_panel_gui_input)
-	_next_button.add_theme_stylebox_override("normal", GameUiStyle.button(GameUiStyle.ACCENT))
-	_next_button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.AMBER))
-	_next_button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER))
-	_skip_button.add_theme_stylebox_override("normal", GameUiStyle.secondary_button())
-	_skip_button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.STROKE_STRONG))
-	_skip_button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.STROKE_STRONG))
+	var shadow_style := GameUiStyle.flat_panel(GameUiStyle.BG_DARK, Color.TRANSPARENT)
+	# 弹窗浮在明亮地图上,默认浅色投影读不出抬升,局部加深
+	shadow_style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	shadow_style.shadow_offset = Vector2(0.0, 4.0)
+	_panel_shadow.add_theme_stylebox_override("panel", shadow_style)
+	_panel.item_rect_changed.connect(_sync_panel_shadow)
+	var next_states := GameUiStyle.popup_action_button(&"primary")
+	for state in next_states:
+		_next_button.add_theme_stylebox_override(state, next_states[state])
+	_next_button.add_theme_color_override("font_hover_color", GameUiStyle.ACCENT)
+	var skip_states := GameUiStyle.popup_action_button(&"secondary")
+	for state in skip_states:
+		_skip_button.add_theme_stylebox_override(state, skip_states[state])
 	_step_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_body_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_hint_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
+	_hint_label.add_theme_color_override("default_color", GameUiStyle.TEXT_DIM)
 	_next_button.pressed.connect(func() -> void: next_requested.emit())
 	_skip_button.pressed.connect(func() -> void: skip_requested.emit())
 	hide_tutorial()
@@ -48,7 +56,7 @@ func show_step(step_index: int, total_steps: int, title: String, body: String, h
 	_step_label.text = "教程 %d/%d" % [step_index, total_steps]
 	_title_label.text = title
 	_body_label.text = body
-	_hint_label.text = hint
+	_hint_label.text = _decorate_hint(hint)
 	_next_button.visible = true
 	_next_button.disabled = false
 	_next_button.text = "完成" if step_index >= total_steps else "下一步"
@@ -57,7 +65,7 @@ func show_step(step_index: int, total_steps: int, title: String, body: String, h
 func set_panel_position(position_id: StringName, force := false) -> void:
 	if _user_moved and not force:
 		return
-	var panel_size := _panel.size
+	var panel_size := _panel.get_combined_minimum_size()
 	if panel_size.x <= 0.0 or panel_size.y <= 0.0:
 		panel_size = Vector2(430.0, 254.0)
 	var margin := Vector2(22.0, 118.0)
@@ -93,7 +101,7 @@ func _on_panel_gui_input(event: InputEvent) -> void:
 
 
 func _set_panel_top_left(top_left: Vector2) -> void:
-	var panel_size := _panel.size
+	var panel_size := _panel.get_combined_minimum_size()
 	if panel_size.x <= 0.0 or panel_size.y <= 0.0:
 		panel_size = Vector2(430.0, 254.0)
 	var clamped := Vector2(
@@ -114,3 +122,17 @@ func _clamp_panel_to_view() -> void:
 	if _panel == null:
 		return
 	_set_panel_top_left(_panel.position)
+
+
+func _sync_panel_shadow() -> void:
+	if _panel_shadow == null or _panel == null:
+		return
+	_panel_shadow.position = _panel.position + Vector2(4.0, 4.0)
+	_panel_shadow.size = _panel.size - Vector2(8.0, 8.0)
+
+
+static func _decorate_hint(hint: String) -> String:
+	var decorated := hint
+	for keyword in ["下一步", "跳过", "完成"]:
+		decorated = decorated.replace(keyword, "[color=#%s]%s[/color]" % [GameUiStyle.ACCENT.to_html(false), keyword])
+	return decorated
