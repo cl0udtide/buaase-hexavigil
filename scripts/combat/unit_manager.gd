@@ -3,6 +3,8 @@ extends Node
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 
+const RANGED_DEPLOY_CLASSES: Array[StringName] = [&"sniper", &"caster"]
+
 signal operator_redeploy_completed(operator_key: StringName)
 
 
@@ -59,13 +61,9 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	var deploy_slot_cost := _get_operator_deploy_slot_cost(cfg)
 	if run_state.deployed_count + deploy_slot_cost > run_state.deploy_limit:
 		return ActionResult.err(&"DEPLOY_LIMIT_REACHED", "无法部署：部署上限已满")
-	if _map_manager == null:
-		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
-	if not _map_manager.is_walkable(cell):
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
-	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
-	if cell_data != null and cell_data.is_core:
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：不能部署在核心上")
+	var deploy_cell_result := _validate_deploy_cell(cell, cfg)
+	if not deploy_cell_result.get("ok", false):
+		return deploy_cell_result
 
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
 	if scene == null:
@@ -98,6 +96,25 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	return ActionResult.ok({"runtime_id": _next_runtime_id - 1, "operator_key": operator_key, "unit_id": unit_id, "star": star})
 
 
+## 部署落格校验：平地走 is_walkable 全职业；highland 地形仅远程职业（设计稿 §2.4）。
+## 人工高台建筑的放行将在后续任务加入本函数（保持单点）。
+func _validate_deploy_cell(cell: Vector2i, cfg: Dictionary) -> Dictionary:
+	if _map_manager == null:
+		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
+	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
+	if cell_data != null and cell_data.is_core:
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：不能部署在核心上")
+	if cell_data != null and cell_data.has_method("allows_ranged_deploy") and cell_data.allows_ranged_deploy():
+		if int(cell_data.unit_runtime_id) >= 0:
+			return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：该格已有干员")
+		if not RANGED_DEPLOY_CLASSES.has(StringName(cfg.get("class", ""))):
+			return ActionResult.err(&"CLASS_NOT_ALLOWED", "无法部署：高台只能部署狙击/术师")
+		return ActionResult.ok()
+	if not _map_manager.is_walkable(cell):
+		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
+	return ActionResult.ok()
+
+
 func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dictionary:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
@@ -123,13 +140,11 @@ func _validate_deploy_operator(operator_key: StringName, cell: Vector2i) -> Dict
 		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
 	if not _map_manager.is_inside(cell):
 		return ActionResult.err(&"CELL_OUT_OF_RANGE", "无法部署：目标格不在地图内")
-	var cell_data = _map_manager.get_cell_data(cell) if _map_manager.has_method("get_cell_data") else null
-	if cell_data != null and cell_data.is_core:
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：不能部署在核心上")
 	if _map_manager.has_method("is_discovered") and not _map_manager.is_discovered(cell):
 		return ActionResult.err(&"CELL_NOT_DISCOVERED", "无法部署：目标格尚未探索")
-	if not _map_manager.is_walkable(cell):
-		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
+	var deploy_cell_result := _validate_deploy_cell(cell, cfg)
+	if not deploy_cell_result.get("ok", false):
+		return deploy_cell_result
 	return ActionResult.ok({"operator_key": operator_key, "unit_id": unit_id})
 
 
