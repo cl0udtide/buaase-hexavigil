@@ -48,7 +48,7 @@ func generate_new_map(seed: int) -> void:
 	_emit_path_grid_changed()
 
 
-func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary, blocked_cells: Array = []) -> void:
+func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary, blocked_cells: Array = [], highland_cells: Array = []) -> void:
 	width = max(1, new_width)
 	height = max(1, new_height)
 	_cells.clear()
@@ -67,6 +67,7 @@ func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, sp
 		core_data.buildable = false
 	_apply_debug_spawns(spawn_defs)
 	_apply_debug_blocked_cells(blocked_cells)
+	_apply_debug_highland_cells(highland_cells)
 	_clear_event_overlay()
 	refresh_all_layers(true)
 	_emit_path_grid_changed()
@@ -170,6 +171,7 @@ func set_debug_core(cell: Vector2i) -> bool:
 
 func get_debug_map_state() -> Dictionary:
 	var mountain_cells: Array = []
+	var highland_cells: Array = []
 	for raw_cell in _cells.keys():
 		var cell: Vector2i = raw_cell
 		var data := get_cell_data(cell)
@@ -179,7 +181,14 @@ func get_debug_map_state() -> Dictionary:
 			continue
 		if data.terrain == CellData.TERRAIN_MOUNTAIN:
 			mountain_cells.append([cell.x, cell.y])
+		elif data.terrain == CellData.TERRAIN_HIGHLAND:
+			highland_cells.append([cell.x, cell.y])
 	mountain_cells.sort_custom(func(a: Array, b: Array) -> bool:
+		if int(a[1]) == int(b[1]):
+			return int(a[0]) < int(b[0])
+		return int(a[1]) < int(b[1])
+	)
+	highland_cells.sort_custom(func(a: Array, b: Array) -> bool:
 		if int(a[1]) == int(b[1]):
 			return int(a[0]) < int(b[0])
 		return int(a[1]) < int(b[1])
@@ -189,6 +198,7 @@ func get_debug_map_state() -> Dictionary:
 		"height": height,
 		"core": [_core_cell.x, _core_cell.y],
 		"mountain": mountain_cells,
+		"highland": highland_cells,
 	}
 
 
@@ -205,7 +215,11 @@ func apply_debug_map_state(map_state: Dictionary, spawn_defs: Dictionary = {}) -
 	var raw_blocked: Variant = map_state.get("mountain", map_state.get("blocked", []))
 	if typeof(raw_blocked) == TYPE_ARRAY:
 		blocked_cells = raw_blocked
-	generate_debug_map(new_width, new_height, core_cell, spawn_defs, blocked_cells)
+	var highland_cells: Array = []
+	var raw_highland: Variant = map_state.get("highland", [])
+	if typeof(raw_highland) == TYPE_ARRAY:
+		highland_cells = raw_highland
+	generate_debug_map(new_width, new_height, core_cell, spawn_defs, blocked_cells, highland_cells)
 
 
 func set_debug_map_size(new_width: int, new_height: int) -> void:
@@ -489,6 +503,21 @@ func _apply_debug_blocked_cells(blocked_cells: Array) -> void:
 		if data.occupied or data.unit_runtime_id >= 0 or data.building_runtime_id >= 0:
 			continue
 		data.set_base_terrain(CellData.TERRAIN_MOUNTAIN)
+
+
+func _apply_debug_highland_cells(highland_cells: Array) -> void:
+	for raw_cell in highland_cells:
+		var cell := _parse_debug_cell(raw_cell, Vector2i(-1, -1))
+		if not is_inside(cell):
+			continue
+		var data := get_cell_data(cell)
+		if data == null:
+			continue
+		if data.is_core or data.spawn_key != StringName():
+			continue
+		if data.occupied or data.unit_runtime_id >= 0 or data.building_runtime_id >= 0:
+			continue
+		data.set_base_terrain(CellData.TERRAIN_HIGHLAND)
 
 
 func _parse_debug_cell(raw_cell: Variant, fallback: Vector2i) -> Vector2i:

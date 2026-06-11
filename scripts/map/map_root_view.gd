@@ -84,6 +84,8 @@ const COLOR_SPAWN := Color(0.82, 0.30, 0.26, 1.0)
 const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
 const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
 const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
+const COLOR_HIGHLAND := Color(0.62, 0.54, 0.38)
+const HIGHLAND_PLACEHOLDER_TINT := Color(1.25, 1.1, 0.78)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
@@ -1019,6 +1021,8 @@ func _get_cell_color(data) -> Color:
 		return COLOR_SPAWN
 	if data.terrain == CellData.TERRAIN_WATER:
 		return COLOR_WATER
+	if data.terrain == CellData.TERRAIN_HIGHLAND:
+		return COLOR_HIGHLAND
 	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
 		return COLOR_BLOCKED
 	if _is_resource_hidden_by_operational_building(data):
@@ -1034,10 +1038,14 @@ func _get_cell_color(data) -> Color:
 
 func _draw_cell_tile(rect: Rect2, data) -> void:
 	var texture := _get_cell_texture(data)
-	if texture != null:
-		draw_texture_rect(texture, rect, false)
-	else:
+	if texture == null:
 		draw_rect(rect, _get_cell_color(data))
+		return
+	# 占位：tile_highland.png 未生成前用山地贴图暖黄染色（docs/MAP_ASSET_GENERATION_PROMPTS.md §11）。
+	if data.discovered and data.terrain == CellData.TERRAIN_HIGHLAND:
+		draw_texture_rect(texture, rect, false, HIGHLAND_PLACEHOLDER_TINT)
+		return
+	draw_texture_rect(texture, rect, false)
 
 
 func _get_cell_texture(data) -> Texture2D:
@@ -1049,6 +1057,8 @@ func _get_cell_texture(data) -> Texture2D:
 		return TILE_SPAWN
 	if data.terrain == CellData.TERRAIN_WATER:
 		return TILE_WATER
+	if data.terrain == CellData.TERRAIN_HIGHLAND:
+		return TILE_MOUNTAIN
 	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
 		return TILE_MOUNTAIN
 	if _is_resource_hidden_by_operational_building(data):
