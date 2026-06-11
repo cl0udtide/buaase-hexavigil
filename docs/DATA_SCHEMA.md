@@ -476,6 +476,26 @@ Boss 多阶段规则：
 |---|---|---|
 | `enemy_choices` | `Array` | 随机敌人候选池；每项包含 `enemy_id` 和可选 `weight`。运行时按本局随机种子、模板 ID 和组序号确定选择，白天预览与夜晚实际刷怪保持一致 |
 
+### 6.0 活跃口集合（spawn gates v2）
+
+每晚出怪前，`night_template_resolver.gd` 根据以下规则确定本晚的**活跃出怪口集合**：
+
+**激活序**：`resolve_activation_order` 用本局 `run_seed` 对全部 5 个候选口做 seeded shuffle，得到一条固定的顺序（每局唯一，不随天数改变）。
+
+**日程表**：`ACTIVE_COUNT_BY_DAY = {1: 2, 3: 3, 5: 4, 7: 5}`。清晨按当天天数找最近触发的门槛，从激活序中取前 N 个口作为基础活跃集。
+
+**一夜覆盖项**（存于 `RunState`，黎明清零）：
+
+| 字段 | 说明 |
+|---|---|
+| `night_gate_extra_open_keys` | 今晚额外追加为活跃的口 |
+| `night_gate_closed_keys` | 今晚封堵的口（由塌方契约写入，不得使活跃口低于 1） |
+| `night_gate_seals_today` | 今晚封堵口的 key 集合（与 closed_keys 同步） |
+
+**最终活跃集** = (日程表前 N 口 ∪ extra_open) − closed，且至少保留 1 口。
+
+**预览即契约**：清晨结算完成后通过 EventBus `night_gate_overrides_changed` 通知 UI，`wave_manager.get_night_preview` 返回的 `active_gates` 字段与运行时 `wave_manager._active_spawn_keys()` 使用同一计算路径——预览内容等于夜晚实际开口，无二次随机。
+
 ---
 
 ## 6.1 `night_affixes.json`
@@ -638,6 +658,36 @@ Boss 多阶段规则：
 | `wager_no_leak` | — | 激活赌约：核心一夜未失血则次日清晨额外一次遗物三选一（`game_controller.gd` 结算） |
 | `grant_random_operator` | `unit_cost` | 获得一名指定费用档（`cost_prestige`）的随机干员；无候选时改发 3 声望 |
 | `night_affix_add` | `affix_id` | 为今晚追加指定的夜晚词缀（已存在时跳过） |
+| `gate_open_extra_tonight` | — | 今晚在当前激活序中的下一个沉默口追加为活跃口（写入 `RunState.night_gate_extra_open_keys`）；无可用沉默口时无效 |
+
+### 8.1 出怪口相关事件（spawn gates v2）
+
+当前根事件池新增两类口相关事件：
+
+**塌方契约（`event_landslide_contract`）**
+
+- 根事件，动态生成选项：每个当前活跃出怪口对应一个"封堵该口（消耗 3 魔力矿）"的选项 + 一个"拒绝"选项，类似祭坛的动态选项模式。
+- 选择封堵后执行隐藏子事件，效果为将该口写入 `RunState.night_gate_seals_today`（今晚封堵，黎明清空）。
+- 封堵后活跃口不得低于 1；口数 = 1 时无可选封堵项，塌方契约实质上为空选项。
+
+隐藏子事件（均设 `hidden_in_map_pool: true`）：
+
+| `id` | 说明 |
+|---|---|
+| `event_landslide_leave` | 玩家拒绝，无效果 |
+
+（每个活跃口的封堵结果事件由 `random_event_manager.gd` 在运行时动态构造，不写入 JSON）
+
+**开口赌约（`event_gate_wager`）**
+
+- 根事件，`max_day: 6`。
+- 两个选项：接受（`event_gate_wager_accept`）/ 拒绝（`event_gate_wager_decline`）。
+- `event_gate_wager_accept` 效果：`gate_open_extra_tonight`（今晚追加一个沉默口为活跃口）+ `payload.prestige: 3, mana: 2`。
+
+| `id` | 说明 |
+|---|---|
+| `event_gate_wager_accept` | 追加一个沉默口 + 获得 3 声望 2 魔力矿 |
+| `event_gate_wager_decline` | 无效果 |
 
 ---
 
@@ -709,7 +759,9 @@ Boss 多阶段规则：
 |---|---|---|
 | `width` | `int` | 地图宽度 |
 | `height` | `int` | 地图高度 |
-| `spawn_count` | `int` | 刷怪点数量；当前波次表使用 `S1`、`S2`、`S3` |
+| `spawn_count` | `int` | 刷怪候选口数量；spawn gates v2 起固定为 5，由 `map_generator.gd` 按等弧算法放置 |
+| `spawn_corner_margin` | `int` | 等弧放置时距地图角落的最小格数，防止出怪口卡在角落 |
+| `spawn_arc_center_ratio` | `float` | 等弧放置时弧段中心采样点的相对位置比例（0-1），微调口的偏向分布 |
 | `resources_per_type` | `int` | 每种资源在整张地图上的目标生成数量 |
 | `near_resources_per_type` | `int` | 每种资源在核心可见区外侧探索圈内的保底生成数量 |
 | `event_point_count` | `int` | 旧地图生成期事件点数量；当前配置为 0，正式事件由 `RandomEventManager` 每日刷新 |
@@ -724,8 +776,8 @@ Boss 多阶段规则：
 | `scattered_obstacle_ratio` | `float` | 总障碍中保留为零散障碍的比例，其余优先生成连续地貌簇 |
 | `core_safe_radius` | `int` | 核心周围不会随机生成障碍、额外资源、事件点的安全半径 |
 | `spawn_safe_radius` | `int` | 刷怪点周围不会随机生成障碍、额外资源、事件点的安全半径 |
-| `min_spawn_core_distance` | `int` | 刷怪点到核心的最小曼哈顿距离 |
-| `min_spawn_distance` | `int` | 刷怪点之间的最小曼哈顿距离 |
+| ~~`min_spawn_core_distance`~~ | ~~`int`~~ | ~~刷怪点到核心的最小曼哈顿距离~~ → **v2 已删除**，等弧算法隐式保证边缘距离 |
+| ~~`min_spawn_distance`~~ | ~~`int`~~ | ~~刷怪点之间的最小曼哈顿距离~~ → **v2 已删除**，等弧均分自然保证间距 |
 
 当前配置：
 
@@ -733,7 +785,9 @@ Boss 多阶段规则：
 {
   "width": 30,
   "height": 30,
-  "spawn_count": 3,
+  "spawn_count": 5,
+  "spawn_corner_margin": 3,
+  "spawn_arc_center_ratio": 0.6,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
   "event_point_count": 0,
@@ -747,9 +801,7 @@ Boss 多阶段规则：
   "terrain_cluster_attempts": 24,
   "scattered_obstacle_ratio": 0.22,
   "core_safe_radius": 3,
-  "spawn_safe_radius": 1,
-  "min_spawn_core_distance": 12,
-  "min_spawn_distance": 10
+  "spawn_safe_radius": 1
 }
 ```
 
@@ -762,7 +814,7 @@ Boss 多阶段规则：
 - 障碍数量先按 `width * height * obstacle_ratio` 估算，再被 `min_obstacle_count` 与 `max_obstacle_count` 限制。
 - 障碍优先生成若干连续地貌簇：水域偏块状湖泊，山地偏带状山脉；随后按 `scattered_obstacle_ratio` 补少量零散障碍，避免地图过于规则。
 - 障碍放置后会校验刷怪点到核心仍存在地面路径，失败的地貌簇或散点会回滚，避免随机地图把夜晚路径彻底堵死。
-- 刷怪点优先从地图边缘选择，受核心距离和刷怪点互相距离限制。
+- 刷怪点（spawn gates v2）按等弧算法沿地图边缘均匀放置：将边缘划分为 `spawn_count` 段等长弧，每段取 `spawn_arc_center_ratio` 处一点，并跳过距角落不足 `spawn_corner_margin` 格的位置。此方案取代了旧的 `min_spawn_core_distance` / `min_spawn_distance` 随机筛选策略。
 
 事件点说明：
 
