@@ -27,6 +27,7 @@ func _run() -> void:
 	_test_sector_geometry()
 	_test_lanes_protected()
 	_test_ridge_growth()
+	_test_rivers_lakes()
 	_finish()
 
 
@@ -607,6 +608,92 @@ func _test_ridge_growth() -> void:
 	var ledger3: Dictionary = FleshGen.make_ledger(fx3["skeleton"]["cfg"], fx3["skeleton"]["archetype"], carded, 30, 30)
 	FleshGen.grow_ridges(fx3["cells"], fx3["skeleton"], fx3["protected"], _new_rng(IntNoise.derive_seed(2024, 0, 14)), ledger3)
 	_expect(_serialize_obstacles_only({"cells": fx3["cells"]}) == _serialize_obstacles_only({"cells": cells}), "grow_ridges deterministic")
+
+
+func _is_edge_cell(cell: Vector2i) -> bool:
+	return cell.x == 0 or cell.y == 0 or cell.x == 29 or cell.y == 29
+
+
+func _test_rivers_lakes() -> void:
+	# 伪高程：山旁高于旷野、决定性。
+	var carded := {"S1": "bastion", "S2": "canyon", "S3": "steppe", "S4": "riverlands", "S5": "bastion"}
+	var fx := _build_skeleton_fixture(2024, carded)
+	var ledger: Dictionary = FleshGen.make_ledger(fx["skeleton"]["cfg"], fx["skeleton"]["archetype"], carded, 30, 30)
+	FleshGen.grow_ridges(fx["cells"], fx["skeleton"], fx["protected"], _new_rng(IntNoise.derive_seed(2024, 0, 14)), ledger)
+	var elev: Dictionary = FleshGen.build_elevation(fx["cells"], 30, 30, 555)
+	_expect(elev.size() == 900, "elevation covers all cells")
+	var near_ridge: Vector2i = Vector2i(-1, -1)
+	for raw_cell: Variant in fx["cells"].keys():
+		var cell: Vector2i = raw_cell
+		if (fx["cells"][cell] as CellData).terrain == CellDataRef.TERRAIN_MOUNTAIN:
+			for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+				var nb: Vector2i = cell + direction
+				if fx["cells"].has(nb) and (fx["cells"][nb] as CellData).terrain == CellDataRef.TERRAIN_PLAIN:
+					near_ridge = nb
+					break
+		if near_ridge.x >= 0:
+			break
+	if near_ridge.x >= 0:
+		var far_cell := Vector2i(15, 25) if _cheb(near_ridge, Vector2i(15, 25)) > 8 else Vector2i(8, 22)
+		_expect(int(elev[near_ridge]) > int(elev[far_cell]), "elevation higher near ridges")
+	var elev_b: Dictionary = FleshGen.build_elevation(fx["cells"], 30, 30, 555)
+	_expect(str(elev) == str(elev_b), "build_elevation deterministic")
+	# 河流 + 渡口：跨种子统计渡口出现率，出现时恰 1 个 2 格窗且新最短路穿窗。
+	var ford_hits: int = 0
+	var river_runs: int = 0
+	for seed_value in range(3000, 3010):
+		var rfx := _build_skeleton_fixture(seed_value, carded)
+		var rledger: Dictionary = FleshGen.make_ledger(rfx["skeleton"]["cfg"], rfx["skeleton"]["archetype"], carded, 30, 30)
+		FleshGen.grow_ridges(rfx["cells"], rfx["skeleton"], rfx["protected"], _new_rng(IntNoise.derive_seed(seed_value, 0, 14)), rledger)
+		var relev: Dictionary = FleshGen.build_elevation(rfx["cells"], 30, 30, IntNoise.derive_seed(seed_value, 0, 15))
+		var river: Dictionary = FleshGen.trace_river(rfx["cells"], rfx["skeleton"], "S4", relev, rfx["protected"], _new_rng(IntNoise.derive_seed(seed_value, 0, 15)), rledger)
+		river_runs += 1
+		var river_cells: Array = river.get("river_cells", [])
+		var pond_cells: Array = river.get("pond_cells", [])
+		_expect(river_cells.size() + pond_cells.size() >= 3, "seed %d: river or pond materialized" % seed_value)
+		var reached_edge := false
+		for raw_cell: Variant in river_cells:
+			if _is_edge_cell(raw_cell):
+				reached_edge = true
+		_expect(reached_edge or pond_cells.size() >= 3, "seed %d: river reaches edge or ends in pond" % seed_value)
+		_expect(MapGeneratorScript._are_all_spawns_connected(rfx["cells"], 30, 30, rfx["skeleton"]["spawn_cells"], rfx["skeleton"]["core"]), "seed %d: gates connected after river" % seed_value)
+		var ford_cells: Array = river.get("ford_cells", [])
+		if not ford_cells.is_empty():
+			ford_hits += 1
+			_expect(ford_cells.size() == 2, "seed %d: ford window is 2 cells" % seed_value)
+			for raw_cell: Variant in ford_cells:
+				_expect((rfx["cells"][raw_cell] as CellData).walkable, "seed %d: ford stays walkable" % seed_value)
+			# 渡口唯一：S4 新最短路与水格零相交（只能走渡口）。
+			var dist_gate: Dictionary = MapGeneratorScript._bfs_distances(rfx["cells"], 30, 30, rfx["skeleton"]["gate_cells"]["S4"])
+			_expect(int(dist_gate.get(rfx["skeleton"]["core"], -1)) > 0, "seed %d: S4 still reaches core" % seed_value)
+	print("  ford hits: %d/%d" % [ford_hits, river_runs])
+	_expect(ford_hits >= 5, "fords occur in majority of riverlands runs")
+	# 湖：steppe 扇区落湖、贴图、远离车道、不淹 protected。
+	var lfx := _build_skeleton_fixture(2026, carded)
+	var lledger: Dictionary = FleshGen.make_ledger(lfx["skeleton"]["cfg"], lfx["skeleton"]["archetype"], carded, 30, 30)
+	FleshGen.place_lakes(lfx["cells"], lfx["skeleton"], "S3", 1, lfx["protected"], _new_rng(606), lledger)
+	var water: int = _count_terrain(lfx["cells"], CellDataRef.TERRAIN_WATER)
+	_expect(water >= 6, "steppe lake materialized (water=%d)" % water)
+	for raw_cell: Variant in lfx["protected"].keys():
+		_expect((lfx["cells"][raw_cell] as CellData).terrain != CellDataRef.TERRAIN_WATER, "lake spares protected")
+	_expect(MapGeneratorScript._are_all_spawns_connected(lfx["cells"], 30, 30, lfx["skeleton"]["spawn_cells"], lfx["skeleton"]["core"]), "gates connected after lake")
+	# 湿度：迎风侧计划 ≥ 背风侧（30 个种子聚合）。
+	var wet_total: int = 0
+	var dry_total: int = 0
+	for seed_value in range(30):
+		var plans: Dictionary = FleshGen.roll_water_plans(fx["skeleton"], Vector2i(1, 0), _new_rng(seed_value), fx["skeleton"]["cfg"])
+		for raw_key: Variant in plans.keys():
+			var gate: Vector2i = fx["skeleton"]["gate_cells"][raw_key]
+			var dot: int = (gate - fx["skeleton"]["core"]).x
+			var weight: int = int(plans[raw_key].get("lakes", 0)) + (1 if bool(plans[raw_key].get("river", false)) else 0)
+			if dot > 0:
+				wet_total += weight
+			elif dot < 0:
+				dry_total += weight
+	_expect(wet_total > dry_total, "windward side plans more water (wet=%d dry=%d)" % [wet_total, dry_total])
+	var plans_a: Dictionary = FleshGen.roll_water_plans(fx["skeleton"], Vector2i(1, 0), _new_rng(9), fx["skeleton"]["cfg"])
+	var plans_b: Dictionary = FleshGen.roll_water_plans(fx["skeleton"], Vector2i(1, 0), _new_rng(9), fx["skeleton"]["cfg"])
+	_expect(str(plans_a) == str(plans_b), "roll_water_plans deterministic")
 
 
 func _finish() -> void:
