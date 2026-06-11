@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_activation()
 	await _test_overrides_lifecycle()
 	await _test_active_set_consumption()
+	await _test_player_seal()
 	_finish()
 
 
@@ -167,6 +168,53 @@ func _test_active_set_consumption() -> void:
 		var summary2: Dictionary = raw_summary2
 		for raw_entry2: Variant in summary2.get("entries", []):
 			_expect(String((raw_entry2 as Dictionary).get("spawn_key", "")) != victim, "no entry spawns at sealed gate")
+	run_state.clear_night_gate_overrides()
+	game.queue_free()
+	await process_frame
+
+
+func _test_player_seal() -> void:
+	var game_scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var game := game_scene.instantiate()
+	root.add_child(game)
+	for _i in range(8):
+		await process_frame
+	var run_state = root.get_node_or_null("RunState")
+	var day_manager := game.get_node_or_null("Managers/DayManager")
+	var map_manager := game.get_node_or_null("Managers/MapManager")
+	if run_state == null or day_manager == null or map_manager == null:
+		_expect(false, "boot ok for seal test")
+		game.queue_free()
+		await process_frame
+		return
+	var all_gates: Array = map_manager.get_spawn_keys()
+	var active: Array = ResolverScript.resolve_active_gates(all_gates, int(run_state.random_seed), int(run_state.day), [], [])
+	var gate_key := String(active[0])
+	var gate_cell: Vector2i = map_manager.get_spawn_cell_by_key(StringName(gate_key))
+	var silent_key := ""
+	for raw_gate: Variant in all_gates:
+		if not active.has(String(raw_gate)):
+			silent_key = String(raw_gate)
+			break
+	run_state.stone = 0
+	run_state.reset_action_points(30)
+	var poor: Dictionary = day_manager.try_seal_spawn_gate(gate_cell)
+	_expect(not poor.get("ok", false), "seal fails without stone")
+	run_state.stone = 10
+	var not_gate: Dictionary = day_manager.try_seal_spawn_gate(Vector2i(15, 15))
+	_expect(not not_gate.get("ok", false), "seal rejects non-gate cell")
+	var silent_cell: Vector2i = map_manager.get_spawn_cell_by_key(StringName(silent_key))
+	var silent_result: Dictionary = day_manager.try_seal_spawn_gate(silent_cell)
+	_expect(not silent_result.get("ok", false), "seal rejects silent gate")
+	var ap_before: int = int(run_state.action_points)
+	var ok_result: Dictionary = day_manager.try_seal_spawn_gate(gate_cell)
+	_expect(ok_result.get("ok", false), "seal succeeds")
+	_expect(int(run_state.stone) == 6 and int(run_state.action_points) == ap_before - 6, "seal costs 4 stone 6 ap")
+	_expect((run_state.night_gate_closed_keys as Array).has(gate_key), "seal recorded")
+	var second_gate := String(active[1])
+	var second_cell: Vector2i = map_manager.get_spawn_cell_by_key(StringName(second_gate))
+	var second: Dictionary = day_manager.try_seal_spawn_gate(second_cell)
+	_expect(not second.get("ok", false), "daily seal limit enforced (also guards min-1)")
 	run_state.clear_night_gate_overrides()
 	game.queue_free()
 	await process_frame

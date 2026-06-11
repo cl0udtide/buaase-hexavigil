@@ -1,6 +1,10 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
+const GATE_SEAL_STONE_COST := 4
+const GATE_SEAL_AP_COST := 6
+const GATE_SEALS_PER_DAY := 1
 
 const EXPLORE_AP_COST := 2
 const EVENT_TRIGGER_AP_COST := 2
@@ -144,6 +148,38 @@ func is_resource_collected_today(cell: Vector2i) -> bool:
 
 func _get_resource_collect_amount(resource_type: StringName) -> int:
 	return WOOD_RESOURCE_COLLECT_AMOUNT if resource_type == &"wood" else DEFAULT_RESOURCE_COLLECT_AMOUNT
+
+
+## 玩家封口：白天对一个活跃口支付石材+行动力，使其今晚沉默（一夜有效，黎明解封）。
+## 语义是导流不是减伤：总刷怪量不变，怪改派其他活跃口。
+func try_seal_spawn_gate(cell: Vector2i) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
+	if run_state.phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天才能封堵出怪口")
+	if _map_manager == null or not _map_manager.has_method("get_spawn_key_at_cell"):
+		return ActionResult.err(&"MAP_UNAVAILABLE", "地图尚未初始化")
+	var gate_key := String(_map_manager.get_spawn_key_at_cell(cell))
+	if gate_key.is_empty():
+		return ActionResult.err(&"NOT_A_GATE", "该格子不是出怪口")
+	if int(run_state.night_gate_seals_today) >= GATE_SEALS_PER_DAY:
+		return ActionResult.err(&"SEAL_LIMIT_REACHED", "今天已经封堵过出怪口")
+	var all_gates: Array = _map_manager.get_spawn_keys()
+	var active: Array = NightTemplateResolver.resolve_active_gates(all_gates, int(run_state.random_seed), int(run_state.day), run_state.night_gate_closed_keys, run_state.night_gate_extra_open_keys)
+	if not active.has(gate_key):
+		return ActionResult.err(&"GATE_NOT_ACTIVE", "该出怪口今晚本就沉默")
+	if active.size() <= 1:
+		return ActionResult.err(&"LAST_ACTIVE_GATE", "至少要保留一个活跃出怪口")
+	if int(run_state.stone) < GATE_SEAL_STONE_COST:
+		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "石材不足（需要 %d）" % GATE_SEAL_STONE_COST)
+	if int(run_state.action_points) < GATE_SEAL_AP_COST:
+		return ActionResult.err(&"NOT_ENOUGH_AP", "行动力不足（需要 %d）" % GATE_SEAL_AP_COST)
+	run_state.spend_materials(0, GATE_SEAL_STONE_COST, 0)
+	run_state.consume_action_points(GATE_SEAL_AP_COST)
+	run_state.night_gate_seals_today = int(run_state.night_gate_seals_today) + 1
+	run_state.add_night_gate_closed(gate_key)
+	return ActionResult.ok({"gate_key": gate_key, "ap_cost": GATE_SEAL_AP_COST, "stone_cost": GATE_SEAL_STONE_COST}, "已封堵 %s 一晚，怪物将改道其他出怪口" % gate_key)
 
 
 func request_start_night() -> Dictionary:
