@@ -2388,6 +2388,8 @@ func _serialize_current_preset() -> Dictionary:
 	}
 
 
+# TODO(地形包阶段B): 本序列化只搬 mountain；sandbox 高台画笔落地时必须同步携带 "highland" 键，
+# 否则沙盒存取一轮高台蒸发（terrain 设计稿 §7 陷阱 2）。
 func _serialize_debug_map_state() -> Dictionary:
 	if _map_manager != null and _map_manager.has_method("get_debug_map_state"):
 		var map_state: Dictionary = _map_manager.get_debug_map_state()

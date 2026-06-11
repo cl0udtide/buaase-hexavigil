@@ -847,8 +847,7 @@ Boss 多阶段规则：
   "height": 10,
   "core": [5, 5],
   "mountain": [[2, 3], [2, 4]],
-  "highland": [[6, 3]],
-  "spawn_defs": {}
+  "highland": [[6, 3]]
 }
 ```
 
