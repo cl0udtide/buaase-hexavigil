@@ -100,7 +100,7 @@ static func place_mesas(cells: Dictionary, skeleton: Dictionary, protected: Dict
 			break	# 预算尽，后续槽位同败
 		live = _place_slot_with_fallback(ctx, mesas, ledger, live, KIND_FILLER, "", filler_size)
 	# 量带兜底（B2-11）：尺寸降阶会压低总量（4×3=12 < cells_min），座数未达
-	# 上限时补填至 cells_min（不掷 rng，决定性；单次新增 ≤6 → 总量恒 ≤ 19 < cells_max）。
+	# 上限时补填至 cells_min（不掷 rng，决定性；单次新增 ≤6 → 总量恒 ≤ cells_min+5 < cells_max）。
 	while mesas.size() < count_max and _cells_total(mesas) < cells_min:
 		var top_size: int = mini(maxi(cells_min - _cells_total(mesas), MIN_SHAPE_SIZE), 6)
 		var before_top: int = mesas.size()
