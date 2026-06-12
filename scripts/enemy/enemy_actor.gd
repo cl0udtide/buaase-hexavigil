@@ -6,6 +6,7 @@ const BossController = preload("res://scripts/enemy/boss_controller.gd")
 const EnemyMovementController = preload("res://scripts/enemy/enemy_movement_controller.gd")
 const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controller.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
+const ContactShadow = preload("res://scripts/effects/contact_shadow.gd")
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
@@ -15,6 +16,7 @@ const VISUAL_IDLE_ANIM := "idle"
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 70.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
+const CONTACT_SHADOW_Y := 25.0
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
 const ATTACK_LUNGE_DISTANCE := 5.0
@@ -66,6 +68,11 @@ var _has_visual_sprite := false
 
 func _ready() -> void:
 	add_to_group("enemies")
+	var shadow := ContactShadow.new()
+	shadow.name = "ContactShadow"
+	shadow.position = Vector2(0.0, CONTACT_SHADOW_Y)
+	shadow.radius = 12.0
+	add_child(shadow)
 	queue_redraw()
 
 
