@@ -622,6 +622,175 @@ static func _shuffle_cells(cells: Array[Vector2i], rng: RandomNumberGenerator) -
 		cells[swap_index] = temp
 
 
+## 资源风味放置 v2（设计稿 S8）：包装 _place_resources 的近环保底块（UNTOUCHED），
+## 远区换加权无放回抽取：风味亲和 ×3（wood/mana→水邻近 cheb≤2，stone→山邻近 cheb≤2）、
+## 扇区 resource_mult 倍率、risk_reward_bias ×3/2（靠近阻挡或隘口外侧），
+## 走廊格排除；决定性（候选 (y,x) 序 + rng 流）。
+static func _place_resources_v2(
+	cells: Dictionary,
+	width: int,
+	height: int,
+	spawn_cells: Array[Vector2i],
+	core_cell: Vector2i,
+	rng: RandomNumberGenerator,
+	cfg: Dictionary,
+	skeleton: Dictionary,
+	corridors: Dictionary
+) -> void:
+	var target_per_type: int = int(cfg.get("resources_per_type", RESOURCES_PER_TYPE))
+	var near_target_per_type: int = mini(int(cfg.get("near_resources_per_type", NEAR_RESOURCES_PER_TYPE)), target_per_type)
+
+	# 预扫：corridor 并集（走廊排除集）。
+	var corridor_set: Dictionary = {}
+	for raw_key: Variant in corridors.keys():
+		var entry: Dictionary = corridors[raw_key]
+		for raw_cell: Variant in (entry.get("cells", {}) as Dictionary).keys():
+			corridor_set[raw_cell] = true
+
+	# 预扫：水邻近集（cheb ≤2 膨胀，用于 wood/mana 亲和）。
+	var water_near: Dictionary = {}
+	for y in range(height):
+		for x in range(width):
+			var cell := Vector2i(x, y)
+			var data: CellData = cells.get(cell) as CellData
+			if data != null and data.terrain == CellData.TERRAIN_WATER:
+				for dy2 in range(-2, 3):
+					for dx2 in range(-2, 3):
+						water_near[Vector2i(x + dx2, y + dy2)] = true
+
+	# 预扫：山邻近集（cheb ≤2，用于 stone 亲和）。
+	var mountain_near: Dictionary = {}
+	for y in range(height):
+		for x in range(width):
+			var cell := Vector2i(x, y)
+			var data: CellData = cells.get(cell) as CellData
+			if data != null and data.terrain == CellData.TERRAIN_MOUNTAIN:
+				for dy2 in range(-2, 3):
+					for dx2 in range(-2, 3):
+						mountain_near[Vector2i(x + dx2, y + dy2)] = true
+
+	# 预扫：阻挡邻近集（任一阻挡格 cheb ≤2，用于 risk_reward）。
+	var blocked_near: Dictionary = {}
+	for y in range(height):
+		for x in range(width):
+			var cell := Vector2i(x, y)
+			var data: CellData = cells.get(cell) as CellData
+			if data != null and not data.walkable:
+				for dy2 in range(-2, 3):
+					for dx2 in range(-2, 3):
+						blocked_near[Vector2i(x + dx2, y + dy2)] = true
+
+	# 预扫：锚环表（gate_key → cheb(anchor.cell, core)）。
+	var anchor_rings: Dictionary = {}
+	var anchors: Dictionary = skeleton.get("anchors", {})
+	for raw_key: Variant in anchors.keys():
+		var entry: Dictionary = anchors[raw_key]
+		var anchor_cell: Vector2i = entry.get("cell", core_cell)
+		anchor_rings[String(raw_key)] = maxi(absi(anchor_cell.x - core_cell.x), absi(anchor_cell.y - core_cell.y))
+
+	# 扇区倍率表（gate_key → resource_mult float）。
+	var sector_mults: Dictionary = {}
+	var sector_cards: Dictionary = cfg.get("sector_cards", {})
+	var cards_map: Dictionary = skeleton.get("cards", {})
+	for raw_key: Variant in anchors.keys():
+		var card_id := String(cards_map.get(String(raw_key), "bastion"))
+		var card_cfg: Dictionary = sector_cards.get(card_id, {})
+		sector_mults[String(raw_key)] = float(card_cfg.get("resource_mult", 1.0))
+
+	var sector_of: Dictionary = skeleton.get("sector_of", {})
+	var risk_reward_bias: float = float((cfg.get("economy", {}) as Dictionary).get("risk_reward_bias", 0.5))
+
+	# 候选收集（按 (y,x) 序，保证决定性）。
+	var near_candidates: Array[Vector2i] = []
+	var far_candidates: Array[Vector2i] = []
+	for y in range(1, height - 1):
+		for x in range(1, width - 1):
+			var cell := Vector2i(x, y)
+			var near_ring := _is_near_exploration_ring(cell, core_cell)
+			if _is_protected_cell(cell, core_cell, spawn_cells, cfg) and not near_ring:
+				continue
+			var data: CellData = cells.get(cell) as CellData
+			if data == null or not data.walkable or data.resource_type != StringName() or data.spawn_key != StringName():
+				continue
+			if near_ring:
+				near_candidates.append(cell)
+			else:
+				if not corridor_set.has(cell):
+					far_candidates.append(cell)
+
+	# 近环保底（原样复用）。
+	_shuffle_cells(near_candidates, rng)
+	var resource_types: Array[StringName] = [&"wood", &"stone", &"mana"]
+	var placed_by_type: Dictionary = {}
+	for rt in resource_types:
+		placed_by_type[rt] = 0
+	for rt in resource_types:
+		_place_resource_type(cells, near_candidates, rt, near_target_per_type, placed_by_type)
+
+	# 远区加权无放回抽取（固定序 wood→stone→mana）。
+	for rt in resource_types:
+		var remaining: int = target_per_type - int(placed_by_type.get(rt, 0))
+		if remaining <= 0:
+			continue
+		# 当前远区候选（剔除已被占用的格）。
+		var pool: Array[Vector2i] = []
+		for cell: Vector2i in far_candidates:
+			var data: CellData = cells.get(cell) as CellData
+			if data == null or not data.walkable or data.resource_type != StringName():
+				continue
+			pool.append(cell)
+		# 逐次加权抽取（无放回）。
+		for _pick_iter in range(remaining):
+			if pool.is_empty():
+				break
+			# 计算权重向量（整数，(y,x) 序已由 pool 构造序保证）。
+			var weights: Array[int] = []
+			var total_w: int = 0
+			for cell: Vector2i in pool:
+				var w: int = 16
+				# 亲和 ×3。
+				var affinity_hit := false
+				if rt == &"wood" or rt == &"mana":
+					affinity_hit = water_near.has(cell)
+				else:  # stone
+					affinity_hit = mountain_near.has(cell)
+				if affinity_hit:
+					w *= 3
+				# 扇区倍率。
+				var gate_key: String = String(sector_of.get(cell, "S1"))
+				var mult: float = float(sector_mults.get(gate_key, 1.0))
+				w = int(round(float(w) * mult * 16.0)) / 16
+				if w < 1:
+					w = 1
+				# risk_reward_bias（×3/2）：靠近阻挡 cheb≤2，或 ring > 锚环。
+				var ring_c: int = maxi(absi(cell.x - core_cell.x), absi(cell.y - core_cell.y))
+				var anchor_ring: int = int(anchor_rings.get(gate_key, 0))
+				var risk_hit := blocked_near.has(cell) or (anchor_ring > 0 and ring_c > anchor_ring)
+				if risk_hit and risk_reward_bias > 0.0:
+					w = w * 3 / 2
+				if w < 1:
+					w = 1
+				weights.append(w)
+				total_w += w
+			if total_w <= 0:
+				break
+			# 滚动累计选格。
+			var roll: int = rng.randi_range(0, total_w - 1)
+			var cursor: int = 0
+			var chosen_idx: int = pool.size() - 1
+			for idx in range(pool.size()):
+				cursor += weights[idx]
+				if roll < cursor:
+					chosen_idx = idx
+					break
+			var chosen: Vector2i = pool[chosen_idx]
+			var chosen_data: CellData = cells.get(chosen) as CellData
+			if chosen_data != null:
+				_set_resource_node(chosen_data, rt)
+				placed_by_type[rt] = int(placed_by_type.get(rt, 0)) + 1
+			pool.remove_at(chosen_idx)
+
+
 ## 绕路上限修复（设计稿 S6②）：每口真实 BFS 路长 / 曼哈顿 > detour_cap 时，
 ## 鞍部软代价 A* 取门→核心最小代价路径，凿穿其上全部阻挡格（恢复平原），
 ## 任意墙厚一次贯通。每口 ≤ max_repair_rounds 轮；纯确定性，无 RNG。

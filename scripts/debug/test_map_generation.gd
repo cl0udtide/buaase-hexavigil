@@ -34,6 +34,7 @@ func _run() -> void:
 	_test_erosion_cleanup()
 	_test_corridor_repair()
 	_test_mesa_placement()
+	_test_resource_flavor()
 	_finish()
 
 
@@ -1092,6 +1093,112 @@ func _test_mesa_placement() -> void:
 		var out_a: Dictionary = MesaGen.place_mesas(fx_a["cells"], fx_a["skeleton"], fx_a["protected"], verdict_a2["corridors"], _new_rng(42), fx_a["ledger"])
 		var out_b: Dictionary = MesaGen.place_mesas(fx_b["cells"], fx_b["skeleton"], fx_b["protected"], verdict_b2["corridors"], _new_rng(42), fx_b["ledger"])
 		_expect(str(out_a.get("mesas", [])) == str(out_b.get("mesas", [])) and _serialize_obstacles_only({"cells": fx_a["cells"]}) == _serialize_obstacles_only({"cells": fx_b["cells"]}), "place_mesas deterministic")
+
+
+func _resource_cells_by_type(cells: Dictionary) -> Dictionary:
+	var by_type: Dictionary = {&"wood": [], &"stone": [], &"mana": []}
+	for raw_cell: Variant in cells.keys():
+		var data: CellData = cells[raw_cell]
+		if data.resource_type != StringName() and by_type.has(data.resource_type):
+			(by_type[data.resource_type] as Array).append(raw_cell)
+	return by_type
+
+
+func _near_terrain(cells: Dictionary, cell: Vector2i, terrain: StringName, radius: int) -> bool:
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var nb: Vector2i = cell + Vector2i(dx, dy)
+			if cells.has(nb) and (cells[nb] as CellData).terrain == terrain:
+				return true
+	return false
+
+
+func _test_resource_flavor() -> void:
+	var cards := {"S1": "bastion", "S2": "canyon", "S3": "steppe", "S4": "riverlands", "S5": "bastion"}
+	var stone_hits: int = 0
+	var stone_total: int = 0
+	var wood_hits: int = 0
+	var wood_total: int = 0
+	var wood_base_hits: int = 0
+	var wood_base_total: int = 0
+	var mana_hits: int = 0
+	var mana_total: int = 0
+	var mana_base_hits: int = 0
+	var mana_base_total: int = 0
+	for seed_value in range(8001, 8013):
+		var fx := _build_fleshed_fixture(seed_value, cards)
+		var verdict: Dictionary = GenRepairMod.full_repair(fx["cells"], fx["skeleton"], fx["protected"], fx["elevation"], fx["ledger"])
+		if not bool(verdict.get("ok", false)):
+			continue
+		var mesa_out: Dictionary = MesaGen.place_mesas(fx["cells"], fx["skeleton"], fx["protected"], verdict["corridors"], _new_rng(IntNoise.derive_seed(seed_value, 0, 18)), fx["ledger"])
+		if not bool(mesa_out.get("ok", false)):
+			continue
+		var corridors: Dictionary = mesa_out["corridors"]
+		# 基线率：远区候选里满足谓词的占比（自归一化对照）。
+		for raw_cell: Variant in fx["cells"].keys():
+			var data: CellData = fx["cells"][raw_cell]
+			if not data.walkable or data.resource_type != StringName():
+				continue
+			wood_base_total += 1
+			mana_base_total += 1
+			if _near_terrain(fx["cells"], raw_cell, CellDataRef.TERRAIN_WATER, 2):
+				wood_base_hits += 1
+				mana_base_hits += 1
+		MapGeneratorScript._place_resources_v2(fx["cells"], 30, 30, fx["skeleton"]["spawn_cells"], fx["skeleton"]["core"], _new_rng(IntNoise.derive_seed(seed_value, 0, 3)), fx["skeleton"]["cfg"], fx["skeleton"], corridors)
+		var by_type := _resource_cells_by_type(fx["cells"])
+		var corridor_union: Dictionary = {}
+		for raw_key: Variant in corridors.keys():
+			for raw_cell: Variant in (corridors[raw_key]["cells"] as Dictionary).keys():
+				corridor_union[raw_cell] = true
+		for raw_type: Variant in by_type.keys():
+			var placed: Array = by_type[raw_type]
+			_expect(placed.size() == 12, "seed %d: %s count 12 (got %d)" % [seed_value, String(raw_type), placed.size()])
+			var near_ring: int = 0
+			for raw_cell: Variant in placed:
+				var ring: int = _cheb(raw_cell, fx["skeleton"]["core"])
+				if ring >= 3 and ring <= 5:
+					near_ring += 1
+				_expect((fx["cells"][raw_cell] as CellData).walkable, "seed %d: resource walkable" % seed_value)
+			_expect(near_ring >= 2, "seed %d: %s near-ring guarantee (got %d)" % [seed_value, String(raw_type), near_ring])
+		# 远区资源不落 corridor（近环保底豁免——与近环既有语义一致）。
+		for raw_type: Variant in by_type.keys():
+			for raw_cell: Variant in by_type[raw_type]:
+				var ring: int = _cheb(raw_cell, fx["skeleton"]["core"])
+				if ring >= 3 and ring <= 5:
+					continue
+				_expect(not corridor_union.has(raw_cell), "seed %d: far resource off corridor (%s)" % [seed_value, str(raw_cell)])
+		# 亲和统计样本。
+		for raw_cell: Variant in by_type[&"stone"]:
+			stone_total += 1
+			if _near_terrain(fx["cells"], raw_cell, CellDataRef.TERRAIN_MOUNTAIN, 2):
+				stone_hits += 1
+		for raw_cell: Variant in by_type[&"wood"]:
+			wood_total += 1
+			if _near_terrain(fx["cells"], raw_cell, CellDataRef.TERRAIN_WATER, 2):
+				wood_hits += 1
+		for raw_cell: Variant in by_type[&"mana"]:
+			mana_total += 1
+			if _near_terrain(fx["cells"], raw_cell, CellDataRef.TERRAIN_WATER, 2):
+				mana_hits += 1
+	_expect(stone_total >= 48, "flavor sample size adequate (stone_total=%d)" % stone_total)
+	_expect(stone_hits * 100 >= stone_total * 55, "stone foothill lean >=55%% (%d/%d)" % [stone_hits, stone_total])
+	var wood_rate: float = float(wood_hits) / float(maxi(wood_total, 1))
+	var wood_base: float = float(wood_base_hits) / float(maxi(wood_base_total, 1))
+	_expect(wood_rate >= wood_base + 0.10, "wood moist lean beats base by 10pp (%.2f vs %.2f)" % [wood_rate, wood_base])
+	var mana_rate: float = float(mana_hits) / float(maxi(mana_total, 1))
+	var mana_base: float = float(mana_base_hits) / float(maxi(mana_base_total, 1))
+	_expect(mana_rate >= mana_base + 0.10, "mana water lean beats base by 10pp (%.2f vs %.2f)" % [mana_rate, mana_base])
+	# 决定性。
+	var fx_a := _build_fleshed_fixture(8001, cards)
+	var fx_b := _build_fleshed_fixture(8001, cards)
+	var va: Dictionary = GenRepairMod.full_repair(fx_a["cells"], fx_a["skeleton"], fx_a["protected"], fx_a["elevation"], fx_a["ledger"])
+	var vb: Dictionary = GenRepairMod.full_repair(fx_b["cells"], fx_b["skeleton"], fx_b["protected"], fx_b["elevation"], fx_b["ledger"])
+	if bool(va.get("ok", false)) and bool(vb.get("ok", false)):
+		var ma: Dictionary = MesaGen.place_mesas(fx_a["cells"], fx_a["skeleton"], fx_a["protected"], va["corridors"], _new_rng(1), fx_a["ledger"])
+		var mb: Dictionary = MesaGen.place_mesas(fx_b["cells"], fx_b["skeleton"], fx_b["protected"], vb["corridors"], _new_rng(1), fx_b["ledger"])
+		MapGeneratorScript._place_resources_v2(fx_a["cells"], 30, 30, fx_a["skeleton"]["spawn_cells"], fx_a["skeleton"]["core"], _new_rng(2), fx_a["skeleton"]["cfg"], fx_a["skeleton"], ma["corridors"])
+		MapGeneratorScript._place_resources_v2(fx_b["cells"], 30, 30, fx_b["skeleton"]["spawn_cells"], fx_b["skeleton"]["core"], _new_rng(2), fx_b["skeleton"]["cfg"], fx_b["skeleton"], mb["corridors"])
+		_expect(_serialize_terrain({"cells": fx_a["cells"]}) == _serialize_terrain({"cells": fx_b["cells"]}), "resources_v2 deterministic")
 
 
 func _finish() -> void:
