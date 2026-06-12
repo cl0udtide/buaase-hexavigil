@@ -790,18 +790,18 @@ Boss 多阶段规则：
 | `detour_cap` / `detour_floor` | `float` | 每口「真实最短路长 / 曼哈顿距离」的验收带 [1.15, 1.6]（cap 同时被 legacy 绕路修复使用） |
 | `lane_jitter_base` | `float` | 车道噪声抖动缺省幅度（牌的 `jitter_amp` 覆写） |
 | `corridor_slack` | `int` | corridor 派生松弛：双 BFS 距离和 ≤ 最短 + slack |
-| `gate_slide_jitter` | `int` | 门位弧内滑移抖动幅度 |
-| `repair` | `object` | 开凿代价权重（`carve_costs.water`/`mountain`，字典序次序键）、入侵度上限（单图/均值）、`dual_pass_ratio_cap`（dual 隘口比例目标，平衡盘项） |
+| `gate_slide_jitter` | `int` | 门位弧内滑移抖动幅度 **预留（未接线）** |
+| `repair` | `object` | 开凿代价权重（`carve_costs.water`/`mountain`，字典序次序键）、入侵度上限（单图/均值）、`dual_pass_ratio_cap`（dual 隘口比例目标，平衡盘项）；其中 `intrusion_max_mean` **预留（仅单图上限已接线）** |
 | `pass` | `object` | 隘口验收窗纵深（`aperture_depth`）、口袋核尺寸（`pocket_core_w/h`）与口袋 flood 验收（`pocket_min_plain`/`pocket_flood_limit`） |
 | `mesa` | `object` | 天然高台座数带（`count_min/max`、降阶下限）、总格数带（`cells_min/max`）、尺寸权重、corridor 贴靠（`max_corridor_dist`/`min_covered_ratio`）、起手台（`starter.*` 环带 4-5） |
-| `economy` | `object` | 资源风味亲和（wood→湿原 / stone→山麓 / mana→临水）与 `risk_reward_bias` |
+| `economy` | `object` | 资源风味亲和（wood→湿原 / stone→山麓 / mana→临水）与 `risk_reward_bias`；其中 `resource_affinity` 键值 **预留（当前亲和规则硬编码，键值未消费）** |
 | `moisture_gradient_strength` | `float` | 湿度梯度强度（河湖计划与资源风味用） |
-| `sector_cards` | `object` | 扇区牌定义（bastion / steppe / riverlands / canyon：隘口宽、环带、密度、mesa 配额、抖动、资源倍率、河/湖键） |
+| `sector_cards` | `object` | 扇区牌定义（bastion / steppe / riverlands / canyon：隘口宽、环带、密度、mesa 配额、抖动、资源倍率、河/湖键）；其中 `riverlands.ford_width` **预留（渡口宽度硬编码 2）** |
 | `archetypes` | `array` | 地图原型（id、权重、牌组多重集、汇流拓扑、阻挡占比带 `ratio_band`） |
 | `day1_card_constraint` | `string` | 发牌约束：`"no_double_steppe"` = 第 1 天活跃口不得全为 steppe |
 | `bias_cards_by_activation` | `bool` | 预留：按激活序加权发牌（当前 `false`） |
 
-generator 开关说明：`"skeleton_v2"` 走骨架生成器全管线（牌组 → 车道 → 长肉 → 修复 → mesa → 资源），`"legacy"` 走旧 walker 管线；`obstacle_ratio`、`terrain_cluster_*` 等旧算法键全部保留，既作回切配置，也是 skeleton_v2 重试耗尽后的兜底生成器所用。`generate` 返回字典在 v2 下额外回传 `sectors`（gate_key → {card, pass_grade, anchor, aperture, ford}）与 `gen_report`（attempts / fallback / ledger / intrusion / blocked_ratio 等）两键；`map_manager.generate_new_map` 只消费 cells / core_cell / spawn_cells / event_points 四键，新增键向上透传（夜晚播报链就绪），legacy 路径回传两个空字典。
+generator 开关说明：`"skeleton_v2"` 走骨架生成器全管线（牌组 → 车道 → 长肉 → 修复 → mesa → 资源），`"legacy"` 走旧 walker 管线；`obstacle_ratio`、`terrain_cluster_*` 等旧算法键全部保留，既作回切配置，也是 skeleton_v2 重试耗尽后的兜底生成器所用。`generate` 返回字典在 v2 下额外回传 `sectors`（gate_key → {card, pass_grade, anchor, aperture, ford}）与 `gen_report`（attempts / fallback / ledger / intrusion / blocked_ratio 等）两键；新增键由 generate() 返回，map_manager 仅消费四个旧键（cells / core_cell / spawn_cells / event_points），sectors/gen_report 当前无运行时消费方（夜晚播报链接入需另行铺管），legacy 路径回传两个空字典。
 
 当前配置：
 
