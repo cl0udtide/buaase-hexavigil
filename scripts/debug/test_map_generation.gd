@@ -60,11 +60,11 @@ func _v2_cfg() -> Dictionary:
 		"pass": {"aperture_depth": 2, "pocket_core_w": 3, "pocket_core_h": 2,
 			"pocket_min_plain": 6, "pocket_flood_limit": 12},
 		"mesa": {
-			"count_min": 4, "count_max": 6, "count_floor_degraded": 3,
-			"cells_min": 14, "cells_max": 24,
+			"count_min": 5, "count_max": 8, "count_floor_degraded": 4,
+			"cells_min": 20, "cells_max": 30,
 			"size_weights": {"3": 0.30, "4": 0.35, "5": 0.20, "6": 0.15},
 			"max_corridor_dist": 2, "min_covered_ratio": 0.6,
-			"starter": {"ring_min": 4, "ring_max": 5, "size_min": 3, "size_max": 4, "max_corridor_dist": 2},
+			"starter": {"ring_min": 4, "ring_max": 5, "size_min": 4, "size_max": 5, "max_corridor_dist": 2},
 		},
 		"economy": {
 			"resource_affinity": {"wood": "moist_plain", "stone": "foothill", "mana": "water_adjacent"},
@@ -1061,13 +1061,13 @@ func _test_mesa_placement() -> void:
 			_expect(covered * 10 >= mesa_cells.size() * 6, "seed %d: mesa coverage >=60%% (%d/%d)" % [seed_value, covered, mesa_cells.size()])
 			if StringName(mesa.get("kind", &"")) == &"starter":
 				starter_seen = true
-				_expect(mesa_cells.size() >= 3 and mesa_cells.size() <= 4, "seed %d: starter 3-4 cells" % seed_value)
+				_expect(mesa_cells.size() >= 4 and mesa_cells.size() <= 5, "seed %d: starter 4-5 cells" % seed_value)
 				for raw_cell: Variant in mesa_cells:
 					var ring: int = _cheb(raw_cell, fx["skeleton"]["core"])
 					_expect(ring >= 4 and ring <= 5, "seed %d: starter ring %d in [4,5]" % [seed_value, ring])
 		_expect(starter_seen, "seed %d: starter mesa present" % seed_value)
-		_expect(mesas.size() >= 4 and mesas.size() <= 6, "seed %d: mesa count %d in [4,6]" % [seed_value, mesas.size()])
-		_expect(total_cells >= 14 and total_cells <= 24, "seed %d: mesa cells %d in [14,24]" % [seed_value, total_cells])
+		_expect(mesas.size() >= 5 and mesas.size() <= 8, "seed %d: mesa count %d in [5,8]" % [seed_value, mesas.size()])
+		_expect(total_cells >= 20 and total_cells <= 30, "seed %d: mesa cells %d in [20,30]" % [seed_value, total_cells])
 		print("  mesas seed %d: count=%d cells=%d" % [seed_value, mesas.size(), total_cells])
 		# 战位锚定：每张配额牌扇区有一座贴本扇区验收窗。
 		for raw_key: Variant in fx["skeleton"]["gate_keys"]:
@@ -1278,6 +1278,7 @@ func _test_skeleton_sweep() -> void:
 	var graded_count: int = 0
 	var retry_maps: int = 0
 	var fallback_maps: int = 0
+	var degraded_maps: int = 0
 	var total_maps: int = 0
 	var worst_ms: int = 0
 	var worst_detour: float = 0.0
@@ -1316,20 +1317,25 @@ func _test_skeleton_sweep() -> void:
 				var detour: float = float(path_len) / float(maxi(_manhattan(raw_gate, core_cell), 1))
 				worst_detour = maxf(worst_detour, detour)
 				_expect(detour >= 1.15 - 0.0001 and detour <= 1.6 + 0.0001, "%s seed %d: detour %.3f in band" % [arch_id, seed_value, detour])
-			# mesa 供给：总格数 + 分量数 + 起手台环带。
+			# mesa 供给：总格数 + 分量数 + 起手台环带（末次 attempt 放行的 degraded 图
+			# 按降阶契约断言座数 >= count_floor，量带/起手台断言不适用）。
 			var highlands: Dictionary = {}
 			for raw_cell: Variant in cells.keys():
 				if (cells[raw_cell] as CellData).terrain == CellDataRef.TERRAIN_HIGHLAND:
 					highlands[raw_cell] = true
-			_expect(highlands.size() >= 14 and highlands.size() <= 24, "%s seed %d: mesa cells %d in [14,24]" % [arch_id, seed_value, highlands.size()])
 			var mesa_components: Array = _terrain_components_of(cells, CellDataRef.TERRAIN_HIGHLAND)
-			_expect(mesa_components.size() >= 4 and mesa_components.size() <= 6, "%s seed %d: mesa count %d in [4,6]" % [arch_id, seed_value, mesa_components.size()])
-			var starter_found := false
-			for raw_cell: Variant in highlands.keys():
-				var ring: int = _cheb(raw_cell, core_cell)
-				if ring >= 4 and ring <= 5:
-					starter_found = true
-			_expect(starter_found, "%s seed %d: starter mesa ring 4-5 present" % [arch_id, seed_value])
+			if bool(report.get("mesa_degraded", false)):
+				degraded_maps += 1
+				_expect(mesa_components.size() >= 4, "%s seed %d: degraded mesa count %d >= floor 4" % [arch_id, seed_value, mesa_components.size()])
+			else:
+				_expect(highlands.size() >= 20 and highlands.size() <= 30, "%s seed %d: mesa cells %d in [20,30]" % [arch_id, seed_value, highlands.size()])
+				_expect(mesa_components.size() >= 5 and mesa_components.size() <= 8, "%s seed %d: mesa count %d in [5,8]" % [arch_id, seed_value, mesa_components.size()])
+				var starter_found := false
+				for raw_cell: Variant in highlands.keys():
+					var ring: int = _cheb(raw_cell, core_cell)
+					if ring >= 4 and ring <= 5:
+						starter_found = true
+				_expect(starter_found, "%s seed %d: starter mesa ring 4-5 present" % [arch_id, seed_value])
 			# 占比带 ±0.02：mesa 等量扣除（_validate_v2 同口径；v2 中 highland 仅出自 mesa）。
 			var blocked: int = 0
 			for raw_cell: Variant in cells.keys():
@@ -1408,12 +1414,13 @@ func _test_skeleton_sweep() -> void:
 		if histogram_text != "":
 			histogram_text += " "
 		histogram_text += "%d:%d" % [int(raw_attempts), int(attempts_histogram[raw_attempts])]
-	print("== sweep totals == attempts{%s} fallback=%d/%d graded=%d dual=%d (%.1f%%) retries=%d worst_detour=%.3f worst_ms=%d" % [
-		histogram_text, fallback_maps, total_maps, graded_count, dual_count,
+	print("== sweep totals == attempts{%s} fallback=%d/%d degraded=%d/%d graded=%d dual=%d (%.1f%%) retries=%d worst_detour=%.3f worst_ms=%d" % [
+		histogram_text, fallback_maps, total_maps, degraded_maps, total_maps, graded_count, dual_count,
 		100.0 * float(dual_count) / float(maxi(graded_count, 1)), retry_maps, worst_detour, worst_ms])
 	# 生产腿：不强制 archetype（每 attempt 重抽 + 保守剖面可换 open_run），
 	# 兜底率 ≤5%% 是玩家实际体验的承诺（设计稿 §5）；决定性种子集，断言稳定。
 	var prod_fallback: int = 0
+	var prod_degraded: int = 0
 	var prod_attempts: Dictionary = {}
 	for seed_value in range(42000, 42040):
 		var generated: Dictionary = MapGeneratorScript.generate(30, 30, seed_value, base_cfg, [])
@@ -1422,6 +1429,8 @@ func _test_skeleton_sweep() -> void:
 		if bool(report.get("fallback", false)):
 			prod_fallback += 1
 			continue
+		if bool(report.get("mesa_degraded", false)):
+			prod_degraded += 1
 		var core_cell: Vector2i = generated["core_cell"]
 		var spawn_cells: Array = generated.get("spawn_cells", [])
 		_expect(spawn_cells.size() == 5, "prod seed %d: 5 gates" % seed_value)
@@ -1437,7 +1446,7 @@ func _test_skeleton_sweep() -> void:
 		if prod_histogram != "":
 			prod_histogram += " "
 		prod_histogram += "%d:%d" % [int(raw_attempts), int(prod_attempts[raw_attempts])]
-	print("== sweep production == fallback=%d/40 attempts{%s}" % [prod_fallback, prod_histogram])
+	print("== sweep production == fallback=%d/40 degraded=%d/40 attempts{%s}" % [prod_fallback, prod_degraded, prod_histogram])
 	_expect(prod_fallback * 20 <= 40, "production fallback %d/40 <= 5%%" % prod_fallback)
 
 

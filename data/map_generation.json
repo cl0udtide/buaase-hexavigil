@@ -34,11 +34,11 @@
   },
   "pass": { "aperture_depth": 2, "pocket_core_w": 3, "pocket_core_h": 2, "pocket_min_plain": 6, "pocket_flood_limit": 12 },
   "mesa": {
-    "count_min": 4, "count_max": 6, "count_floor_degraded": 3,
-    "cells_min": 14, "cells_max": 24,
+    "count_min": 5, "count_max": 8, "count_floor_degraded": 4,
+    "cells_min": 20, "cells_max": 30,
     "size_weights": { "3": 0.30, "4": 0.35, "5": 0.20, "6": 0.15 },
     "max_corridor_dist": 2, "min_covered_ratio": 0.6,
-    "starter": { "ring_min": 4, "ring_max": 5, "size_min": 3, "size_max": 4, "max_corridor_dist": 2 }
+    "starter": { "ring_min": 4, "ring_max": 5, "size_min": 4, "size_max": 5, "max_corridor_dist": 2 }
   },
   "economy": {
     "resource_affinity": { "wood": "moist_plain", "stone": "foothill", "mana": "water_adjacent" },
