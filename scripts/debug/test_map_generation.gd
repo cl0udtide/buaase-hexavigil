@@ -35,6 +35,8 @@ func _run() -> void:
 	_test_corridor_repair()
 	_test_mesa_placement()
 	_test_resource_flavor()
+	_test_generate_v2()
+	_test_golden_seeds()
 	_finish()
 
 
@@ -1199,6 +1201,62 @@ func _test_resource_flavor() -> void:
 		MapGeneratorScript._place_resources_v2(fx_a["cells"], 30, 30, fx_a["skeleton"]["spawn_cells"], fx_a["skeleton"]["core"], _new_rng(2), fx_a["skeleton"]["cfg"], fx_a["skeleton"], ma["corridors"])
 		MapGeneratorScript._place_resources_v2(fx_b["cells"], 30, 30, fx_b["skeleton"]["spawn_cells"], fx_b["skeleton"]["core"], _new_rng(2), fx_b["skeleton"]["cfg"], fx_b["skeleton"], mb["corridors"])
 		_expect(_serialize_terrain({"cells": fx_a["cells"]}) == _serialize_terrain({"cells": fx_b["cells"]}), "resources_v2 deterministic")
+
+
+func _test_generate_v2() -> void:
+	var cfg := _v2_cfg()
+	# 分派：缺省/显式 legacy 与旧行为逐位等价；legacy 返回补空 sectors/gen_report。
+	var base_cfg := {"spawn_count": 5, "resources_per_type": 12, "event_point_count": 0}
+	var legacy_cfg := {"spawn_count": 5, "resources_per_type": 12, "event_point_count": 0, "generator": "legacy"}
+	var a: Dictionary = MapGeneratorScript.generate(30, 30, 9001, base_cfg, [])
+	var b: Dictionary = MapGeneratorScript.generate(30, 30, 9001, legacy_cfg, [])
+	_expect(_serialize_terrain(a) == _serialize_terrain(b), "default dispatch == legacy")
+	_expect(a.has("sectors") and (a["sectors"] as Dictionary).is_empty(), "legacy returns empty sectors")
+	_expect(a.has("gen_report"), "legacy returns gen_report key")
+	# v2：返回契约完整。
+	var v2: Dictionary = MapGeneratorScript.generate(30, 30, 20260611, cfg, [])
+	_expect((v2.get("spawn_cells", []) as Array).size() == 5, "v2 places 5 gates")
+	var sectors: Dictionary = v2.get("sectors", {})
+	_expect(sectors.size() == 5, "v2 returns 5 sector entries")
+	for raw_key: Variant in sectors.keys():
+		var meta: Dictionary = sectors[raw_key]
+		for field in ["card", "pass_grade", "aperture", "anchor", "ford"]:
+			_expect(meta.has(field), "sector %s has %s" % [String(raw_key), field])
+	var report: Dictionary = v2.get("gen_report", {})
+	for field in ["attempts", "archetype", "cards", "wind", "ledger", "intrusion", "blocked_ratio", "fallback", "fail_log"]:
+		_expect(report.has(field), "gen_report has %s" % field)
+	_expect(not bool(report.get("fallback", true)), "v2 normal seed no fallback")
+	_expect(int(report.get("attempts", 0)) >= 1, "v2 records attempts")
+	# 连通 + cells/core 契约（map_manager 四键零改动的依据）。
+	var core_cell: Vector2i = v2.get("core_cell", Vector2i.ZERO)
+	for raw_gate: Variant in v2.get("spawn_cells", []):
+		_expect(_bfs_path_length(v2.get("cells", {}), 30, 30, raw_gate, core_cell) > 0, "v2 gate connected")
+	# 兜底：不可能的 detour_cap → 5 attempts 后落 legacy，不崩溃。
+	var doomed := _v2_cfg()
+	doomed["detour_cap"] = 0.5
+	doomed["detour_floor"] = 0.4
+	var fb: Dictionary = MapGeneratorScript.generate(30, 30, 777, doomed, [])
+	_expect(bool((fb.get("gen_report", {}) as Dictionary).get("fallback", false)), "impossible cfg falls back to legacy")
+	_expect((fb.get("spawn_cells", []) as Array).size() == 5, "fallback map still has 5 gates")
+	for raw_gate: Variant in fb.get("spawn_cells", []):
+		_expect(_bfs_path_length(fb.get("cells", {}), 30, 30, raw_gate, fb.get("core_cell", Vector2i.ZERO)) > 0, "fallback gate connected")
+
+
+func _test_golden_seeds() -> void:
+	# 金种子决定性：两次 generate_v2 序列化哈希全等；seed+1 不同。
+	var cfg := _v2_cfg()
+	for seed_value in [20260611, 424242, 90417]:
+		var a: Dictionary = MapGeneratorScript.generate_v2(30, 30, seed_value, cfg, [])
+		var b: Dictionary = MapGeneratorScript.generate_v2(30, 30, seed_value, cfg, [])
+		var hash_a: String = _serialize_terrain(a).md5_text()
+		var hash_b: String = _serialize_terrain(b).md5_text()
+		var report: Dictionary = a.get("gen_report", {})
+		print("  golden seed %d terrain md5 %s (attempts=%d fallback=%s)" % [seed_value, hash_a, int(report.get("attempts", 0)), str(report.get("fallback", false))])
+		_expect(hash_a == hash_b, "golden seed %d deterministic" % seed_value)
+		_expect(str(a.get("sectors", {})) == str(b.get("sectors", {})), "golden seed %d sectors deterministic" % seed_value)
+	var c: Dictionary = MapGeneratorScript.generate_v2(30, 30, 20260612, cfg, [])
+	var base: Dictionary = MapGeneratorScript.generate_v2(30, 30, 20260611, cfg, [])
+	_expect(_serialize_terrain(c) != _serialize_terrain(base), "different seed different v2 map")
 
 
 func _finish() -> void:
