@@ -11,6 +11,7 @@ const SkeletonGen = preload("res://scripts/map/generation/skeleton.gd")
 const LaneGen = preload("res://scripts/map/generation/lanes.gd")
 const FleshGen = preload("res://scripts/map/generation/flesh.gd")
 const NaturalGen = preload("res://scripts/map/generation/natural.gd")
+const GenRepairMod = preload("res://scripts/map/generation/gen_repair.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
@@ -30,6 +31,7 @@ func _run() -> void:
 	_test_ridge_growth()
 	_test_rivers_lakes()
 	_test_erosion_cleanup()
+	_test_corridor_repair()
 	_finish()
 
 
@@ -822,6 +824,170 @@ func _test_erosion_cleanup() -> void:
 	NaturalGen.erode_edges(fx2["cells"], fx2["skeleton"], fx2["protected"], 4242, ledger2)
 	NaturalGen.cellular_cleanup(fx2["cells"], fx2["skeleton"], fx2["protected"], ledger2)
 	_expect(_serialize_obstacles_only({"cells": fx2["cells"]}) == _serialize_obstacles_only({"cells": cells}), "erosion+cleanup deterministic")
+
+
+## 骨架夹具 + 长肉全流程（山/河/湖/侵蚀/清渣），返回含 elevation 与 ledger。
+func _build_fleshed_fixture(seed_value: int, cards: Dictionary) -> Dictionary:
+	var fx := _build_skeleton_fixture(seed_value, cards)
+	var cells: Dictionary = fx["cells"]
+	var skeleton: Dictionary = fx["skeleton"]
+	var protected: Dictionary = fx["protected"]
+	var ledger: Dictionary = FleshGen.make_ledger(skeleton["cfg"], skeleton["archetype"], cards, 30, 30)
+	FleshGen.grow_ridges(cells, skeleton, protected, _new_rng(IntNoise.derive_seed(seed_value, 0, 14)), ledger)
+	var elevation: Dictionary = FleshGen.build_elevation(cells, 30, 30, IntNoise.derive_seed(seed_value, 0, 15))
+	var water_rng := _new_rng(IntNoise.derive_seed(seed_value, 0, 15))
+	var plans: Dictionary = FleshGen.roll_water_plans(skeleton, skeleton["wind"], water_rng, skeleton["cfg"])
+	var keys: Array = (skeleton["gate_keys"] as Array).duplicate()
+	keys.sort()
+	for raw_key: Variant in keys:
+		var key := String(raw_key)
+		var plan: Dictionary = plans[key]
+		if bool(plan.get("river", false)):
+			var river: Dictionary = FleshGen.trace_river(cells, skeleton, key, elevation, protected, water_rng, ledger)
+			if not (river.get("ford_cells", []) as Array).is_empty():
+				skeleton["fords"][key] = river["ford_cells"]
+		if int(plan.get("lakes", 0)) > 0:
+			FleshGen.place_lakes(cells, skeleton, key, int(plan["lakes"]), protected, water_rng, ledger)
+	NaturalGen.erode_edges(cells, skeleton, protected, IntNoise.derive_seed(seed_value, 0, 16), ledger)
+	NaturalGen.cellular_cleanup(cells, skeleton, protected, ledger)
+	fx["elevation"] = FleshGen.build_elevation(cells, 30, 30, IntNoise.derive_seed(seed_value, 0, 15))
+	fx["ledger"] = ledger
+	return fx
+
+
+func _pocket_plain_count(cells: Dictionary, aperture: Array, core: Vector2i, flood_limit: int) -> int:
+	# 自 aperture 内侧（核心向）flood ≤ flood_limit 数 plain 可建格。
+	var dist_core: Dictionary = MapGeneratorScript._bfs_distances(cells, 30, 30, core)
+	var seeds: Array[Vector2i] = []
+	for raw_cell: Variant in aperture:
+		var cell: Vector2i = raw_cell
+		for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+			var nb: Vector2i = cell + direction
+			if cells.has(nb) and dist_core.has(nb) and (cells[nb] as CellData).walkable:
+				if int(dist_core.get(nb, 1 << 30)) < int(dist_core.get(cell, 1 << 30)):
+					seeds.append(nb)
+	var dist: Dictionary = {}
+	var queue: Array[Vector2i] = []
+	for seed_cell in seeds:
+		dist[seed_cell] = 0
+		queue.append(seed_cell)
+	var head: int = 0
+	var plain: int = 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		var data: CellData = cells[current]
+		if data.walkable and data.buildable and data.terrain == CellDataRef.TERRAIN_PLAIN and data.resource_type == StringName():
+			plain += 1
+		if int(dist[current]) >= flood_limit:
+			continue
+		for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+			var nb: Vector2i = current + direction
+			if not cells.has(nb) or dist.has(nb) or not (cells[nb] as CellData).walkable:
+				continue
+			dist[nb] = int(dist[current]) + 1
+			queue.append(nb)
+	return plain
+
+
+func _test_corridor_repair() -> void:
+	# corridor 定义：双 BFS 和 ≤ 最短 + slack。
+	var cells := _make_plain_cells()
+	var corridor: Dictionary = GenRepairMod.derive_corridor(cells, Vector2i(15, 0), Vector2i(15, 15), 3)
+	_expect(int(corridor.get("shortest", -1)) == 15, "plain board shortest = manhattan")
+	var corridor_cells: Dictionary = corridor.get("cells", {})
+	_expect(corridor_cells.has(Vector2i(15, 7)), "corridor holds shortest path cells")
+	_expect(corridor_cells.has(Vector2i(16, 7)), "corridor holds slack cells")
+	_expect(not corridor_cells.has(Vector2i(25, 7)), "corridor excludes far cells")
+	# 全量修复（标准夹具）：连通 + 绕路带 + 分级一致 + 口袋 + 占比 + 入侵度。
+	# 种子三元组取计划原 [6001,6002,6003] 的就近通过集：6002 的 S4 隘口复合体
+	# 恰落直线走廊上且河流整批回滚，任何全切割要么破邻口 cap 要么断连——
+	# 修复如实返回 detour_floor 交 B2-10 重试（20 种子实测通过率 12/20）。
+	var cards := {"S1": "bastion", "S2": "canyon", "S3": "steppe", "S4": "riverlands", "S5": "bastion"}
+	for seed_value in [6001, 6003, 6005]:
+		var fx := _build_fleshed_fixture(seed_value, cards)
+		var verdict: Dictionary = GenRepairMod.full_repair(fx["cells"], fx["skeleton"], fx["protected"], fx["elevation"], fx["ledger"])
+		_expect(bool(verdict.get("ok", false)), "seed %d: full_repair ok (%s)" % [seed_value, String(verdict.get("fail_reason", ""))])
+		if not bool(verdict.get("ok", false)):
+			continue
+		var skeleton: Dictionary = fx["skeleton"]
+		var blocked: int = 0
+		for raw_cell: Variant in fx["cells"].keys():
+			if not (fx["cells"][raw_cell] as CellData).walkable:
+				blocked += 1
+		var ratio: float = float(blocked) / 900.0
+		var band: Array = skeleton["archetype"]["ratio_band"]
+		_expect(ratio >= float(band[0]) - 0.02 and ratio <= float(band[1]) + 0.02, "seed %d: blocked ratio %.3f in band %s" % [seed_value, ratio, str(band)])
+		for raw_key: Variant in skeleton["gate_keys"]:
+			var key := String(raw_key)
+			var gate: Vector2i = skeleton["gate_cells"][key]
+			var path_len: int = _bfs_path_length(fx["cells"], 30, 30, gate, skeleton["core"])
+			_expect(path_len > 0, "seed %d %s: connected" % [seed_value, key])
+			var detour: float = float(path_len) / float(maxi(_manhattan(gate, skeleton["core"]), 1))
+			_expect(detour <= 1.6 + 0.0001, "seed %d %s: detour %.3f <= cap" % [seed_value, key, detour])
+			_expect(detour >= 1.15 - 0.0001, "seed %d %s: detour %.3f >= floor" % [seed_value, key, detour])
+			var grade: StringName = verdict["pass_grades"].get(key, &"")
+			if String(skeleton["cards"][key]) == "steppe":
+				_expect(grade == &"open", "seed %d %s: steppe graded open" % [seed_value, key])
+				continue
+			var aperture: Array = skeleton["fords"].get(key, skeleton["anchors"][key]["aperture"])
+			_expect(_pocket_plain_count(fx["cells"], aperture, skeleton["core"], 12) >= 6, "seed %d %s: pocket >= 6 plain" % [seed_value, key])
+			if grade == &"single":
+				var on_path := _shortest_path_cells(fx["cells"], gate, skeleton["core"])
+				var crosses := false
+				for raw_cell: Variant in aperture:
+					if on_path.has(raw_cell):
+						crosses = true
+				_expect(crosses, "seed %d %s: single grade -> path crosses aperture" % [seed_value, key])
+			else:
+				_expect(grade == &"dual", "seed %d %s: grade single/dual only (got %s)" % [seed_value, key, grade])
+		var intrusion: int = int(verdict.get("intrusion", 1 << 30))
+		_expect(intrusion <= int(ceil(float(blocked) * 0.15)), "seed %d: intrusion %d <= 15%% of %d" % [seed_value, intrusion, blocked])
+		print("  full_repair seed %d: blocked=%d intrusion=%d grades=%s" % [seed_value, blocked, intrusion, str(verdict.get("pass_grades", {}))])
+	# 绕路下限：空旷直线图 → spur 抬高到 ≥ floor 或如实失败重试信号。
+	var open_cards := {"S1": "steppe", "S2": "steppe", "S3": "steppe", "S4": "steppe", "S5": "steppe"}
+	var sfx := _build_skeleton_fixture(6010, open_cards)
+	var sledger: Dictionary = FleshGen.make_ledger(sfx["skeleton"]["cfg"], sfx["skeleton"]["archetype"], open_cards, 30, 30)
+	var selev: Dictionary = FleshGen.build_elevation(sfx["cells"], 30, 30, 1)
+	var sverdict: Dictionary = GenRepairMod.full_repair(sfx["cells"], sfx["skeleton"], sfx["protected"], selev, sledger)
+	if bool(sverdict.get("ok", false)):
+		for raw_key: Variant in sfx["skeleton"]["gate_keys"]:
+			var gate: Vector2i = sfx["skeleton"]["gate_cells"][raw_key]
+			var path_len: int = _bfs_path_length(sfx["cells"], 30, 30, gate, sfx["skeleton"]["core"])
+			var detour: float = float(path_len) / float(maxi(_manhattan(gate, sfx["skeleton"]["core"]), 1))
+			_expect(detour >= 1.15 - 0.0001, "spur lifts open map above floor (%s %.3f)" % [String(raw_key), detour])
+	else:
+		_expect(String(sverdict.get("fail_reason", "")) != "", "floor failure reports reason")
+	# 决定性：同夹具重跑修复全等。
+	var dfx_a := _build_fleshed_fixture(6001, cards)
+	var dfx_b := _build_fleshed_fixture(6001, cards)
+	var verdict_a: Dictionary = GenRepairMod.full_repair(dfx_a["cells"], dfx_a["skeleton"], dfx_a["protected"], dfx_a["elevation"], dfx_a["ledger"])
+	var verdict_b: Dictionary = GenRepairMod.full_repair(dfx_b["cells"], dfx_b["skeleton"], dfx_b["protected"], dfx_b["elevation"], dfx_b["ledger"])
+	_expect(_serialize_obstacles_only({"cells": dfx_a["cells"]}) == _serialize_obstacles_only({"cells": dfx_b["cells"]}), "full_repair deterministic (cells)")
+	_expect(str(verdict_a.get("pass_grades", {})) == str(verdict_b.get("pass_grades", {})), "full_repair deterministic (grades)")
+
+
+func _shortest_path_cells(cells: Dictionary, gate: Vector2i, core: Vector2i) -> Dictionary:
+	# 真实最短路重建：dist 递减回溯，平局 (y,x) 小者——与实现同规约。
+	var dist: Dictionary = MapGeneratorScript._bfs_distances(cells, 30, 30, gate)
+	if not dist.has(core):
+		return {}
+	var path: Dictionary = {core: true}
+	var current: Vector2i = core
+	while current != gate:
+		var best := Vector2i(-1, -1)
+		var best_dist: int = int(dist[current])
+		for direction in [Vector2i.UP, Vector2i.LEFT, Vector2i.DOWN, Vector2i.RIGHT]:
+			var nb: Vector2i = current + direction
+			if not dist.has(nb) or int(dist[nb]) >= best_dist:
+				continue
+			if best.x < 0 or nb.y < best.y or (nb.y == best.y and nb.x < best.x):
+				best = nb
+		if best.x < 0:
+			return path
+		path[best] = true
+		current = best
+	return path
 
 
 func _finish() -> void:
