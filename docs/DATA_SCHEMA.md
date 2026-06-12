@@ -392,7 +392,7 @@ Boss 多阶段规则：
 | `active_visual_key` | `String` | 可开关建筑开启状态贴图逻辑名，例如战火圣坛开启态 |
 | `inactive_visual_key` | `String` | 可开关建筑关闭状态贴图逻辑名，例如战火圣坛关闭态 |
 | `destroyed_visual_key` | `String` | 建筑完全损毁状态贴图逻辑名，缺省时使用 `generic_destroyed_building` |
-| `wall_visual_prefix` | `String` | 木墙连接变体前缀；运行时组合为 `<prefix>_0001_n` 等 16 种四邻接贴图名 |
+| `wall_visual_prefix` | `String` | 墙族连接变体前缀；运行时组合为 `<prefix>_0001_n` 等 16 种四邻接贴图键。配置了该字段的建筑（木墙、人工高台）互为可连接邻居、互刷连接掩码；贴图由 `scripts/building/wall_art.gd` 程序化生成（`building_actor._load_visual_texture` 优先程序化路径，文件贴图为兜底） |
 | `visual_display_size` | `float` | 建筑贴图在地图上的显示尺寸，默认 `72`，用于让 128px 贴图覆盖 64px 逻辑格并减少连接缝 |
 | `hidden_in_build_panel` | `bool` | 是否从建筑面板隐藏，适合未开放或调试建筑 |
 | `ranged_deployable` | `bool` | 机制标志：建筑存活时，该格视同高台，允许狙击/术师（`RANGED_DEPLOY_CLASSES`）部署；建筑被摧毁时同格占驻干员立即阵亡（夜间触发再部署冷却，白昼直接移除）；未配置默认 `false` |
