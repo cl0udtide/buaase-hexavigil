@@ -2,12 +2,27 @@ class_name MapGenerator
 extends RefCounted
 
 const IntNoise = preload("res://scripts/map/generation/int_noise.gd")
+const SkeletonGen = preload("res://scripts/map/generation/skeleton.gd")
+const LaneGen = preload("res://scripts/map/generation/lanes.gd")
+const FleshGen = preload("res://scripts/map/generation/flesh.gd")
+const NaturalGen = preload("res://scripts/map/generation/natural.gd")
+const GenRepair = preload("res://scripts/map/generation/gen_repair.gd")
+const MesaGen = preload("res://scripts/map/generation/mesa.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 const STAGE_SPAWNS := 1
 const STAGE_OBSTACLES := 2
 const STAGE_RESOURCES := 3
 const STAGE_EVENTS := 4
 const STAGE_REPAIR := 5  # 修复 pass 当前纯确定性无 RNG；保留给 B2 随机化修复
+const STAGE_CARDS := 11
+const STAGE_GEOMETRY := 12
+const STAGE_LANES := 13
+const STAGE_RIDGES := 14
+const STAGE_WATER := 15
+const STAGE_EROSION := 16
+const STAGE_REPAIR_V2 := 17  # full_repair 纯确定性无 RNG；按契约表保留流位
+const STAGE_MESA := 18
 
 const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.RIGHT,
@@ -50,7 +65,22 @@ static func _stage_rng(run_seed: int, stage_id: int) -> RandomNumberGenerator:
 	return rng
 
 
+## v2 重试期 stage 流：启用 attempt 位（B1 _stage_rng 恒 attempt=0，旧路径不动）。
+static func _stage_rng_v2(run_seed: int, attempt: int, stage_id: int) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = IntNoise.derive_seed(run_seed, attempt, stage_id)
+	return rng
+
+
 static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = {}, event_ids: Array[StringName] = []) -> Dictionary:
+	if String(cfg.get("generator", "legacy")) == "skeleton_v2":
+		return generate_v2(width, height, seed, cfg, event_ids)
+	return _generate_legacy(width, height, seed, cfg, event_ids)
+
+
+## 旧管线整体提取（B2-10）：行为与提取前 generate() 逐位等价，仅返回 dict 增补
+## 空 sectors/gen_report 两键（map_manager 只读四键，透传无感）。
+static func _generate_legacy(width: int, height: int, seed: int, cfg: Dictionary, event_ids: Array[StringName]) -> Dictionary:
 	var cells := _create_plain_cells(width, height)
 	var actual_seed: int = seed
 	if actual_seed < 0:
@@ -70,8 +100,290 @@ static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = 
 		"cells": cells,
 		"core_cell": core_cell,
 		"spawn_cells": spawn_cells,
-		"event_points": event_points
+		"event_points": event_points,
+		"sectors": {},
+		"gen_report": {}
 	}
+
+
+## skeleton_v2 编排器（设计稿 §1.0/1.1/S9/§5）：≤max_retries 次独立尝试（每次
+## 全阶段 RNG 经 IntNoise.derive_seed(seed, attempt, STAGE_*) 派生，末两轮保守
+## 剖面），全败落 legacy 兜底（计划自审记录的偏差：规格 §5 曼哈顿走廊清障弃用，
+## legacy 全管线久经考验且更简单）。elapsed_ms 仅观测指标，不参与生成决策。
+static func generate_v2(width: int, height: int, seed: int, cfg: Dictionary, event_ids: Array[StringName]) -> Dictionary:
+	var actual_seed: int = seed
+	if actual_seed < 0:
+		var boot_rng := RandomNumberGenerator.new()
+		boot_rng.randomize()
+		actual_seed = int(boot_rng.randi())
+	var max_retries: int = maxi(int(cfg.get("max_retries", 5)), 1)
+	var fail_log: Array = []
+	var started_ms: int = Time.get_ticks_msec()   # 仅观测指标，不参与生成决策
+	for attempt in range(max_retries):
+		var conservative: bool = attempt >= max_retries - 2   # 末两轮保守剖面（设计稿 §5 attempt 4）
+		var outcome: Dictionary = _generate_v2_attempt(width, height, actual_seed, attempt, cfg, event_ids, conservative)
+		if bool(outcome.get("ok", false)):
+			var result: Dictionary = outcome["result"]
+			var report: Dictionary = result["gen_report"]
+			report["attempts"] = attempt + 1
+			report["fail_log"] = fail_log
+			report["fallback"] = false
+			report["elapsed_ms"] = Time.get_ticks_msec() - started_ms
+			return result
+		fail_log.append({"attempt": attempt, "reason": String(outcome.get("reason", "unknown"))})
+	push_warning("skeleton_v2: %d attempts exhausted, falling back to legacy (%s)" % [max_retries, str(fail_log)])
+	var legacy := _generate_legacy(width, height, actual_seed, cfg, event_ids)
+	legacy["gen_report"] = {
+		"attempts": max_retries, "fallback": true, "fail_log": fail_log,
+		"archetype": "", "cards": {}, "wind": Vector2i.ZERO, "ledger": {},
+		"intrusion": 0, "blocked_ratio": 0.0,
+		"elapsed_ms": Time.get_ticks_msec() - started_ms,
+	}
+	return legacy
+
+
+## skeleton_v2 单次尝试（S1-S9 对位接线）：失败 → {"ok": false, "reason": String}
+## 交重试壳记 fail_log；成功 → {"ok": true, "result": Dictionary}（六键结果；
+## attempts/fail_log/fallback/elapsed_ms 由重试壳补写）。
+static func _generate_v2_attempt(width: int, height: int, actual_seed: int, attempt: int, cfg: Dictionary, event_ids: Array[StringName], conservative: bool) -> Dictionary:
+	var cells := _create_plain_cells(width, height)
+	var core_cell := Vector2i(width / 2, height / 2)
+	_setup_core_and_initial_fog(cells, core_cell)
+	# S2a 等弧门（复用 B1 placement，attempt 进流）。
+	var spawn_cells := _place_spawns(cells, width, height, core_cell, _stage_rng_v2(actual_seed, attempt, STAGE_SPAWNS), cfg)
+	if spawn_cells.size() < maxi(int(cfg.get("spawn_count", SPAWN_COUNT)), 1):
+		return {"ok": false, "reason": "gate_placement"}
+	var gate_keys: Array = []
+	var gate_map: Dictionary = {}
+	for i in range(spawn_cells.size()):
+		var key := "S%d" % (i + 1)
+		gate_keys.append(key)
+		gate_map[key] = spawn_cells[i]
+	# S1 archetype + day1 发牌约束 + 风向（保守剖面换 open_run 并收窄占比带）。
+	var cards_rng := _stage_rng_v2(actual_seed, attempt, STAGE_CARDS)
+	var archetype: Dictionary = SkeletonGen.draw_archetype(cfg, cards_rng)
+	if conservative:
+		archetype = _archetype_by_id(cfg, "open_run", archetype)
+		archetype = archetype.duplicate(true)
+		var band: Array = archetype.get("ratio_band", [0.20, 0.22])
+		archetype["ratio_band"] = [float(band[0]), float(band[0]) + 0.01]
+	var day1_active: Array = NightTemplateResolver.resolve_active_gates(gate_keys, actual_seed, 1)
+	var cards: Dictionary = SkeletonGen.deal_cards(archetype, gate_keys, day1_active, cards_rng, cfg)
+	var wind: Vector2i = SkeletonGen.roll_wind(cards_rng)
+	# S2b 扇区楔形 / 隘口锚 / 汇流点。
+	var geom_rng := _stage_rng_v2(actual_seed, attempt, STAGE_GEOMETRY)
+	var sector_of: Dictionary = SkeletonGen.assign_sectors(width, height, spawn_cells)
+	var confluences: Array[Dictionary] = SkeletonGen.place_confluences(archetype, spawn_cells, core_cell, geom_rng)
+	var sector_cards: Dictionary = cfg.get("sector_cards", {})
+	var pass_cfg: Dictionary = cfg.get("pass", {})
+	var anchors: Dictionary = {}
+	for i in range(spawn_cells.size()):
+		var key := String(gate_keys[i])
+		var card_cfg: Dictionary = sector_cards.get(String(cards.get(key, "bastion")), {})
+		var anchor: Vector2i = SkeletonGen.place_pass_anchor(spawn_cells[i], core_cell, card_cfg, geom_rng)
+		var aperture: Array[Vector2i] = LaneGen.aperture_window(anchor, spawn_cells[i], core_cell, int(card_cfg.get("pass_width", 2)), int(pass_cfg.get("aperture_depth", 2)))
+		anchors[key] = {"cell": anchor, "pass_width": int(card_cfg.get("pass_width", 2)), "aperture": aperture}
+	var skeleton := {
+		"width": width, "height": height, "core": core_cell,
+		"gate_keys": gate_keys, "gate_cells": gate_map, "spawn_cells": spawn_cells,
+		"cards": cards, "card_cfgs": sector_cards,
+		"archetype": archetype, "wind": wind, "sector_of": sector_of,
+		"anchors": anchors, "confluences": confluences, "lanes": {}, "fords": {},
+		"conservative": conservative, "cfg": cfg,
+	}
+	# S3 车道 + protected（途径点外→内 = anchor → 本门汇流点）。
+	var lane_seed: int = IntNoise.derive_seed(actual_seed, attempt, STAGE_LANES)
+	var lanes: Dictionary = skeleton["lanes"]
+	for i in range(spawn_cells.size()):
+		var key := String(gate_keys[i])
+		var card_cfg: Dictionary = sector_cards.get(String(cards.get(key, "bastion")), {})
+		var anchor_cell: Vector2i = (anchors[key] as Dictionary)["cell"]
+		var waypoints: Array[Vector2i] = [anchor_cell]
+		for raw_conf: Variant in confluences:
+			if ((raw_conf as Dictionary).get("gate_cells", []) as Array).has(spawn_cells[i]):
+				waypoints.append((raw_conf as Dictionary).get("cell", core_cell) as Vector2i)
+		var jitter: float = 0.0 if conservative else float(card_cfg.get("jitter_amp", float(cfg.get("lane_jitter_base", 0.35))))
+		var lane: Array[Vector2i] = LaneGen.trace_lane_checked(cells, spawn_cells[i], waypoints, core_cell, jitter, IntNoise.squirrel3(i, lane_seed))
+		if lane.is_empty():
+			return {"ok": false, "reason": "lane_trace"}
+		lanes[key] = lane
+	var protected: Dictionary = LaneGen.build_protected(lanes, core_cell, spawn_cells, anchors, cfg)
+	# S4 山脊 + 预算台账。
+	var ledger: Dictionary = FleshGen.make_ledger(cfg, archetype, cards, width, height)
+	FleshGen.grow_ridges(cells, skeleton, protected, _stage_rng_v2(actual_seed, attempt, STAGE_RIDGES), ledger)
+	# S4.5 河湖（伪高程 → 湿度计划 → 河/湖；trace_river 成功且渡口非空才写回
+	# skeleton.fords，整批回滚的河留缺键——分级回退锚窗容忍，B2-5/7 评审结论）。
+	var water_seed: int = IntNoise.derive_seed(actual_seed, attempt, STAGE_WATER)
+	var elevation: Dictionary = FleshGen.build_elevation(cells, width, height, water_seed)
+	var water_rng := _stage_rng_v2(actual_seed, attempt, STAGE_WATER)
+	var plans: Dictionary = FleshGen.roll_water_plans(skeleton, wind, water_rng, cfg)
+	for raw_key: Variant in gate_keys:
+		var key := String(raw_key)
+		var plan: Dictionary = plans.get(key, {})
+		if bool(plan.get("river", false)):
+			var river: Dictionary = FleshGen.trace_river(cells, skeleton, key, elevation, protected, water_rng, ledger)
+			if not (river.get("ford_cells", []) as Array).is_empty():
+				(skeleton["fords"] as Dictionary)[key] = river["ford_cells"]
+		if int(plan.get("lakes", 0)) > 0:
+			FleshGen.place_lakes(cells, skeleton, key, int(plan.get("lakes", 0)), protected, water_rng, ledger)
+	# S5 侵蚀 + CA 清渣。
+	NaturalGen.erode_edges(cells, skeleton, protected, IntNoise.derive_seed(actual_seed, attempt, STAGE_EROSION), ledger)
+	NaturalGen.cellular_cleanup(cells, skeleton, protected, ledger)
+	# S6 全量修复（伪高程按清渣后地形重建，种子复用 STAGE_WATER 流）。
+	elevation = FleshGen.build_elevation(cells, width, height, water_seed)
+	var repair: Dictionary = GenRepair.full_repair(cells, skeleton, protected, elevation, ledger)
+	if not bool(repair.get("ok", false)):
+		return {"ok": false, "reason": "repair_%s" % String(repair.get("fail_reason", ""))}
+	# S7 mesa（degraded 仅末次 attempt 放行）。
+	var mesa: Dictionary = MesaGen.place_mesas(cells, skeleton, protected, repair["corridors"], _stage_rng_v2(actual_seed, attempt, STAGE_MESA), ledger)
+	if not bool(mesa.get("ok", false)):
+		return {"ok": false, "reason": "mesa_supply"}
+	var max_retries: int = maxi(int(cfg.get("max_retries", 5)), 1)
+	if bool(mesa.get("degraded", false)) and attempt < max_retries - 1:
+		return {"ok": false, "reason": "mesa_degraded"}
+	# S8 资源风味 + 事件（复用既有流 id，attempt 进流）。
+	_place_resources_v2(cells, width, height, spawn_cells, core_cell, _stage_rng_v2(actual_seed, attempt, STAGE_RESOURCES), cfg, skeleton, mesa["corridors"])
+	var event_points := _place_event_points(cells, width, height, spawn_cells, core_cell, _stage_rng_v2(actual_seed, attempt, STAGE_EVENTS), cfg, event_ids)
+	# S9 终验。
+	var verdict: Dictionary = _validate_v2(cells, skeleton, repair, mesa, cfg)
+	if not bool(verdict.get("ok", false)):
+		return {"ok": false, "reason": "validate_%s" % String(verdict.get("reason", ""))}
+	return {"ok": true, "result": {
+		"cells": cells, "core_cell": core_cell, "spawn_cells": spawn_cells, "event_points": event_points,
+		"sectors": _build_sectors_meta(skeleton, repair, mesa),
+		"gen_report": {
+			"archetype": String(archetype.get("id", "")), "cards": cards, "wind": wind,
+			"ledger": ledger, "intrusion": int(repair.get("intrusion", 0)),
+			"blocked_ratio": _blocked_ratio(cells, width, height),
+			"pass_grades": repair.get("pass_grades", {}), "mesa_degraded": bool(mesa.get("degraded", false)),
+		},
+	}}
+
+
+## 线性找 archetype id；缺 → fallback（保守剖面换 open_run 用）。
+static func _archetype_by_id(cfg: Dictionary, id: String, fallback: Dictionary) -> Dictionary:
+	for raw: Variant in (cfg.get("archetypes", []) as Array):
+		if String((raw as Dictionary).get("id", "")) == id:
+			return raw
+	return fallback
+
+
+static func _blocked_ratio(cells: Dictionary, width: int, height: int) -> float:
+	var blocked: int = 0
+	for raw_cell: Variant in cells.keys():
+		if not (cells[raw_cell] as CellData).walkable:
+			blocked += 1
+	return float(blocked) / float(maxi(width * height, 1))
+
+
+## 扇区元数据（generate_v2 返回 "sectors" 键）：gate_key → {card, pass_grade,
+## anchor, aperture（渡口非空用渡口窗否则锚窗）, ford（无渡口 = 空数组）}。
+static func _build_sectors_meta(skeleton: Dictionary, repair: Dictionary, _mesa: Dictionary) -> Dictionary:
+	var sectors: Dictionary = {}
+	var grades: Dictionary = repair.get("pass_grades", {})
+	var fords: Dictionary = skeleton.get("fords", {})
+	var anchors: Dictionary = skeleton.get("anchors", {})
+	var cards: Dictionary = skeleton.get("cards", {})
+	var keys: Array = (skeleton.get("gate_keys", []) as Array).duplicate()
+	keys.sort()
+	for raw_key: Variant in keys:
+		var key := String(raw_key)
+		var anchor_entry: Dictionary = anchors.get(key, {})
+		var ford: Array = fords.get(key, [])
+		var aperture: Array = ford if not ford.is_empty() else (anchor_entry.get("aperture", []) as Array)
+		sectors[key] = {
+			"card": String(cards.get(key, "")),
+			"pass_grade": StringName(grades.get(key, &"")),
+			"anchor": anchor_entry.get("cell", Vector2i.ZERO),
+			"aperture": aperture,
+			"ford": ford,
+		}
+	return sectors
+
+
+## S9 终验（全部硬断言，任一失败 → 本 attempt 作废重试）：口数齐、全口连通、
+## 每口 detour ∈ [floor−ε, cap+ε]、阻挡占比带、分级一致性、mesa 供给。
+## 占比带按 mesa 精确格数扣除后复核（B2-8 评审结论：原带由 full_repair ⑥ 在
+## mesa 前保障，mesa 最多 +cells_max/面积 ≈ +0.027，不得对 mesa 后地图重申原带）。
+## 分级一致性同 gen_repair 规约：single → 当前最短路 ∩ 验收窗 ≠ ∅；
+## dual → 旁路窗 ≥ 1；open（steppe）免检。
+static func _validate_v2(cells: Dictionary, skeleton: Dictionary, repair: Dictionary, mesa: Dictionary, cfg: Dictionary) -> Dictionary:
+	var width: int = int(skeleton.get("width", 30))
+	var height: int = int(skeleton.get("height", 30))
+	var core: Vector2i = skeleton.get("core", Vector2i.ZERO)
+	var gate_map: Dictionary = skeleton.get("gate_cells", {})
+	var gate_keys: Array = (skeleton.get("gate_keys", []) as Array).duplicate()
+	gate_keys.sort()
+	if gate_keys.size() < maxi(int(cfg.get("spawn_count", SPAWN_COUNT)), 1):
+		return {"ok": false, "reason": "gate_count"}
+	if not bool(mesa.get("ok", false)):
+		return {"ok": false, "reason": "mesa"}
+	var detour_cap: float = float(cfg.get("detour_cap", 1.6))
+	var detour_floor: float = float(cfg.get("detour_floor", 1.15))
+	var grades: Dictionary = repair.get("pass_grades", {})
+	for raw_key: Variant in gate_keys:
+		var key := String(raw_key)
+		var gate: Vector2i = gate_map[key]
+		var path_len: int = int(_bfs_distances(cells, width, height, gate).get(core, -1))
+		if path_len <= 0:
+			return {"ok": false, "reason": "connectivity"}
+		var manhattan: int = maxi(absi(gate.x - core.x) + absi(gate.y - core.y), 1)
+		var ratio: float = float(path_len) / float(manhattan)
+		if ratio > detour_cap + 0.0001 or ratio < detour_floor - 0.0001:
+			return {"ok": false, "reason": "detour"}
+		var grade: StringName = StringName(grades.get(key, &""))
+		if grade == &"single":
+			var win: Array[Vector2i] = GenRepair._acceptance_window(skeleton, key)
+			var path: Array[Vector2i] = GenRepair._shortest_path(cells, gate, core)
+			var crosses := false
+			for cell in win:
+				if path.has(cell):
+					crosses = true
+					break
+			if not crosses:
+				return {"ok": false, "reason": "grade_single"}
+		elif grade == &"dual":
+			if _bypass_window_count(cells, skeleton, key, cfg) < 1:
+				return {"ok": false, "reason": "grade_dual"}
+		elif grade != &"open":
+			return {"ok": false, "reason": "grade_missing"}
+	var mesa_cells_total: int = 0
+	for raw_mesa: Variant in (mesa.get("mesas", []) as Array):
+		mesa_cells_total += ((raw_mesa as Dictionary).get("cells", []) as Array).size()
+	var blocked: int = 0
+	for raw_cell: Variant in cells.keys():
+		if not (cells[raw_cell] as CellData).walkable:
+			blocked += 1
+	var band: Array = (skeleton.get("archetype", {}) as Dictionary).get("ratio_band", [0.20, 0.26])
+	var pre_mesa_ratio: float = float(blocked - mesa_cells_total) / float(maxi(width * height, 1))
+	if pre_mesa_ratio < float(band[0]) - 0.02 or pre_mesa_ratio > float(band[1]) + 0.02:
+		return {"ok": false, "reason": "ratio"}
+	return {"ok": true, "reason": ""}
+
+
+## dual 复核助手（与 gen_repair._grade_passes 同规约）：corridor 环带
+## [ring_A−1, ring_A+1] 去验收窗膨胀（cheb≤1）后 8 连通聚类计数。
+static func _bypass_window_count(cells: Dictionary, skeleton: Dictionary, key: String, cfg: Dictionary) -> int:
+	var core: Vector2i = skeleton.get("core", Vector2i.ZERO)
+	var gate: Vector2i = (skeleton.get("gate_cells", {}) as Dictionary).get(key, core)
+	var win: Array[Vector2i] = GenRepair._acceptance_window(skeleton, key)
+	if win.is_empty():
+		return 0
+	var ring_a: int = maxi(absi(win[0].x - core.x), absi(win[0].y - core.y))
+	var dilation: Dictionary = {}
+	for cell in win:
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				dilation[cell + Vector2i(dx, dy)] = true
+	var corridor: Dictionary = GenRepair.derive_corridor(cells, gate, core, int(cfg.get("corridor_slack", 3)))
+	var bypass: Array[Vector2i] = []
+	for raw_cell: Variant in (corridor.get("cells", {}) as Dictionary).keys():
+		var cell: Vector2i = raw_cell
+		var ring: int = maxi(absi(cell.x - core.x), absi(cell.y - core.y))
+		if absi(ring - ring_a) > 1 or dilation.has(cell):
+			continue
+		bypass.append(cell)
+	return GenRepair._cluster8(bypass).size()
 
 
 static func _create_plain_cells(width: int, height: int) -> Dictionary:
