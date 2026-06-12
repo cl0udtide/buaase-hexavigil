@@ -10,6 +10,7 @@ const CellDataRef = preload("res://scripts/map/cell_data.gd")
 const SkeletonGen = preload("res://scripts/map/generation/skeleton.gd")
 const LaneGen = preload("res://scripts/map/generation/lanes.gd")
 const FleshGen = preload("res://scripts/map/generation/flesh.gd")
+const NaturalGen = preload("res://scripts/map/generation/natural.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
@@ -28,6 +29,7 @@ func _run() -> void:
 	_test_lanes_protected()
 	_test_ridge_growth()
 	_test_rivers_lakes()
+	_test_erosion_cleanup()
 	_finish()
 
 
@@ -736,6 +738,90 @@ func _test_rivers_lakes() -> void:
 	var plans_a: Dictionary = FleshGen.roll_water_plans(fx["skeleton"], Vector2i(1, 0), _new_rng(9), fx["skeleton"]["cfg"])
 	var plans_b: Dictionary = FleshGen.roll_water_plans(fx["skeleton"], Vector2i(1, 0), _new_rng(9), fx["skeleton"]["cfg"])
 	_expect(str(plans_a) == str(plans_b), "roll_water_plans deterministic")
+
+
+func _blocked_component_sizes(cells: Dictionary) -> Array[int]:
+	var seen: Dictionary = {}
+	var sizes: Array[int] = []
+	for raw_cell: Variant in cells.keys():
+		var cell: Vector2i = raw_cell
+		if seen.has(cell) or (cells[cell] as CellData).walkable:
+			continue
+		var queue: Array[Vector2i] = [cell]
+		seen[cell] = true
+		var head: int = 0
+		var size: int = 0
+		while head < queue.size():
+			var current: Vector2i = queue[head]
+			head += 1
+			size += 1
+			for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+				var nb: Vector2i = current + direction
+				if not cells.has(nb) or seen.has(nb) or (cells[nb] as CellData).walkable:
+					continue
+				seen[nb] = true
+				queue.append(nb)
+		sizes.append(size)
+	return sizes
+
+
+func _test_erosion_cleanup() -> void:
+	# 合成场景：长直墙 + 单格渣 ×3 + 2 格岛 + 3 格封闭死口袋。
+	var fx := _build_skeleton_fixture(2027, {"S1": "bastion", "S2": "bastion", "S3": "steppe", "S4": "riverlands", "S5": "canyon"})
+	var cells: Dictionary = fx["cells"]
+	var skeleton: Dictionary = fx["skeleton"]
+	var protected: Dictionary = fx["protected"]
+	var paint_wall: Array[Vector2i] = []
+	for x in range(4, 14):
+		paint_wall.append(Vector2i(x, 22))
+	for raw_cell: Variant in paint_wall + [Vector2i(3, 4), Vector2i(26, 3), Vector2i(22, 24)]:
+		var cell: Vector2i = raw_cell
+		if not protected.has(cell):
+			(cells[cell] as CellData).set_base_terrain(CellDataRef.TERRAIN_MOUNTAIN)
+	# 2 格岛。
+	for raw_cell: Variant in [Vector2i(25, 20), Vector2i(26, 20)]:
+		if not protected.has(raw_cell):
+			(cells[raw_cell] as CellData).set_base_terrain(CellDataRef.TERRAIN_MOUNTAIN)
+	# 死口袋：(5,26)(6,26)(5,27) 由山圈死（圈格避 protected）。
+	var pocket: Array[Vector2i] = [Vector2i(5, 26), Vector2i(6, 26), Vector2i(5, 27)]
+	var fence: Array[Vector2i] = [Vector2i(4, 25), Vector2i(5, 25), Vector2i(6, 25), Vector2i(7, 25), Vector2i(4, 26), Vector2i(7, 26), Vector2i(4, 27), Vector2i(6, 27), Vector2i(7, 27), Vector2i(4, 28), Vector2i(5, 28), Vector2i(6, 28)]
+	var fenced := true
+	for raw_cell: Variant in fence:
+		if protected.has(raw_cell):
+			fenced = false
+		else:
+			(cells[raw_cell] as CellData).set_base_terrain(CellDataRef.TERRAIN_MOUNTAIN)
+	var before := _serialize_obstacles_only({"cells": cells})
+	var ledger: Dictionary = FleshGen.make_ledger(skeleton["cfg"], skeleton["archetype"], skeleton["cards"], 30, 30)
+	NaturalGen.erode_edges(cells, skeleton, protected, 4242, ledger)
+	# 侵蚀触动了边界但比例有度（10%-50% 边界格变动）。
+	_expect(before != _serialize_obstacles_only({"cells": cells}), "erosion changed something")
+	for raw_cell: Variant in protected.keys():
+		var data: CellData = cells[raw_cell]
+		_expect(data.terrain == CellDataRef.TERRAIN_PLAIN or StringName(protected[raw_cell]) != &"aperture", "erosion never touches aperture")
+	NaturalGen.cellular_cleanup(cells, skeleton, protected, ledger)
+	var sizes := _blocked_component_sizes(cells)
+	for size in sizes:
+		_expect(size >= 3, "no blocked component < 3 (got %d)" % size)
+	# 死口袋被填或被打开：口袋格要么不可走（填）要么可达核心。
+	if fenced:
+		var dist_core: Dictionary = MapGeneratorScript._bfs_distances(cells, 30, 30, skeleton["core"])
+		for raw_cell: Variant in pocket:
+			var data: CellData = cells[raw_cell]
+			_expect((not data.walkable) or dist_core.has(raw_cell), "dead pocket %s resolved" % str(raw_cell))
+	_expect(MapGeneratorScript._are_all_spawns_connected(cells, 30, 30, skeleton["spawn_cells"], skeleton["core"]), "gates connected after cleanup")
+	# 决定性：同输入重跑全等。
+	var fx2 := _build_skeleton_fixture(2027, {"S1": "bastion", "S2": "bastion", "S3": "steppe", "S4": "riverlands", "S5": "canyon"})
+	for raw_cell: Variant in paint_wall + [Vector2i(3, 4), Vector2i(26, 3), Vector2i(22, 24), Vector2i(25, 20), Vector2i(26, 20)]:
+		if not fx2["protected"].has(raw_cell):
+			(fx2["cells"][raw_cell] as CellData).set_base_terrain(CellDataRef.TERRAIN_MOUNTAIN)
+	for raw_cell: Variant in fence:
+		if not fx2["protected"].has(raw_cell):
+			(fx2["cells"][raw_cell] as CellData).set_base_terrain(CellDataRef.TERRAIN_MOUNTAIN)
+	var ledger2: Dictionary = FleshGen.make_ledger(fx2["skeleton"]["cfg"], fx2["skeleton"]["archetype"], fx2["skeleton"]["cards"], 30, 30)
+	NaturalGen.erode_edges(fx2["cells"], fx2["skeleton"], fx2["protected"], 4242, ledger2)
+	NaturalGen.cellular_cleanup(fx2["cells"], fx2["skeleton"], fx2["protected"], ledger2)
+	_expect(_serialize_obstacles_only({"cells": fx2["cells"]}) == _serialize_obstacles_only({"cells": cells}), "erosion+cleanup deterministic")
 
 
 func _finish() -> void:
