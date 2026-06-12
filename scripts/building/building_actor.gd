@@ -3,6 +3,7 @@ extends Node2D
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
+const WallArt = preload("res://scripts/building/wall_art.gd")
 
 const VISUAL_TEXTURE_ROOT := "res://assets/sprites/buildings"
 const VISUAL_IDLE_ANIM := "idle"
@@ -176,7 +177,7 @@ func _refresh_visual_sprite() -> void:
 	_using_destroyed_visual_fallback = false
 	var desired_key := _resolve_visual_key()
 	var texture := _load_visual_texture(desired_key)
-	if texture == null and building_id == &"wood_wall" and not _is_destroyed:
+	if texture == null and _uses_wall_visuals() and not _is_destroyed:
 		var base_key := String(cfg.get("visual_key", "")).strip_edges()
 		if not base_key.is_empty() and base_key != desired_key:
 			texture = _load_visual_texture(base_key)
@@ -230,8 +231,12 @@ func _resolve_visual_key() -> String:
 	return _resolve_operational_visual_key()
 
 
+func _uses_wall_visuals() -> bool:
+	return not String(cfg.get("wall_visual_prefix", "")).strip_edges().is_empty()
+
+
 func _resolve_operational_visual_key() -> String:
-	if building_id == &"wood_wall":
+	if _uses_wall_visuals():
 		return _resolve_wall_visual_key()
 	if can_toggle_enabled():
 		var state_key_name := "active_visual_key" if _enabled else "inactive_visual_key"
@@ -292,6 +297,10 @@ func _load_visual_texture(visual_key: String) -> Texture2D:
 	var normalized_key := visual_key.strip_edges()
 	if normalized_key.is_empty():
 		return null
+	# 墙族贴图（木墙/人工高台连接变种）由 wall_art 程序化生成，优先于文件贴图。
+	var generated := WallArt.texture_for_key(normalized_key)
+	if generated != null:
+		return generated
 	for path in _candidate_texture_paths(normalized_key):
 		if ResourceLoader.exists(path):
 			return load(path) as Texture2D

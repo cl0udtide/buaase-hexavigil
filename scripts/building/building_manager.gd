@@ -437,12 +437,16 @@ func _has_connectable_wall(cell: Vector2i) -> bool:
 	return _is_connectable_wall(get_building_by_cell(cell))
 
 
+## 视觉连接族：带 wall_visual_prefix 的建筑（木墙/人工高台）相互拼接连接臂。
 func _is_connectable_wall(actor: Node) -> bool:
 	if actor == null or not is_instance_valid(actor):
 		return false
 	if _is_building_destroyed(actor):
 		return false
-	return StringName(actor.get("building_id")) == &"wood_wall"
+	var cfg_variant: Variant = actor.get("cfg")
+	if typeof(cfg_variant) != TYPE_DICTIONARY:
+		return false
+	return not String((cfg_variant as Dictionary).get("wall_visual_prefix", "")).strip_edges().is_empty()
 
 
 func _get_income_value(cfg: Dictionary, base_value: int, material: StringName) -> int:
