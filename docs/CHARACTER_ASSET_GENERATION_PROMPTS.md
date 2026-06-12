@@ -1,6 +1,6 @@
 # Character and Enemy Asset Generation Prompts
 
-> **状态（2026-06-12 维护）**：项目内现有干员/敌人 sprite（高饱和赛璐璐、Q 版比例、干净细描边）即**全游戏的画风基准，不在重绘范围**——环境美术（地形/建筑）反过来以它们为同台参照（见 `MAP_ASSET_GENERATION_PROMPTS.md` §0 画风宪章）。本文档仅用于**新增**角色/敌人或个别参考图重绘；旧版"低饱和半卡通 + #FF00FF 抠图底"的表述已按现状修正（抠图底统一 #FF00FF，风格以现有 sprite 为准，新增时必须附现有 sprite 作参照图）。
+> **状态（2026-06-12 维护）**：项目内现有干员/敌人 sprite（高饱和赛璐璐、Q 版比例、干净细描边）即**全游戏的画风基准，不在重绘范围**——环境美术（地形/建筑）反过来以它们为同台参照（见 `MAP_ASSET_GENERATION_PROMPTS.md` §1 画风五条）。本文档仅用于**新增**角色/敌人或个别参考图重绘；旧版"低饱和半卡通 + #FF00FF 抠图底"的表述已按现状修正（抠图底统一 #FF00FF，风格以现有 sprite 为准，新增时必须附现有 sprite 作参照图）。
 
 本文档用于生成或重绘游戏内角色、干员和敌人 sprite。它不是 UI 头像、技能图标、遗物图标或战斗特效提示词库；UI 资产继续参考 `docs/UI_ASSET_GENERATION_PROMPTS.md`，地图建筑参考 `docs/MAP_ASSET_GENERATION_PROMPTS.md`，战斗特效参考 `docs/EFFECT_ASSET_GENERATION_PROMPTS.md`。
 
