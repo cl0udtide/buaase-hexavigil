@@ -8,7 +8,8 @@ const TILE_PLAIN_ALT: Texture2D = preload("res://assets/map/CommandMap/tile_plai
 const TILE_HIDDEN: Texture2D = preload("res://assets/map/CommandMap/tile_hidden.png")
 const TILE_MOUNTAIN: Texture2D = preload("res://assets/map/CommandMap/tile_mountain.png")
 const TILE_WATER: Texture2D = preload("res://assets/map/CommandMap/tile_water.png")
-const TILE_CORE: Texture2D = preload("res://assets/map/CommandMap/tile_core.png")
+const TILE_HIGHLAND: Texture2D = preload("res://assets/map/CommandMap/tile_highland.png")
+const TILE_FORD: Texture2D = preload("res://assets/map/CommandMap/tile_ford.png")
 const TILE_SPAWN: Texture2D = preload("res://assets/map/CommandMap/tile_spawn.png")
 const TILE_RESOURCE_WOOD: Texture2D = preload("res://assets/map/CommandMap/tile_resource_wood.png")
 const TILE_RESOURCE_STONE: Texture2D = preload("res://assets/map/CommandMap/tile_resource_stone.png")
@@ -85,7 +86,6 @@ const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
 const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
 const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
 const COLOR_HIGHLAND := Color(0.62, 0.54, 0.38)
-const HIGHLAND_PLACEHOLDER_TINT := Color(1.25, 1.1, 0.78)
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
@@ -1041,10 +1041,6 @@ func _draw_cell_tile(rect: Rect2, data) -> void:
 	if texture == null:
 		draw_rect(rect, _get_cell_color(data))
 		return
-	# 占位：tile_highland.png 未生成前用山地贴图暖黄染色（docs/MAP_ASSET_GENERATION_PROMPTS.md §11）。
-	if data.discovered and data.terrain == CellData.TERRAIN_HIGHLAND:
-		draw_texture_rect(texture, rect, false, HIGHLAND_PLACEHOLDER_TINT)
-		return
 	draw_texture_rect(texture, rect, false)
 
 
@@ -1052,15 +1048,17 @@ func _get_cell_texture(data) -> Texture2D:
 	if not data.discovered:
 		return TILE_HIDDEN
 	if data.is_core:
-		return TILE_CORE
+		return TILE_PLAIN
 	if data.spawn_key != StringName():
 		return TILE_SPAWN
 	if data.terrain == CellData.TERRAIN_WATER:
 		return TILE_WATER
 	if data.terrain == CellData.TERRAIN_HIGHLAND:
-		return TILE_MOUNTAIN
+		return TILE_HIGHLAND
 	if data.terrain == CellData.TERRAIN_MOUNTAIN or not data.walkable:
 		return TILE_MOUNTAIN
+	if data.is_ford:
+		return TILE_FORD
 	if _is_resource_hidden_by_operational_building(data):
 		return TILE_PLAIN_ALT if _uses_alternate_plain(data.cell) else TILE_PLAIN
 	if data.resource_type == &"wood":

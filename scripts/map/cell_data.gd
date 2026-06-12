@@ -18,6 +18,8 @@ var building_runtime_id := -1
 var unit_runtime_id := -1
 var spawn_key: StringName = &""
 var is_core := false
+# 渡口浅滩：地形仍是 plain（可走可建），仅影响贴图选择。
+var is_ford := false
 
 
 func is_terrain_blocking() -> bool:

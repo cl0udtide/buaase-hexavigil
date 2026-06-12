@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dl2xshf00x4rj"
-path="res://.godot/imported/map_source_sheet_03_resources_events.png.png-d32dfe3d960f3f9140df2500e920e5c6.ctex"
+uid="uid://ce7508j7fb821"
+path="res://.godot/imported/tile_highland.png-8612728053de148e20aed20fe7cbdb51.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/map/CommandMap/raw/map_source_sheet_03_resources_events.png.png"
-dest_files=["res://.godot/imported/map_source_sheet_03_resources_events.png.png-d32dfe3d960f3f9140df2500e920e5c6.ctex"]
+source_file="res://assets/map/CommandMap/tile_highland.png"
+dest_files=["res://.godot/imported/tile_highland.png-8612728053de148e20aed20fe7cbdb51.ctex"]
 
 [params]
 
