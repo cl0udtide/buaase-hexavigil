@@ -135,6 +135,12 @@ static func aperture_window(anchor: Vector2i, gate: Vector2i, core: Vector2i, pa
 	return window
 
 
+## 从 gate→core 主轴提取单步方向向量（与 aperture_window 轴系约定一致）。
+static func _main_axis(gate: Vector2i, core: Vector2i) -> Vector2i:
+	var axis := core - gate
+	return Vector2i(signi(axis.x), 0) if absi(axis.x) >= absi(axis.y) else Vector2i(0, signi(axis.y))
+
+
 ## 注册顺序 core→apron→aperture→pocket→lane，先注册先得。
 ## build_protected 内对窗/口袋格做 0..width/height 裁剪（width/height 取 cfg，缺省 30）。
 static func build_protected(lanes: Dictionary, core: Vector2i, gates: Array[Vector2i], anchors: Dictionary, cfg: Dictionary) -> Dictionary:
@@ -168,24 +174,28 @@ static func build_protected(lanes: Dictionary, core: Vector2i, gates: Array[Vect
 			var c: Vector2i = raw_cell
 			if c.x >= 0 and c.x < width and c.y >= 0 and c.y < height:
 				_mark(protected, c, &"aperture")
-		# 口袋最小核：aperture 内侧（核心向）pocket_w × pocket_h
-		# 同 aperture_window 的轴系，di ∈ [aperture_depth, aperture_depth + pocket_h)
-		# 需要重建 gate 以获取方向 —— entry 不携带 gate；用 anchors key 对应的 gate。
-		# 但 build_protected 的签名只有 gates Array 无 key 映射，所以从 cfg sector 取不到。
-		# 解法：由 entry 的 aperture 格反推 dir_d（首格与锚的差即 dir_d），退而求其次
-		# 直接用 cfg pass 的 aperture_depth 重建同样轴系（anchor 已知，aperture 已知）。
-		# 最简决定性方案：如果 aperture 非空，取 aperture[0] - anchor 得到 dir_d。
+		# 口袋最小核：aperture 核心侧（核心向）pocket_w × pocket_h。
+		# aperture_window 发射顺序为 di 外循环 × wi 内循环，故：
+		#   aperture[0]          = anchor + dir_d*0 + dir_w*(-pass_width/2)
+		#   aperture[pass_width] = anchor + dir_d*1 + dir_w*(-pass_width/2)
+		#   => aperture[pass_width] - aperture[0] = dir_d（纵深轴单步）
+		# 用该差值可精确还原纵深方向；pass_width=1 时数组只有 depth 行共 depth 格，
+		# 无法用该差取（idx==pass_width 可能 == depth 超界），回退到 _main_axis。
 		var aperture_arr: Array = entry.get("aperture", [])
-		if aperture_arr.size() >= 1:
-			var first_ap: Vector2i = aperture_arr[0]
-			var dir_d_raw: Vector2i = first_ap - anchor_cell
-			# dir_d_raw 可能 = (0,di) 或 (di,0)，取单步方向
-			var dir_d: Vector2i
-			if dir_d_raw.x == 0:
-				dir_d = Vector2i(0, signi(dir_d_raw.y)) if dir_d_raw.y != 0 else Vector2i(0, 1)
-			else:
-				dir_d = Vector2i(signi(dir_d_raw.x), 0)
-			var dir_w: Vector2i = Vector2i(0, 1) if dir_d.x != 0 else Vector2i(1, 0)
+		var dir_d: Vector2i
+		if aperture_arr.size() > pass_width:
+			# aperture[pass_width] - aperture[0] = dir_d（纵深轴）
+			var a0: Vector2i = aperture_arr[0]
+			var a1: Vector2i = aperture_arr[pass_width]
+			var raw: Vector2i = a1 - a0
+			dir_d = Vector2i(signi(raw.x), 0) if absi(raw.x) >= absi(raw.y) else Vector2i(0, signi(raw.y))
+		else:
+			# 回退：从 anchors entry 不携带 gate_cell，用最近 gate 门近似——
+			# 因 anchor 唯一属于本扇区且 gate→core 主轴与 anchor 同扇区，_main_axis
+			# 使用 core 全局方向作为兜底（pass_width>=2 的正常路径永不触此）。
+			dir_d = _main_axis(anchor_cell, core)
+		var dir_w: Vector2i = Vector2i(0, 1) if dir_d.x != 0 else Vector2i(1, 0)
+		if not aperture_arr.is_empty():
 			for di in range(aperture_depth, aperture_depth + pocket_h):
 				for wi in range(pocket_w):
 					var off: int = wi - pocket_w / 2

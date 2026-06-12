@@ -411,7 +411,7 @@ static func trace_river(cells: Dictionary, skeleton: Dictionary, gate_key: Strin
 		polyline.append(best)
 		visited[best] = true
 	# 渡口预规划（落水前）。
-	var ford: Array[Vector2i] = _plan_ford(cells, skeleton, gate_key, polyline)
+	var ford: Array[Vector2i] = _plan_ford(cells, skeleton, gate_key, polyline, protected)
 	var ford_lookup: Dictionary = {}
 	for cell in ford:
 		ford_lookup[cell] = true
@@ -451,6 +451,11 @@ static func trace_river(cells: Dictionary, skeleton: Dictionary, gate_key: Strin
 		else:
 			river_cells.append(cell)
 	result["ford_cells"] = ford
+	# 渡口格写入 protected，阻止后续湖/河/侵蚀再淹（§2.2；_water_paintable 拒绝
+	# 除 &"lane" 外的所有保护类，ford 亦不应再淹，故注册为独立类别）。
+	for cell in ford:
+		if not protected.has(cell):
+			protected[cell] = &"ford"
 	return result
 
 
@@ -560,7 +565,7 @@ static func _collect_pond(cells: Dictionary, elevation: Dictionary, protected: D
 ## 本口当前真实最短路 P；crossings = 河折线 ∩ P；chosen = 距本扇区锚格切比雪夫
 ## 最近者（平局 (y,x)）；窗 = [chosen, chosen + 河向]（chosen 为折线末格时取上一格
 ## 方向延伸；延伸格出图则回退 [上一格, chosen]）。无交点/折线过短 → 空（锚窗承担）。
-static func _plan_ford(cells: Dictionary, skeleton: Dictionary, gate_key: String, polyline: Array[Vector2i]) -> Array[Vector2i]:
+static func _plan_ford(cells: Dictionary, skeleton: Dictionary, gate_key: String, polyline: Array[Vector2i], protected: Dictionary) -> Array[Vector2i]:
 	var ford: Array[Vector2i] = []
 	if polyline.size() < 2:
 		return ford
@@ -604,7 +609,8 @@ static func _plan_ford(cells: Dictionary, skeleton: Dictionary, gate_key: String
 		ford.append(polyline[chosen_idx + 1])
 		return ford
 	var extended: Vector2i = chosen + (chosen - polyline[chosen_idx - 1])
-	if cells.has(extended):
+	# 延伸格须图内、可走且非 protected（除 lane 类），否则回退到 [上一格, chosen]。
+	if cells.has(extended) and _water_paintable(cells, protected, extended):
 		ford.append(chosen)
 		ford.append(extended)
 	else:

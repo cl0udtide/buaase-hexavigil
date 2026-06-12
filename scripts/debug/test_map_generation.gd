@@ -494,11 +494,31 @@ func _test_lanes_protected() -> void:
 		var entry: Dictionary = anchors[raw_key]
 		for raw_cell: Variant in entry["aperture"]:
 			_expect(protected.has(raw_cell), "aperture cell protected (%s)" % String(raw_key))
+		# 口袋格数量检查（旧断言，保留）。
 		var pocket_count: int = 0
 		for raw_cell: Variant in protected.keys():
 			if StringName(protected[raw_cell]) == &"pocket" and _cheb(raw_cell, entry["cell"]) <= 4:
 				pocket_count += 1
 		_expect(pocket_count >= 4, "pocket core present near anchor (%s, got %d)" % [String(raw_key), pocket_count])
+		# Fix 1 强化断言：口袋格必须位于锚格的核心侧。
+		# 核心侧定义：(pocket_cell - anchor) · (core - gate_cell) > 0（整数点积）。
+		# gate_cell 由 key "S%d" 下标推算（S1→gates[0]，依此类推）。
+		var key_str := String(raw_key)
+		var gate_idx: int = int(key_str.substr(1)) - 1   # "S1"→0, "S2"→1, …
+		var gate_cell: Vector2i = gates[gate_idx]
+		var core_dir: Vector2i = core - gate_cell         # 指向核心的向量
+		var anchor_cell_fix: Vector2i = entry["cell"]
+		var pocket_coreside_count: int = 0
+		for raw_cell: Variant in protected.keys():
+			if StringName(protected[raw_cell]) != &"pocket":
+				continue
+			if _cheb(raw_cell, anchor_cell_fix) > 6:
+				continue
+			var rel: Vector2i = (raw_cell as Vector2i) - anchor_cell_fix
+			var dot: int = rel.x * core_dir.x + rel.y * core_dir.y
+			if dot > 0:
+				pocket_coreside_count += 1
+		_expect(pocket_coreside_count >= 4, "pocket cells are core-side of anchor (%s, got %d)" % [key_str, pocket_coreside_count])
 	var protected_b: Dictionary = LaneGen.build_protected(lanes, core, gates, anchors, cfg)
 	_expect(str(protected) == str(protected_b), "build_protected deterministic")
 
@@ -663,17 +683,39 @@ func _test_rivers_lakes() -> void:
 			_expect(ford_cells.size() == 2, "seed %d: ford window is 2 cells" % seed_value)
 			for raw_cell: Variant in ford_cells:
 				_expect((rfx["cells"][raw_cell] as CellData).walkable, "seed %d: ford stays walkable" % seed_value)
+			# Fix 2：渡口格必须在 protected 中（&"ford" 或先注册的更高优先级类别），
+			# 确保后续湖/河不再淹没该格（_water_paintable 拒绝所有非 &"lane" 保护格）。
+			_expect(rfx["protected"].has(ford_cells[0]), "seed %d: ford cell[0] in protected" % seed_value)
 			# 渡口唯一：S4 新最短路与水格零相交（只能走渡口）。
 			var dist_gate: Dictionary = MapGeneratorScript._bfs_distances(rfx["cells"], 30, 30, rfx["skeleton"]["gate_cells"]["S4"])
 			_expect(int(dist_gate.get(rfx["skeleton"]["core"], -1)) > 0, "seed %d: S4 still reaches core" % seed_value)
 	print("  ford hits: %d/%d" % [ford_hits, river_runs])
 	_expect(ford_hits >= 5, "fords occur in majority of riverlands runs")
+	# Fix 4 台账断言 rivers：picked single seed で river_cells+pond_cells == stages["rivers"].applied。
+	var ledger_check_fx := _build_skeleton_fixture(3000, carded)
+	var ledger_check_rledger: Dictionary = FleshGen.make_ledger(ledger_check_fx["skeleton"]["cfg"], ledger_check_fx["skeleton"]["archetype"], carded, 30, 30)
+	FleshGen.grow_ridges(ledger_check_fx["cells"], ledger_check_fx["skeleton"], ledger_check_fx["protected"], _new_rng(IntNoise.derive_seed(3000, 0, 14)), ledger_check_rledger)
+	var ledger_check_elev: Dictionary = FleshGen.build_elevation(ledger_check_fx["cells"], 30, 30, IntNoise.derive_seed(3000, 0, 15))
+	var ledger_check_river: Dictionary = FleshGen.trace_river(ledger_check_fx["cells"], ledger_check_fx["skeleton"], "S4", ledger_check_elev, ledger_check_fx["protected"], _new_rng(IntNoise.derive_seed(3000, 0, 15)), ledger_check_rledger)
+	var lc_river_cells: Array = ledger_check_river.get("river_cells", [])
+	var lc_pond_cells: Array = ledger_check_river.get("pond_cells", [])
+	var lc_stages: Dictionary = ledger_check_rledger.get("stages", {})
+	var lc_river_stage: Dictionary = lc_stages.get("rivers", {})
+	_expect(int(lc_river_stage.get("applied", -1)) == lc_river_cells.size() + lc_pond_cells.size(), "ledger rivers applied == river_cells + pond_cells (seed 3000, got applied=%d expected=%d)" % [int(lc_river_stage.get("applied", -1)), lc_river_cells.size() + lc_pond_cells.size()])
+	_expect(int(lc_river_stage.get("requested", 0)) >= int(lc_river_stage.get("applied", 0)), "ledger rivers requested >= applied")
 	# 湖：steppe 扇区落湖、贴图、远离车道、不淹 protected。
 	var lfx := _build_skeleton_fixture(2026, carded)
 	var lledger: Dictionary = FleshGen.make_ledger(lfx["skeleton"]["cfg"], lfx["skeleton"]["archetype"], carded, 30, 30)
+	var water_before: int = _count_terrain(lfx["cells"], CellDataRef.TERRAIN_WATER)
 	FleshGen.place_lakes(lfx["cells"], lfx["skeleton"], "S3", 1, lfx["protected"], _new_rng(606), lledger)
 	var water: int = _count_terrain(lfx["cells"], CellDataRef.TERRAIN_WATER)
 	_expect(water >= 6, "steppe lake materialized (water=%d)" % water)
+	# Fix 4 台账断言 lakes：applied == 实际水域增量 + requested >= applied。
+	var lake_stages: Dictionary = lledger.get("stages", {})
+	var lake_stage: Dictionary = lake_stages.get("lakes", {})
+	var water_delta: int = water - water_before
+	_expect(int(lake_stage.get("applied", -1)) == water_delta, "ledger lakes applied == water delta (applied=%d delta=%d)" % [int(lake_stage.get("applied", -1)), water_delta])
+	_expect(int(lake_stage.get("requested", 0)) >= int(lake_stage.get("applied", 0)), "ledger lakes requested >= applied")
 	for raw_cell: Variant in lfx["protected"].keys():
 		_expect((lfx["cells"][raw_cell] as CellData).terrain != CellDataRef.TERRAIN_WATER, "lake spares protected")
 	_expect(MapGeneratorScript._are_all_spawns_connected(lfx["cells"], 30, 30, lfx["skeleton"]["spawn_cells"], lfx["skeleton"]["core"]), "gates connected after lake")
