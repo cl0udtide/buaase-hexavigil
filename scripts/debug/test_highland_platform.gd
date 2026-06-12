@@ -124,7 +124,10 @@ func _test_highland_deploy() -> void:
 	plain_data.resource_type = &""
 	plain_data.set_base_terrain(CellDataScript.TERRAIN_PLAIN)
 	var plain_result: Dictionary = unit_manager.try_deploy_operator(second_sniper_key, plain_cell, Vector2i.RIGHT)
-	_expect(plain_result.get("ok", false), "ranged still deploys on plain")
+	_expect(not plain_result.get("ok", false), "ranged rejected on plain (strict gate)")
+	_expect(StringName(plain_result.get("code", &"")) == &"CLASS_NOT_ALLOWED", "plain ranged rejection code is CLASS_NOT_ALLOWED")
+	var guard_plain: Dictionary = unit_manager.try_deploy_operator(guard_key, plain_cell, Vector2i.RIGHT)
+	_expect(guard_plain.get("ok", false), "melee deploys on plain")
 	game.queue_free()
 	await process_frame
 

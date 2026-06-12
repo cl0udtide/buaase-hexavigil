@@ -97,7 +97,8 @@ func try_deploy_operator(operator_key: StringName, cell: Vector2i, facing: Vecto
 	return ActionResult.ok({"runtime_id": _next_runtime_id - 1, "operator_key": operator_key, "unit_id": unit_id, "star": star})
 
 
-## 部署落格校验：平地走 is_walkable 全职业；highland 地形与存活的人工高台建筑仅远程职业（设计稿 §2.4）。
+## 部署落格校验：highland 地形与存活的人工高台建筑仅远程职业；平地走 is_walkable
+## 且仅非远程职业——远程（sniper/caster）严格只上高台（设计稿 §2.4/§2.6 严格门控）。
 func _validate_deploy_cell(cell: Vector2i, cfg: Dictionary) -> Dictionary:
 	if _map_manager == null:
 		return ActionResult.err(&"MAP_UNAVAILABLE", "操作失败：地图尚未初始化")
@@ -124,6 +125,8 @@ func _validate_deploy_cell(cell: Vector2i, cfg: Dictionary) -> Dictionary:
 				return ActionResult.ok()
 	if not _map_manager.is_walkable(cell):
 		return ActionResult.err(&"CELL_NOT_WALKABLE", "无法部署：目标格不可部署")
+	if RANGED_DEPLOY_CLASSES.has(StringName(cfg.get("class", ""))):
+		return ActionResult.err(&"CLASS_NOT_ALLOWED", "无法部署：高台干员只能部署在高台上")
 	return ActionResult.ok()
 
 
