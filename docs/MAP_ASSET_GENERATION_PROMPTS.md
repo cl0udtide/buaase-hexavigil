@@ -252,7 +252,7 @@
 2. 重新生成为地图建筑 sprite：#FF00FF 背景源图，抠图后 128x128 透明 PNG，主体居中偏下，底部中心为锚点。
 3. 普通建筑可以直接覆盖 `assets/sprites/buildings/<visual_key>.png`。
 4. `war_shrine` 需要保留 `war_shrine_inactive.png` 与 `war_shrine_active.png` 两个状态。
-5. `wood_wall` 需要保留 16 个连接变体，不能只用一张 UI 木墙图标替换。
+5. `wood_wall` 与 `artificial_platform` 已改为**程序化代码绘制**（`scripts/building/wall_art.gd` 运行时生成 16 连接变体，共享连接臂几何保证无缝拼接），**不再需要生成贴图**；改风格直接改该脚本的调色板/几何常量，校样用 `scripts/debug/gen_wall_art_sheet.gd` 出图人审。
 
 ### 10.1 建筑全局提示词
 
@@ -343,7 +343,9 @@ assets/sprites/buildings/war_shrine_active.png
 两个状态必须尺寸、视角、锚点、建筑主体结构一致，只通过火焰/能量强度区分开关。保持 readable at 72px, same silhouette, keyable background, no UI icon appearance。
 ```
 
-### 10.4 第 7 轮：木墙连接变体
+### 10.4 第 7 轮：木墙连接变体（已废弃——改为程序化绘制）
+
+> **状态：已废弃（2026-06-12）**。木墙 16 连接变体改由 `scripts/building/wall_art.gd` 程序化生成（`building_actor._load_visual_texture` 优先程序化路径），旧 `assets/sprites/buildings/wood_wall/` 16 张 PNG 已删除。人工高台 `artificial_platform` 共用同一模块（哨站造型，与木墙任意互连无缝）。建造菜单图标也由 `scripts/debug/gen_building_icons.gd` 从程序化贴图导出。调整美术＝改 `wall_art.gd` 调色板/几何常量，用 `scripts/debug/gen_wall_art_sheet.gd` 出校样图人审。以下原提示词仅作历史存档。
 
 保存源图为：`building_source_sheet_03_wood_wall_variants.png`
 
@@ -447,7 +449,7 @@ generic_destroyed_building：小型通用建筑残骸。破碎木板、低矮石
 - 输出文件必须是抠图后的透明 PNG，最终尺寸为 128x128，无半透明像素和 #FF00FF 残边。
 - 普通建筑文件名必须和 `data/buildings.json` 中的 `visual_key` 对齐。
 - `war_shrine` 必须保留 active / inactive 两个状态，结构一致、差异清楚。
-- `wood_wall` 必须检查 16 个连接变体在地图上连续摆放时能对齐；尤其检查 `1010_ew`、`0101_ns`、`1111_nesw`。
+- `wood_wall` / `artificial_platform` 为程序化绘制（见 10.4 状态注），不走本检查清单；拼接校验由 `scripts/debug/test_wall_art.gd` 与校样图覆盖。
 - 把建筑叠在 `tile_plain`、`tile_resource_wood`、`tile_resource_stone`、`tile_resource_mana` 上预览：不能遮住资源主体到不可读，也不能被地块噪点淹没。
 - 在 1920x1080 和 1366x768 视口中检查：建筑、单位、范围覆盖层、路径线同时存在时仍能分清层级。
 - 如果使用 UI 图标作为参考，检查最终资产是否已经从“图标”转化为“地图实体”；不能保留图标式海报构图和 UI 底板感。
@@ -478,16 +480,16 @@ generic_destroyed_building：小型通用建筑残骸。破碎木板、低矮石
 请保持所有木墙变体相同高度、厚度、颜色和锚点。连接端必须统一对齐到 N/E/S/W 四个方向，连续摆放时形成一条完整墙线。不要每个变体重新设计不同墙体。
 ```
 
-## 11. 第三阶段：高台地形与人工高台（TODO，地形包迭代用）
+## 11. 第三阶段：高台地形与人工高台（部分 TODO，地形包迭代用）
 
-> **状态：TODO**——本节资产服务于“地形包”迭代（设计稿：动态地图生成终案），实装由 AI 完成。生成与裁剪约定同第 2 节，风格遵循本文档新版美术方向。**资产未就绪前的占位方案**：`tile_highland` 由代码侧复制 `tile_mountain` 加 modulate 调色占位；人工高台建筑暂用 `inspiring_monolith.png` + 建筑列表 icon_text“台”占位。
+> **状态更新（2026-06-12）**：`artificial_platform` 已改为程序化绘制（见 10.4 状态注），**不再需要生成**，11.3 仅作存档；待生成的只剩 `tile_highland` 与可选的 `tile_ford`。**资产未就绪前的占位方案**：`tile_highland` 由代码侧复制 `tile_mountain` 加 modulate 调色占位。
 
 ### 11.1 资产清单
 
 | 资产 key | 输出路径 | 用途 | 视觉目标 |
 |---|---|---|---|
 | `tile_highland` | `assets/map/CommandMap/tile_highland.png` | 高台地形格（敌不可走、仅远程干员可部署） | 概括化平顶台地/崖缘平台，顶面干净可站位，与山地、平地拉开明确色相差 |
-| `artificial_platform` | `assets/sprites/buildings/artificial_platform.png` | 人工高台建筑（玩家建造的木石炮台基座，可载干员） | 低矮木石结构平台，看得出“上面能站人” |
+| ~~`artificial_platform`~~ | ~~`assets/sprites/buildings/artificial_platform.png`~~ | 人工高台建筑——**已由 wall_art.gd 程序化绘制（16 连接变体哨站），无需生成** | — |
 | `tile_ford` | `assets/map/CommandMap/tile_ford.png` | 渡口浅滩格（v1.5 可选） | 水面中的可通行浅滩/碎石滩 |
 
 ### 11.2 第 9 轮：高台地形格
@@ -505,7 +507,7 @@ generic_destroyed_building：小型通用建筑残骸。破碎木板、低矮石
 两格必须与现有 tile_plain / tile_mountain / tile_water 同一画风，铺在一起无违和。保持 top-down orthographic square stylized game map tiles, readable at 64x64。
 ```
 
-### 11.3 第 10 轮：人工高台建筑 Sprite
+### 11.3 第 10 轮：人工高台建筑 Sprite（已废弃——改为程序化绘制，见 10.4 状态注）
 
 保存源图为：`building_source_sheet_05_artificial_platform.png`，裁剪顺序：1. `artificial_platform`
 
