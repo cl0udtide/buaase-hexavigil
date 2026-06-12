@@ -192,7 +192,8 @@
     "icon_text": "台",
     "building_type": "block",
     "max_hp": 500,
-    "visual_key": "inspiring_monolith",
+    "visual_key": "artificial_platform_0000_isolated",
+    "wall_visual_prefix": "artificial_platform",
     "destroyed_visual_key": "generic_destroyed_building",
     "cost_wood": 2,
     "cost_stone": 2,
@@ -205,6 +206,6 @@
     "effect_value": 0,
     "place_rule": "plain_only",
     "scene_key": "building_actor",
-    "icon_path": "res://assets/ui/generated/icon_building_inspiring_monolith.png"
+    "icon_path": "res://assets/ui/generated/icon_building_artificial_platform.png"
   }
 ]
