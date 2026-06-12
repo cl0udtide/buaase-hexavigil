@@ -94,6 +94,28 @@ const SHORE_SHALLOW_WIDTH := 6.0
 # 合成层：昼夜全局调色（资产画白天标准光，夜晚由 CanvasModulate 压冷）。
 const NIGHT_CANVAS_TINT := Color(0.64, 0.68, 0.9)
 const DAY_NIGHT_FADE_SECONDS := 1.2
+# 合成层：地形特征外投影（左上暖光 → 山/高台向下/右邻格投冷色短影）。
+const FEATURE_SHADOW_COLOR := Color(0.10, 0.10, 0.24, 0.16)
+const FEATURE_SHADOW_WIDTH := 7.0
+# 合成层：迷雾边缘羽化（已探索格沿雾邻边的雾色渐变带）。
+const FOG_EDGE_COLOR := Color(0.13, 0.14, 0.20)
+const FOG_EDGE_ALPHAS: Array[float] = [0.4, 0.22, 0.1]
+const FOG_EDGE_STEP_WIDTH := 4.0
+# 合成层：夜晚发光体（核心/魔力晶簇挂 PointLight2D，抵抗夜色压暗）。
+const NIGHT_GLOW_CORE_COLOR := Color(0.66, 0.52, 1.0)
+const NIGHT_GLOW_MANA_COLOR := Color(0.42, 0.76, 1.0)
+const NIGHT_GLOW_CORE_ENERGY := 0.6
+const NIGHT_GLOW_MANA_ENERGY := 0.42
+const NIGHT_GLOW_CORE_SCALE := 0.8
+const NIGHT_GLOW_MANA_SCALE := 0.55
+# 合成层：平地微贴花与水面微光（按格哈希确定性撒布）。
+const DECAL_STONE_LIGHT := Color(0.63, 0.61, 0.54)
+const DECAL_STONE_DARK := Color(0.45, 0.44, 0.41)
+const DECAL_FLOWER_PETAL := Color(0.96, 0.95, 0.88)
+const DECAL_FLOWER_GOLD := Color(0.88, 0.76, 0.4)
+const DECAL_GRASS := Color(0.32, 0.42, 0.2)
+const SPARKLE_COLOR := Color(0.93, 1.0, 1.0)
+const SPARKLE_REDRAW_HZ := 3.0
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
@@ -148,6 +170,9 @@ var _hovered_event_cell := Vector2i(-1, -1)
 
 
 var _day_night_tint: CanvasModulate
+var _sparkle_bucket := -1
+var _night_glow_root: Node2D
+var _glow_texture: Texture2D
 
 
 func _ready() -> void:
@@ -177,6 +202,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_range_outline_time += delta
 	_tick_range_outline_effects(delta)
+	var sparkle_bucket := int(_range_outline_time * SPARKLE_REDRAW_HZ)
+	if sparkle_bucket != _sparkle_bucket:
+		_sparkle_bucket = sparkle_bucket
+		queue_redraw()
 	var map_manager := _get_map_manager()
 	if map_manager == null:
 		return
@@ -243,8 +272,15 @@ func _draw() -> void:
 				continue
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
 			_draw_cell_tile(rect, data)
-			if data.discovered and data.terrain == CellData.TERRAIN_WATER:
-				_draw_shore_bands(rect, cell, map_manager)
+			if data.discovered:
+				if data.terrain == CellData.TERRAIN_WATER:
+					_draw_shore_bands(rect, cell, map_manager)
+					_draw_water_sparkles(rect, cell)
+				else:
+					_draw_feature_cast_shadow(rect, cell, map_manager, data)
+				if _is_quiet_plain(data):
+					_draw_plain_decals(rect, cell)
+				_draw_fog_feather(rect, cell, map_manager)
 			draw_rect(rect, GRID_COLOR, false, 1.0)
 			if _deploy_range_preview_cells.has(cell):
 				_draw_deploy_range_cell(rect)
@@ -1057,6 +1093,93 @@ func _get_cell_color(data) -> Color:
 	return COLOR_PLAIN
 
 
+static func _cell_hash(cell: Vector2i, salt: int) -> int:
+	var h := cell.x * 374761393 + cell.y * 668265263 + salt * 2147483647
+	h = (h ^ (h >> 13)) * 1274126177
+	return int(abs(h ^ (h >> 16)))
+
+
+## 安静平地（无资源/出生点/核心/渡口的草地）才撒微贴花。
+func _is_quiet_plain(data) -> bool:
+	if data.terrain != CellData.TERRAIN_PLAIN:
+		return false
+	return data.resource_type == StringName() and data.spawn_key == StringName() and not data.is_core and not data.is_ford
+
+
+## 平地微贴花：按格哈希撒 0-2 个碎石/野花/草簇，打破平铺重复。
+func _draw_plain_decals(rect: Rect2, cell: Vector2i) -> void:
+	var roll := _cell_hash(cell, 11) % 10
+	if roll >= 4:
+		return
+	var count := 2 if roll == 0 else 1
+	for i: int in range(count):
+		var px := 10.0 + float(_cell_hash(cell, 23 + i * 7) % 44)
+		var py := 10.0 + float(_cell_hash(cell, 41 + i * 7) % 44)
+		var at := rect.position + Vector2(px, py)
+		var kind := _cell_hash(cell, 67 + i * 7) % 3
+		if kind == 0:
+			draw_circle(at + Vector2(0.6, 0.8), 2.4, DECAL_STONE_DARK)
+			draw_circle(at, 2.2, DECAL_STONE_LIGHT)
+		elif kind == 1:
+			var petal := DECAL_FLOWER_PETAL if _cell_hash(cell, 83 + i) % 2 == 0 else DECAL_FLOWER_GOLD
+			draw_circle(at + Vector2(-1.4, 0.4), 1.1, petal)
+			draw_circle(at + Vector2(1.4, 0.4), 1.1, petal)
+			draw_circle(at + Vector2(0.0, -1.2), 1.1, petal)
+		else:
+			draw_line(at + Vector2(-1.6, 2.0), at + Vector2(-2.2, -2.2), DECAL_GRASS, 1.1, false)
+			draw_line(at + Vector2(0.0, 2.0), at + Vector2(0.4, -3.0), DECAL_GRASS, 1.1, false)
+			draw_line(at + Vector2(1.6, 2.0), at + Vector2(2.4, -1.6), DECAL_GRASS, 1.1, false)
+
+
+## 水面微光：按格哈希撒 1-2 条高光短线，相位错开低频闪烁。
+func _draw_water_sparkles(rect: Rect2, cell: Vector2i) -> void:
+	var count := 1 + _cell_hash(cell, 5) % 2
+	for i: int in range(count):
+		var phase := (_sparkle_bucket + _cell_hash(cell, 29 + i * 13)) % 6
+		if phase >= 3:
+			continue
+		var alpha := 0.38 if phase == 1 else 0.2
+		var px := 8.0 + float(_cell_hash(cell, 47 + i * 13) % 44)
+		var py := 8.0 + float(_cell_hash(cell, 59 + i * 13) % 48)
+		var at := rect.position + Vector2(px, py)
+		var dash := 3.0 + float(_cell_hash(cell, 71 + i) % 3)
+		var color := Color(SPARKLE_COLOR.r, SPARKLE_COLOR.g, SPARKLE_COLOR.b, alpha)
+		draw_line(at, at + Vector2(dash, 0.0), color, 1.2, false)
+
+
+## 左上暖光：北/西邻是山或高台时，本格沿该边受冷色短影。
+func _draw_feature_cast_shadow(rect: Rect2, cell: Vector2i, map_manager: Node, data) -> void:
+	if data.terrain == CellData.TERRAIN_MOUNTAIN or data.terrain == CellData.TERRAIN_HIGHLAND:
+		return
+	var north = map_manager.get_cell_data(cell + Vector2i(0, -1))
+	if north != null and north.discovered and (north.terrain == CellData.TERRAIN_MOUNTAIN or north.terrain == CellData.TERRAIN_HIGHLAND):
+		draw_rect(Rect2(rect.position, Vector2(rect.size.x, FEATURE_SHADOW_WIDTH)), FEATURE_SHADOW_COLOR)
+	var west = map_manager.get_cell_data(cell + Vector2i(-1, 0))
+	if west != null and west.discovered and (west.terrain == CellData.TERRAIN_MOUNTAIN or west.terrain == CellData.TERRAIN_HIGHLAND):
+		draw_rect(Rect2(rect.position, Vector2(FEATURE_SHADOW_WIDTH, rect.size.y)), FEATURE_SHADOW_COLOR)
+
+
+## 迷雾羽化：已探索格沿未探索邻边画雾色渐变带，软化硬切。
+func _draw_fog_feather(rect: Rect2, cell: Vector2i, map_manager: Node) -> void:
+	for dir: Vector2i in [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]:
+		var neighbor = map_manager.get_cell_data(cell + dir)
+		if neighbor == null or neighbor.discovered:
+			continue
+		for step: int in range(FOG_EDGE_ALPHAS.size()):
+			var color := Color(FOG_EDGE_COLOR.r, FOG_EDGE_COLOR.g, FOG_EDGE_COLOR.b, FOG_EDGE_ALPHAS[step])
+			var offset := float(step) * FOG_EDGE_STEP_WIDTH
+			var band := Rect2()
+			if dir == Vector2i(-1, 0):
+				band = Rect2(rect.position + Vector2(offset, 0.0), Vector2(FOG_EDGE_STEP_WIDTH, rect.size.y))
+			elif dir == Vector2i(1, 0):
+				band = Rect2(rect.position + Vector2(rect.size.x - offset - FOG_EDGE_STEP_WIDTH, 0.0), Vector2(FOG_EDGE_STEP_WIDTH, rect.size.y))
+			elif dir == Vector2i(0, -1):
+				band = Rect2(rect.position + Vector2(0.0, offset), Vector2(rect.size.x, FOG_EDGE_STEP_WIDTH))
+			else:
+				band = Rect2(rect.position + Vector2(0.0, rect.size.y - offset - FOG_EDGE_STEP_WIDTH), Vector2(rect.size.x, FOG_EDGE_STEP_WIDTH))
+			draw_rect(band, color)
+
+
 ## 水格内侧沿临陆边画浅水带+泡沫线（渡口与水视作同面，未探索邻格不画防剧透）。
 func _draw_shore_bands(rect: Rect2, cell: Vector2i, map_manager: Node) -> void:
 	for dir: Vector2i in [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]:
@@ -1085,10 +1208,65 @@ func _draw_shore_bands(rect: Rect2, cell: Vector2i, map_manager: Node) -> void:
 
 func _on_day_started_tint(_day: int) -> void:
 	_tween_day_night_tint(Color.WHITE)
+	_clear_night_glows()
 
 
 func _on_night_started_tint(_day: int) -> void:
 	_tween_day_night_tint(NIGHT_CANVAS_TINT)
+	_spawn_night_glows()
+
+
+func _clear_night_glows() -> void:
+	if _night_glow_root != null:
+		_night_glow_root.queue_free()
+		_night_glow_root = null
+
+
+## 夜晚为核心与已探索魔力晶簇挂径向点光（代码生成渐变纹理，不依赖资产）。
+func _spawn_night_glows() -> void:
+	_clear_night_glows()
+	var map_manager := _get_map_manager()
+	if map_manager == null:
+		return
+	_night_glow_root = Node2D.new()
+	_night_glow_root.name = "NightGlowRoot"
+	add_child(_night_glow_root)
+	for y in range(map_manager.height):
+		for x in range(map_manager.width):
+			var data = map_manager.get_cell_data(Vector2i(x, y))
+			if data == null or not data.discovered:
+				continue
+			if data.is_core:
+				_add_night_glow(Vector2i(x, y), NIGHT_GLOW_CORE_COLOR, NIGHT_GLOW_CORE_ENERGY, NIGHT_GLOW_CORE_SCALE)
+			elif data.resource_type == &"mana":
+				_add_night_glow(Vector2i(x, y), NIGHT_GLOW_MANA_COLOR, NIGHT_GLOW_MANA_ENERGY, NIGHT_GLOW_MANA_SCALE)
+
+
+func _add_night_glow(cell: Vector2i, color: Color, energy: float, glow_scale: float) -> void:
+	var light := PointLight2D.new()
+	light.texture = _get_glow_texture()
+	light.position = (Vector2(cell) + Vector2(0.5, 0.5)) * CELL_SIZE
+	light.color = color
+	light.energy = energy
+	light.texture_scale = glow_scale
+	_night_glow_root.add_child(light)
+
+
+func _get_glow_texture() -> Texture2D:
+	if _glow_texture != null:
+		return _glow_texture
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	gradient.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0)])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(0.5, 0.0)
+	texture.width = 256
+	texture.height = 256
+	_glow_texture = texture
+	return _glow_texture
 
 
 func _tween_day_night_tint(target: Color) -> void:
