@@ -1,5 +1,7 @@
 # Character and Enemy Asset Generation Prompts
 
+> **状态（2026-06-12 维护）**：项目内现有干员/敌人 sprite（高饱和赛璐璐、Q 版比例、干净细描边）即**全游戏的画风基准，不在重绘范围**——环境美术（地形/建筑）反过来以它们为同台参照（见 `MAP_ASSET_GENERATION_PROMPTS.md` §0 画风宪章）。本文档仅用于**新增**角色/敌人或个别参考图重绘；旧版"低饱和半卡通 + #FF00FF 抠图底"的表述已按现状修正（抠图底统一 #FF00FF，风格以现有 sprite 为准，新增时必须附现有 sprite 作参照图）。
+
 本文档用于生成或重绘游戏内角色、干员和敌人 sprite。它不是 UI 头像、技能图标、遗物图标或战斗特效提示词库；UI 资产继续参考 `docs/UI_ASSET_GENERATION_PROMPTS.md`，地图建筑参考 `docs/MAP_ASSET_GENERATION_PROMPTS.md`，战斗特效参考 `docs/EFFECT_ASSET_GENERATION_PROMPTS.md`。
 
 当前运行时入口以代码为准：
@@ -17,11 +19,11 @@
 我们要为一个 Godot 俯视塔防游戏生成游戏内角色/敌人 sprite。资产会被放在 64x64 地图格上，最终裁切为 128x128 透明 PNG，并在游戏中缩放到约 70-72px 显示。
 
 整体风格：
-- 低饱和半卡通手绘，轻微奇幻塔防，和现有 UI、地图建筑、敌人特效属于同一游戏。
+- 与现有干员/敌人 sprite 完全同族（生成时必须附 1-2 张现有 sprite 作参照图，例如 `assets/sprites/units/blaze/idle/blaze_idle_000.png`、`assets/sprites/enemies/hound/idle/hound_idle_000.png`）：Q 版二到三头身比例、高饱和赛璐璐影调（2-3 阶硬影界）、干净的深色细描边、清晰的材质分区（金属/布料/皮肤/甲壳）、克制的局部光泽高光。
+- 角色是画面主角：饱和度与对比允许明显高于地形建筑，每个角色保留 1-2 个强烈的色彩重音作为识别点。
 - 俯视正交或轻微三分之二俯视，不要正面立绘、半身头像、卡牌插画、海报构图或强透视。
 - 轮廓优先，72px 下必须能读出职业/敌人类型、体型、武器或核心识别点。
-- 色彩以暗青灰、雾蓝灰、灰绿、石灰、木褐为基底；功能点缀可以使用低饱和青蓝、浅金、琥珀、暗红。
-- 光效克制，只作为局部识别点，不能抢地图、范围提示和战斗特效的层级。
+- 发光克制，只作为局部识别点，不能抢范围提示和战斗特效的层级。
 
 构图硬约束：
 - 最终单张资产为 128x128 透明 PNG，主体完整，不被裁切。
@@ -34,7 +36,7 @@
 - 不要背景地块、投影大底座、UI 边框、卡片框、徽章、按钮、头像框、文字、数字、水印或签名。
 - 不要写实照片、PBR 3D 渲染、厚黑描边、霓虹强发光、赛博重装甲、复杂高频纹理。
 - 不要把技能特效、弹道、爆炸、范围圈烘进角色本体；这些属于特效资产。
-- 不要生成透明棋盘格背景。源图阶段使用纯色背景 #79C7B6，最终抠成透明 PNG。
+- 不要生成透明棋盘格背景。源图阶段使用纯色背景 #FF00FF，最终抠成透明 PNG。
 
 输出要求：
 - 清晰边缘，低噪点，适合抠图和缩小。
@@ -59,7 +61,7 @@
 ### 3.1 新干员单体模板
 
 ```text
-请生成 1 个干员地图 sprite，纯色背景 #79C7B6，最终裁切为 128x128 透明 PNG。
+请生成 1 个干员地图 sprite，纯色背景 #FF00FF，最终裁切为 128x128 透明 PNG。
 
 干员信息：
 - id: <unit_id>
@@ -68,11 +70,11 @@
 - 职业/定位: <guard/sniper/caster/defender/medic/supporter 等>
 - 攻击方式: <近战/远程/法术/治疗/阻挡>
 - 轮廓关键词: <体型、站姿、武器、头部或背部识别点>
-- 主色: <低饱和主色>
-- 点缀色: <低饱和功能色>
+- 主色: <主色>
+- 点缀色: <功能/重音色>
 
 造型要求：
-- 低饱和半卡通手绘，轻微奇幻塔防地图实体。
+- 与附图现有干员 sprite 完全同族：Q 版比例、高饱和赛璐璐影调、干净细描边。
 - 默认朝右或右下，完整站姿，底部锚点居中。
 - 72px 下先读出职业和武器，再读出服装细节。
 - 不要画 UI 头像、卡牌立绘、职业图标、技能特效、名字或任何文字。
@@ -84,7 +86,7 @@ assets/sprites/units/<visual_key>/idle/<visual_key>_idle_000.png
 ### 3.2 新敌人单体模板
 
 ```text
-请生成 1 个敌人地图 sprite，纯色背景 #79C7B6，最终裁切为 128x128 透明 PNG。
+请生成 1 个敌人地图 sprite，纯色背景 #FF00FF，最终裁切为 128x128 透明 PNG。
 
 敌人信息：
 - id: <enemy_id>
@@ -94,11 +96,11 @@ assets/sprites/units/<visual_key>/idle/<visual_key>_idle_000.png
 - 移动类型: <ground/flying>
 - 攻击方式: <近战/远程投射/法术/爆炸/召唤>
 - 轮廓关键词: <体型、头部、武器、护甲、核心器官或族群特征>
-- 主色: <低饱和主色>
-- 点缀色: <低饱和危险/法术色>
+- 主色: <主色>
+- 点缀色: <危险/法术重音色>
 
 造型要求：
-- 低饱和半卡通手绘，轻微奇幻塔防地图敌人。
+- 与附图现有敌人 sprite 完全同族：高饱和赛璐璐影调、干净细描边、清晰的甲壳/材质分区。
 - 默认朝右或右下，完整身体，底部锚点居中；飞行单位可略微悬浮，但不要画巨大地面影子。
 - 普通敌人可见主体约 64-82px，Boss 可见主体可放大到约 86-96px。
 - 70px 下先读出威胁类型和移动方式，再读出局部细节。
@@ -111,7 +113,7 @@ assets/sprites/enemies/<visual_key>/idle/<visual_key>_idle_000.png
 ### 3.3 批量源图模板
 
 ```text
-请生成一张角色/敌人 sprite 源图，纯色背景 #79C7B6，包含 <数量> 个独立资产，按从左到右、从上到下排列。每个资产最终都裁切为 128x128 透明 PNG。
+请生成一张角色/敌人 sprite 源图，纯色背景 #FF00FF，包含 <数量> 个独立资产，按从左到右、从上到下排列。每个资产最终都裁切为 128x128 透明 PNG。
 
 统一要求：
 - 所有资产同一视角、同一光照、同一缩放基准、同一底部锚点。
@@ -134,7 +136,7 @@ assets/sprites/enemies/<visual_key>/idle/<visual_key>_idle_000.png
 ### 4.1 旧角色/敌人重绘模板
 
 ```text
-请基于上传的参考图，重绘为 Godot 俯视塔防游戏内角色/敌人 sprite。参考图用于保留角色身份、主要轮廓、颜色关系和关键识别元素，但最终必须转成项目统一的低饱和半卡通手绘地图实体。
+请基于上传的参考图，重绘为 Godot 俯视塔防游戏内角色/敌人 sprite。参考图用于保留角色身份、主要轮廓、颜色关系和关键识别元素，但最终必须转成与本游戏现有 sprite（另附）同族的高饱和赛璐璐 Q 版地图实体。
 
 目标信息：
 - 类型: <unit/enemy>
@@ -147,11 +149,11 @@ assets/sprites/enemies/<visual_key>/idle/<visual_key>_idle_000.png
 - 需要强化: <72px 下最重要的轮廓或颜色识别点>
 
 重绘要求：
-- 128x128 源图，纯色背景 #79C7B6，最终抠成透明 PNG。
+- 128x128 源图，纯色背景 #FF00FF，最终抠成透明 PNG。
 - 默认朝右或右下，完整身体，主体居中略偏下，底部锚点居中。
 - 保留参考图角色身份，但重新概括体块和细节，让它在 70-72px 下清楚可读。
 - 不要保留参考图中的背景、UI 框、文字、光圈、复杂特效、阴影地面或裁切边。
-- 不要做成头像、贴纸、表情包、卡牌立绘、写实 3D 模型或高饱和霓虹风。
+- 不要做成头像、贴纸、表情包、卡牌立绘、写实 3D 模型或霓虹发光风。
 
 目标输出路径：
 assets/sprites/<units|enemies>/<visual_key>/idle/<visual_key>_idle_000.png
@@ -203,7 +205,7 @@ assets/sprites/<units|enemies>/<visual_key>/idle/<visual_key>_idle_000.png
 - 显示名: 奶龙酋长
 
 重绘要求：
-- 128x128 源图，纯色背景 #79C7B6，最终抠成透明 PNG。
+- 128x128 源图，纯色背景 #FF00FF，最终抠成透明 PNG。
 - 默认朝右或右下，完整身体，主体居中略偏下，底部锚点居中。
 - 体量按参考图表现，但需要适合 64x64 地图格附近显示；顶部和左右保留透明边距，不要压满画布。
 - 70px 下优先保持参考图中的主要轮廓和识别点清楚。
@@ -213,13 +215,13 @@ assets/sprites/<units|enemies>/<visual_key>/idle/<visual_key>_idle_000.png
 - 不要保留参考图中的背景、文字、水印、UI 框、影子地面、装饰底座或裁切边。
 
 风格关键词：
-low-saturation hand-painted cartoon boss sprite, top-down tactical fantasy, clean silhouette, map-ready transparent sprite, readable at 70px, no UI frame, no text, no realistic 3D render, no neon glow.
+vivid cel-shaded chibi boss sprite matching the attached game sprites, clean dark lineart, crisp 2-3 tone shading, top-down tactical fantasy, clean silhouette, map-ready transparent sprite, readable at 70px, no UI frame, no text, no realistic 3D render, no neon glow.
 ```
 
 ## 6. 入库检查
 
 - `git diff --check` 无空白错误。
-- PNG 最终尺寸是 `128x128`，透明背景无青绿色残边。
+- PNG 最终尺寸是 `128x128`，透明背景无洋红（#FF00FF）残边。
 - 路径和 `visual_key` 完全一致，Godot 能按当前加载逻辑找到文件。
 - 在暗色平地、山地、水域、路径线和范围覆盖层上预览，70-72px 下轮廓清楚。
 - Boss 不能遮挡邻格单位、敌人路径和攻击范围提示。
