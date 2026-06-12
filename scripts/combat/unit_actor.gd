@@ -4,6 +4,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameplaySettings = preload("res://scripts/core/gameplay_settings.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
+const ContactShadow = preload("res://scripts/effects/contact_shadow.gd")
 
 const CELL_SIZE := 64.0
 const BLOCK_RADIUS_TILES := 0.7071
@@ -22,6 +23,9 @@ const VISUAL_IDLE_ANIM := "idle"
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 72.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
+# 高台格部署时整体上抬，让脚落在台顶面而不是崖底（tile_highland 顶面中心偏上）。
+const HIGHLAND_VISUAL_LIFT := Vector2(0.0, -24.0)
+const CONTACT_SHADOW_Y := 26.0
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
 const ATTACK_LUNGE_DISTANCE := 5.0
@@ -165,6 +169,11 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	_current_target_runtime_id = -1
 	_is_dead = false
 	global_position = get_map_manager().cell_to_world(spawn_cell) if get_map_manager() != null else Vector2.ZERO
+	if get_map_manager() != null:
+		var spawn_data = get_map_manager().get_cell_data(spawn_cell)
+		if spawn_data != null and spawn_data.terrain == &"highland":
+			global_position += HIGHLAND_VISUAL_LIFT
+	_ensure_contact_shadow()
 	var label := get_node_or_null("%TitleLabel") as Label
 	if label != null:
 		label.theme = AppTheme.get_theme()
@@ -834,6 +843,15 @@ func _get_idle_motion_root() -> Node2D:
 		root.unique_name_in_owner = true
 		_visual_root.add_child(root)
 	return root
+
+
+func _ensure_contact_shadow() -> void:
+	if get_node_or_null("ContactShadow") != null:
+		return
+	var shadow := ContactShadow.new()
+	shadow.name = "ContactShadow"
+	shadow.position = Vector2(0.0, CONTACT_SHADOW_Y)
+	add_child(shadow)
 
 
 func _get_or_create_idle_sprite() -> Sprite2D:
