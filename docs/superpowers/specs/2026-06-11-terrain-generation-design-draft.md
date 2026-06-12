@@ -115,6 +115,9 @@ S6  corridor 派生 + 约束修复（详见第 3 节）
     每口双 BFS → 真实最短路 + corridor 集（slack=3）
     ① 连通断言（构造已保证，鞍部软代价 A* 开凿兜底）
     ② 绕路上限：双 BFS 最优破墙，并列取伪高程最低（鞍部破墙）
+    > 2026-06-11 修订（B1/B2 落地）：①开凿语义为**字典序**（步数主序，水 6/山 12
+    > 权重次序，见 `_soft_cost_path` 头注），加性软代价与 saddle_weight 弃用；
+    > ②破墙并列裁决为 (y,x) 全序，伪高程不参与。
     ③ 绕路下限：直线段旁插山脊 spur
     ④ 隘口分级：single 扇区旁路封堵（封堵格沿最近山体生长）；顶破 cap → 标 dual
     ⑤ 口袋 flood 复检：不足则自隘口内侧按伪高程升序清障至 ≥6 可建 plain
@@ -203,7 +206,7 @@ S9  终验 + 有界重试
 
 | 硬约束 | 保证方式 | 违反时修复 | 修复如何「像设计的」 |
 |---|---|---|---|
-| 全 5 口连通核心 | **构造保证**：lane 格全程 protected plain | 鞍部软代价 A* 开凿（plain 1/water 6/mountain 12/highland 禁穿 + saddle_weight×伪高程）兜底 | 凿口自动落在山墙最薄最低处=垭口；凿水变渡口 |
+| 全 5 口连通核心 | **构造保证**：lane 格全程 protected plain | 鞍部软代价 A* 开凿（plain 1/water 6/mountain 12/highland 禁穿 + saddle_weight×伪高程）兜底。**2026-06-11 修订：实现为字典序（步数主序 + 水 6/山 12 权重次序，B1 落地）；plain 成本与 saddle_weight 不再使用、不入 json** | 凿口自动落在山墙最薄最低处=垭口；凿水变渡口 |
 | 绕路上限（真实 BFS 路长/曼哈顿 ≤1.6） | S3 走线自检 | 双 BFS 最优破墙：`min(邻dist_gate)+1+min(邻dist_core)` 取最小，并列取伪高程最低，1-3 轮收敛 | 破在最薄处，读作又一个山口 |
 | 绕路下限（≥1.15） | S3 自检 | 直线段旁插 6-10 格纺锤 spur | 山脉天然支脉 |
 | 隘口分级一致性 | 牌构造 aperture | single 扇区旁路封堵（沿最近山体生长合龙）；顶破 cap → 改标 dual，元数据如实 | 封堵=山脉合龙；dual=双口分流牌面 |
@@ -253,12 +256,14 @@ S9  终验 + 有界重试
 {
   "spawn_count": 5, "spawn_safe_radius": 2,
   "generator": "skeleton_v2",            // 切回 "legacy" 即旧 walker（兜底/灰度开关）
-  "max_retries": 5, "max_repair_rounds": 3,
+  "max_retries": 8, // 2026-06-11 调参：5→8（占位值自由取整；floor 修复成功率主导兜底率，详见 B2-11 实施报告）
+  "max_repair_rounds": 3,
   "detour_cap": 1.6, "detour_floor": 1.15,
   "lane_jitter_base": 0.35, "corridor_slack": 3, "gate_slide_jitter": 2,
   "repair": {
-    "carve_costs": { "plain": 1, "water": 6, "mountain": 12 },
-    "saddle_weight": 0.05,
+    // 2026-06-11 修订：开凿语义实现为字典序（步数主序 + 水/山权重次序，B1 落地），
+    // plain 成本与 saddle_weight 在该语义下无意义、不入 json。
+    "carve_costs": { "water": 6, "mountain": 12 },
     "intrusion_max_per_map": 0.15, "intrusion_max_mean": 0.10,
     "dual_pass_ratio_cap": 0.25
   },
@@ -303,6 +308,7 @@ S9  终验 + 有界重试
 - **噪声**：**整数哈希值噪声**（squirrel3 式 `hash(x,y,seed)` + 定点双线性插值 + 2 octave，~50 行 GDScript），不用 FastNoiseLite——跨平台逐位一致，「贴阈值格子翻面」问题**结构性不存在**（structure-first 与 evolve-current 共识，工程镜头背书）。
 - **平局裁决**：A* open list、分位数序、梯度下降、评分排序全部用 `(值, y, x)` 全序；候选集行优先扫描构建（Godot 4 Dictionary 保插入序）。
 - **有界重试**：stage 内局部重抽（走线 ≤3、修复 ≤3 轮、mesa 逐座回滚）→ 整图重试 ≤5 次（attempt 4 强制保守剖面：open_run、ratio 0.20、jitter=0、无河、mesa 4 座）→ **末路兜底**：对每个不连通口沿曼哈顿走廊直线清障到核心（构造性保证连通），`push_error` 报警但**任何路径都不返回非法地图、不死循环**（采纳 evolve-current 的完整语义）。因连通由 protected 车道按构造保证，整图重试预期触发率 <1%（工程镜头认定三案中唯一可信的近零承诺）。
+  > 2026-06-11 修订（B2 落地）：末路兜底改为**回落 legacy 生成器 + `push_warning`**（legacy 全管线久经十套件回归、同样构造性必成，曼哈顿走廊清障弃用）；整图重试 5→8 次、保守剖面取末两轮（重试主因是绕路下限 1.15 在开阔剖面下 spur 修复不可达，非连通——生产形态实测兜底率 0/40，强制单 archetype 压力扫描 ≤3/40，详见 B2-11 报告）；③ 绕路下限改为修复期尽力、S9 终验硬裁决（与 ②/⑥ 同语义）。
 - **失败可观测**：`debug.gen_report` 记 attempt 数、各 pass 台账（申请/落地/回滚）、入侵度、失败约束，供测试与调参读取。
 
 ---

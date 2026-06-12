@@ -1,7 +1,7 @@
 {
   "width": 30,
   "height": 30,
-  "generator": "legacy",
+  "generator": "skeleton_v2",
   "spawn_count": 5,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
@@ -19,7 +19,7 @@
   "spawn_safe_radius": 2,
   "spawn_corner_margin": 3,
   "spawn_arc_center_ratio": 0.6,
-  "max_retries": 5,
+  "max_retries": 8,
   "max_repair_rounds": 3,
   "detour_cap": 1.6,
   "detour_floor": 1.15,

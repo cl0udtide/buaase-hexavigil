@@ -456,6 +456,21 @@ static func trace_river(cells: Dictionary, skeleton: Dictionary, gate_key: Strin
 	for cell in ford:
 		if not protected.has(cell):
 			protected[cell] = &"ford"
+	# 渡口内袋口保护（B2-11）：渡口将成为该口验收窗，但其核心侧袋口没有锚窗那样
+	# 的 protected 口袋核——spur（&"lane" 豁免）/⑥补切/mesa 均可能把窄袋口封死
+	# （sweep 实证 region=0）。把渡口核心向的可走 4 邻升格 &"pocket"（含覆写
+	# &"lane"——袋口处车道豁免必须收回，否则保护不闭合）。
+	for cell in ford:
+		var cell_ring: int = maxi(absi(cell.x - core.x), absi(cell.y - core.y))
+		for direction in CARDINALS:
+			var nb: Vector2i = cell + direction
+			var nb_data: CellData = cells.get(nb) as CellData
+			if nb_data == null or not nb_data.walkable:
+				continue
+			if maxi(absi(nb.x - core.x), absi(nb.y - core.y)) >= cell_ring:
+				continue
+			if not protected.has(nb) or StringName(protected[nb]) == &"lane":
+				protected[nb] = &"pocket"
 	return result
 
 
