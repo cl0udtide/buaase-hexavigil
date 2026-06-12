@@ -74,7 +74,7 @@ static func place_mesas(cells: Dictionary, skeleton: Dictionary, protected: Dict
 	var live: Dictionary = corridors
 	# ① 起手保底台：全格 ring(core) 入 [ring_min, ring_max]。
 	var starter_size: int = rng.randi_range(int(starter_cfg.get("size_min", 3)), int(starter_cfg.get("size_max", 4)))
-	live = _place_slot(ctx, mesas, ledger, live, KIND_STARTER, "", starter_size)
+	live = _place_slot_with_fallback(ctx, mesas, ledger, live, KIND_STARTER, "", starter_size)
 	# ② 战位配额座。尺寸掷预留后续配额座最小形状量（适配：计划仅约束填充座掷，
 	# 但 4 个配额扇区时无预留可掷爆 cells_max、挤掉后续配额保障——预留下界
 	# 归纳保证每座可掷 ≥ MIN_SHAPE_SIZE 且总量恒 ≤ cells_max，详见任务报告）。
@@ -89,7 +89,7 @@ static func place_mesas(cells: Dictionary, skeleton: Dictionary, protected: Dict
 		var quota_size: int = _roll_size(rng, mesa_cfg, cells_max - _cells_total(mesas) - reserve)
 		if quota_size <= 0:
 			continue
-		live = _place_slot(ctx, mesas, ledger, live, KIND_QUOTA, String(quota_keys[i]), quota_size)
+		live = _place_slot_with_fallback(ctx, mesas, ledger, live, KIND_QUOTA, String(quota_keys[i]), quota_size)
 	# ③ 填充到座数带；conservative 取下限（掷点照常消费，保 rng 流序）。
 	var rolled_count: int = rng.randi_range(count_min, count_max)
 	var target_count: int = count_min if bool(skeleton.get("conservative", false)) else rolled_count
@@ -98,7 +98,15 @@ static func place_mesas(cells: Dictionary, skeleton: Dictionary, protected: Dict
 		var filler_size: int = _roll_size(rng, mesa_cfg, cells_max - _cells_total(mesas))
 		if filler_size <= 0:
 			break	# 预算尽，后续槽位同败
-		live = _place_slot(ctx, mesas, ledger, live, KIND_FILLER, "", filler_size)
+		live = _place_slot_with_fallback(ctx, mesas, ledger, live, KIND_FILLER, "", filler_size)
+	# 量带兜底（B2-11）：尺寸降阶会压低总量（4×3=12 < cells_min），座数未达
+	# 上限时补填至 cells_min（不掷 rng，决定性；单次新增 ≤6 → 总量恒 ≤ 19 < cells_max）。
+	while mesas.size() < count_max and _cells_total(mesas) < cells_min:
+		var top_size: int = mini(maxi(cells_min - _cells_total(mesas), MIN_SHAPE_SIZE), 6)
+		var before_top: int = mesas.size()
+		live = _place_slot_with_fallback(ctx, mesas, ledger, live, KIND_FILLER, "", top_size)
+		if mesas.size() == before_top:
+			break	# 全图无处可放，交验收降阶
 	# 验收与降阶（B2-10 编排器对非末次 attempt 视 degraded 为失败重试）。
 	var count: int = mesas.size()
 	var total: int = _cells_total(mesas)
@@ -137,6 +145,21 @@ static func _build_ctx(cells: Dictionary, skeleton: Dictionary, protected: Dicti
 		"conf_near": _dilate(conf_set, HUG_DIST),
 		"mg": _mg(),
 	}
+
+
+## 槽位放置 + 尺寸降阶兜底：rolled 尺寸候选枯竭/复检全败 → size−1 … 目录最小
+## 形状逐级重试（窗区拥挤放不下大形状是配额座枯竭主因——B2-11 sweep 实证；
+## 降阶序固定且不消费 rng，决定性不变）。
+static func _place_slot_with_fallback(ctx: Dictionary, mesas: Array[Dictionary], ledger: Dictionary, corridors: Dictionary, kind: StringName, gate_key: String, size: int) -> Dictionary:
+	var live: Dictionary = corridors
+	var try_size: int = size
+	while try_size >= MIN_SHAPE_SIZE:
+		var before: int = mesas.size()
+		live = _place_slot(ctx, mesas, ledger, live, kind, gate_key, try_size)
+		if mesas.size() > before:
+			break
+		try_size -= 1
+	return live
 
 
 ## 单槽位反漂移闭环：候选全序扫描（≤TRIALS_PER_SLOT 次试落）。每候选：批量
@@ -275,15 +298,22 @@ static func _candidate_less(a: Array, b: Array) -> bool:
 
 
 ## 候选格合法：非 protected（任意类别，含 ford/aperture/pocket/lane）、当前
-## plain 可走、且过 map_generator 候选过滤（图内/安全半径/无资源口核）。
+## plain 可走、4 邻无既有 highland（两座相邻即 4 连通合并，座数对外读数塌缩
+## ——B2-11 sweep 实证 count 带失败主因）、且过 map_generator 候选过滤
+## （图内/安全半径/无资源口核）。
 static func _cell_placeable(ctx: Dictionary, cell: Vector2i) -> bool:
 	if (ctx["protected"] as Dictionary).has(cell):
 		return false
-	var data: CellData = (ctx["cells"] as Dictionary).get(cell) as CellData
+	var cells: Dictionary = ctx["cells"]
+	var data: CellData = cells.get(cell) as CellData
 	if data == null or data.terrain != CellData.TERRAIN_PLAIN or not data.walkable:
 		return false
+	for direction in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+		var nb: CellData = cells.get(cell + direction) as CellData
+		if nb != null and nb.terrain == CellData.TERRAIN_HIGHLAND:
+			return false
 	var mg: GDScript = ctx["mg"]
-	return bool(mg._is_obstacle_candidate(ctx["cells"], ctx["width"], ctx["height"], ctx["spawn_cells"], ctx["core"], ctx["cfg"], cell))
+	return bool(mg._is_obstacle_candidate(cells, ctx["width"], ctx["height"], ctx["spawn_cells"], ctx["core"], ctx["cfg"], cell))
 
 
 ## 加权尺寸掷：恒消费 1 次 randf（rng 流序固定），可行集 = 目录尺寸 ∩ 权重>0 ∩

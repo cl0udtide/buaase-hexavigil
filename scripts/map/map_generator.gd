@@ -347,6 +347,13 @@ static func _validate_v2(cells: Dictionary, skeleton: Dictionary, repair: Dictio
 				return {"ok": false, "reason": "grade_dual"}
 		elif grade != &"open":
 			return {"ok": false, "reason": "grade_missing"}
+		if grade != &"open":
+			# 口袋终验（B2-11）：⑤/⑤b 之后 mesa 仍可能圈死窄袋口（渡口窗为甚），
+			# 资源点也会蚕食 plain 计数——非 steppe 口在终图上重申 ≥ pocket_min_plain。
+			var pass_cfg: Dictionary = cfg.get("pass", {})
+			var flood: Dictionary = GenRepair._pocket_flood(cells, GenRepair._acceptance_window(skeleton, key), core, int(pass_cfg.get("pocket_flood_limit", 12)))
+			if int(flood.get("plain", 0)) < int(pass_cfg.get("pocket_min_plain", 6)):
+				return {"ok": false, "reason": "pocket_final"}
 	var mesa_cells_total: int = 0
 	for raw_mesa: Variant in (mesa.get("mesas", []) as Array):
 		mesa_cells_total += ((raw_mesa as Dictionary).get("cells", []) as Array).size()

@@ -48,8 +48,10 @@ static func derive_all_corridors(cells: Dictionary, skeleton: Dictionary, slack:
 	return corridors
 
 
-## 六步全量修复（S6①-⑥）：连通兜底 → 绕路上限 → 绕路下限 spur → 隘口分级 →
-## 口袋 flood → 占比回调。入侵度（微创修复改写格，写 ledger.repair_intrusion）
+## 全量修复（S6①-⑥ + ⑤b 口袋复检）：连通兜底 → 绕路上限 → 绕路下限 spur
+## （尽力，硬裁决在 S9）→ 隘口分级 → 口袋 flood → 占比回调 → 口袋复检。
+## 成功 verdict 附加观测键 "floors_ok"（③ 是否全口抬过 floor，B2-11 新增）。
+## 入侵度（微创修复改写格，写 ledger.repair_intrusion）
 ## = 破坏性改写：① 开凿 + ② 破墙 + ⑤ 清障 + ⑥ 啃边（推倒已长地貌/凿穿）；
 ## 建设性落山（③ spur=支脉、④ 封堵=合龙、⑥ 欠收补切=贴地貌长肉，§3 自然感列）
 ## 是地貌预算补齐（设计稿「缺口由 S6⑥ 台账回调补齐」），只记台账 stages 不计
@@ -69,11 +71,12 @@ static func full_repair(cells: Dictionary, skeleton: Dictionary, protected: Dict
 	var cap_carved: int = _repair_caps(cells, skeleton, cfg)
 	FleshGen.ledger_note(ledger, "repair_caps", cap_carved, cap_carved, 0)
 	intrusion += cap_carved
-	# ③ 绕路下限：直线段旁插山脊 spur（预算补齐，不计入侵度）。
+	# ③ 绕路下限：直线段旁插山脊 spur（预算补齐，不计入侵度）。尽力修复、不在
+	# 此判负——与 ②caps/⑥占比同语义（修复期尽力，S9 终验裁决）：④ 封堵驻留与
+	# S7 mesa 贴走廊落地会继续抬高低位口，③ 期判负过早且放大重试相关性
+	# （B2-11 sweep 实证：detour_floor 占 attempt 失败 ~9 成）。
 	var floors: Dictionary = _repair_floors(cells, skeleton, protected, cfg)
 	FleshGen.ledger_note(ledger, "repair_spur", int(floors["applied"]), int(floors["applied"]), 0)
-	if not bool(floors["ok"]):
-		return _verdict(cells, skeleton, ledger, false, "detour_floor", grades, intrusion)
 	# ④ 隘口分级：旁路窗封堵（合龙=建设性，不计入侵度）→ single/dual/open + 自证。
 	var grading: Dictionary = _grade_passes(cells, skeleton, protected, elevation, cfg)
 	FleshGen.ledger_note(ledger, "repair_grade", int(grading["applied"]), int(grading["applied"]), 0)
@@ -92,12 +95,21 @@ static func full_repair(cells: Dictionary, skeleton: Dictionary, protected: Dict
 	intrusion += int(rebalance["removed"])
 	if not bool(rebalance["ok"]):
 		return _verdict(cells, skeleton, ledger, false, "ratio", grades, intrusion)
+	# ⑤b 口袋复检：⑥ 补切只避 corridor 近旁与 protected 格，仍可在保护岛外圈
+	# 合围、把验收窗内袋与核心隔断（B2-11 sweep 实证 4 例）——复跑 ⑤ 凿穿合围。
+	var pockets_b: Dictionary = _repair_pockets(cells, skeleton, protected, elevation, cfg)
+	FleshGen.ledger_note(ledger, "repair_pocket_b", int(pockets_b["intrusion"]), int(pockets_b["intrusion"]), 0)
+	intrusion += int(pockets_b["intrusion"])
+	if not bool(pockets_b["ok"]):
+		return _verdict(cells, skeleton, ledger, false, "pocket_b", grades, intrusion)
 	# 收尾：入侵度上限自检（修复是微创不是重画）。
 	var repair_cfg: Dictionary = cfg.get("repair", {})
 	var max_intrusion: int = int(ceil(float(_blocked_count(cells)) * float(repair_cfg.get("intrusion_max_per_map", 0.15))))
 	if intrusion > max_intrusion:
 		return _verdict(cells, skeleton, ledger, false, "intrusion", grades, intrusion)
-	return _verdict(cells, skeleton, ledger, true, "", grades, intrusion)
+	var verdict: Dictionary = _verdict(cells, skeleton, ledger, true, "", grades, intrusion)
+	verdict["floors_ok"] = bool(floors["ok"])	# 观测键（B2-11 新增）：③ 是否全口抬过 floor
+	return verdict
 
 
 ## ① 连通兜底：key 升序，每口不可达 → _soft_cost_path 取路并把路上阻挡格还原
@@ -152,8 +164,9 @@ static func _repair_caps(cells: Dictionary, skeleton: Dictionary, cfg: Dictionar
 ## ③ 绕路下限（§3「直线段旁插山脊 spur」）：ratio < floor 的口沿真实最短路
 ## 自中点向两端扫锚位，锚位处沿门→核心行进向的单调反链插山脊条带，
 ## 每轮至多收下一墙，收下条件 = 本口路长严格变长、本口 ≤ cap 且全口 cap 保持
-## （入带即停）。轮尽仍 < floor → fail。spur 格记台账 "repair_spur"（地貌预算
-## 补齐），不计微创入侵度——见任务报告适配记录。
+## （入带即停）。轮尽仍 < floor → ok=false 但**不判负**（B2-11：尽力语义，
+## ④ 封堵驻留与 S7 mesa 继续抬升，floor 硬裁决移交 S9 _validate_v2）。
+## spur 格记台账 "repair_spur"（地貌预算补齐），不计微创入侵度——见任务报告。
 ## 适配记录（详见任务报告）：a) 锚位不限中点（中点=最宽漏斗腰，单点必败）；
 ## b) 收下放宽到「严格推进」多墙成脉（§3 spur 即山脉支脉，单墙 +2 不足跨 floor）；
 ## c) 条带可越 &"lane" 格（SF-1：车道非验收对象，连通由 _try_apply 保证；
@@ -167,6 +180,7 @@ static func _repair_floors(cells: Dictionary, skeleton: Dictionary, protected: D
 	var floor_ratio: float = float(cfg.get("detour_floor", 1.15))
 	var rounds: int = maxi(int(cfg.get("max_repair_rounds", 3)), 1)
 	var applied_total: int = 0
+	var all_lifted := true
 	for raw_key: Variant in _sorted_gate_keys(skeleton):
 		var gate: Vector2i = gate_map[raw_key]
 		var lifted := false
@@ -176,11 +190,11 @@ static func _repair_floors(cells: Dictionary, skeleton: Dictionary, protected: D
 				break
 			var applied: int = _try_spur(cells, skeleton, protected, cfg, gate)
 			if applied <= 0:
-				break	# 无墙可落，重试同输入必同败——提前判负
+				break	# 无墙可落，本轮同输入必同败——余量交后续阶段抬升
 			applied_total += applied
 		if not lifted and _gate_ratio(cells, gate, core) < floor_ratio:
-			return {"ok": false, "applied": applied_total}
-	return {"ok": true, "applied": applied_total}
+			all_lifted = false	# 不提前返回：其余口继续尽力修复
+	return {"ok": all_lifted, "applied": applied_total}
 
 
 ## 单轮 spur：沿当前最短路自中点向两端扫锚位，落下首个「严格推进且全口 cap
@@ -213,22 +227,39 @@ static func _try_spur(cells: Dictionary, skeleton: Dictionary, protected: Dictio
 		var anchor_idx: int = mid_idx + ((offset + 1) / 2 if offset % 2 == 1 else -(offset / 2))
 		if anchor_idx < 1 or anchor_idx > path.size() - 2:
 			continue
-		var batch: Array[Vector2i] = _spur_strip(cells, protected, path[anchor_idx], perp, rect_lo, rect_hi, width, height)
-		if batch.size() < SPUR_MIN:
-			continue
-		var applied: int = _mg()._try_apply_obstacle_cells(cells, batch, CellData.TERRAIN_MOUNTAIN, width, height, spawn_cells, core, cfg)
-		if applied <= 0:
-			continue
-		var new_len: int = int(_bfs(cells, gate).get(core, -1))
-		if new_len > base_len and float(new_len) / float(manhattan) <= cap and _all_caps_ok(cells, skeleton, cap):
-			return applied
-		for cell in batch:
-			(cells.get(cell) as CellData).set_base_terrain(CellData.TERRAIN_PLAIN)
+		# 同锚位两档条带：先短档（停在既有阻挡旁，墙量小、对邻口扰动小），失败再
+		# 长档（穿越既有阻挡远侧续链，铺满反链截面）——短档即 B2-7 原行为，长档
+		# 处理障碍旁活口致 no_gain 的局面（B2-11 sweep 实证 floor 失败主因）。
+		# 长档免 SPUR_MIN：穿越语义下 1-2 格条带可以是「桥接两道既有山体」的完整
+		# 切割（最廉价的合龙）；短档保留下限（独立短墙必漏）。
+		var prev_size: int = -1
+		for continue_through: bool in [false, true]:
+			var batch: Array[Vector2i] = _spur_strip(cells, protected, path[anchor_idx], perp, rect_lo, rect_hi, width, height, continue_through)
+			if batch.is_empty() or batch.size() == prev_size:
+				continue	# 长短档同长 = 臂上无障碍，跳过重复试落
+			if not continue_through and batch.size() < SPUR_MIN:
+				prev_size = batch.size()
+				continue
+			prev_size = batch.size()
+			var applied: int = _mg()._try_apply_obstacle_cells(cells, batch, CellData.TERRAIN_MOUNTAIN, width, height, spawn_cells, core, cfg)
+			if applied <= 0:
+				continue
+			var new_len: int = int(_bfs(cells, gate).get(core, -1))
+			if new_len > base_len and float(new_len) / float(manhattan) <= cap and _all_caps_ok(cells, skeleton, cap):
+				return applied
+			for cell in batch:
+				(cells.get(cell) as CellData).set_base_terrain(CellData.TERRAIN_PLAIN)
 	return 0
 
 
-## 过锚位的最大可落反链条带：两臂沿 ±perp 走到自然停点。锚位不可落 → 空。
-static func _spur_strip(cells: Dictionary, protected: Dictionary, anchor: Vector2i, perp: Vector2i, rect_lo: Vector2i, rect_hi: Vector2i, width: int, height: int) -> Array[Vector2i]:
+## 过锚位的最大可落反链条带：两臂沿 ±perp 走到自然停点（图缘、保护格、资源/
+## 口/核格、越出包围盒 SPUR_OVERHANG）。锚位不可落 → 空。
+## continue_through=false：臂停在既有阻挡旁（B2-7 原行为，短档）；
+## continue_through=true：既有阻挡格不入批但**穿越续走**（合龙后在远侧继续
+## 成链，长档）——r0=1.0 时全部最短路是门-核包围盒内的单调阶梯，条带须铺满
+## 该反链截面才有严格增益，停在障碍旁会在其远侧留活口 → no_gain
+## （B2-11 sweep 实证 floor 失败主因）。
+static func _spur_strip(cells: Dictionary, protected: Dictionary, anchor: Vector2i, perp: Vector2i, rect_lo: Vector2i, rect_hi: Vector2i, width: int, height: int, continue_through: bool) -> Array[Vector2i]:
 	var batch: Array[Vector2i] = []
 	if not _spur_blockable(cells, protected, anchor, width, height):
 		return batch
@@ -237,6 +268,14 @@ static func _spur_strip(cells: Dictionary, protected: Dictionary, anchor: Vector
 		var k: int = 1
 		while batch.size() < SPUR_MAX:
 			var cell: Vector2i = anchor + perp * (k * dir_sign)
+			if cell.x < 0 or cell.x >= width or cell.y < 0 or cell.y >= height:
+				break
+			var data: CellData = cells.get(cell) as CellData
+			if data != null and not data.walkable:
+				if not continue_through or _beyond_rect(cell, rect_lo, rect_hi) >= SPUR_OVERHANG:
+					break
+				k += 1	# 既有阻挡：墙体合龙穿越，远侧续链
+				continue
 			if not _spur_blockable(cells, protected, cell, width, height):
 				break
 			batch.append(cell)
@@ -379,6 +418,9 @@ static func _repair_pockets(cells: Dictionary, skeleton: Dictionary, protected: 
 
 
 ## 自验收窗内侧（核心向更近邻）种子 flood；返回 {"plain": int, "region": Dictionary}。
+## 窗被合围（核心不可达 → 零种子）时退化为窗自身可走格播种且 plain 记 0：
+## 区域仍非空供清障器沿岛界凿穿合围，凿通后下轮重 flood 自动回核心向语义
+## （⑤b 复检需要，见 full_repair；B2-11 sweep 实证）。
 static func _pocket_flood(cells: Dictionary, win: Array[Vector2i], core: Vector2i, flood_limit: int) -> Dictionary:
 	var dist_core: Dictionary = _bfs(cells, core)
 	var dist: Dictionary = {}
@@ -392,6 +434,12 @@ static func _pocket_flood(cells: Dictionary, win: Array[Vector2i], core: Vector2
 				continue
 			dist[nb] = 0
 			queue.append(nb)
+	var enclosed: bool = queue.is_empty()
+	if enclosed:
+		for cell in win:
+			if cells.has(cell) and (cells[cell] as CellData).walkable and not dist.has(cell):
+				dist[cell] = 0
+				queue.append(cell)
 	var head: int = 0
 	var plain: int = 0
 	while head < queue.size():
@@ -408,7 +456,7 @@ static func _pocket_flood(cells: Dictionary, win: Array[Vector2i], core: Vector2
 				continue
 			dist[nb] = int(dist[current]) + 1
 			queue.append(nb)
-	return {"plain": plain, "region": dist}
+	return {"plain": 0 if enclosed else plain, "region": dist}
 
 
 ## flood 区 4 邻阻挡格中 (elev, y, x) 最小者（凿山坳自最低处）；无候选 → (-1,-1)。

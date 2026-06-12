@@ -776,9 +776,32 @@ Boss 多阶段规则：
 | `terrain_cluster_attempts` | `int` | 每个连续地貌簇的尝试次数；失败通常是因为会堵死刷怪点到核心路径 |
 | `scattered_obstacle_ratio` | `float` | 总障碍中保留为零散障碍的比例，其余优先生成连续地貌簇 |
 | `core_safe_radius` | `int` | 核心周围不会随机生成障碍、额外资源、事件点的安全半径 |
-| `spawn_safe_radius` | `int` | 刷怪点周围不会随机生成障碍、额外资源、事件点的安全半径 |
+| `spawn_safe_radius` | `int` | 刷怪点周围不会随机生成障碍、额外资源、事件点的安全半径（地形包阶段 B 起 1→2） |
 | ~~`min_spawn_core_distance`~~ | ~~`int`~~ | ~~刷怪点到核心的最小曼哈顿距离~~ → **v2 已删除**，等弧算法隐式保证边缘距离 |
 | ~~`min_spawn_distance`~~ | ~~`int`~~ | ~~刷怪点之间的最小曼哈顿距离~~ → **v2 已删除**，等弧均分自然保证间距 |
+
+骨架生成器（skeleton_v2，地形包阶段 B）新增字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `generator` | `string` | 生成器开关：`"skeleton_v2"`（现行）/ `"legacy"`（旧 walker 管线，随时可切回） |
+| `max_retries` | `int` | skeleton_v2 整图重试上限（末两轮强制保守剖面；全败回落 legacy 并 `push_warning`） |
+| `max_repair_rounds` | `int` | 修复 pass 内每个目标项的轮数上限 |
+| `detour_cap` / `detour_floor` | `float` | 每口「真实最短路长 / 曼哈顿距离」的验收带 [1.15, 1.6]（cap 同时被 legacy 绕路修复使用） |
+| `lane_jitter_base` | `float` | 车道噪声抖动缺省幅度（牌的 `jitter_amp` 覆写） |
+| `corridor_slack` | `int` | corridor 派生松弛：双 BFS 距离和 ≤ 最短 + slack |
+| `gate_slide_jitter` | `int` | 门位弧内滑移抖动幅度 |
+| `repair` | `object` | 开凿代价权重（`carve_costs.water`/`mountain`，字典序次序键）、入侵度上限（单图/均值）、`dual_pass_ratio_cap`（dual 隘口比例目标，平衡盘项） |
+| `pass` | `object` | 隘口验收窗纵深（`aperture_depth`）、口袋核尺寸（`pocket_core_w/h`）与口袋 flood 验收（`pocket_min_plain`/`pocket_flood_limit`） |
+| `mesa` | `object` | 天然高台座数带（`count_min/max`、降阶下限）、总格数带（`cells_min/max`）、尺寸权重、corridor 贴靠（`max_corridor_dist`/`min_covered_ratio`）、起手台（`starter.*` 环带 4-5） |
+| `economy` | `object` | 资源风味亲和（wood→湿原 / stone→山麓 / mana→临水）与 `risk_reward_bias` |
+| `moisture_gradient_strength` | `float` | 湿度梯度强度（河湖计划与资源风味用） |
+| `sector_cards` | `object` | 扇区牌定义（bastion / steppe / riverlands / canyon：隘口宽、环带、密度、mesa 配额、抖动、资源倍率、河/湖键） |
+| `archetypes` | `array` | 地图原型（id、权重、牌组多重集、汇流拓扑、阻挡占比带 `ratio_band`） |
+| `day1_card_constraint` | `string` | 发牌约束：`"no_double_steppe"` = 第 1 天活跃口不得全为 steppe |
+| `bias_cards_by_activation` | `bool` | 预留：按激活序加权发牌（当前 `false`） |
+
+generator 开关说明：`"skeleton_v2"` 走骨架生成器全管线（牌组 → 车道 → 长肉 → 修复 → mesa → 资源），`"legacy"` 走旧 walker 管线；`obstacle_ratio`、`terrain_cluster_*` 等旧算法键全部保留，既作回切配置，也是 skeleton_v2 重试耗尽后的兜底生成器所用。`generate` 返回字典在 v2 下额外回传 `sectors`（gate_key → {card, pass_grade, anchor, aperture, ford}）与 `gen_report`（attempts / fallback / ledger / intrusion / blocked_ratio 等）两键；`map_manager.generate_new_map` 只消费 cells / core_cell / spawn_cells / event_points 四键，新增键向上透传（夜晚播报链就绪），legacy 路径回传两个空字典。
 
 当前配置：
 
@@ -786,9 +809,8 @@ Boss 多阶段规则：
 {
   "width": 30,
   "height": 30,
+  "generator": "skeleton_v2",
   "spawn_count": 5,
-  "spawn_corner_margin": 3,
-  "spawn_arc_center_ratio": 0.6,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
   "event_point_count": 0,
@@ -802,7 +824,51 @@ Boss 多阶段规则：
   "terrain_cluster_attempts": 24,
   "scattered_obstacle_ratio": 0.22,
   "core_safe_radius": 3,
-  "spawn_safe_radius": 1
+  "spawn_safe_radius": 2,
+  "spawn_corner_margin": 3,
+  "spawn_arc_center_ratio": 0.6,
+  "max_retries": 8,
+  "max_repair_rounds": 3,
+  "detour_cap": 1.6,
+  "detour_floor": 1.15,
+  "lane_jitter_base": 0.35,
+  "corridor_slack": 3,
+  "gate_slide_jitter": 2,
+  "repair": {
+    "carve_costs": { "water": 6, "mountain": 12 },
+    "intrusion_max_per_map": 0.15,
+    "intrusion_max_mean": 0.10,
+    "dual_pass_ratio_cap": 0.25
+  },
+  "pass": { "aperture_depth": 2, "pocket_core_w": 3, "pocket_core_h": 2, "pocket_min_plain": 6, "pocket_flood_limit": 12 },
+  "mesa": {
+    "count_min": 4, "count_max": 6, "count_floor_degraded": 3,
+    "cells_min": 14, "cells_max": 24,
+    "size_weights": { "3": 0.30, "4": 0.35, "5": 0.20, "6": 0.15 },
+    "max_corridor_dist": 2, "min_covered_ratio": 0.6,
+    "starter": { "ring_min": 4, "ring_max": 5, "size_min": 3, "size_max": 4, "max_corridor_dist": 2 }
+  },
+  "economy": {
+    "resource_affinity": { "wood": "moist_plain", "stone": "foothill", "mana": "water_adjacent" },
+    "risk_reward_bias": 0.5
+  },
+  "moisture_gradient_strength": 0.2,
+  "sector_cards": {
+    "bastion":    { "pass_width": 2, "pass_ring": [6, 8],  "density": 1.3, "mesa_quota": 1, "jitter_amp": 0.5,  "resource_mult": 1.0 },
+    "steppe":     { "pass_width": 5, "pass_ring": [7, 10], "density": 0.6, "mesa_quota": 0, "jitter_amp": 0.3,  "resource_mult": 1.5, "lake": [1, 2] },
+    "riverlands": { "pass_width": 2, "pass_ring": [6, 9],  "density": 0.9, "mesa_quota": 1, "jitter_amp": 0.4,  "resource_mult": 1.1, "river": true, "ford_width": 2 },
+    "canyon":     { "pass_width": 3, "pass_ring": [6, 10], "density": 1.2, "mesa_quota": 1, "jitter_amp": 0.35, "resource_mult": 0.9, "corridor_len": [6, 9] }
+  },
+  "archetypes": [
+    { "id": "highland_run", "weight": 1.0, "deck": { "bastion": 2, "canyon": 2, "steppe": 1 },
+      "confluence": "five_fingers", "ratio_band": [0.24, 0.28] },
+    { "id": "riverine_run", "weight": 1.0, "deck": { "riverlands": 3, "steppe": 1, "bastion": 1 },
+      "confluence": "twin_pincers", "ratio_band": [0.20, 0.24] },
+    { "id": "open_run", "weight": 1.0, "deck": { "steppe": 3, "bastion": 1, "riverlands": 1 },
+      "confluence": "trident", "ratio_band": [0.20, 0.22] }
+  ],
+  "day1_card_constraint": "no_double_steppe",
+  "bias_cards_by_activation": false
 }
 ```
 
