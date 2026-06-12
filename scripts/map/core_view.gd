@@ -3,6 +3,8 @@ extends Node2D
 ## 核心视图：立体建筑 sprite 叠在平地地块上（贴图由生成批次产出，见
 ## docs/MAP_ASSET_GENERATION_PROMPTS.md §4.2），比普通建筑（72px）更大更庄重。
 
+const ContactShadow = preload("res://scripts/effects/contact_shadow.gd")
+
 const CORE_TEXTURE: Texture2D = preload("res://assets/map/CommandMap/core_structure.png")
 const TEXTURE_SIZE := 128.0
 const DISPLAY_SIZE := 88.0
@@ -23,3 +25,9 @@ func _ready() -> void:
 	sprite.z_index = VISUAL_Z_INDEX
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
+	var shadow := ContactShadow.new()
+	shadow.name = "ContactShadow"
+	shadow.position = Vector2(0.0, 26.0)
+	shadow.radius = 24.0
+	shadow.squash = 0.36
+	add_child(shadow)
