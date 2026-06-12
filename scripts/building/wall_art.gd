@@ -29,14 +29,21 @@ const DECK_X1 := 109
 const DECK_Y1 := 103
 const DECK_RIM := 9
 
-const COL_OUTLINE := Color8(58, 50, 41)
-const COL_WOOD_A := Color8(203, 166, 118)
-const COL_WOOD_B := Color8(189, 151, 104)
-const COL_WOOD_C := Color8(172, 135, 92)
-const COL_WOOD_SEAM := Color8(143, 112, 78)
-const COL_WOOD_FRONT := Color8(124, 97, 66)
-const COL_WOOD_FRONT_SEAM := Color8(103, 80, 55)
-const COL_WOOD_SIDE := Color8(149, 120, 84)
+const COL_OUTLINE := Color8(54, 44, 38)
+const COL_WOOD_A := Color8(221, 176, 116)
+const COL_WOOD_B := Color8(202, 154, 95)
+const COL_WOOD_C := Color8(180, 131, 76)
+const COL_WOOD_SEAM := Color8(138, 103, 66)
+const COL_WOOD_FRONT := Color8(118, 90, 64)
+const COL_WOOD_FRONT_SEAM := Color8(92, 71, 58)
+const COL_WOOD_SIDE := Color8(152, 118, 78)
+# 金属包角（呼应生成建筑的铁件），冷灰偏蓝。
+const COL_IRON := Color8(76, 78, 92)
+const COL_IRON_LIGHT := Color8(136, 140, 156)
+# 顶面光影（画风第 2 条：左上暖光、偏冷阴影）。
+const LIGHT_EDGE_LIGHTEN := 0.12
+const SHADE_EDGE_COLOR := Color(0.36, 0.36, 0.52)
+const SHADE_EDGE_MIX := 0.22
 const COL_DECK_A := Color8(214, 183, 136)
 const COL_DECK_B := Color8(201, 169, 122)
 const COL_DECK_SEAM := Color8(172, 142, 100)
@@ -143,10 +150,11 @@ static func build_image(kind: StringName, mask: int) -> Image:
 				image.set_pixel(x, y, _front_color_wood(x, y))
 			elif front[y * TEX + x] == 2:
 				image.set_pixel(x, y, _front_color_stone(x, y))
+	_apply_top_light_pass(image, shape)
 	if is_platform:
 		_draw_corner_posts(image)
 	else:
-		_draw_center_pegs(image)
+		_draw_corner_braces(image)
 	_draw_outline(image, shape, front)
 	return image
 
@@ -257,6 +265,22 @@ static func _front_color_stone(x: int, y: int) -> Color:
 	return COL_STONE_FRONT if _hash(x / 10, y / 6, 37) % 4 != 0 else COL_STONE_FRONT_SEAM
 
 
+## 顶面左上受光、右缘偏冷背光（只作用于顶面形状，幅度克制保住板缝纹样）。
+static func _apply_top_light_pass(image: Image, shape: PackedByteArray) -> void:
+	for y: int in range(TEX):
+		for x: int in range(TEX):
+			if shape[y * TEX + x] != 1:
+				continue
+			var north_open := y < 2 or shape[(y - 2) * TEX + x] == 0
+			var west_open := x < 2 or shape[y * TEX + (x - 2)] == 0
+			var east_open := x > TEX - 3 or shape[y * TEX + (x + 2)] == 0
+			var base := image.get_pixel(x, y)
+			if north_open or west_open:
+				image.set_pixel(x, y, base.lightened(LIGHT_EDGE_LIGHTEN))
+			elif east_open:
+				image.set_pixel(x, y, base.lerp(SHADE_EDGE_COLOR, SHADE_EDGE_MIX))
+
+
 static func _draw_corner_posts(image: Image) -> void:
 	var corners: Array[Vector2i] = [
 		Vector2i(DECK_X0 + 3, DECK_Y0 + 3),
@@ -266,19 +290,31 @@ static func _draw_corner_posts(image: Image) -> void:
 	]
 	for corner: Vector2i in corners:
 		image.fill_rect(Rect2i(corner.x, corner.y, 12, 12), COL_POST)
-		image.fill_rect(Rect2i(corner.x, corner.y, 12, 2), COL_POST_LIGHT)
-		image.fill_rect(Rect2i(corner.x, corner.y, 2, 12), COL_POST_LIGHT)
+		image.fill_rect(Rect2i(corner.x, corner.y, 12, 3), COL_IRON)
+		image.fill_rect(Rect2i(corner.x, corner.y, 12, 1), COL_IRON_LIGHT)
+		image.fill_rect(Rect2i(corner.x, corner.y + 3, 1, 9), COL_POST_LIGHT)
 
 
-static func _draw_center_pegs(image: Image) -> void:
-	var pegs: Array[Vector2i] = [
-		Vector2i(CEN_X0 + 6, CEN_Y0 + 6),
-		Vector2i(CEN_X1 - 8, CEN_Y0 + 6),
-		Vector2i(CEN_X0 + 6, CEN_Y1 - 8),
-		Vector2i(CEN_X1 - 8, CEN_Y1 - 8),
+## 中心块四角铁质 L 形包角（替代旧版 3px 木桩点）。
+static func _draw_corner_braces(image: Image) -> void:
+	var arm := 9
+	var thick := 3
+	var specs: Array[Array] = [
+		[Vector2i(CEN_X0 + 2, CEN_Y0 + 2), 1, 1],
+		[Vector2i(CEN_X1 - 2, CEN_Y0 + 2), -1, 1],
+		[Vector2i(CEN_X0 + 2, CEN_Y1 - 2), 1, -1],
+		[Vector2i(CEN_X1 - 2, CEN_Y1 - 2), -1, -1],
 	]
-	for peg: Vector2i in pegs:
-		image.fill_rect(Rect2i(peg.x, peg.y, 3, 3), COL_OUTLINE)
+	for spec: Array in specs:
+		var origin: Vector2i = spec[0]
+		var sx := int(spec[1])
+		var sy := int(spec[2])
+		var h_rect := Rect2i(origin.x if sx > 0 else origin.x - arm + 1, origin.y if sy > 0 else origin.y - thick + 1, arm, thick)
+		var v_rect := Rect2i(origin.x if sx > 0 else origin.x - thick + 1, origin.y if sy > 0 else origin.y - arm + 1, thick, arm)
+		image.fill_rect(h_rect, COL_IRON)
+		image.fill_rect(v_rect, COL_IRON)
+		image.fill_rect(Rect2i(h_rect.position, Vector2i(h_rect.size.x, 1)), COL_IRON_LIGHT)
+		image.fill_rect(Rect2i(v_rect.position, Vector2i(1, v_rect.size.y)), COL_IRON_LIGHT)
 
 
 ## 形状（顶面+正面）外侧 2px 描边；两轮 4 邻域膨胀。
