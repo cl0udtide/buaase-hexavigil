@@ -86,6 +86,14 @@ const COLOR_RESOURCE_WOOD := Color(0.45, 0.31, 0.18, 1.0)
 const COLOR_RESOURCE_STONE := Color(0.56, 0.59, 0.64, 1.0)
 const COLOR_RESOURCE_MANA := Color(0.16, 0.62, 0.72, 1.0)
 const COLOR_HIGHLAND := Color(0.62, 0.54, 0.38)
+# 合成层：水陆岸线（画在水格内侧，赛璐璐两阶：浅水带 + 泡沫线）。
+const SHORE_SHALLOW_COLOR := Color(0.62, 0.88, 0.92, 0.22)
+const SHORE_FOAM_COLOR := Color(0.93, 0.98, 0.98, 0.45)
+const SHORE_FOAM_WIDTH := 2.0
+const SHORE_SHALLOW_WIDTH := 6.0
+# 合成层：昼夜全局调色（资产画白天标准光，夜晚由 CanvasModulate 压冷）。
+const NIGHT_CANVAS_TINT := Color(0.64, 0.68, 0.9)
+const DAY_NIGHT_FADE_SECONDS := 1.2
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
 const ZOOM_STEP := 0.9
@@ -139,6 +147,9 @@ var _wave_route_previews: Array[Dictionary] = []
 var _hovered_event_cell := Vector2i(-1, -1)
 
 
+var _day_night_tint: CanvasModulate
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_process(true)
@@ -153,6 +164,14 @@ func _ready() -> void:
 	if viewport != null and not viewport.size_changed.is_connected(_on_viewport_size_changed):
 		viewport.size_changed.connect(_on_viewport_size_changed)
 	call_deferred("_fit_camera_to_map")
+	_day_night_tint = CanvasModulate.new()
+	_day_night_tint.name = "DayNightTint"
+	_day_night_tint.color = Color.WHITE
+	add_child(_day_night_tint)
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.day_started.connect(_on_day_started_tint)
+		event_bus.night_started.connect(_on_night_started_tint)
 
 
 func _process(delta: float) -> void:
@@ -224,6 +243,8 @@ func _draw() -> void:
 				continue
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
 			_draw_cell_tile(rect, data)
+			if data.discovered and data.terrain == CellData.TERRAIN_WATER:
+				_draw_shore_bands(rect, cell, map_manager)
 			draw_rect(rect, GRID_COLOR, false, 1.0)
 			if _deploy_range_preview_cells.has(cell):
 				_draw_deploy_range_cell(rect)
@@ -1034,6 +1055,47 @@ func _get_cell_color(data) -> Color:
 	if data.resource_type == &"mana":
 		return COLOR_RESOURCE_MANA
 	return COLOR_PLAIN
+
+
+## 水格内侧沿临陆边画浅水带+泡沫线（渡口与水视作同面，未探索邻格不画防剧透）。
+func _draw_shore_bands(rect: Rect2, cell: Vector2i, map_manager: Node) -> void:
+	for dir: Vector2i in [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]:
+		var neighbor = map_manager.get_cell_data(cell + dir)
+		if neighbor == null or not neighbor.discovered:
+			continue
+		if neighbor.terrain == CellData.TERRAIN_WATER or neighbor.is_ford:
+			continue
+		var foam := Rect2()
+		var shallow := Rect2()
+		if dir == Vector2i(-1, 0):
+			foam = Rect2(rect.position, Vector2(SHORE_FOAM_WIDTH, rect.size.y))
+			shallow = Rect2(rect.position + Vector2(SHORE_FOAM_WIDTH, 0.0), Vector2(SHORE_SHALLOW_WIDTH, rect.size.y))
+		elif dir == Vector2i(1, 0):
+			foam = Rect2(rect.position + Vector2(rect.size.x - SHORE_FOAM_WIDTH, 0.0), Vector2(SHORE_FOAM_WIDTH, rect.size.y))
+			shallow = Rect2(rect.position + Vector2(rect.size.x - SHORE_FOAM_WIDTH - SHORE_SHALLOW_WIDTH, 0.0), Vector2(SHORE_SHALLOW_WIDTH, rect.size.y))
+		elif dir == Vector2i(0, -1):
+			foam = Rect2(rect.position, Vector2(rect.size.x, SHORE_FOAM_WIDTH))
+			shallow = Rect2(rect.position + Vector2(0.0, SHORE_FOAM_WIDTH), Vector2(rect.size.x, SHORE_SHALLOW_WIDTH))
+		else:
+			foam = Rect2(rect.position + Vector2(0.0, rect.size.y - SHORE_FOAM_WIDTH), Vector2(rect.size.x, SHORE_FOAM_WIDTH))
+			shallow = Rect2(rect.position + Vector2(0.0, rect.size.y - SHORE_FOAM_WIDTH - SHORE_SHALLOW_WIDTH), Vector2(rect.size.x, SHORE_SHALLOW_WIDTH))
+		draw_rect(shallow, SHORE_SHALLOW_COLOR)
+		draw_rect(foam, SHORE_FOAM_COLOR)
+
+
+func _on_day_started_tint(_day: int) -> void:
+	_tween_day_night_tint(Color.WHITE)
+
+
+func _on_night_started_tint(_day: int) -> void:
+	_tween_day_night_tint(NIGHT_CANVAS_TINT)
+
+
+func _tween_day_night_tint(target: Color) -> void:
+	if _day_night_tint == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(_day_night_tint, "color", target, DAY_NIGHT_FADE_SECONDS)
 
 
 func _draw_cell_tile(rect: Rect2, data) -> void:

@@ -4,12 +4,14 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 const WallArt = preload("res://scripts/building/wall_art.gd")
+const ContactShadow = preload("res://scripts/effects/contact_shadow.gd")
 
 const VISUAL_TEXTURE_ROOT := "res://assets/sprites/buildings"
 const VISUAL_IDLE_ANIM := "idle"
 const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 72.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
+const CONTACT_SHADOW_Y := 25.0
 const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
 const DESTROYED_VISUAL_KEY := "generic_destroyed_building"
@@ -193,6 +195,7 @@ func _refresh_visual_sprite() -> void:
 	if texture == null:
 		if sprite != null:
 			sprite.visible = false
+		_refresh_contact_shadow(false)
 		modulate = Color(0.55, 0.55, 0.55, 0.78) if _is_destroyed else Color.WHITE
 		_refresh_title_label()
 		return
@@ -204,8 +207,27 @@ func _refresh_visual_sprite() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.visible = true
 	_has_visual_sprite = true
+	_refresh_contact_shadow(not _uses_wall_visuals())
 	modulate = Color(0.55, 0.55, 0.55, 0.78) if _is_destroyed and _using_destroyed_visual_fallback else Color.WHITE
 	_refresh_title_label()
+
+
+## 墙族铺满整格无悬浮感，不加接触阴影。
+func _refresh_contact_shadow(enabled: bool) -> void:
+	var existing := get_node_or_null("ContactShadow") as Node2D
+	if not enabled:
+		if existing != null:
+			existing.visible = false
+		return
+	if existing == null:
+		var shadow := ContactShadow.new()
+		shadow.name = "ContactShadow"
+		shadow.position = Vector2(0.0, CONTACT_SHADOW_Y)
+		shadow.radius = 20.0
+		shadow.squash = 0.36
+		add_child(shadow)
+		return
+	existing.visible = true
 
 
 func _get_visual_sprite(create_if_missing: bool) -> Sprite2D:
