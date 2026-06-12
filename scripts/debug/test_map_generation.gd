@@ -12,6 +12,7 @@ const LaneGen = preload("res://scripts/map/generation/lanes.gd")
 const FleshGen = preload("res://scripts/map/generation/flesh.gd")
 const NaturalGen = preload("res://scripts/map/generation/natural.gd")
 const GenRepairMod = preload("res://scripts/map/generation/gen_repair.gd")
+const MesaGen = preload("res://scripts/map/generation/mesa.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
@@ -32,6 +33,7 @@ func _run() -> void:
 	_test_rivers_lakes()
 	_test_erosion_cleanup()
 	_test_corridor_repair()
+	_test_mesa_placement()
 	_finish()
 
 
@@ -988,6 +990,108 @@ func _shortest_path_cells(cells: Dictionary, gate: Vector2i, core: Vector2i) -> 
 		path[best] = true
 		current = best
 	return path
+
+
+func _normalize_shape(shape_cells: Array) -> String:
+	var min_x: int = 1 << 30
+	var min_y: int = 1 << 30
+	for raw: Variant in shape_cells:
+		var cell: Vector2i = raw
+		min_x = mini(min_x, cell.x)
+		min_y = mini(min_y, cell.y)
+	var offsets: Array = []
+	for raw: Variant in shape_cells:
+		var cell: Vector2i = raw
+		offsets.append(Vector2i(cell.x - min_x, cell.y - min_y))
+	offsets.sort()
+	return str(offsets)
+
+
+func _min_cheb_to_set(cell: Vector2i, target: Dictionary) -> int:
+	var best: int = 1 << 30
+	for raw: Variant in target.keys():
+		best = mini(best, _cheb(cell, raw))
+	return best
+
+
+func _test_mesa_placement() -> void:
+	var cards := {"S1": "bastion", "S2": "canyon", "S3": "steppe", "S4": "riverlands", "S5": "bastion"}
+	var legal_shapes: Dictionary = {}
+	for raw_size: Variant in MesaGen.SHAPES.keys():
+		for raw_shape: Variant in MesaGen.SHAPES[raw_size]:
+			legal_shapes[_normalize_shape(raw_shape)] = true
+	_expect(not legal_shapes.has(_normalize_shape([Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)])), "no standalone 2x2 in catalog")
+	for seed_value in [7001, 7002]:
+		var fx := _build_fleshed_fixture(seed_value, cards)
+		var verdict: Dictionary = GenRepairMod.full_repair(fx["cells"], fx["skeleton"], fx["protected"], fx["elevation"], fx["ledger"])
+		if not bool(verdict.get("ok", false)):
+			continue
+		var outcome: Dictionary = MesaGen.place_mesas(fx["cells"], fx["skeleton"], fx["protected"], verdict["corridors"], _new_rng(IntNoise.derive_seed(seed_value, 0, 18)), fx["ledger"])
+		_expect(bool(outcome.get("ok", false)), "seed %d: mesas placed" % seed_value)
+		if not bool(outcome.get("ok", false)):
+			continue
+		var mesas: Array = outcome.get("mesas", [])
+		var total_cells: int = 0
+		var starter_seen := false
+		var corridor_union: Dictionary = {}
+		for raw_key: Variant in outcome["corridors"].keys():
+			for raw_cell: Variant in (outcome["corridors"][raw_key]["cells"] as Dictionary).keys():
+				corridor_union[raw_cell] = true
+		for raw_mesa: Variant in mesas:
+			var mesa: Dictionary = raw_mesa
+			var mesa_cells: Array = mesa.get("cells", [])
+			total_cells += mesa_cells.size()
+			_expect(legal_shapes.has(_normalize_shape(mesa_cells)), "seed %d: mesa shape legal %s" % [seed_value, _normalize_shape(mesa_cells)])
+			var covered: int = 0
+			for raw_cell: Variant in mesa_cells:
+				var data: CellData = fx["cells"][raw_cell]
+				_expect(data.terrain == CellDataRef.TERRAIN_HIGHLAND and not data.walkable and not data.buildable, "seed %d: mesa cell is blocking highland" % seed_value)
+				if _min_cheb_to_set(raw_cell, corridor_union) <= 2:
+					covered += 1
+			_expect(covered * 10 >= mesa_cells.size() * 6, "seed %d: mesa coverage >=60%% (%d/%d)" % [seed_value, covered, mesa_cells.size()])
+			if StringName(mesa.get("kind", &"")) == &"starter":
+				starter_seen = true
+				_expect(mesa_cells.size() >= 3 and mesa_cells.size() <= 4, "seed %d: starter 3-4 cells" % seed_value)
+				for raw_cell: Variant in mesa_cells:
+					var ring: int = _cheb(raw_cell, fx["skeleton"]["core"])
+					_expect(ring >= 4 and ring <= 5, "seed %d: starter ring %d in [4,5]" % [seed_value, ring])
+		_expect(starter_seen, "seed %d: starter mesa present" % seed_value)
+		_expect(mesas.size() >= 4 and mesas.size() <= 6, "seed %d: mesa count %d in [4,6]" % [seed_value, mesas.size()])
+		_expect(total_cells >= 14 and total_cells <= 24, "seed %d: mesa cells %d in [14,24]" % [seed_value, total_cells])
+		print("  mesas seed %d: count=%d cells=%d" % [seed_value, mesas.size(), total_cells])
+		# 战位锚定：每张配额牌扇区有一座贴本扇区验收窗。
+		for raw_key: Variant in fx["skeleton"]["gate_keys"]:
+			var key := String(raw_key)
+			if int((fx["skeleton"]["card_cfgs"][fx["skeleton"]["cards"][key]] as Dictionary).get("mesa_quota", 0)) <= 0:
+				continue
+			var aperture: Array = fx["skeleton"]["fords"].get(key, fx["skeleton"]["anchors"][key]["aperture"])
+			var aperture_set: Dictionary = {}
+			for raw_cell: Variant in aperture:
+				aperture_set[raw_cell] = true
+			var hugged := false
+			for raw_mesa: Variant in mesas:
+				if String((raw_mesa as Dictionary).get("gate_key", "")) != key:
+					continue
+				for raw_cell: Variant in (raw_mesa as Dictionary).get("cells", []):
+					if _min_cheb_to_set(raw_cell, aperture_set) <= 2:
+						hugged = true
+			_expect(hugged, "seed %d: quota mesa hugs %s aperture/ford" % [seed_value, key])
+		# 反漂移闭环：放置后全口绕路 cap 仍守、连通仍在。
+		for raw_key: Variant in fx["skeleton"]["gate_keys"]:
+			var gate: Vector2i = fx["skeleton"]["gate_cells"][raw_key]
+			var path_len: int = _bfs_path_length(fx["cells"], 30, 30, gate, fx["skeleton"]["core"])
+			_expect(path_len > 0, "seed %d: %s connected after mesas" % [seed_value, String(raw_key)])
+			var detour: float = float(path_len) / float(maxi(_manhattan(gate, fx["skeleton"]["core"]), 1))
+			_expect(detour <= 1.6 + 0.0001, "seed %d: %s cap holds after mesas (%.3f)" % [seed_value, String(raw_key), detour])
+	# 决定性。
+	var fx_a := _build_fleshed_fixture(7001, cards)
+	var fx_b := _build_fleshed_fixture(7001, cards)
+	var verdict_a2: Dictionary = GenRepairMod.full_repair(fx_a["cells"], fx_a["skeleton"], fx_a["protected"], fx_a["elevation"], fx_a["ledger"])
+	var verdict_b2: Dictionary = GenRepairMod.full_repair(fx_b["cells"], fx_b["skeleton"], fx_b["protected"], fx_b["elevation"], fx_b["ledger"])
+	if bool(verdict_a2.get("ok", false)) and bool(verdict_b2.get("ok", false)):
+		var out_a: Dictionary = MesaGen.place_mesas(fx_a["cells"], fx_a["skeleton"], fx_a["protected"], verdict_a2["corridors"], _new_rng(42), fx_a["ledger"])
+		var out_b: Dictionary = MesaGen.place_mesas(fx_b["cells"], fx_b["skeleton"], fx_b["protected"], verdict_b2["corridors"], _new_rng(42), fx_b["ledger"])
+		_expect(str(out_a.get("mesas", [])) == str(out_b.get("mesas", [])) and _serialize_obstacles_only({"cells": fx_a["cells"]}) == _serialize_obstacles_only({"cells": fx_b["cells"]}), "place_mesas deterministic")
 
 
 func _finish() -> void:
