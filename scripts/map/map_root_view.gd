@@ -28,8 +28,8 @@ const RANGE_FIELD_NODE: Texture2D = preload("res://assets/effects/range/field_bo
 const RANGE_GRAVITY_EDGE: Texture2D = preload("res://assets/effects/range/gravity_field_edge_pulse_strip.png")
 const RANGE_BUILDING_EDGE: Texture2D = preload("res://assets/effects/range/building_aura_edge_pulse_strip.png")
 const GRID_COLOR := Color(0.02, 0.045, 0.065, 0.36)
-const HOVER_COLOR := Color(1.0, 0.9, 0.35, 0.35)
-const FOG_EXPLORE_HOVER_COLOR := Color(0.55, 1.0, 0.70, 0.55)
+const HOVER_COLOR := Color(1.0, 0.92, 0.45, 0.9)
+const FOG_EXPLORE_HOVER_COLOR := Color(0.55, 1.0, 0.70, 0.95)
 const SELECT_COLOR := Color(0.35, 0.8, 1.0, 0.4)
 const ATTACK_RANGE_FILL := Color(0.20, 0.55, 0.95, 0.28)
 const ATTACK_RANGE_BORDER := Color(0.30, 0.85, 1.0, 0.95)
@@ -294,7 +294,7 @@ func _draw() -> void:
 				_draw_deploy_locked_cell(rect)
 			if cell == _hovered_cell:
 				var hover_tint := FOG_EXPLORE_HOVER_COLOR if _fog_hover_active else HOVER_COLOR
-				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, hover_tint, Color.TRANSPARENT, 2.0, 0.0)
+				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, hover_tint, Color.TRANSPARENT, 2.0, 0.0, hover_tint)
 			if cell == _selected_cell:
 				_draw_cell_overlay(OVERLAY_MAP_SELECTED, rect, SELECT_COLOR, Color.TRANSPARENT, 6.0, 0.0)
 	_draw_range_outlines(map_manager)
@@ -685,9 +685,9 @@ func _draw_deploy_locked_cell(rect: Rect2) -> void:
 	draw_rect(rect.grow(-5.0), DEPLOY_LOCKED_BORDER, false, 3.0)
 
 
-func _draw_cell_overlay(texture: Texture2D, rect: Rect2, fill_color: Color, border_color: Color, inset: float, border_width: float) -> void:
+func _draw_cell_overlay(texture: Texture2D, rect: Rect2, fill_color: Color, border_color: Color, inset: float, border_width: float, texture_tint: Color = Color.WHITE) -> void:
 	if texture != null:
-		draw_texture_rect(texture, rect, false)
+		draw_texture_rect(texture, rect, false, texture_tint)
 		return
 	var overlay_rect := rect.grow(-inset)
 	draw_rect(overlay_rect, fill_color)
