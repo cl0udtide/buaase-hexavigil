@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://xwqigbpcb72h"
-path="res://.godot/imported/map_source_sheet_02_core_spawn.png.png-d524a36eee2d90c0b65c20316d5c9f46.ctex"
+uid="uid://c6cbvihiha204"
+path="res://.godot/imported/core_structure.png-57ca093542185d3a7a65650325d66135.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/map/CommandMap/raw/map_source_sheet_02_core_spawn.png.png"
-dest_files=["res://.godot/imported/map_source_sheet_02_core_spawn.png.png-d524a36eee2d90c0b65c20316d5c9f46.ctex"]
+source_file="res://assets/map/CommandMap/core_structure.png"
+dest_files=["res://.godot/imported/core_structure.png-57ca093542185d3a7a65650325d66135.ctex"]
 
 [params]
 

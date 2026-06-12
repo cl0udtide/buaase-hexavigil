@@ -224,6 +224,10 @@ static func _generate_v2_attempt(width: int, height: int, actual_seed: int, atte
 			var river: Dictionary = FleshGen.trace_river(cells, skeleton, key, elevation, protected, water_rng, ledger)
 			if not (river.get("ford_cells", []) as Array).is_empty():
 				(skeleton["fords"] as Dictionary)[key] = river["ford_cells"]
+				for raw_ford: Variant in (river["ford_cells"] as Array):
+					var ford_data: CellData = cells.get(raw_ford as Vector2i)
+					if ford_data != null:
+						ford_data.is_ford = true
 		if int(plan.get("lakes", 0)) > 0:
 			FleshGen.place_lakes(cells, skeleton, key, int(plan.get("lakes", 0)), protected, water_rng, ledger)
 	# S5 侵蚀 + CA 清渣。

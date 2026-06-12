@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d1yilv7q58bso"
-path="res://.godot/imported/map_source_sheet_04_overlays_optional.png.png-35163c16e7607aca1d6ea6ccd94c275f.ctex"
+uid="uid://dimvvbeqoajen"
+path="res://.godot/imported/map_source_sheet_02_feature_points.png-847fc0ff0b3a4c70e3858c5618d35447.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/map/CommandMap/raw/map_source_sheet_04_overlays_optional.png.png"
-dest_files=["res://.godot/imported/map_source_sheet_04_overlays_optional.png.png-35163c16e7607aca1d6ea6ccd94c275f.ctex"]
+source_file="res://assets/map/CommandMap/raw/map_source_sheet_02_feature_points.png"
+dest_files=["res://.godot/imported/map_source_sheet_02_feature_points.png-847fc0ff0b3a4c70e3858c5618d35447.ctex"]
 
 [params]
 

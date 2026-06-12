@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://0yy4m5k5lgg8"
-path="res://.godot/imported/map_source_sheet_01_base_terrain.png.png-5932cbd93890a5b7f03d4fc0d5928ebc.ctex"
+uid="uid://c0bxlqf5ru15d"
+path="res://.godot/imported/map_source_sheet_03_highland_ford.png-23a14962067cc75c1b921d9b75cf8541.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/map/CommandMap/raw/map_source_sheet_01_base_terrain.png.png"
-dest_files=["res://.godot/imported/map_source_sheet_01_base_terrain.png.png-5932cbd93890a5b7f03d4fc0d5928ebc.ctex"]
+source_file="res://assets/map/CommandMap/raw/map_source_sheet_03_highland_ford.png"
+dest_files=["res://.godot/imported/map_source_sheet_03_highland_ford.png-23a14962067cc75c1b921d9b75cf8541.ctex"]
 
 [params]
 
