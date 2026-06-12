@@ -1,8 +1,9 @@
 extends SceneTree
 
 ## 资产入库（非测试）：风格锚源图 → tile_plain / tile_plain_alt / tile_mountain / lumber_station。
-## 按洋红空隙自动分割三个资产；地块裁内缩方块缩到 256，平地旋转 180° 派生 alt；
-## 建筑抠洋红装入 128 画布（底部居中锚点）。运行后需 `--headless --import`。
+## 按洋红空隙自动分割资产；地块裁内缩方块缩到 256，平地旋转 180° 派生 alt；
+## 建筑抠洋红装入 128 画布（底部居中锚点），第 2 个之后的全部组件视为建筑部件底对齐合成。
+## 运行后需 `--headless --import`。
 
 const SRC := "res://assets/map/CommandMap/raw/style_anchor_sheet.png"
 const TILE_SIZE := 256
@@ -24,15 +25,18 @@ func _init() -> void:
 	sheet.convert(Image.FORMAT_RGBA8)
 	var spans := _split_columns(sheet)
 	print("components: %d -> %s" % [spans.size(), str(spans)])
-	if spans.size() != 3:
-		printerr("expect 3 components")
+	if spans.size() < 3:
+		printerr("expect >= 3 components")
 		quit(1)
 		return
 	var failures := 0
 	failures += _save_tile(_crop_component(sheet, spans[0]), "tile_plain", false)
 	failures += _save_tile(_crop_component(sheet, spans[0]), "tile_plain_alt", true)
 	failures += _save_tile(_crop_component(sheet, spans[1]), "tile_mountain", false)
-	failures += _save_building(_crop_component(sheet, spans[2]), "lumber_station")
+	var parts: Array[Image] = []
+	for i: int in range(2, spans.size()):
+		parts.append(_crop_component(sheet, spans[i]))
+	failures += _save_building(parts, "lumber_station")
 	quit(0 if failures == 0 else 1)
 
 
@@ -94,19 +98,34 @@ static func _save_tile(comp: Image, key: String, rotate: bool) -> int:
 	return 0 if err == OK else 1
 
 
-static func _save_building(comp: Image, key: String) -> int:
-	for y: int in range(comp.get_height()):
-		for x: int in range(comp.get_width()):
-			if _is_key(comp.get_pixel(x, y)):
-				comp.set_pixel(x, y, Color(0, 0, 0, 0))
-	var used := comp.get_used_rect()
-	var body := comp.get_region(used)
-	var scale := minf(float(BUILDING_MAX) / body.get_width(), float(BUILDING_MAX) / body.get_height())
-	var w := int(round(body.get_width() * scale))
-	var h := int(round(body.get_height() * scale))
-	body.resize(w, h, Image.INTERPOLATE_LANCZOS)
+## 多个部件（如主棚+两侧原木捆）按源图顺序底对齐拼成一个建筑体。
+static func _save_building(parts: Array[Image], key: String) -> int:
+	const PART_GAP := 6
+	var bodies: Array[Image] = []
+	var total_w := 0
+	var max_h := 0
+	for comp: Image in parts:
+		for y: int in range(comp.get_height()):
+			for x: int in range(comp.get_width()):
+				if _is_key(comp.get_pixel(x, y)):
+					comp.set_pixel(x, y, Color(0, 0, 0, 0))
+		var body := comp.get_region(comp.get_used_rect())
+		bodies.append(body)
+		total_w += body.get_width()
+		max_h = maxi(max_h, body.get_height())
+	total_w += PART_GAP * (bodies.size() - 1)
+	var merged := Image.create(total_w, max_h, false, Image.FORMAT_RGBA8)
+	var cursor_x := 0
+	for body: Image in bodies:
+		var rect := Rect2i(0, 0, body.get_width(), body.get_height())
+		merged.blend_rect(body, rect, Vector2i(cursor_x, max_h - body.get_height()))
+		cursor_x += body.get_width() + PART_GAP
+	var scale := minf(float(BUILDING_MAX) / merged.get_width(), float(BUILDING_MAX) / merged.get_height())
+	var w := int(round(merged.get_width() * scale))
+	var h := int(round(merged.get_height() * scale))
+	merged.resize(w, h, Image.INTERPOLATE_LANCZOS)
 	var canvas := Image.create(BUILDING_CANVAS, BUILDING_CANVAS, false, Image.FORMAT_RGBA8)
-	canvas.blend_rect(body, Rect2i(0, 0, w, h), Vector2i((BUILDING_CANVAS - w) / 2, BUILDING_BOTTOM - h))
+	canvas.blend_rect(merged, Rect2i(0, 0, w, h), Vector2i((BUILDING_CANVAS - w) / 2, BUILDING_BOTTOM - h))
 	var dst := "res://assets/sprites/buildings/%s.png" % key
 	var err := canvas.save_png(ProjectSettings.globalize_path(dst))
 	print("%s -> err=%d (%dx%d)" % [dst, err, w, h])
