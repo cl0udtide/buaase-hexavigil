@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_bottom_deploy_rail_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 90.0000
-content_margin_top = 42.0000
-content_margin_right = 90.0000
-content_margin_bottom = 42.0000
+content_margin_left = 20.5542
+content_margin_top = 21.9363
+content_margin_right = 20.5542
+content_margin_bottom = 21.9363
 texture = ExtResource("1_texture")
-texture_margin_left = 114.0000
-texture_margin_top = 129.0000
-texture_margin_right = 114.0000
-texture_margin_bottom = 129.0000
+texture_margin_left = 26.0354
+texture_margin_top = 67.3758
+texture_margin_right = 26.0354
+texture_margin_bottom = 67.3758
 draw_center = true

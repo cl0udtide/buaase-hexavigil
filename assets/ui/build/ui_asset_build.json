@@ -132,8 +132,8 @@
                 112
             ],
             "base_size": [
-                267,
-                380
+                625,
+                171
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -172,8 +172,8 @@
                 176
             ],
             "base_size": [
-                350,
-                196
+                1696,
+                157
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -432,8 +432,8 @@
                 64
             ],
             "base_size": [
-                250,
-                253
+                675,
+                71
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -572,8 +572,8 @@
                 260
             ],
             "base_size": [
-                329,
-                125
+                505,
+                270
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -589,11 +589,11 @@
             "output_style": "res://assets/ui/styles/frame_operator_card_base.tres",
             "target_size": [
                 164,
-                148
+                184
             ],
             "base_size": [
-                561,
-                142
+                319,
+                390
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -609,11 +609,11 @@
             "output_style": "res://assets/ui/styles/frame_operator_card_cooldown_overlay.tres",
             "target_size": [
                 164,
-                148
+                184
             ],
             "base_size": [
-                201,
-                332
+                305,
+                379
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -629,11 +629,11 @@
             "output_style": "res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres",
             "target_size": [
                 164,
-                148
+                184
             ],
             "base_size": [
-                196,
-                336
+                304,
+                381
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -649,11 +649,11 @@
             "output_style": "res://assets/ui/styles/frame_operator_card_deployed_overlay.tres",
             "target_size": [
                 164,
-                148
+                184
             ],
             "base_size": [
-                192,
-                335
+                304,
+                378
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -669,11 +669,11 @@
             "output_style": "res://assets/ui/styles/frame_operator_card_selected_overlay.tres",
             "target_size": [
                 164,
-                148
+                184
             ],
             "base_size": [
-                201,
-                335
+                307,
+                384
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -768,12 +768,12 @@
             "output_png": "res://assets/ui/generated/frame_operator_title_strip.png",
             "output_style": "res://assets/ui/styles/frame_operator_title_strip.tres",
             "target_size": [
-                140,
-                28
+                132,
+                42
             ],
             "base_size": [
-                190,
-                208
+                306,
+                75
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -792,8 +792,8 @@
                 112
             ],
             "base_size": [
-                257,
-                408
+                524,
+                138
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -812,8 +812,8 @@
                 112
             ],
             "base_size": [
-                254,
-                409
+                519,
+                134
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -928,12 +928,12 @@
             "output_png": "res://assets/ui/generated/frame_relic_panel_base.png",
             "output_style": "res://assets/ui/styles/frame_relic_panel_base.tres",
             "target_size": [
-                900,
-                640
+                668,
+                430
             ],
             "base_size": [
-                648,
-                321
+                949,
+                550
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1068,12 +1068,12 @@
             "output_png": "res://assets/ui/generated/frame_result_panel_base.png",
             "output_style": "res://assets/ui/styles/frame_result_panel_base.tres",
             "target_size": [
-                720,
-                520
+                520,
+                260
             ],
             "base_size": [
-                738,
-                239
+                530,
+                496
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1392,8 +1392,8 @@
                 52
             ],
             "base_size": [
-                452,
-                111
+                216,
+                123
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1608,8 +1608,8 @@
             "output_png": "res://assets/ui/generated/frame_wave_enemy_row_base.png",
             "output_style": "res://assets/ui/styles/frame_wave_enemy_row_base.tres",
             "target_size": [
-                320,
-                32
+                150,
+                126
             ],
             "base_size": [
                 1114,
@@ -1628,8 +1628,8 @@
             "output_png": "res://assets/ui/generated/frame_wave_preview_base.png",
             "output_style": "res://assets/ui/styles/frame_wave_preview_base.tres",
             "target_size": [
-                360,
-                220
+                384,
+                316
             ],
             "base_size": [
                 470,
@@ -1648,8 +1648,8 @@
             "output_png": "res://assets/ui/generated/frame_wave_route_toggle_base.png",
             "output_style": "res://assets/ui/styles/frame_wave_route_toggle_base.tres",
             "target_size": [
-                120,
-                32
+                64,
+                36
             ],
             "base_size": [
                 388,
@@ -1668,8 +1668,8 @@
             "output_png": "res://assets/ui/generated/frame_wave_warning_row_base.png",
             "output_style": "res://assets/ui/styles/frame_wave_warning_row_base.tres",
             "target_size": [
-                320,
-                32
+                328,
+                38
             ],
             "base_size": [
                 655,

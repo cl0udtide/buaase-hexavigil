@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_icon_backplate.png" id="1_texture"]
 
 [resource]
-content_margin_left = 6.0000
-content_margin_top = 6.0000
-content_margin_right = 6.0000
-content_margin_bottom = 6.0000
+content_margin_left = 47.4074
+content_margin_top = 27.5745
+content_margin_right = 47.4074
+content_margin_bottom = 27.5745
 texture = ExtResource("1_texture")
-texture_margin_left = 10.0000
-texture_margin_top = 10.0000
-texture_margin_right = 10.0000
-texture_margin_bottom = 10.0000
+texture_margin_left = 79.0123
+texture_margin_top = 45.9574
+texture_margin_right = 79.0123
+texture_margin_bottom = 45.9574
 draw_center = true

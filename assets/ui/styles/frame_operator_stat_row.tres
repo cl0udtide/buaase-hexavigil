@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_stat_row.png" id="1_texture"]
 
 [resource]
-content_margin_left = 8.0000
-content_margin_top = 2.0000
-content_margin_right = 8.0000
-content_margin_bottom = 2.0000
+content_margin_left = 38.1414
+content_margin_top = 0.7692
+content_margin_right = 38.1414
+content_margin_bottom = 0.7692
 texture = ExtResource("1_texture")
-texture_margin_left = 3.3300
-texture_margin_top = 2.0000
-texture_margin_right = 3.3300
-texture_margin_bottom = 2.0000
+texture_margin_left = 15.8764
+texture_margin_top = 0.7692
+texture_margin_right = 15.8764
+texture_margin_bottom = 0.7692
 draw_center = true

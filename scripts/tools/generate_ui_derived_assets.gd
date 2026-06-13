@@ -1,11 +1,14 @@
 extends SceneTree
 
-const GENERATOR_VERSION := "ui-derived-assets-v1"
+const GENERATOR_VERSION := "ui-derived-assets-v2-fit-actual-size"
 const CONFIG_PATH := "res://assets/ui/build/ui_asset_build.json"
 const MANIFEST_PATH := "res://assets/ui/build/ui_asset_build_manifest.json"
+const ACTUAL_SIZE_PATH := "res://assets/ui/build/ui_asset_actual_sizes.json"
+const SCAN_SCRIPT_PATH := "scripts/tools/scan_ui_actual_sizes.gd"
 
 var _failed := false
 var _manifest: Dictionary = {}
+var _actual_sizes: Dictionary = {}
 
 
 func _init() -> void:
@@ -14,6 +17,10 @@ func _init() -> void:
 
 
 func _run() -> void:
+	_scan_actual_sizes()
+	if _failed:
+		return
+	_actual_sizes = _read_optional_json_dictionary(ACTUAL_SIZE_PATH)
 	var config := _read_json_dictionary(CONFIG_PATH)
 	if _failed:
 		return
@@ -28,18 +35,60 @@ func _run() -> void:
 		_manifest["assets"] = {}
 
 	var assets: Dictionary = config.get("assets", {})
+	var selected_assets := _selected_asset_names()
 	var asset_names := assets.keys()
 	asset_names.sort()
 	for asset_name in asset_names:
+		var asset_name_text := String(asset_name)
+		if not selected_assets.is_empty() and not selected_assets.has(asset_name_text):
+			continue
 		var asset_config: Variant = assets[asset_name]
 		if not (asset_config is Dictionary):
 			_fail("Asset %s must be a dictionary." % String(asset_name))
 			continue
-		_process_asset(String(asset_name), asset_config as Dictionary)
+		_process_asset(asset_name_text, asset_config as Dictionary)
 
 	if _failed:
 		return
 	_write_json(MANIFEST_PATH, _manifest)
+
+
+func _selected_asset_names() -> Dictionary:
+	var selected: Dictionary = {}
+	var args := OS.get_cmdline_user_args()
+	args.append_array(OS.get_cmdline_args())
+	var index := 0
+	while index < args.size():
+		var arg := String(args[index])
+		if arg == "--asset" and index + 1 < args.size():
+			selected[String(args[index + 1])] = true
+			index += 2
+			continue
+		if arg.begins_with("--asset="):
+			selected[arg.trim_prefix("--asset=")] = true
+		index += 1
+	return selected
+
+
+func _scan_actual_sizes() -> void:
+	if not FileAccess.file_exists("res://%s" % SCAN_SCRIPT_PATH):
+		_fail("Missing actual-size scan script: %s" % SCAN_SCRIPT_PATH)
+		return
+	var output: Array = []
+	var args := PackedStringArray([
+		"--headless",
+		"--path",
+		ProjectSettings.globalize_path("res://"),
+		"--script",
+		SCAN_SCRIPT_PATH,
+	])
+	var exit_code := OS.execute(OS.get_executable_path(), args, output, true, false)
+	for line in output:
+		print(line)
+	if exit_code != 0:
+		_fail("Failed to scan actual UI sizes before generating assets: exit %d" % exit_code)
+	elif not FileAccess.file_exists(ACTUAL_SIZE_PATH):
+		_fail("Actual UI size scan did not write %s" % ACTUAL_SIZE_PATH)
 
 
 func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
@@ -64,25 +113,27 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 	if _failed:
 		return
 
+	var actual_target := _actual_target_size(asset_config)
 	var pre_scale := _resolve_pre_scale(asset_name, asset_config)
 	if pre_scale <= 0:
 		return
 
-	var input_hash := _input_hash(source_png, template_style, asset_config)
+	var input_hash := _input_hash(source_png, template_style, asset_config, actual_target)
 	var manifest_assets: Dictionary = _manifest["assets"]
 	var previous: Dictionary = manifest_assets.get(asset_name, {})
 	if String(previous.get("input_hash", "")) == input_hash and _res_file_exists(output_png) and (kind == "texture" or _res_file_exists(output_style)):
 		previous["output_png"] = output_png
 		previous["pre_scale"] = pre_scale
+		previous["actual_target_size"] = [actual_target.x, actual_target.y]
 		if kind == "stylebox_texture":
 			previous["output_style"] = output_style
 		manifest_assets[asset_name] = previous
 		print("skip %s" % asset_name)
 		return
 
-	_generate_png(asset_name, source_png, output_png, pre_scale, String(asset_config.get("interpolation", "nearest")))
+	var png_scale := _generate_png(asset_name, source_png, output_png, pre_scale, actual_target, String(asset_config.get("interpolation", "nearest")))
 	if kind == "stylebox_texture":
-		_generate_style(asset_name, template_style, output_png, output_style, pre_scale, asset_config)
+		_generate_style(asset_name, template_style, output_png, output_style, png_scale, asset_config)
 	if _failed:
 		return
 
@@ -90,6 +141,8 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 		"input_hash": input_hash,
 		"output_png": output_png,
 		"pre_scale": pre_scale,
+		"actual_target_size": [actual_target.x, actual_target.y],
+		"png_scale": [png_scale.x, png_scale.y],
 	}
 	if kind == "stylebox_texture":
 		record["output_style"] = output_style
@@ -97,27 +150,45 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 	print("generated %s" % asset_name)
 
 
-func _generate_png(asset_name: String, source_png: String, output_png: String, pre_scale: int, interpolation: String) -> void:
+func _generate_png(asset_name: String, source_png: String, output_png: String, pre_scale: int, target_size: Vector2i, interpolation: String) -> Vector2:
 	var image := Image.new()
 	var load_error := image.load(ProjectSettings.globalize_path(source_png))
 	if load_error != OK:
 		_fail("%s failed to load source PNG %s: %s" % [asset_name, source_png, error_string(load_error)])
-		return
-	if pre_scale != 1:
-		var mode := Image.INTERPOLATE_NEAREST
-		if interpolation == "bilinear":
-			mode = Image.INTERPOLATE_BILINEAR
-		elif interpolation != "nearest":
-			_fail("%s has unsupported interpolation '%s'." % [asset_name, interpolation])
-			return
-		image.resize(image.get_width() * pre_scale, image.get_height() * pre_scale, mode)
+		return Vector2.ONE
+	var source_width := image.get_width()
+	var source_height := image.get_height()
+	var output_width := source_width
+	var output_height := source_height
+	if target_size.x > 0 and target_size.y > 0:
+		output_width = target_size.x
+		output_height = target_size.y
+	elif pre_scale != 1:
+		output_width = source_width * pre_scale
+		output_height = source_height * pre_scale
+	if output_width != source_width or output_height != source_height:
+		var mode := _interpolation_mode(asset_name, interpolation)
+		if _failed:
+			return Vector2.ONE
+		image.resize(output_width, output_height, mode)
 	_ensure_parent_dir(output_png)
 	var save_error := image.save_png(output_png)
 	if save_error != OK:
 		_fail("%s failed to save output PNG %s: %s" % [asset_name, output_png, error_string(save_error)])
+		return Vector2.ONE
+	return Vector2(float(output_width) / float(source_width), float(output_height) / float(source_height))
 
 
-func _generate_style(asset_name: String, template_style: String, output_png: String, output_style: String, pre_scale: int, asset_config: Dictionary) -> void:
+func _interpolation_mode(asset_name: String, interpolation: String) -> int:
+	if interpolation == "nearest":
+		return Image.INTERPOLATE_NEAREST
+	if interpolation == "bilinear":
+		return Image.INTERPOLATE_BILINEAR
+	_fail("%s has unsupported interpolation '%s'." % [asset_name, interpolation])
+	return Image.INTERPOLATE_NEAREST
+
+
+func _generate_style(asset_name: String, template_style: String, output_png: String, output_style: String, png_scale: Vector2, asset_config: Dictionary) -> void:
 	if String(asset_config.get("margin_mode", "")) != "scale_from_template":
 		_fail("%s margin_mode must be scale_from_template." % asset_name)
 		return
@@ -130,14 +201,14 @@ func _generate_style(asset_name: String, template_style: String, output_png: Str
 		_fail("%s template_style must be StyleBoxTexture: %s" % [asset_name, template_style])
 		return
 	var style := (loaded as StyleBoxTexture).duplicate(true) as StyleBoxTexture
-	style.texture_margin_left = style.texture_margin_left * float(pre_scale)
-	style.texture_margin_top = style.texture_margin_top * float(pre_scale)
-	style.texture_margin_right = style.texture_margin_right * float(pre_scale)
-	style.texture_margin_bottom = style.texture_margin_bottom * float(pre_scale)
-	style.content_margin_left = style.content_margin_left * float(pre_scale)
-	style.content_margin_top = style.content_margin_top * float(pre_scale)
-	style.content_margin_right = style.content_margin_right * float(pre_scale)
-	style.content_margin_bottom = style.content_margin_bottom * float(pre_scale)
+	style.texture_margin_left = style.texture_margin_left * png_scale.x
+	style.texture_margin_top = style.texture_margin_top * png_scale.y
+	style.texture_margin_right = style.texture_margin_right * png_scale.x
+	style.texture_margin_bottom = style.texture_margin_bottom * png_scale.y
+	style.content_margin_left = style.content_margin_left * png_scale.x
+	style.content_margin_top = style.content_margin_top * png_scale.y
+	style.content_margin_right = style.content_margin_right * png_scale.x
+	style.content_margin_bottom = style.content_margin_bottom * png_scale.y
 	_ensure_parent_dir(output_style)
 	var save_error := _save_stylebox_texture(output_style, output_png, style)
 	if save_error != OK:
@@ -184,7 +255,9 @@ func _resolve_pre_scale(asset_name: String, asset_config: Dictionary) -> int:
 	if String(raw) != "auto_integer":
 		_fail("%s pre_scale must be an integer or auto_integer." % asset_name)
 		return 0
-	var target := _required_size(asset_name, asset_config, "target_size")
+	var target := _actual_target_size(asset_config)
+	if target == Vector2i.ZERO:
+		target = _required_size(asset_name, asset_config, "target_size")
 	var base := _required_size(asset_name, asset_config, "base_size")
 	if target == Vector2i.ZERO or base == Vector2i.ZERO:
 		return 0
@@ -197,13 +270,34 @@ func _resolve_pre_scale(asset_name: String, asset_config: Dictionary) -> int:
 	return clampi(int(ceil(maxf(scale_x, scale_y))), 1, max_pre_scale)
 
 
-func _input_hash(source_png: String, template_style: String, asset_config: Dictionary) -> String:
+func _actual_target_size(asset_config: Dictionary) -> Vector2i:
+	var kind := String(asset_config.get("kind", ""))
+	var bucket_name := "styles" if kind == "stylebox_texture" else "textures"
+	var path_key := "output_style" if kind == "stylebox_texture" else "output_png"
+	var asset_path := String(asset_config.get(path_key, ""))
+	if asset_path.is_empty():
+		return Vector2i.ZERO
+	var bucket: Dictionary = _actual_sizes.get(bucket_name, {})
+	if not bucket.has(asset_path):
+		return Vector2i.ZERO
+	var record: Dictionary = bucket.get(asset_path, {})
+	var raw_size: Variant = record.get("max_size", [])
+	if not (raw_size is Array) or (raw_size as Array).size() != 2:
+		return Vector2i.ZERO
+	var size := Vector2i(int((raw_size as Array)[0]), int((raw_size as Array)[1]))
+	if size.x <= 0 or size.y <= 0:
+		return Vector2i.ZERO
+	return size
+
+
+func _input_hash(source_png: String, template_style: String, asset_config: Dictionary, actual_target: Vector2i) -> String:
 	var parts := PackedStringArray()
 	parts.append(GENERATOR_VERSION)
 	parts.append(_file_sha256(source_png))
 	if not template_style.is_empty():
 		parts.append(_file_sha256(template_style))
 	parts.append(_sha256_text(_stable_stringify(asset_config)))
+	parts.append("%d,%d" % [actual_target.x, actual_target.y])
 	return "sha256:%s" % _sha256_text("\n".join(parts))
 
 
@@ -269,6 +363,18 @@ func _read_manifest() -> Dictionary:
 	if not FileAccess.file_exists(MANIFEST_PATH):
 		return {"version": 1, "generator_version": GENERATOR_VERSION, "assets": {}}
 	return _read_json_dictionary(MANIFEST_PATH)
+
+
+func _read_optional_json_dictionary(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if parsed is Dictionary:
+		return parsed as Dictionary
+	return {}
 
 
 func _write_json(path: String, data: Dictionary) -> void:

@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_right_detail_sidebar_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 20.0000
-content_margin_top = 18.0000
-content_margin_right = 20.0000
-content_margin_bottom = 20.0000
+content_margin_left = 18.9163
+content_margin_top = 11.9624
+content_margin_right = 18.9163
+content_margin_bottom = 13.2915
 texture = ExtResource("1_texture")
-texture_margin_left = 14.6700
-texture_margin_top = 14.6700
-texture_margin_right = 14.6700
-texture_margin_bottom = 14.6700
+texture_margin_left = 13.8751
+texture_margin_top = 9.7493
+texture_margin_right = 13.8751
+texture_margin_bottom = 9.7493
 draw_center = true

@@ -2,6 +2,7 @@
 extends Control
 
 const CONFIG_PATH := "res://assets/ui/build/ui_asset_build.json"
+const ACTUAL_SIZE_PATH := "res://assets/ui/build/ui_asset_actual_sizes.json"
 const TEXTURE_MARGIN_COLOR := Color(1.0, 0.38, 0.18, 0.95)
 const TEXTURE_MARGIN_FILL := Color(1.0, 0.38, 0.18, 0.08)
 const CONTENT_MARGIN_COLOR := Color(0.18, 0.86, 1.0, 0.95)
@@ -9,6 +10,7 @@ const CONTENT_MARGIN_FILL := Color(0.18, 0.86, 1.0, 0.07)
 
 var _root: MarginContainer
 var _body: VBoxContainer
+var _actual_sizes: Dictionary = {}
 
 
 class MarginGuideOverlay:
@@ -111,6 +113,7 @@ func _rebuild() -> void:
 
 	var config := _read_config()
 	var assets: Dictionary = config.get("assets", {})
+	_actual_sizes = _read_actual_sizes()
 	_body.add_child(_header(assets.size()))
 	var names := assets.keys()
 	names.sort()
@@ -181,7 +184,7 @@ func _add_asset_row(asset_name: String, asset: Dictionary) -> void:
 
 	var template_style: StyleBoxTexture = null
 	var preview_style: StyleBoxTexture = null
-	var pre_scale := _resolved_pre_scale(asset)
+	var png_scale := _resolved_png_scale(asset)
 	var source_guides: Array[MarginGuideOverlay] = []
 	var output_guides: Array[MarginGuideOverlay] = []
 	var source_content_guides: Array[MarginGuideOverlay] = []
@@ -190,13 +193,13 @@ func _add_asset_row(asset_name: String, asset: Dictionary) -> void:
 		template_style = _load_template_style(String(asset.get("template_style", "")))
 		if template_style != null:
 			preview_style = template_style.duplicate(true) as StyleBoxTexture
-			_apply_template_margins_to_preview(preview_style, template_style, pre_scale)
+			_apply_template_margins_to_preview(preview_style, template_style, png_scale)
 	var show_margin_guides := String(asset.get("kind", "")) == "stylebox_texture"
 	row.add_child(_texture_block("source_png", String(asset.get("source_png", "")), _texture_margins(template_style), _content_margins(template_style), show_margin_guides, source_guides, source_content_guides))
 	row.add_child(_texture_block("output_png", String(asset.get("output_png", "")), _texture_margins(preview_style), _content_margins(preview_style), show_margin_guides, output_guides, output_content_guides))
 
 	if String(asset.get("kind", "")) == "stylebox_texture":
-		row.add_child(_margin_editor_block(asset_name, asset, template_style, preview_style, pre_scale, source_guides, output_guides, source_content_guides, output_content_guides))
+		row.add_child(_margin_editor_block(asset_name, asset, template_style, preview_style, png_scale, source_guides, output_guides, source_content_guides, output_content_guides))
 
 
 func _texture_block(
@@ -242,7 +245,7 @@ func _margin_editor_block(
 	asset: Dictionary,
 	template_style: StyleBoxTexture,
 	preview_style: StyleBoxTexture,
-	pre_scale: float,
+	png_scale: Vector2,
 	source_guides: Array[MarginGuideOverlay],
 	output_guides: Array[MarginGuideOverlay],
 	source_content_guides: Array[MarginGuideOverlay],
@@ -259,7 +262,7 @@ func _margin_editor_block(
 	var status := _label("editing template margins; Save writes assets/ui/templates", 12, Color(0.620, 0.700, 0.760, 1.0))
 	block.add_child(status)
 	var callback := func(_value: float) -> void:
-		_apply_template_margins_to_preview(preview_style, template_style, pre_scale)
+		_apply_template_margins_to_preview(preview_style, template_style, png_scale)
 		_update_margin_guides(template_style, preview_style, source_guides, output_guides, source_content_guides, output_content_guides)
 		status.text = "unsaved template margins for %s" % asset_name
 
@@ -277,6 +280,20 @@ func _margin_editor_block(
 		status.text = "saved %s" % String(asset.get("template_style", "")).trim_prefix("res://") if save_error == OK else "save failed: %s" % error_string(save_error)
 	)
 	buttons.add_child(save_button)
+	var generate_button := Button.new()
+	generate_button.text = "Generate"
+	generate_button.custom_minimum_size = Vector2(104.0, 32.0)
+	generate_button.pressed.connect(func() -> void:
+		var save_error := _save_template_style(String(asset.get("template_style", "")), template_style)
+		if save_error != OK:
+			status.text = "save failed: %s" % error_string(save_error)
+			return
+		status.text = "generating %s..." % asset_name
+		var exit_code := _run_generator(asset_name)
+		status.text = "generated %s" % asset_name if exit_code == 0 else "generate failed: exit %d" % exit_code
+		_reload()
+	, CONNECT_DEFERRED)
+	buttons.add_child(generate_button)
 	var reset_button := Button.new()
 	reset_button.text = "Reload Row"
 	reset_button.custom_minimum_size = Vector2(110.0, 32.0)
@@ -357,29 +374,62 @@ func _margin_spin(label_text: String, value: float, callback: Callable) -> Contr
 
 func _asset_summary(asset: Dictionary) -> String:
 	var base := _array_size(asset.get("base_size", []))
-	return "%s  source/base %.0fx%.0f  pre_scale %s  interpolation %s" % [
+	var actual_target := _actual_target_size(asset)
+	var config_target := _array_size(asset.get("target_size", []))
+	var target_label := "%.0fx%.0f actual" % [actual_target.x, actual_target.y] if actual_target != Vector2.ZERO else "%.0fx%.0f config" % [config_target.x, config_target.y]
+	return "%s  source/base %.0fx%.0f  target %s  pre_scale %s  interpolation %s" % [
 		String(asset.get("kind", "")),
 		base.x,
 		base.y,
+		target_label,
 		String(asset.get("pre_scale", "")),
 		String(asset.get("interpolation", "")),
 	]
 
 
-func _resolved_pre_scale(asset: Dictionary) -> float:
+func _resolved_png_scale(asset: Dictionary) -> Vector2:
+	var source_texture := _load_preview_texture(String(asset.get("source_png", "")))
+	if source_texture != null:
+		var actual_target := _actual_target_size(asset)
+		if actual_target != Vector2.ZERO:
+			return Vector2(actual_target.x / float(source_texture.get_width()), actual_target.y / float(source_texture.get_height()))
 	var raw: Variant = asset.get("pre_scale", 1)
 	if raw is int or raw is float:
-		return maxf(1.0, float(raw))
+		var explicit := maxf(1.0, float(raw))
+		return Vector2(explicit, explicit)
 	if String(raw) != "auto_integer":
-		return 1.0
-	var target_size := _array_size(asset.get("target_size", []))
+		return Vector2.ONE
+	var target_size := _actual_target_size(asset)
+	if target_size == Vector2.ZERO:
+		target_size = _array_size(asset.get("target_size", []))
 	var base := _array_size(asset.get("base_size", []))
 	if target_size.x <= 0.0 or target_size.y <= 0.0 or base.x <= 0.0 or base.y <= 0.0:
-		return 1.0
+		return Vector2.ONE
 	var max_pre_scale := maxf(1.0, float(asset.get("max_pre_scale", 1)))
 	var scale_x := target_size.x / base.x
 	var scale_y := target_size.y / base.y
-	return clampf(ceilf(maxf(scale_x, scale_y)), 1.0, max_pre_scale)
+	var resolved := clampf(ceilf(maxf(scale_x, scale_y)), 1.0, max_pre_scale)
+	return Vector2(resolved, resolved)
+
+
+func _actual_target_size(asset: Dictionary) -> Vector2:
+	var kind := String(asset.get("kind", ""))
+	var bucket_name := "styles" if kind == "stylebox_texture" else "textures"
+	var path_key := "output_style" if kind == "stylebox_texture" else "output_png"
+	var asset_path := String(asset.get(path_key, ""))
+	if asset_path.is_empty():
+		return Vector2.ZERO
+	var bucket: Dictionary = _actual_sizes.get(bucket_name, {})
+	if not bucket.has(asset_path):
+		return Vector2.ZERO
+	var record: Dictionary = bucket.get(asset_path, {})
+	var raw_size: Variant = record.get("max_size", [])
+	if not (raw_size is Array) or (raw_size as Array).size() != 2:
+		return Vector2.ZERO
+	var size := Vector2(float((raw_size as Array)[0]), float((raw_size as Array)[1]))
+	if size.x <= 0.0 or size.y <= 0.0:
+		return Vector2.ZERO
+	return size
 
 
 func _preview_slot(size: Vector2) -> Control:
@@ -449,6 +499,18 @@ func _read_config() -> Dictionary:
 	return {"assets": {}}
 
 
+func _read_actual_sizes() -> Dictionary:
+	if not FileAccess.file_exists(ACTUAL_SIZE_PATH):
+		return {}
+	var file := FileAccess.open(ACTUAL_SIZE_PATH, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if parsed is Dictionary:
+		return parsed as Dictionary
+	return {}
+
+
 func _array_size(raw: Variant) -> Vector2:
 	if not (raw is Array) or (raw as Array).size() != 2:
 		return Vector2(120.0, 48.0)
@@ -473,17 +535,17 @@ func _load_preview_texture(path: String) -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
-func _apply_template_margins_to_preview(preview_style: StyleBoxTexture, template_style: StyleBoxTexture, pre_scale: float) -> void:
+func _apply_template_margins_to_preview(preview_style: StyleBoxTexture, template_style: StyleBoxTexture, png_scale: Vector2) -> void:
 	if preview_style == null or template_style == null:
 		return
-	preview_style.texture_margin_left = template_style.texture_margin_left * pre_scale
-	preview_style.texture_margin_top = template_style.texture_margin_top * pre_scale
-	preview_style.texture_margin_right = template_style.texture_margin_right * pre_scale
-	preview_style.texture_margin_bottom = template_style.texture_margin_bottom * pre_scale
-	preview_style.content_margin_left = template_style.content_margin_left * pre_scale
-	preview_style.content_margin_top = template_style.content_margin_top * pre_scale
-	preview_style.content_margin_right = template_style.content_margin_right * pre_scale
-	preview_style.content_margin_bottom = template_style.content_margin_bottom * pre_scale
+	preview_style.texture_margin_left = template_style.texture_margin_left * png_scale.x
+	preview_style.texture_margin_top = template_style.texture_margin_top * png_scale.y
+	preview_style.texture_margin_right = template_style.texture_margin_right * png_scale.x
+	preview_style.texture_margin_bottom = template_style.texture_margin_bottom * png_scale.y
+	preview_style.content_margin_left = template_style.content_margin_left * png_scale.x
+	preview_style.content_margin_top = template_style.content_margin_top * png_scale.y
+	preview_style.content_margin_right = template_style.content_margin_right * png_scale.x
+	preview_style.content_margin_bottom = template_style.content_margin_bottom * png_scale.y
 
 
 func _update_margin_guides(
@@ -512,7 +574,7 @@ func _update_margin_guides(
 		guide.queue_redraw()
 
 
-func _run_generator() -> int:
+func _run_generator(asset_name: String = "") -> int:
 	var output: Array = []
 	var args := PackedStringArray([
 		"--headless",
@@ -521,6 +583,9 @@ func _run_generator() -> int:
 		"--script",
 		"scripts/tools/generate_ui_derived_assets.gd",
 	])
+	if not asset_name.is_empty():
+		args.append("--asset")
+		args.append(asset_name)
 	var exit_code := OS.execute(OS.get_executable_path(), args, output, true, false)
 	for line in output:
 		print(line)

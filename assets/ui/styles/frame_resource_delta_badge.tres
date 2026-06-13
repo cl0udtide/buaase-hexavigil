@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_resource_delta_badge.png" id="1_texture"]
 
 [resource]
-content_margin_left = 5.0000
-content_margin_top = 3.0000
-content_margin_right = 5.0000
-content_margin_bottom = 3.0000
+content_margin_left = 0.7363
+content_margin_top = 0.4222
+content_margin_right = 0.7363
+content_margin_bottom = 0.4222
 texture = ExtResource("1_texture")
-texture_margin_left = 1.3000
-texture_margin_top = 1.0000
-texture_margin_right = 1.3000
-texture_margin_bottom = 1.0000
+texture_margin_left = 0.1914
+texture_margin_top = 0.1407
+texture_margin_right = 0.1914
+texture_margin_bottom = 0.1407
 draw_center = true

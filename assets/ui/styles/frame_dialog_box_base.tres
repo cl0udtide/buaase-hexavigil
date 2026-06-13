@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_dialog_box_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 52.0000
-content_margin_top = 48.0000
-content_margin_right = 52.0000
-content_margin_bottom = 32.0000
+content_margin_left = 63.0528
+content_margin_top = 31.0376
+content_margin_right = 63.0528
+content_margin_bottom = 20.6917
 texture = ExtResource("1_texture")
-texture_margin_left = 286.3200
-texture_margin_top = 125.2600
-texture_margin_right = 178.9400
-texture_margin_bottom = 125.2600
+texture_margin_left = 347.1783
+texture_margin_top = 80.9952
+texture_margin_right = 216.9743
+texture_margin_bottom = 80.9952
 draw_center = true
