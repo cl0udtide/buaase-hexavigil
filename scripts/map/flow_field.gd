@@ -48,6 +48,60 @@ static func compute_front(cells: Dictionary, dist: Dictionary, blocked: Dictiona
 	return front
 
 
+const LATERAL_SLACK := 1
+
+
+## 单只怪的下一步格：沿梯度前进 + 朝相位槽位横向铺开 + 避让 extra_blocked（占用格）。
+## 纯函数，输入已算好的 dist/front。无可走则返回原格。
+static func next_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase: float, half_width: int, extra_blocked: Dictionary) -> Vector2i:
+	var f: Dictionary = front.get(cell, {})
+	if f.is_empty():
+		return cell
+	var g: Vector2i = f.get("g", Vector2i.ZERO)
+	if g == Vector2i.ZERO:
+		return cell  # 已在核心
+	var width: int = int(f.get("width", 1))
+	var axis: Vector2i = f.get("axis", Vector2i.ZERO)
+	var cur_d: int = int(dist.get(cell, 0))
+	var cur_index: int = int(round(float(f.get("frac", 0.0)) * float(max(width - 1, 1))))
+	var desired_index: int = _desired_index(width, phase, half_width)
+	# 1) 横向纠偏到相位槽位（slack 内允许 dist 略升，否则开阔地无法铺开）
+	if axis != Vector2i.ZERO and cur_index != desired_index:
+		var lat_dir: Vector2i = axis if desired_index > cur_index else -axis
+		var lat_cell: Vector2i = cell + lat_dir
+		if _can_enter(dist, extra_blocked, lat_cell) and int(dist[lat_cell]) <= cur_d + LATERAL_SLACK:
+			return lat_cell
+	# 2) 前进（严格降 dist）
+	var fwd: Vector2i = cell + g
+	if _can_enter(dist, extra_blocked, fwd) and int(dist[fwd]) < cur_d:
+		return fwd
+	# 3) 前进格被占（绕单位）：任一未占、dist 更低的邻
+	for dir in CARDINALS:
+		var nb: Vector2i = cell + dir
+		if _can_enter(dist, extra_blocked, nb) and int(dist[nb]) < cur_d:
+			return nb
+	# 4) 全堵：同 dist 的未占邻（绕行/等待），否则原地
+	for dir in CARDINALS:
+		var nb2: Vector2i = cell + dir
+		if _can_enter(dist, extra_blocked, nb2) and int(dist[nb2]) <= cur_d:
+			return nb2
+	return cell
+
+
+static func _can_enter(dist: Dictionary, extra_blocked: Dictionary, cell: Vector2i) -> bool:
+	return dist.has(cell) and not bool(extra_blocked.get(cell, false))
+
+
+## 相位 [0,1) → 该正面内的目标横向 index；half_width 封顶展开幅度。
+static func _desired_index(width: int, phase: float, half_width: int) -> int:
+	if width <= 1:
+		return 0
+	var center: float = float(width - 1) * 0.5
+	var spread: float = min(float(width - 1), float(2 * max(half_width, 0)))
+	var idx: float = center + (clampf(phase, 0.0, 1.0) - 0.5) * spread
+	return clampi(int(round(idx)), 0, width - 1)
+
+
 static func _passable(cells: Dictionary, blocked: Dictionary, cell: Vector2i) -> bool:
 	if bool(blocked.get(cell, false)):
 		return false
