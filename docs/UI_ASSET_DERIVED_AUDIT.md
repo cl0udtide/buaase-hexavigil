@@ -71,7 +71,7 @@
 
 | Overlay | 对应 base | actual size | 输出 PNG 对齐 | 结论 |
 |---|---|---:|---|---|
-| `frame_build_list_card_selected_overlay` | `frame_sidebar_tab_selected_overlay` / `frame_build_list_card_base` | overlay `272x104`，base `280x104` | overlay `272x181`，base 当前按列表卡底板生成 | 建筑卡和商店 Unit 卡已改为简单高亮，不再使用该纹理 overlay |
+| `frame_build_list_card_selected_overlay` | `frame_build_list_card_base` | overlay `272x104`，base `280x104` | overlay `272x181`，base `280x187` | 高度族一致，宽度因 Game 实例收缩到 272；可用，但需验收 selected 对齐 |
 | `frame_button_primary_overlay` | `frame_button_base` | overlay `318x76`，base `280x36` | 不同 | 被 ActionPanel 大按钮和小按钮共用，尺寸族冲突，建议拆出语义资源 |
 | `frame_button_disabled_overlay` | `frame_button_base` | overlay `318x76`，base `280x36` | 不同 | 同上；尤其被 `72x72`、`318x76`、`280x33` 共用 |
 | `frame_button_danger_overlay` | `frame_button_base` | overlay `280x33`，base `280x36` | 高度接近但 PNG 不同 | 可短期保留，仍建议与普通按钮族统一 |
@@ -79,8 +79,7 @@
 | `frame_relic_card_hover_overlay` | `frame_relic_card_base` | 未被正式扫描使用 | PNG `434x112` vs base `425x112` | 已删除，hover 改由代码色块表达 |
 | `frame_relic_filter_selected_overlay` | `frame_relic_filter_tab_base` | 未被正式扫描使用 | 只配置自身；未见正式引用 | 已删除，selected 复用 filter tab base |
 | `frame_relic_rarity_*_overlay` | `frame_relic_card_base` / icon frame | 未被正式扫描使用 | `345-352x201-202` 与 card/icon 尺寸族不一致 | 已删除，rarity 改由代码色块表达 |
-| `frame_sidebar_tab_selected_overlay` | `BuildListCard/CardBase` | `280x104` | 按建筑列表卡底板生成 | 保留稳定旧文件名，但离线语义已迁移为建筑列表卡底板；不再作为页签选中 overlay |
-| `frame_build_list_card_base` | `ShopUnitCard/CardBase` | `280x104` | 按商店 Unit 商品卡底板生成 | 与建筑卡分场景静态引用，不在运行时切换底座 |
+| `frame_sidebar_tab_selected_overlay` | `frame_sidebar_tab_base` | 两者 `134x50` | PNG 高度不同 | actual 对齐，输出图语义需验收是否只含状态层 |
 | `frame_speed_toggle_active_overlay` | `frame_speed_toggle_base` | overlay `216x82`，base `200x82` | PNG `216x123` vs base `331x82` | 已删除，`SpeedActiveOverlay` 复用通用 primary overlay |
 | `frame_top_status_chip_active_overlay` | `frame_top_status_chip_base` | 未被正式扫描使用 | PNG `240x106` vs base `273x154` | 已删除，selected hud cell 改为代码色块 |
 
