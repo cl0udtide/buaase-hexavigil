@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const FlowField = preload("res://scripts/map/flow_field.gd")
 
 const PATH_MODE_NORMAL: StringName = &"normal"
 const PATH_MODE_DEMOLISHER: StringName = &"demolisher"
@@ -20,6 +21,10 @@ const SCORE_INF := 1_000_000_000
 var _terrain_blocked_cells: Dictionary = {}
 var _normal_blocked_cells: Dictionary = {}
 var _grid_ready: bool = false
+# 敌人共享场（按 mode）：cell→CellData 快照、cell→步数、cell→{g,axis,width,frac}
+var _cells: Dictionary = {}
+var _dist_by_mode: Dictionary = {}
+var _front_by_mode: Dictionary = {}
 
 
 func _ready() -> void:
@@ -32,6 +37,7 @@ func _ready() -> void:
 func rebuild_from_map() -> void:
 	_terrain_blocked_cells.clear()
 	_normal_blocked_cells.clear()
+	_cells.clear()
 	_grid_ready = false
 	if _map_manager == null:
 		return
@@ -41,6 +47,7 @@ func rebuild_from_map() -> void:
 			var data: CellData = _map_manager.get_cell_data(cell)
 			if data == null:
 				continue
+			_cells[cell] = data
 			if not data.walkable:
 				_terrain_blocked_cells[cell] = true
 				_normal_blocked_cells[cell] = true
@@ -48,6 +55,39 @@ func rebuild_from_map() -> void:
 			if _is_path_blocking_building(data):
 				_normal_blocked_cells[cell] = true
 	_grid_ready = true
+	_rebuild_fields()
+
+
+## 重建按 mode 的距离场 + 正面结构（normal 绕墙、demolisher 无视墙）。随 rebuild_from_map 调用。
+func _rebuild_fields() -> void:
+	_dist_by_mode.clear()
+	_front_by_mode.clear()
+	if _map_manager == null:
+		return
+	var core: Vector2i = _map_manager.get_core_cell()
+	var dist_normal: Dictionary = FlowField.compute_distance(_cells, core, _normal_blocked_cells)
+	_dist_by_mode[PATH_MODE_NORMAL] = dist_normal
+	_front_by_mode[PATH_MODE_NORMAL] = FlowField.compute_front(_cells, dist_normal, _normal_blocked_cells)
+	var dist_demo: Dictionary = FlowField.compute_distance(_cells, core, _terrain_blocked_cells)
+	_dist_by_mode[PATH_MODE_DEMOLISHER] = dist_demo
+	_front_by_mode[PATH_MODE_DEMOLISHER] = FlowField.compute_front(_cells, dist_demo, _terrain_blocked_cells)
+
+
+func get_dist_map(path_mode: StringName) -> Dictionary:
+	return _dist_by_mode.get(path_mode, {})
+
+
+func get_front_map(path_mode: StringName) -> Dictionary:
+	return _front_by_mode.get(path_mode, {})
+
+
+func has_route(cell: Vector2i, path_mode: StringName) -> bool:
+	return (_dist_by_mode.get(path_mode, {}) as Dictionary).has(cell)
+
+
+## 到核心步数；无路返回 -1。
+func get_core_distance(cell: Vector2i, path_mode: StringName) -> int:
+	return int((_dist_by_mode.get(path_mode, {}) as Dictionary).get(cell, -1))
 
 
 func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]:
