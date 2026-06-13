@@ -15,6 +15,7 @@ const GenRepairMod = preload("res://scripts/map/generation/gen_repair.gd")
 const MesaGen = preload("res://scripts/map/generation/mesa.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 const TerrainField = preload("res://scripts/map/generation/terrain_field.gd")
+const CorePicker = preload("res://scripts/map/generation/core_picker.gd")
 
 var _failures: int = 0
 
@@ -32,6 +33,7 @@ func _run() -> void:
 	_test_terrain_field_despeckle()
 	_test_terrain_field_dump()
 	_test_terrain_field_presets()
+	_test_core_picker()
 	_test_stage_stream_isolation()
 	_test_detour_repair()
 	_test_cards_archetypes_wind()
@@ -261,6 +263,31 @@ func _test_terrain_field_presets() -> void:
 	_expect(highland > open + 0.05, "highland preset rockier than open (h=%.3f o=%.3f)" % [highland, open])
 	for preset_name in ["highland_run", "riverine_run", "open_run"]:
 		print("\n=== preset %s seed=11 ===\n" % preset_name, TerrainField.ascii_dump(TerrainField.classify(30, 30, 11, 0, pre[preset_name]), 30, 30))
+
+
+func _test_core_picker() -> void:
+	var c: Dictionary = TerrainField.DEFAULT_CLIMATE
+	var terr: Dictionary = TerrainField.classify(30, 30, 12345, 0, c)
+	var clr: Dictionary = CorePicker.clearance_field(terr, 30, 30)
+	_expect(clr.size() == 900, "clearance covers grid")
+	var someblock := Vector2i(-1, -1)
+	for k in terr.keys():
+		if terr[k] == CellDataRef.TERRAIN_MOUNTAIN:
+			someblock = k
+			break
+	if someblock.x >= 0:
+		_expect(int(clr[someblock]) == 0, "blocking cell clearance 0")
+	var core1: Vector2i = CorePicker.pick_core(terr, 30, 30, 12345, 0)
+	var core2: Vector2i = CorePicker.pick_core(terr, 30, 30, 12345, 0)
+	_expect(core1 == core2, "pick_core deterministic")
+	_expect(terr[core1] == CellDataRef.TERRAIN_PLAIN, "core on plain")
+	var margin: int = mini(mini(core1.x, 29 - core1.x), mini(core1.y, 29 - core1.y))
+	_expect(margin >= 5, "core respects edge margin (%d)" % margin)
+	print("\n=== core pick DEFAULT seed=12345 core=%s ===\n" % str(core1), CorePicker.ascii_overlay(terr, 30, 30, {core1: "C"}))
+	for s in [777, 2024]:
+		var t2: Dictionary = TerrainField.classify(30, 30, s, 0, c)
+		var co: Vector2i = CorePicker.pick_core(t2, 30, 30, s, 0)
+		print("\n=== core pick seed=%d core=%s ===\n" % [s, str(co)], CorePicker.ascii_overlay(t2, 30, 30, {co: "C"}))
 
 
 func _expect(cond: bool, msg: String) -> void:
