@@ -44,7 +44,7 @@
 ```
 
 > 通用 Boss 特效（阶段转换光环 `boss_phase_transition_strip`、阶段进入爆发 `boss_phase_enter_area_burst_strip`）已有资产、格式相同；只有某 Boss 需要专属观感时才新做。
-> 地面寒焰当前是占位（`ground_hazard_zone.gd` 程序绘制的半透明格）；`coucou_fire_rain_tile` 出图后由代码切换为贴图渲染。
+> 凑凑企鹅四个特效已生成入库并接线（`coucou_fire_rain_strip` 循环贴地火雨、`coucou_corona_pulse_strip` 普攻冲击环、`coucou_reflect_spark_strip` 反弹、`coucou_frost_phase_burst_strip` 变身爆发），均 6 帧；重做时覆盖同名文件即可（火雨无贴图时 `ground_hazard_zone.gd` 回退半透明占位格）。
 
 ## 5. 入库检查
 
