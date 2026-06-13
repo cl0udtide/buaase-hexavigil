@@ -1,15 +1,21 @@
 extends RefCounted
 class_name NightTemplateResolver
 
+## 单局总天数（九天三幕，d3/d6/d9 为幕末 Boss 晚）。胜利判定以此为准。
+const TOTAL_DAYS := 9
+
 ## day -> 每晚各波的档位序列。调整单局天数或夜晚节奏时改这张表。
-## 占位节奏：波数随天数递增，最后一晚为 late + boss。
+## 九天三幕：每幕 3 天，幕末（d3/d6/d9）末波为 boss；boss 晚少配 adds（数量系数已配合）。
 const WAVE_TIERS_BY_DAY := {
 	1: [&"early"],
 	2: [&"early", &"early"],
-	3: [&"early", &"mid"],
+	3: [&"early", &"boss"],
 	4: [&"mid", &"mid"],
-	5: [&"mid", &"late", &"late"],
+	5: [&"mid", &"mid", &"late"],
 	6: [&"late", &"boss"],
+	7: [&"late", &"late"],
+	8: [&"mid", &"late", &"late"],
+	9: [&"late", &"late", &"boss"],
 }
 const DEFAULT_WAVE_TIERS: Array = [&"late", &"late"]
 const DEFAULT_TIER: StringName = &"late"
@@ -25,6 +31,11 @@ static func wave_tiers_for_day(day: int) -> Array[StringName]:
 
 static func wave_count_for_day(day: int) -> int:
 	return wave_tiers_for_day(day).size()
+
+
+## 当晚是否为幕末 Boss 晚（档位序列含 boss）。供胜利判定/音乐/幕收尾保底等共用。
+static func is_boss_night(day: int) -> bool:
+	return wave_tiers_for_day(day).has(&"boss")
 
 
 ## 兼容入口：返回当晚首波档位。

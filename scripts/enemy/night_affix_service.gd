@@ -14,6 +14,9 @@ const AFFIX_COUNT_BY_DAY := {
 	4: 2,
 	5: 2,
 	6: 1,
+	7: 2,
+	8: 2,
+	9: 1,
 }
 const DEFAULT_AFFIX_COUNT := 2
 

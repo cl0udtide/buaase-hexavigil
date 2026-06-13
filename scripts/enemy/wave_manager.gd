@@ -410,6 +410,8 @@ func _build_resolved_entries(cfg: Dictionary, template_id: StringName, wave_inde
 		var entry: Dictionary = _resolve_wave_entry(entry_variant as Dictionary, seed_day, entry_index)
 		if StringName(entry.get("enemy_id", "")) == StringName():
 			continue
+		if day < 2 and _is_flying_enemy(StringName(entry.get("enemy_id", ""))):
+			continue
 		if String(entry.get("spawn_key", "")).is_empty():
 			var lane := StringName(String(entry.get("lane", "any")))
 			entry["spawn_key"] = NightTemplateResolver.resolve_lane_gate(lane, entry_index, main_gate, active_gates, run_seed, day, wave_index)
@@ -450,6 +452,16 @@ func _apply_count_scale(entries: Array, day: int) -> void:
 		if DifficultyScale.is_boss_cfg(enemy_cfg):
 			continue
 		entry["count"] = DifficultyScale.scaled_count(int(entry.get("count", 1)), scale)
+
+
+## 飞行单位判定（飞行闸用）：第 1 天不出飞行，避免开局就要对空。
+func _is_flying_enemy(enemy_id: StringName) -> bool:
+	if enemy_id == StringName():
+		return false
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return false
+	return StringName(data_repo.get_enemy_cfg(enemy_id).get("move_type", "ground")) == &"flying"
 
 
 func _active_spawn_keys() -> Array:

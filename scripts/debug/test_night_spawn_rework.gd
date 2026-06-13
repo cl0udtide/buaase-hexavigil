@@ -5,6 +5,7 @@ extends SceneTree
 ## 随各步实现逐步补充断言；当前覆盖：第 1 步 DifficultyScale 全局强度系数。
 
 const DifficultyScale = preload("res://scripts/enemy/difficulty_scale.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 var _failures: int = 0
 
@@ -16,6 +17,7 @@ func _init() -> void:
 	_test_scaled_count()
 	_test_apply_stat_scale()
 	_test_stat_scale_for_enemy()
+	_test_nine_day_schedule()
 	if _failures == 0:
 		print("NIGHT SPAWN REWORK TESTS PASSED")
 		quit(0)
@@ -97,3 +99,21 @@ func _test_stat_scale_for_enemy() -> void:
 	# 同一天：Boss 走 boss 曲线，杂兵走 stat 曲线。
 	_expect_approx(DifficultyScale.stat_scale_for_enemy(boss_cfg, 6), 1.5, "boss enemy d6 -> boss scale")
 	_expect_approx(DifficultyScale.stat_scale_for_enemy(normal_cfg, 6), 1.3, "normal enemy d6 -> stat scale")
+
+
+func _test_nine_day_schedule() -> void:
+	_expect(NightTemplateResolver.TOTAL_DAYS == 9, "TOTAL_DAYS == 9")
+	# 每晚波数：1,2,2,2,3,2,2,3,3。
+	var expected_waves := {1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 2, 7: 2, 8: 3, 9: 3}
+	for day in expected_waves:
+		_expect(NightTemplateResolver.wave_count_for_day(day) == int(expected_waves[day]),
+			"wave_count day %d == %d (got %d)" % [day, int(expected_waves[day]), NightTemplateResolver.wave_count_for_day(day)])
+	# 幕末 Boss 晚 = d3/d6/d9，其余非 Boss 晚。
+	for day in [3, 6, 9]:
+		_expect(NightTemplateResolver.is_boss_night(day), "day %d is boss night" % day)
+		_expect(NightTemplateResolver.wave_tiers_for_day(day).back() == &"boss", "day %d last wave is boss" % day)
+	for day in [1, 2, 4, 5, 7, 8]:
+		_expect(not NightTemplateResolver.is_boss_night(day), "day %d not boss night" % day)
+	# 第 1 天只有 early 一波。
+	var d1 := NightTemplateResolver.wave_tiers_for_day(1)
+	_expect(d1.size() == 1 and d1[0] == &"early", "day 1 single early wave")

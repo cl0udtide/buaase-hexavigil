@@ -30,7 +30,7 @@ func _test_resolver_plan() -> void:
 	_expect(Resolver.wave_tiers_for_day(2) == ([&"early", &"early"] as Array[StringName]), "day2 tiers early x2")
 	_expect(Resolver.wave_tiers_for_day(5).size() == 3, "day5 has 3 waves")
 	_expect(Resolver.wave_tiers_for_day(6) == ([&"late", &"boss"] as Array[StringName]), "day6 ends with boss")
-	_expect(Resolver.wave_tiers_for_day(9).size() == 2, "day beyond table falls back to default")
+	_expect(Resolver.wave_tiers_for_day(12).size() == 2, "day beyond table falls back to default")
 	_expect(Resolver.tier_for_day(6) == &"late", "tier_for_day keeps first-wave compat")
 
 	var pools := {
