@@ -40,7 +40,7 @@ static func place_gates(width: int, height: int, count: int) -> Array[Vector2i]:
 
 ## 唯一硬底线：每口能走到核心。口格强制平原；不可达则开凿一条路（穿阻挡代价高）。
 ## 直接改写 terrain（把口格与开凿路径设为平原）。
-static func ensure_connectivity(terrain: Dictionary, width: int, height: int, core: Vector2i, gates: Array) -> void:
+static func ensure_connectivity(terrain: Dictionary, _width: int, _height: int, core: Vector2i, gates: Array) -> void:
 	for raw_g in gates:
 		terrain[raw_g as Vector2i] = CellDataRef.TERRAIN_PLAIN
 	for raw_g in gates:
