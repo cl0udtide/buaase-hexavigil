@@ -32,6 +32,8 @@ const IDLE_MOTION_MIN_SECONDS := 1.7
 const IDLE_MOTION_MAX_SECONDS := 2.45
 const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
 const DEFAULT_STATUS_EFFECT_SIZE := Vector2(112.0, 112.0)
+const SFX_IMPACT_PHYSICAL := &"impact_physical"
+const SFX_IMPACT_ARTS := &"impact_arts"
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -462,6 +464,7 @@ func _play_hit_effect(damage_type_value: int = GameEnums.DAMAGE_PHYSICAL) -> voi
 		"size": DEFAULT_IMPACT_SIZE,
 		"z_index": 24
 	})
+	_request_audio_cue(_impact_sfx_for_damage_type(damage_type_value))
 
 
 func _refresh_fog_visibility() -> void:
@@ -1193,3 +1196,13 @@ func _damage_type_text(type_value: int) -> String:
 			return "真实"
 		_:
 			return "物理"
+
+
+func _impact_sfx_for_damage_type(damage_type_value: int) -> StringName:
+	return SFX_IMPACT_ARTS if damage_type_value == GameEnums.DAMAGE_MAGIC else SFX_IMPACT_PHYSICAL
+
+
+func _request_audio_cue(cue_key: StringName) -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.audio_cue_requested.emit(cue_key)

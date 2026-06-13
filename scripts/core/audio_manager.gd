@@ -30,6 +30,11 @@ const SFX_UI_PAUSE := &"ui_pause"
 const SFX_UI_SPEED_TOGGLE := &"ui_speed_toggle"
 const SFX_UI_BULLET_TIME := &"ui_bullet_time"
 const SFX_UI_SLIDER := &"ui_slider"
+const SFX_IMPACT_PHYSICAL := &"impact_physical"
+const SFX_IMPACT_ARTS := &"impact_arts"
+const SFX_PROJECTILE_PHYSICAL := &"projectile_physical"
+const SFX_PROJECTILE_ARTS := &"projectile_arts"
+const SFX_SKILL_CAST := &"skill_cast"
 
 const FADE_SECONDS := 0.65
 const SFX_POOL_SIZE := 8
@@ -68,7 +73,18 @@ var sfx_paths := {
 	SFX_UI_PAUSE: "res://assets/audio/sfx/ui_transition.ogg",
 	SFX_UI_SPEED_TOGGLE: "res://assets/audio/sfx/ui_transition.ogg",
 	SFX_UI_BULLET_TIME: "res://assets/audio/sfx/ui_transition.ogg",
-	SFX_UI_SLIDER: "res://assets/audio/sfx/ui_click.ogg"
+	SFX_UI_SLIDER: "res://assets/audio/sfx/ui_click.ogg",
+	SFX_IMPACT_PHYSICAL: "res://assets/audio/sfx/impact_physical.ogg",
+	SFX_IMPACT_ARTS: "res://assets/audio/sfx/impact_arts.ogg",
+	SFX_PROJECTILE_PHYSICAL: "res://assets/audio/sfx/projectile_physical.ogg",
+	SFX_PROJECTILE_ARTS: "res://assets/audio/sfx/projectile_arts.ogg",
+	SFX_SKILL_CAST: "res://assets/audio/sfx/skill_cast.ogg"
+}
+var sfx_cooldowns := {
+	SFX_IMPACT_PHYSICAL: 0.045,
+	SFX_IMPACT_ARTS: 0.055,
+	SFX_PROJECTILE_PHYSICAL: 0.04,
+	SFX_PROJECTILE_ARTS: 0.05
 }
 
 var _bgm_player: AudioStreamPlayer
@@ -76,6 +92,7 @@ var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_cursor := 0
 var _current_bgm_key := StringName()
 var _fade_tween: Tween
+var _last_sfx_played_msec := {}
 
 
 func _ready() -> void:
@@ -128,6 +145,8 @@ func play_bgm(bgm_key: StringName) -> void:
 
 
 func play_sfx(sfx_key: StringName) -> void:
+	if _is_sfx_throttled(sfx_key):
+		return
 	var path := String(sfx_paths.get(sfx_key, ""))
 	if path.is_empty():
 		return
@@ -225,6 +244,7 @@ func _bind_events() -> void:
 	event_bus.shop_action_result.connect(_on_shop_action_result)
 	event_bus.blessing_chosen.connect(_on_blessing_chosen)
 	event_bus.audio_cue_requested.connect(_on_audio_cue_requested)
+	event_bus.unit_skill_cast.connect(_on_unit_skill_cast)
 
 
 func _apply_volumes() -> void:
@@ -274,6 +294,18 @@ func _linear_to_db(value: float) -> float:
 	if value <= 0.001:
 		return -80.0
 	return linear_to_db(value)
+
+
+func _is_sfx_throttled(sfx_key: StringName) -> bool:
+	var cooldown_seconds := float(sfx_cooldowns.get(sfx_key, 0.0))
+	if cooldown_seconds <= 0.0:
+		return false
+	var now_msec := Time.get_ticks_msec()
+	var last_msec := int(_last_sfx_played_msec.get(sfx_key, -1000000))
+	if float(now_msec - last_msec) < cooldown_seconds * 1000.0:
+		return true
+	_last_sfx_played_msec[sfx_key] = now_msec
+	return false
 
 
 func _on_day_started(_day: int) -> void:
@@ -333,6 +365,10 @@ func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 
 func _on_blessing_chosen(_buff_id: StringName) -> void:
 	play_sfx(SFX_BLESSING_CHOSEN)
+
+
+func _on_unit_skill_cast(_unit_runtime_id: int, _unit_id: StringName) -> void:
+	play_sfx(SFX_SKILL_CAST)
 
 
 func _on_audio_cue_requested(cue_key: StringName) -> void:

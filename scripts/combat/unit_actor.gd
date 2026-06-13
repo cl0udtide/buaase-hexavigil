@@ -11,6 +11,10 @@ const BLOCK_RADIUS_TILES := 0.7071
 const DEFAULT_PROJECTILE_SPEED := 520.0
 const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
 const DEFAULT_PROJECTILE_LIFETIME := 3.0
+const SFX_IMPACT_PHYSICAL := &"impact_physical"
+const SFX_IMPACT_ARTS := &"impact_arts"
+const SFX_PROJECTILE_PHYSICAL := &"projectile_physical"
+const SFX_PROJECTILE_ARTS := &"projectile_arts"
 const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
 const DEFAULT_STATUS_EFFECT_SIZE := Vector2(112.0, 112.0)
 const TARGET_TYPE_GROUND: StringName = &"ground"
@@ -778,6 +782,7 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node:
 		var origin_variant: Variant = projectile_payload.get("origin", global_position)
 		if origin_variant is Vector2:
 			(projectile as Node2D).global_position = origin_variant
+	_request_audio_cue(_projectile_sfx_for_damage_type(int(projectile_payload.get("damage_type", damage_type))))
 	return projectile
 
 
@@ -1134,6 +1139,7 @@ func _play_hit_effect(damage_type_value: int = GameEnums.DAMAGE_PHYSICAL) -> voi
 		"size": DEFAULT_IMPACT_SIZE,
 		"z_index": 24
 	})
+	_request_audio_cue(_impact_sfx_for_damage_type(damage_type_value))
 
 
 func _play_heal_effect() -> void:
@@ -1542,3 +1548,17 @@ func _damage_type_text(type_value: int) -> String:
 			return "真实"
 		_:
 			return "物理"
+
+
+func _impact_sfx_for_damage_type(damage_type_value: int) -> StringName:
+	return SFX_IMPACT_ARTS if damage_type_value == GameEnums.DAMAGE_MAGIC else SFX_IMPACT_PHYSICAL
+
+
+func _projectile_sfx_for_damage_type(damage_type_value: int) -> StringName:
+	return SFX_PROJECTILE_ARTS if damage_type_value == GameEnums.DAMAGE_MAGIC else SFX_PROJECTILE_PHYSICAL
+
+
+func _request_audio_cue(cue_key: StringName) -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.audio_cue_requested.emit(cue_key)
