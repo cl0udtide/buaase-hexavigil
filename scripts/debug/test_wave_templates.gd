@@ -36,7 +36,7 @@ func _load_templates() -> Array:
 
 
 func _check_data(templates: Array) -> void:
-	_expect(templates.size() == 15, "15 templates (got %d)" % templates.size())
+	_expect(templates.size() == 16, "16 templates (got %d)" % templates.size())
 
 	var enemies_parsed: Variant = _load_json("res://data/enemies.json")
 	var enemy_ids: Dictionary = {}
@@ -104,7 +104,7 @@ func _check_data(templates: Array) -> void:
 	_expect(int(tier_counts.get(&"early", 0)) == 4, "early template count")
 	_expect(int(tier_counts.get(&"mid", 0)) == 5, "mid template count")
 	_expect(int(tier_counts.get(&"late", 0)) == 4, "late template count")
-	_expect(int(tier_counts.get(&"boss", 0)) == 2, "boss template count")
+	_expect(int(tier_counts.get(&"boss", 0)) == 3, "boss template count")
 
 
 func _ids_by_tier(templates: Array, tier: StringName) -> Array[StringName]:

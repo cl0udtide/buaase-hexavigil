@@ -597,5 +597,45 @@
         "interval": 1.2
       }
     ]
+  },
+  {
+    "id": "frostbeak_carnival",
+    "name": "凑凑寒潮",
+    "desc": "绒甲裹着寒雾压上来，物理硬砍只会被反噬；它身边的术士无人机与高阶术师专挑缝隙点火。",
+    "tier": "boss",
+    "min_day": 4,
+    "key_enemies": [
+      "coucou_penguin"
+    ],
+    "groups": [
+      {
+        "time": 0.0,
+        "enemy_id": "shieldguard",
+        "lane": "main",
+        "count": 2,
+        "interval": 1.8
+      },
+      {
+        "time": 4.0,
+        "enemy_id": "arts_drone",
+        "lane": "flank",
+        "count": 3,
+        "interval": 0.9
+      },
+      {
+        "time": 8.0,
+        "enemy_id": "coucou_penguin",
+        "lane": "main",
+        "count": 1,
+        "interval": 0.0
+      },
+      {
+        "time": 16.0,
+        "enemy_id": "senior_caster",
+        "lane": "flank",
+        "count": 1,
+        "interval": 0.0
+      }
+    ]
   }
 ]

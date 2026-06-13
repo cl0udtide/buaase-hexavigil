@@ -506,5 +506,58 @@
       }
     ],
     "scene_key": "enemy_actor"
+  },
+  {
+    "id": "coucou_penguin",
+    "name": "凑凑企鹅·绒甲形态",
+    "visual_key": "milk_dragon_chief_thick_scale",
+    "visual_modulate": [0.45, 0.72, 1.0, 1.0],
+    "max_hp": 2300,
+    "atk": 60,
+    "def": 45,
+    "res": 45,
+    "move_speed": 0.5,
+    "attack_interval": 1.1,
+    "attack_range": 1,
+    "damage_type": "physical",
+    "attack_delivery": "instant",
+    "behavior_type": "boss",
+    "move_type": "ground",
+    "core_damage": 999,
+    "prestige_reward": 22,
+    "block_weight": 3,
+    "reflect_physical_percent": 0.35,
+    "attack_splash_radius": 1,
+    "attack_splash_damage_type": "magic",
+    "phase_transition_sec": 2.0,
+    "phases": [
+      {
+        "phase": 2,
+        "name": "凑凑企鹅·寒怒形态",
+        "max_hp": 1600,
+        "atk": 120,
+        "def": 60,
+        "res": 60,
+        "move_speed": 0.7,
+        "attack_interval": 1.6,
+        "attack_range": 2,
+        "damage_type": "physical",
+        "behavior_type": "boss",
+        "move_type": "ground",
+        "core_damage": 999,
+        "reflect_physical_percent": 0.5,
+        "attack_splash_radius": 2,
+        "attack_splash_damage_type": "magic",
+        "fire_rain": {
+          "length": 3,
+          "half_width": 1,
+          "damage_per_sec": 22.0,
+          "duration": 8.0,
+          "tick_interval": 1.0,
+          "damage_type": "magic"
+        }
+      }
+    ],
+    "scene_key": "enemy_actor"
   }
 ]

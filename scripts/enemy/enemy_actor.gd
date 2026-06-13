@@ -171,7 +171,7 @@ func _draw() -> void:
 	draw_line(Vector2(0.0, -8.0), Vector2(0.0, 8.0), DEBUG_COLOR, 1.5)
 
 
-func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0) -> void:
+func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0, source: Node = null) -> void:
 	if (_boss_controller != null and _boss_controller.is_transitioning()) or bool(cfg.get("invulnerable", false)):
 		_debug_log("敌人 %s#%d 处于无敌状态，免疫本次伤害" % [_debug_name(), runtime_id])
 		return
@@ -188,6 +188,7 @@ func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0) -
 	var shield_absorbed: int = _absorb_damage_with_shield(final_damage)
 	final_damage = max(final_damage - shield_absorbed, 0)
 	current_hp = max(current_hp - final_damage, 0)
+	_apply_reflect_damage(source, final_damage, damage_type)
 	_update_status_view()
 	if shield_absorbed > 0:
 		_play_shield_absorb_effect()
@@ -202,6 +203,19 @@ func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0) -
 		_is_dead = true
 		_debug_log("敌人 %s#%d 死亡" % [_debug_name(), runtime_id])
 		get_enemy_manager().remove_enemy(runtime_id)
+
+
+## 反弹物理伤害给来源（凑凑企鹅 P1）：逼"别用物理硬怼，换法术/真伤/远程"。
+func _apply_reflect_damage(source: Node, final_damage: int, damage_type: int) -> void:
+	if damage_type != GameEnums.DAMAGE_PHYSICAL or final_damage <= 0:
+		return
+	var percent := float(cfg.get("reflect_physical_percent", 0.0))
+	if percent <= 0.0:
+		return
+	if source == null or source == self or not is_instance_valid(source) or not source.has_method("receive_damage"):
+		return
+	var reflected := maxi(int(round(float(final_damage) * percent)), 1)
+	source.receive_damage(reflected, GameEnums.DAMAGE_PHYSICAL, null)
 
 
 func apply_defeat_effects() -> void:
@@ -702,9 +716,21 @@ func _setup_visual_sprite() -> void:
 	sprite.scale = Vector2.ONE * (VISUAL_DISPLAY_SIZE / VISUAL_TEXTURE_SIZE)
 	sprite.flip_h = _should_visual_face_left(facing)
 	sprite.z_index = VISUAL_Z_INDEX
+	_apply_visual_modulate(sprite)
 	_has_visual_sprite = true
 	_start_idle_motion()
 	queue_redraw()
+
+
+## 占位换色（凑凑企鹅 = 奶龙贴图染冷色）：cfg.visual_modulate = [r,g,b,(a)]。
+func _apply_visual_modulate(sprite: Sprite2D) -> void:
+	var raw: Variant = cfg.get("visual_modulate", null)
+	if typeof(raw) == TYPE_ARRAY and (raw as Array).size() >= 3:
+		var m: Array = raw
+		var a := float(m[3]) if m.size() >= 4 else 1.0
+		sprite.self_modulate = Color(float(m[0]), float(m[1]), float(m[2]), a)
+	else:
+		sprite.self_modulate = Color.WHITE
 
 
 func _get_idle_motion_root() -> Node2D:

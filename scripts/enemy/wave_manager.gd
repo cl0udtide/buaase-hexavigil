@@ -66,8 +66,21 @@ func resolve_night_plan(run_seed: int, day: int, used_ids: Array) -> Array[Strin
 	var pools: Dictionary = {}
 	for tier in NightTemplateResolver.wave_tiers_for_day(day):
 		if not pools.has(tier):
-			pools[tier] = data_repo.get_wave_template_ids_by_tier(tier)
+			pools[tier] = _filter_pool_by_min_day(data_repo.get_wave_template_ids_by_tier(tier), day)
 	return NightTemplateResolver.resolve_night_plan(pools, used_ids, run_seed, day)
+
+
+## 按模板 min_day 过滤当天某档池（凑凑企鹅 min_day=4，幕一不登场）。
+func _filter_pool_by_min_day(ids: Array, day: int) -> Array:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_wave_template_cfg"):
+		return ids
+	var entries: Array = []
+	for raw_id: Variant in ids:
+		var id := StringName(raw_id)
+		var cfg: Dictionary = data_repo.get_wave_template_cfg(id)
+		entries.append({"id": id, "min_day": int(cfg.get("min_day", 1))})
+	return NightTemplateResolver.filter_template_ids_by_min_day(entries, day)
 
 
 ## 启动整夜战斗：按计划顺序播放多个波次模板，并应用当晚词缀。
