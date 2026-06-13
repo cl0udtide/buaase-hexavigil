@@ -70,6 +70,7 @@ func apply_phase_enter_effects() -> void:
 	if _owner_actor == null or not is_instance_valid(_owner_actor):
 		return
 	_apply_fire_rain()
+	_play_phase_enter_custom_effect()
 	var area_cfg: Dictionary = _owner_actor.cfg.get("phase_enter_area_damage", {})
 	if area_cfg.is_empty():
 		_pending_phase_cfg.clear()
@@ -126,8 +127,16 @@ func _apply_fire_rain() -> void:
 		return
 	var zone := GroundHazardZone.new()
 	parent.add_child(zone)
-	zone.setup(cells, dps, damage_type, duration, tick, _owner_actor.get_unit_manager(), _owner_actor.get_map_manager(), permanent, _owner_actor.get_enemy_manager())
+	zone.setup(cells, dps, damage_type, duration, tick, _owner_actor.get_unit_manager(), _owner_actor.get_map_manager(), permanent, _owner_actor.get_enemy_manager(), String(fire_cfg.get("effect", "")), int(fire_cfg.get("effect_frames", 6)), float(fire_cfg.get("effect_fps", 10.0)))
 	_debug_log("敌人 %s#%d 释放火雨，覆盖 %d 格，持续 %.1f 秒" % [_debug_name(), _runtime_id(), cells.size(), duration])
+
+
+## 进阶段时的专属爆发特效（凑凑企鹅寒霜变身）：cfg.phase_enter_effect。
+func _play_phase_enter_custom_effect() -> void:
+	var path := String(_owner_actor.cfg.get("phase_enter_effect", ""))
+	if path.is_empty() or not _owner_actor.has_method("spawn_world_effect"):
+		return
+	_owner_actor.spawn_world_effect(path, _owner_actor.global_position, 0.7, 6, 6, 14.0, Vector2(168.0, 168.0), 0.0, false, 26)
 
 
 func on_hp_threshold_crossed(_percent: float) -> void:

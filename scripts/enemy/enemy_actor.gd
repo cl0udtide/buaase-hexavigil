@@ -216,6 +216,9 @@ func _apply_reflect_damage(source: Node, final_damage: int, damage_type: int) ->
 		return
 	var reflected := maxi(int(round(float(final_damage) * percent)), 1)
 	source.receive_damage(reflected, GameEnums.DAMAGE_PHYSICAL, null)
+	var fx := String(cfg.get("reflect_effect", ""))
+	if not fx.is_empty():
+		play_follow_effect(fx, 0.4, 6, 6, 18.0, Vector2(96.0, 96.0), false, VISUAL_OFFSET, 25)
 
 
 func apply_defeat_effects() -> void:

@@ -182,6 +182,10 @@ func _apply_attack_splash(primary_target: Node) -> void:
 			var unit: Node = unit_manager.get_unit_by_cell(Vector2i(x, y))
 			if unit != null and unit != primary_target and is_instance_valid(unit) and unit.has_method("receive_damage"):
 				unit.receive_damage(splash_damage, splash_type, _owner_actor)
+	var fx := String(_owner_actor.cfg.get("attack_splash_effect", ""))
+	if not fx.is_empty() and _owner_actor.has_method("spawn_world_effect"):
+		var diameter := float(radius * 2 + 1) * 64.0
+		_owner_actor.spawn_world_effect(fx, _owner_actor.global_position, 0.5, 6, 6, 18.0, Vector2(diameter, diameter), 0.0, false, 23)
 
 
 func _uses_projectile_range_attack() -> bool:

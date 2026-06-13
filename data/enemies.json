@@ -528,6 +528,8 @@
     "reflect_physical_percent": 0.35,
     "attack_splash_radius": 1,
     "attack_splash_damage_type": "magic",
+    "attack_splash_effect": "res://assets/effects/enemies/coucou_corona_pulse_strip.png",
+    "reflect_effect": "res://assets/effects/enemies/coucou_reflect_spark_strip.png",
     "phase_transition_sec": 2.0,
     "phases": [
       {
@@ -547,6 +549,9 @@
         "reflect_physical_percent": 0.5,
         "attack_splash_radius": 2,
         "attack_splash_damage_type": "magic",
+        "attack_splash_effect": "res://assets/effects/enemies/coucou_corona_pulse_strip.png",
+        "reflect_effect": "res://assets/effects/enemies/coucou_reflect_spark_strip.png",
+        "phase_enter_effect": "res://assets/effects/enemies/coucou_frost_phase_burst_strip.png",
         "fire_rain": {
           "length": 3,
           "half_width": 1,
@@ -554,7 +559,10 @@
           "duration": 8.0,
           "tick_interval": 1.0,
           "damage_type": "magic",
-          "permanent": true
+          "permanent": true,
+          "effect": "res://assets/effects/enemies/coucou_fire_rain_strip.png",
+          "effect_frames": 6,
+          "effect_fps": 10
         }
       }
     ],
