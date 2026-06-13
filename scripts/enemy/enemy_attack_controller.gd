@@ -45,6 +45,7 @@ func process_blocked_attack(delta: float, blocker: Node) -> void:
 	_play_owner_attack_lunge()
 	_play_melee_hit_effect(blocker)
 	blocker.receive_damage(damage_value, damage_type, _owner_actor)
+	_apply_attack_splash(blocker)
 	set_attack_cooldown_from_cfg()
 
 
@@ -160,6 +161,27 @@ func _resolve_range_hit(target: Node, damage_value: int, damage_type: int) -> vo
 		_damage_building(target, damage_value, damage_type)
 	elif target.has_method("receive_damage"):
 		target.receive_damage(damage_value, damage_type)
+	_apply_attack_splash(target)
+
+
+## 攻击范围溅射（凑凑企鹅 Stellar Corona 风味）：普攻额外对自身半径内其它单位造成法术伤害。
+func _apply_attack_splash(primary_target: Node) -> void:
+	var radius := int(_owner_actor.cfg.get("attack_splash_radius", 0))
+	if radius <= 0:
+		return
+	var splash_damage := int(_owner_actor.cfg.get("atk", 1))
+	if splash_damage <= 0:
+		return
+	var splash_type := _parse_damage_type(String(_owner_actor.cfg.get("attack_splash_damage_type", "magic")))
+	var unit_manager: Node = _get_unit_manager()
+	if unit_manager == null or not unit_manager.has_method("get_unit_by_cell"):
+		return
+	var center: Vector2i = _owner_actor.get_current_cell()
+	for y in range(center.y - radius, center.y + radius + 1):
+		for x in range(center.x - radius, center.x + radius + 1):
+			var unit: Node = unit_manager.get_unit_by_cell(Vector2i(x, y))
+			if unit != null and unit != primary_target and is_instance_valid(unit) and unit.has_method("receive_damage"):
+				unit.receive_damage(splash_damage, splash_type, _owner_actor)
 
 
 func _uses_projectile_range_attack() -> bool:

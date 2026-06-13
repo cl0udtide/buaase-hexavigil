@@ -38,6 +38,24 @@ static func is_boss_night(day: int) -> bool:
 	return wave_tiers_for_day(day).has(&"boss")
 
 
+## 按模板 min_day 过滤池：保留 min_day<=day 的模板；若全被过滤则退回全部（避免空池）。
+## entries: Array[{id: StringName, min_day: int}]，返回保留的 id 列表。
+static func filter_template_ids_by_min_day(entries: Array, day: int) -> Array[StringName]:
+	var kept: Array[StringName] = []
+	var all_ids: Array[StringName] = []
+	for raw: Variant in entries:
+		if typeof(raw) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = raw
+		var id := StringName(entry.get("id", ""))
+		if id == StringName():
+			continue
+		all_ids.append(id)
+		if int(entry.get("min_day", 1)) <= day:
+			kept.append(id)
+	return kept if not kept.is_empty() else all_ids
+
+
 ## 兼容入口：返回当晚首波档位。
 static func tier_for_day(day: int) -> StringName:
 	var tiers := wave_tiers_for_day(day)

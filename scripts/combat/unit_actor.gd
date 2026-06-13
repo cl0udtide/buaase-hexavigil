@@ -1237,7 +1237,7 @@ func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int
 	if target == null or not is_instance_valid(target):
 		return
 	if target.has_method("receive_damage"):
-		target.receive_damage(damage_value, damage_type_value, defense_ignore)
+		target.receive_damage(damage_value, damage_type_value, defense_ignore, self)
 	if trigger_after_attack and _skill_behavior != null and _skill_behavior.has_method("after_attack"):
 		_skill_behavior.after_attack(target, damage_value)
 

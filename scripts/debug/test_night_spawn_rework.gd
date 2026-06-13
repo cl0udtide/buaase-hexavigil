@@ -18,6 +18,8 @@ func _init() -> void:
 	_test_apply_stat_scale()
 	_test_stat_scale_for_enemy()
 	_test_nine_day_schedule()
+	_test_min_day_filter()
+	_test_third_boss_data()
 	if _failures == 0:
 		print("NIGHT SPAWN REWORK TESTS PASSED")
 		quit(0)
@@ -117,3 +119,66 @@ func _test_nine_day_schedule() -> void:
 	# 第 1 天只有 early 一波。
 	var d1 := NightTemplateResolver.wave_tiers_for_day(1)
 	_expect(d1.size() == 1 and d1[0] == &"early", "day 1 single early wave")
+
+
+func _test_min_day_filter() -> void:
+	var entries := [
+		{"id": &"a", "min_day": 1},
+		{"id": &"b", "min_day": 4},
+		{"id": &"c", "min_day": 6},
+	]
+	var d3 := NightTemplateResolver.filter_template_ids_by_min_day(entries, 3)
+	_expect(d3.size() == 1 and d3[0] == &"a", "min_day filter day3 keeps only a")
+	var d6 := NightTemplateResolver.filter_template_ids_by_min_day(entries, 6)
+	_expect(d6.size() == 3, "min_day filter day6 keeps all 3")
+	# 全被过滤时退回全部，避免空池。
+	var none := NightTemplateResolver.filter_template_ids_by_min_day([{"id": &"x", "min_day": 9}], 3)
+	_expect(none.size() == 1 and none[0] == &"x", "min_day filter empty -> fallback all")
+
+
+func _test_third_boss_data() -> void:
+	var enemies: Variant = _load_json("res://data/enemies.json")
+	var penguin: Dictionary = _find_by_id(enemies, "coucou_penguin")
+	_expect(not penguin.is_empty(), "coucou_penguin exists in enemies.json")
+	_expect(String(penguin.get("behavior_type", "")) == "boss", "coucou_penguin is boss")
+	_expect(float(penguin.get("reflect_physical_percent", 0.0)) > 0.0, "P1 reflect_physical_percent > 0")
+	_expect(int(penguin.get("attack_splash_radius", 0)) >= 1, "P1 attack_splash_radius >= 1")
+	var phases: Array = penguin.get("phases", [])
+	_expect(phases.size() >= 1, "coucou_penguin has phase 2")
+	if phases.size() >= 1:
+		var p2: Dictionary = phases[0]
+		var fire: Dictionary = p2.get("fire_rain", {})
+		_expect(not fire.is_empty(), "P2 has fire_rain")
+		_expect(float(fire.get("damage_per_sec", 0.0)) > 0.0, "fire_rain damage_per_sec > 0")
+	# boss 模板池含三只 + frostbeak min_day=4 引用凑凑企鹅。
+	var templates: Variant = _load_json("res://data/wave_templates.json")
+	var boss_count := 0
+	var frost: Dictionary = {}
+	if typeof(templates) == TYPE_ARRAY:
+		for raw: Variant in templates:
+			if typeof(raw) != TYPE_DICTIONARY:
+				continue
+			var t: Dictionary = raw
+			if String(t.get("tier", "")) == "boss":
+				boss_count += 1
+			if String(t.get("id", "")) == "frostbeak_carnival":
+				frost = t
+	_expect(boss_count == 3, "3 boss templates (got %d)" % boss_count)
+	_expect(not frost.is_empty(), "frostbeak_carnival template exists")
+	_expect(int(frost.get("min_day", 1)) == 4, "frostbeak min_day == 4")
+	_expect((frost.get("key_enemies", []) as Array).has("coucou_penguin"), "frostbeak references coucou_penguin")
+
+
+func _load_json(path: String) -> Variant:
+	var file := FileAccess.open(path, FileAccess.READ)
+	_expect(file != null, "open %s" % path)
+	return JSON.parse_string(file.get_as_text()) if file != null else null
+
+
+func _find_by_id(arr: Variant, id: String) -> Dictionary:
+	if typeof(arr) != TYPE_ARRAY:
+		return {}
+	for raw: Variant in arr:
+		if typeof(raw) == TYPE_DICTIONARY and String((raw as Dictionary).get("id", "")) == id:
+			return raw
+	return {}

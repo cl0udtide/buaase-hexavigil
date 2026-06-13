@@ -1,6 +1,7 @@
 extends Node
 
 const CELL_SIZE := 64.0
+const GroundHazardZone = preload("res://scripts/effects/ground_hazard_zone.gd")
 
 var _owner_actor: Node = null
 var _initial_cfg: Dictionary = {}
@@ -68,6 +69,7 @@ func get_pending_phase_cfg() -> Dictionary:
 func apply_phase_enter_effects() -> void:
 	if _owner_actor == null or not is_instance_valid(_owner_actor):
 		return
+	_apply_fire_rain()
 	var area_cfg: Dictionary = _owner_actor.cfg.get("phase_enter_area_damage", {})
 	if area_cfg.is_empty():
 		_pending_phase_cfg.clear()
@@ -96,6 +98,35 @@ func apply_phase_enter_effects() -> void:
 					_damage_building(building, damage, damage_type)
 	_debug_log("敌人 %s#%d 点燃周围 %dx%d 区域，造成%s伤害 %d" % [_debug_name(), _runtime_id(), radius * 2 + 1, radius * 2 + 1, _damage_type_text(damage_type), damage])
 	_pending_phase_cfg.clear()
+
+
+## P2 朝向火雨（凑凑企鹅）：朝当前朝向在前方铺地面危险区，持续若干秒每秒法术 DOT。
+func _apply_fire_rain() -> void:
+	var fire_cfg: Dictionary = _owner_actor.cfg.get("fire_rain", {})
+	if fire_cfg.is_empty():
+		return
+	var length: int = maxi(int(fire_cfg.get("length", 3)), 1)
+	var half_width: int = maxi(int(fire_cfg.get("half_width", 1)), 0)
+	var dps := float(fire_cfg.get("damage_per_sec", 10.0))
+	var duration := float(fire_cfg.get("duration", 6.0))
+	var tick := float(fire_cfg.get("tick_interval", 1.0))
+	var damage_type: int = _parse_damage_type(String(fire_cfg.get("damage_type", "magic")))
+	var facing: Vector2i = _owner_actor.facing
+	if facing == Vector2i.ZERO:
+		facing = Vector2i.RIGHT
+	var perp := Vector2i(-facing.y, facing.x)
+	var origin: Vector2i = _owner_actor.get_current_cell()
+	var cells: Array[Vector2i] = []
+	for d in range(1, length + 1):
+		for w in range(-half_width, half_width + 1):
+			cells.append(origin + facing * d + perp * w)
+	var parent: Node = _owner_actor.get_parent()
+	if parent == null:
+		return
+	var zone := GroundHazardZone.new()
+	parent.add_child(zone)
+	zone.setup(cells, dps, damage_type, duration, tick, _owner_actor.get_unit_manager(), _owner_actor.get_map_manager())
+	_debug_log("敌人 %s#%d 释放火雨，覆盖 %d 格，持续 %.1f 秒" % [_debug_name(), _runtime_id(), cells.size(), duration])
 
 
 func on_hp_threshold_crossed(_percent: float) -> void:
