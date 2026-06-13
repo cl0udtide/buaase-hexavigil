@@ -7,9 +7,9 @@ const STYLE_DIR := "res://assets/ui/styles/"
 
 const TOP_HUD := &"frame_top_status_bar_base"
 const TOP_CARD := &"frame_top_status_chip_base"
-const TOP_CARD_ACTIVE := &"frame_top_status_chip_active_overlay"
+const TOP_CARD_ACTIVE := &"frame_top_status_chip_base"
 const HUD_CELL := &"frame_top_status_chip_base"
-const HUD_CELL_SELECTED := &"frame_top_status_chip_active_overlay"
+const HUD_CELL_SELECTED := &"frame_top_status_chip_base"
 const SIDE_PANEL := &"frame_detail_section_base"
 const RIGHT_DETAIL_SIDEBAR := &"frame_right_detail_sidebar_base"
 const BUILD_SIDE_PANEL := &"frame_left_sidebar_base"
@@ -47,17 +47,17 @@ const RELIC_STRIP := &"frame_relic_strip_base"
 const RELIC_ENTRY_BUTTON := &"frame_relic_entry_button_base"
 const RELIC_ICON := &"frame_relic_icon_frame"
 const RELIC_ICON_BACKPLATE := &"frame_relic_icon_backplate"
-const RELIC_ICON_COMMON := &"frame_relic_rarity_common_overlay"
-const RELIC_ICON_UNCOMMON := &"frame_relic_rarity_uncommon_overlay"
-const RELIC_ICON_RARE := &"frame_relic_rarity_rare_overlay"
+const RELIC_ICON_COMMON := &"frame_relic_icon_frame"
+const RELIC_ICON_UNCOMMON := &"frame_relic_icon_frame"
+const RELIC_ICON_RARE := &"frame_relic_icon_frame"
 const RELIC_PANEL := &"frame_relic_panel_base"
 const RELIC_CARD := &"frame_relic_card_base"
-const RELIC_CARD_COMMON := &"frame_relic_rarity_common_overlay"
-const RELIC_CARD_UNCOMMON := &"frame_relic_rarity_uncommon_overlay"
-const RELIC_CARD_RARE := &"frame_relic_rarity_rare_overlay"
-const RELIC_CARD_HOVER := &"frame_relic_card_hover_overlay"
+const RELIC_CARD_COMMON := &"frame_relic_card_base"
+const RELIC_CARD_UNCOMMON := &"frame_relic_card_base"
+const RELIC_CARD_RARE := &"frame_relic_card_base"
+const RELIC_CARD_HOVER := &"frame_relic_card_base"
 const RELIC_FILTER_TAB := &"frame_relic_filter_tab_base"
-const RELIC_FILTER_SELECTED := &"frame_relic_filter_selected_overlay"
+const RELIC_FILTER_SELECTED := &"frame_relic_filter_tab_base"
 const SETTINGS_PANEL := &"frame_settings_panel_base"
 const SETTINGS_ROW := &"frame_settings_row_base"
 const BLESSING_PANEL := &"frame_blessing_panel_base"
@@ -65,7 +65,7 @@ const BLESSING_CHOICE_CARD := &"frame_blessing_choice_card_base"
 const LEGEND_PANEL := &"frame_legend_panel_base"
 const LEGEND_ROW := &"frame_legend_row_base"
 const ACTION_PANEL := &"frame_action_panel_base"
-const ACTION_BUTTON := &"frame_action_button_base"
+const ACTION_BUTTON := &"frame_button_base"
 const MAP_POPUP := &"frame_map_popup_base"
 const EVENT_PANEL := &"frame_event_panel_base"
 const EVENT_CHOICE_BUTTON := &"frame_event_choice_button_base"
@@ -82,7 +82,7 @@ const BUTTON_SECONDARY := &"frame_button_base"
 const BUTTON_DANGER := &"frame_button_base"
 const UNDO_BUTTON := &"frame_undo_button_base"
 const SPEED_TOGGLE := &"frame_speed_toggle_base"
-const SPEED_TOGGLE_ACTIVE := &"frame_speed_toggle_active_overlay"
+const SPEED_TOGGLE_ACTIVE := &"frame_button_primary_overlay"
 const SKILL_ICON_BACKPLATE := &"frame_skill_icon_backplate"
 const SKILL_ICON_FRAME := &"frame_skill_icon_frame"
 const SKILL_DESC_BOX := &"frame_skill_desc_box"
@@ -113,7 +113,6 @@ const DEFAULT_INSETS := Vector4(12.0, 9.0, 12.0, 9.0)
 const SPECS := {
 	TOP_HUD: {"content": Vector4(24.0, 8.0, 24.0, 8.0)},
 	HUD_CELL: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
-	HUD_CELL_SELECTED: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
 	RIGHT_DETAIL_SIDEBAR: {"content": Vector4(20.0, 18.0, 20.0, 20.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUILD_SIDE_PANEL: {"content": Vector4(24.0, 20.0, 24.0, 28.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	DECK_PANEL: {"content": Vector4(24.0, 10.0, 24.0, 10.0)},
@@ -141,14 +140,9 @@ const SPECS := {
 	RELIC_ENTRY_BUTTON: {"content": Vector4(10.0, 5.0, 10.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
 	RELIC_ICON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	RELIC_ICON_BACKPLATE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
-	RELIC_ICON_COMMON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
-	RELIC_ICON_UNCOMMON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
-	RELIC_ICON_RARE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	RELIC_PANEL: {"content": Vector4(24.0, 18.0, 24.0, 18.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	RELIC_CARD: {"content": Vector4(16.0, 10.0, 16.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	RELIC_CARD_HOVER: {"content": ZERO_INSETS, "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	RELIC_FILTER_TAB: {"content": Vector4(12.0, 5.0, 12.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
-	RELIC_FILTER_SELECTED: {"content": Vector4(12.0, 5.0, 12.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
 	SETTINGS_PANEL: {"content": Vector4(14.0, 12.0, 14.0, 12.0)},
 	BLESSING_PANEL: {"content": Vector4(18.0, 16.0, 18.0, 16.0)},
 	BLESSING_CHOICE_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
@@ -166,7 +160,6 @@ const SPECS := {
 	SKILL_ICON_FRAME: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	SKILL_DESC_BOX: {"content": Vector4(12.0, 10.0, 12.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	ACTION_PANEL: {"content": Vector4(12.0, 8.0, 12.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	ACTION_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	UNDO_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	PROGRESS_TRACK: {"content": ZERO_INSETS},
 	PROGRESS_BLUE: {"content": ZERO_INSETS},

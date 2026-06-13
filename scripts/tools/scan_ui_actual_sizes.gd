@@ -52,8 +52,15 @@ func _scan_next_scene() -> void:
 	_disable_runtime_callbacks(_root_node)
 	if _root_node is Control:
 		var control := _root_node as Control
-		control.set_anchors_preset(Control.PRESET_FULL_RECT)
-		control.size = Vector2(VIEWPORT_SIZE)
+		if scene_path == GAME_SCENE_PATH:
+			control.set_anchors_preset(Control.PRESET_FULL_RECT)
+			control.size = Vector2(VIEWPORT_SIZE)
+		else:
+			var minimum_size := control.get_combined_minimum_size()
+			control.size = Vector2(
+				maxf(1.0, maxf(control.size.x, minimum_size.x)),
+				maxf(1.0, maxf(control.size.y, minimum_size.y))
+			)
 	call_deferred("_collect_after_layout", scene_path)
 
 
@@ -73,8 +80,6 @@ func _collect_node(scene_path: String, node: Node) -> void:
 
 
 func _collect_control(scene_path: String, control: Control) -> void:
-	if control.size.x <= 0.0 or control.size.y <= 0.0:
-		return
 	var node_path := _node_path(control)
 	for property_info in control.get_property_list():
 		var property_name := String(property_info.get("name", ""))
@@ -83,13 +88,72 @@ func _collect_control(scene_path: String, control: Control) -> void:
 			if value is StyleBox:
 				var style_path := (value as StyleBox).resource_path
 				if style_path.begins_with(STYLE_DIR):
-					_record_use("styles", style_path, scene_path, node_path, property_name.trim_prefix("theme_override_styles/"), control.size)
+					var style_size := _style_use_size(control)
+					if style_size.x > 0.0 and style_size.y > 0.0:
+						_record_use("styles", style_path, scene_path, node_path, property_name.trim_prefix("theme_override_styles/"), style_size)
 		elif property_name == "texture" or property_name == "icon":
 			var texture_value: Variant = control.get(property_name)
 			if texture_value is Texture2D:
 				var texture_path := (texture_value as Texture2D).resource_path
 				if texture_path.begins_with(GENERATED_DIR):
-					_record_use("textures", texture_path, scene_path, node_path, property_name, control.size)
+					var texture_size := _control_use_size(control)
+					if texture_size.x > 0.0 and texture_size.y > 0.0:
+						_record_use("textures", texture_path, scene_path, node_path, property_name, texture_size)
+
+
+func _style_use_size(control: Control) -> Vector2:
+	var size := _control_use_size(control)
+	if _is_tiny_fill_size(control, size):
+		var full_bar_size := _progress_fill_full_size(control)
+		if full_bar_size.x > 0.0 and full_bar_size.y > 0.0:
+			return full_bar_size
+	if size.x > 0.0 and size.y > 0.0:
+		return size
+	var parent_control := control.get_parent() as Control
+	if parent_control != null:
+		size = _control_use_size(parent_control)
+		if size.x > 0.0 and size.y > 0.0:
+			return size
+	return Vector2.ZERO
+
+
+func _is_tiny_fill_size(control: Control, size: Vector2) -> bool:
+	var node_name := String(control.name).to_lower()
+	return node_name.ends_with("fill") and (size.x <= 1.0 or size.y <= 1.0)
+
+
+func _progress_fill_full_size(control: Control) -> Vector2:
+	var clip := control.get_parent() as Control
+	if clip == null:
+		return Vector2.ZERO
+	var bar := clip.get_parent() as Control
+	if bar != null:
+		for child in bar.get_children():
+			if child is Control and String(child.name).to_lower().contains("track"):
+				var track_size := _control_use_size(child as Control)
+				if track_size.x > 0.0 and track_size.y > 0.0:
+					return track_size
+	var clip_size := _control_use_size(clip)
+	if clip_size.x > 0.0 and clip_size.y > 0.0:
+		return clip_size
+	if bar != null:
+		var bar_size := _control_use_size(bar)
+		if bar_size.x > 0.0 and bar_size.y > 0.0:
+			return bar_size
+	return Vector2.ZERO
+
+
+func _control_use_size(control: Control) -> Vector2:
+	var width := control.size.x
+	var height := control.size.y
+	var minimum_size := control.get_combined_minimum_size()
+	width = maxf(width, minimum_size.x)
+	height = maxf(height, minimum_size.y)
+	width = maxf(width, control.custom_minimum_size.x)
+	height = maxf(height, control.custom_minimum_size.y)
+	if width <= 0.0 or height <= 0.0:
+		return Vector2.ZERO
+	return Vector2(width, height)
 
 
 func _disable_runtime_callbacks(node: Node) -> void:
@@ -138,9 +202,15 @@ func _finalize_max_sizes(bucket_name: String) -> void:
 	var bucket: Dictionary = _result.get(bucket_name, {})
 	for asset_path in bucket.keys():
 		var record: Dictionary = bucket[asset_path]
+		var max_size: Array = record.get("max_size", [0, 0])
 		var game_max_size: Array = record.get("game_max_size", [0, 0])
-		if int(game_max_size[0]) > 0 and int(game_max_size[1]) > 0:
-			record["max_size"] = [int(game_max_size[0]), int(game_max_size[1])]
+		var width := int(max_size[0])
+		var height := int(max_size[1])
+		if int(game_max_size[0]) > 1:
+			width = int(game_max_size[0])
+		if int(game_max_size[1]) > 1:
+			height = int(game_max_size[1])
+		record["max_size"] = [width, height]
 		bucket[asset_path] = record
 	_result[bucket_name] = bucket
 

@@ -44,8 +44,29 @@
 | `frame_result_panel_base` | `scenes/ui/ResultPanel.tscn` 面板 `520x260`，配置目标 `720x520`，当前源图约 `738x239` | 实际是高面板，当前过扁；纵向拉伸明显，若上下边中有牌匾/分隔会被拉坏 | 结算高面板底；不画统计行、评级、固定列表；边中连续，中心大面积干净 |
 | `frame_relic_panel_base` | `scenes/ui/relic/RelicPanel.tscn` 面板 `668x430`，配置目标 `900x640`，当前源图约 `648x321` | 实际大面板纵向扩展明显；当前上/下边中装饰会在拉伸时变形，并和内部遗物卡抢层级 | 大型遗物面板底；外框安静，中心暗色承托，装饰只在四角或拆成 overlay |
 | `frame_relic_card_base` | `scripts/ui/relic/relic_card.gd` 高度 `96/108` 的横向遗物卡；配置目标 `360x112`，当前源图约 `257x408` | 实际是横向列表卡，当前像竖卡；横向拉伸、纵向压缩都很大，且容易画出内置图标框/文本区与真实子节点重复 | 横向遗物卡底；区分于外层遗物面板，但不要内置图标背板、文字、稀有度框或固定按钮 |
-| `frame_relic_card_hover_overlay` | 遗物卡 hover/selected 覆盖层；目标同 `frame_relic_card_base` | 当前若是完整卡框，会和遗物卡底重复；比例也跟横向卡不吻合 | 透明中心的 hover 高亮/描边，严格贴合横向遗物卡，不带实心卡面 |
-| `frame_speed_toggle_active_overlay` | `CombatHud.tscn` 倍速选中层 `216x82`，覆盖三段倍速按钮区域 | 实际节点是选中态覆盖层，但当前问题是容易画成整组分段框；选中层不应包含固定 `1x/2x` 结构或整组分隔柱 | 单个可移动/可定位的选中态视觉，或只覆盖当前 active 区域的轻高亮；不画三段容器、不写数字、不带固定分隔 |
+> `frame_relic_card_hover_overlay` 与 `frame_speed_toggle_active_overlay` 已从派生资产中移除。遗物 hover/稀有度高亮改由 `GameUiStyle` 代码色块表达；倍速 active 层复用通用按钮 overlay，不再单独生图。
+
+## 追加处理：WavePreviewPanel 专项
+
+`WavePreviewPanel` 原本是临时新增的右侧“今晚敌情”模块。复核后发现它虽然已经接入 `CombatHud.tscn`，但内部敌人卡、路线按钮和警告行的素材语义仍偏临时，容易出现厚重横幅塞进小组件、按钮像分段开关、内层卡片套外层卡片的问题。因此单独作为一小组处理：
+
+| Asset | 实际位置/尺寸依据 | 为什么重新生成 | 重生成成什么样 |
+|---|---|---|---|
+| `frame_wave_preview_base` | `CombatHud.tscn` 右侧 `WavePreviewPanel`，实际约 `384x316` | 旧外框较重，边中装饰多，右侧列内呼吸感不足 | 安静的敌情面板底板，中心干净，不画敌人列表、路线图或固定标题 |
+| `frame_wave_spawn_card_base` | `WaveSpawnCardTemplate`，实际约 `328x132` | 原本是裸 `PanelContainer`，分组边界不足；不能只靠内部复制出的敌人卡撑视觉 | 轻量出怪口分组承托，比外层面板轻，不像完整卡片套卡片，中心可放出怪口标签和敌人小卡 |
+| `frame_wave_enemy_row_base` | `WaveEnemyCardTemplate`，实际小卡约 `150x126` | 旧源图是 `1114x218` 大横幅，被压进小敌人卡后比例和层级都不对 | 轻量内部敌人承托，不像完整大面板，不画头像、文字、属性行 |
+| `frame_wave_route_toggle_base` | `WaveRouteToggle`，实际 `64x36` | 旧图带分段柱，语义像一组三段开关；实际只是标题行内单按钮 | 单个小型路线按钮底，不画分段结构、数字或固定状态 |
+| `frame_wave_warning_row_base` | `WaveWarningRow`，实际约 `328x38` | 旧警告行偏厚，容易抢外层面板层级 | 轻量警告条，保留红色危险语义，但中心干净、边中连续 |
+
+## 追加处理：详情内层信息槽
+
+右侧详情与干员卡内的分组/属性行虽然不是最严重的拉伸问题，但视觉验收后确认存在“卡片套卡片”：内层底纹像完整小卡片，和外层 `frame_right_detail_sidebar_base`、`frame_operator_card_base` 抢层级。因此作为一组补充处理，目标是更轻、更扁、更像嵌入式信息槽。
+
+| Asset | 实际位置/尺寸依据 | 为什么重新生成 | 重生成成什么样 |
+|---|---|---|---|
+| `frame_detail_section_base` | `UnitDetailPanel.tscn` 中 `VitalsSectionBase`、`StatsSectionBase`、`SkillSectionBase`，约 `344x116`、`344x108`、`344x230`；也被 `EventPanel.tscn` / `RelicPanel.tscn` 作为通用 detail section | 旧图像完整内层卡片，叠在详情侧栏/事件/遗物面板内会形成卡片套卡片 | 通用轻量分组底板，低对比细边，中心干净，不画标题、列表、图标或固定内容 |
+| `frame_unit_stat_row` | `UnitDetailPanel.tscn` 的 `AtkStatRow`、`DefStatRow`、`ResStatRow`、`BlockStatRow`、`AspdStatRow`、`CovenantStatRow`，实际约 `132x30/40` | 旧配置仍按 `320x28` 老尺寸生成，实际小行里边框显重，像小卡片 | 扁平属性信息条，左右端帽轻，横向中段连续，不抢分组底板层级 |
+| `frame_operator_stat_row` | `OperatorCard.tscn` 的 `HpStatRow`、`SpStatRow`、`CdStatRow`，实际约 `132x30` | 旧行底放在干员卡内部显得像重复按钮/底板 | 更弱的短信息行底纹，适合 HP/SP/CD 文本，不画按钮态、不写文字数字 |
 
 ## 暂缓，不需要本轮重生成
 
@@ -62,9 +83,7 @@
 | `frame_slider_handle` | 当前问题更像控件使用/尺寸语义问题，未发现实际九宫格拉伸破坏到必须生图 |
 | `frame_button_base` / `frame_button_*_overlay` | 多处使用但尺寸以小按钮/普通按钮为主；先不全局替换，避免影响面过大 |
 | `frame_left_sidebar_base` / `frame_right_detail_sidebar_base` | 虽然是大容器，但当前更需要在整体 UI 预览中判断，不作为第一批生图 |
-| `frame_detail_section_base` / `frame_unit_stat_row` / `frame_operator_stat_row` | 当前主要是内层信息槽，实际尺寸没有明显过度拉伸；若后续视觉验收仍有“卡片套卡片”，再单独处理 |
-| `frame_resource_item_base` / `frame_wave_enemy_row_base` / `frame_legend_row_base` | 实际多为小型信息行或缩小使用，不符合本轮“过度拉伸且破坏大”的条件 |
-| `frame_wave_route_toggle_base` | 实际 `64x36`，主要缩小；若后续发现分段语义错误，再结合按钮结构单独改 |
+| `frame_resource_item_base` / `frame_legend_row_base` | 实际多为小型信息行或缩小使用，不符合本轮“过度拉伸且破坏大”的条件 |
 | `frame_icon_*` / `frame_*_portrait_*` / `frame_relic_icon_*` / `frame_skill_icon_*` | 多为固定尺寸图标/头像承托，不按本轮 NinePatch 拉伸问题处理 |
 
 `frame_build_list_card_selected_overlay` 已作为单独案例修复：源图和派生图 alpha 为 `{0,255}`，无不透明品红残留，并按 `frame_build_list_card_base` 的轮廓/尺寸更新。后续只需在实际 `BuildListCard` hover/selected 态中人工视觉验收，不列入本轮重生。

@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_legend_panel_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 14.0000
-content_margin_top = 12.0000
-content_margin_right = 14.0000
-content_margin_bottom = 12.0000
+content_margin_left = 12.7719
+content_margin_top = 10.9434
+content_margin_right = 12.7719
+content_margin_bottom = 10.9434
 texture = ExtResource("1_texture")
-texture_margin_left = 26.2600
-texture_margin_top = 22.6400
-texture_margin_right = 26.2600
-texture_margin_bottom = 22.6400
+texture_margin_left = 23.9565
+texture_margin_top = 20.6465
+texture_margin_right = 23.9565
+texture_margin_bottom = 20.6465
 draw_center = true

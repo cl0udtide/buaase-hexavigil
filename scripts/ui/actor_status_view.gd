@@ -1,8 +1,8 @@
 extends Node2D
 
-const DEFAULT_TRACK_STYLE := preload("res://assets/ui/styles/bar_progress_track.tres")
-const DEFAULT_HP_FILL_STYLE := preload("res://assets/ui/styles/bar_progress_fill_hp.tres")
-const DEFAULT_SP_FILL_STYLE := preload("res://assets/ui/styles/bar_progress_fill_sp.tres")
+const DEFAULT_TRACK_STYLE := preload("res://assets/ui/styles/bar_actor_status_track.tres")
+const DEFAULT_HP_FILL_STYLE := preload("res://assets/ui/styles/bar_actor_status_fill_hp.tres")
+const DEFAULT_SP_FILL_STYLE := preload("res://assets/ui/styles/bar_actor_status_fill_sp.tres")
 const HIT_EFFECT_DURATION := 0.18
 const SECONDARY_BAR_HEIGHT := 4.0
 const SECONDARY_BAR_GAP := 2.0

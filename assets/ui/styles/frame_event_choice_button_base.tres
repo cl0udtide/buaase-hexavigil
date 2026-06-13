@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_event_choice_button_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 2.2400
-content_margin_top = 4.5070
-content_margin_right = 2.2400
-content_margin_bottom = 4.5070
+content_margin_left = 6.3052
+content_margin_top = 3.6056
+content_margin_right = 6.3052
+content_margin_bottom = 3.6056
 texture = ExtResource("1_texture")
-texture_margin_left = 8.6400
-texture_margin_top = 14.6479
-texture_margin_right = 8.6400
-texture_margin_bottom = 14.6479
+texture_margin_left = 24.3200
+texture_margin_top = 11.7183
+texture_margin_right = 24.3200
+texture_margin_bottom = 11.7183
 draw_center = true

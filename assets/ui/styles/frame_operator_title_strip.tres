@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://b4y1klty1t43a"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://b14oe1avaf30o"]
 
-[ext_resource type="Texture2D" uid="uid://cdetoia24mkc3" path="res://assets/ui/generated/frame_operator_title_strip.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://cb10x2lthnunc" path="res://assets/ui/generated/frame_operator_title_strip.png" id="1_texture"]
 
 [resource]
-content_margin_left = 49.3595
-content_margin_top = 2.2400
-content_margin_right = 49.3595
-content_margin_bottom = 2.2400
+content_margin_left = 4.4706
+content_margin_top = 2.24
+content_margin_right = 4.4706
+content_margin_bottom = 2.24
 texture = ExtResource("1_texture")
-texture_margin_left = 172.7582
-texture_margin_top = 6.7200
-texture_margin_right = 172.7582
-texture_margin_bottom = 6.7200
-draw_center = true
+texture_margin_left = 15.6471
+texture_margin_top = 6.72
+texture_margin_right = 15.6471
+texture_margin_bottom = 6.72

@@ -2,38 +2,34 @@
 
 [ext_resource type="Script" uid="uid://xt16qmc0xb5f" path="res://scripts/ui/combat/combat_hud.gd" id="1_ril48"]
 [ext_resource type="Script" uid="uid://m801mbh3evme" path="res://scripts/ui/audio_settings_button.gd" id="2_fvafi"]
-[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicStrip.tscn" id="3_40812"]
 [ext_resource type="PackedScene" uid="uid://dt2d2gea25boo" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="5_w2pd7"]
 [ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
 [ext_resource type="Script" uid="uid://wfh31hvbgi12" path="res://scripts/ui/audio_settings_panel.gd" id="9_7wb5u"]
-[ext_resource type="Texture2D" uid="uid://b0qjep277ns7u" path="res://assets/ui/generated/frame_slider_handle.png" id="26_sliderhandle"]
-[ext_resource type="Texture2D" uid="uid://dt58mb503q38m" path="res://assets/ui/generated/icon_settings_gear.png" id="27_iconsettings"]
-[ext_resource type="Texture2D" uid="uid://d1ao1ixvetbqk" path="res://assets/ui/generated/icon_phase_day.png" id="28_iconphase"]
-[ext_resource type="Texture2D" uid="uid://b816u6kxgjkk0" path="res://assets/ui/generated/icon_core_hp.png" id="29_iconcore"]
-[ext_resource type="Texture2D" uid="uid://dg6s2ta5k0m6k" path="res://assets/ui/generated/icon_deploy_limit.png" id="30_icondeploy"]
-[ext_resource type="Texture2D" uid="uid://dq0x03ppsdxyq" path="res://assets/ui/generated/icon_enemy_queue.png" id="31_iconenemy"]
-[ext_resource type="Texture2D" uid="uid://bbaviox64u1f5" path="res://assets/ui/generated/icon_action_points.png" id="32_iconap"]
-[ext_resource type="Texture2D" uid="uid://gjn4n8qrmuo" path="res://assets/ui/generated/icon_wood.png" id="33_iconwood"]
-[ext_resource type="Texture2D" uid="uid://dew73qurclmfy" path="res://assets/ui/generated/icon_stone.png" id="34_iconstone"]
-[ext_resource type="Texture2D" uid="uid://oyca57r1dhf2" path="res://assets/ui/generated/icon_mana.png" id="35_iconmana"]
-[ext_resource type="Texture2D" uid="uid://fwx1rhdnccy1" path="res://assets/ui/generated/icon_prestige.png" id="36_iconprestige"]
-[ext_resource type="Texture2D" uid="uid://bbcnwl13hwbgj" path="res://assets/ui/generated/icon_pause.png" id="37_iconpause"]
-[ext_resource type="Texture2D" uid="uid://dhie0pgv7rvsy" path="res://assets/ui/generated/icon_close.png" id="38_iconclose"]
-[ext_resource type="Texture2D" uid="uid://bfebku8sc6g1u" path="res://assets/ui/generated/icon_volume_master.png" id="39_iconmaster"]
-[ext_resource type="Texture2D" uid="uid://bfk1f2fh2w0e8" path="res://assets/ui/generated/icon_volume_music.png" id="40_iconmusic"]
-[ext_resource type="Texture2D" uid="uid://hm7kf3qhrwhq" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
+[ext_resource type="Texture2D" uid="uid://c021jrk5jeuwx" path="res://assets/ui/generated/frame_slider_handle.png" id="26_sliderhandle"]
+[ext_resource type="Texture2D" uid="uid://nkhvnstaq2rn" path="res://assets/ui/generated/icon_settings_gear.png" id="27_iconsettings"]
+[ext_resource type="Texture2D" uid="uid://d0f3i3gyl2gnc" path="res://assets/ui/generated/icon_phase_day.png" id="28_iconphase"]
+[ext_resource type="Texture2D" uid="uid://bjkswtrxrnuq0" path="res://assets/ui/generated/icon_core_hp.png" id="29_iconcore"]
+[ext_resource type="Texture2D" uid="uid://b4th0lth47hoo" path="res://assets/ui/generated/icon_deploy_limit.png" id="30_icondeploy"]
+[ext_resource type="Texture2D" uid="uid://6fncba8eucmd" path="res://assets/ui/generated/icon_enemy_queue.png" id="31_iconenemy"]
+[ext_resource type="Texture2D" uid="uid://cmw675tmc2gmf" path="res://assets/ui/generated/icon_action_points.png" id="32_iconap"]
+[ext_resource type="Texture2D" uid="uid://lr6ng7oypjsk" path="res://assets/ui/generated/icon_wood.png" id="33_iconwood"]
+[ext_resource type="Texture2D" uid="uid://b213kt814vdav" path="res://assets/ui/generated/icon_stone.png" id="34_iconstone"]
+[ext_resource type="Texture2D" uid="uid://c6866jf170uu2" path="res://assets/ui/generated/icon_mana.png" id="35_iconmana"]
+[ext_resource type="Texture2D" uid="uid://bqy5ea38il51n" path="res://assets/ui/generated/icon_prestige.png" id="36_iconprestige"]
+[ext_resource type="Texture2D" uid="uid://bvupnfdhrltcn" path="res://assets/ui/generated/icon_pause.png" id="37_iconpause"]
+[ext_resource type="Texture2D" uid="uid://ccsp1iu6rwbn2" path="res://assets/ui/generated/icon_close.png" id="38_iconclose"]
+[ext_resource type="Texture2D" uid="uid://ju400741ecya" path="res://assets/ui/generated/icon_volume_master.png" id="39_iconmaster"]
+[ext_resource type="Texture2D" uid="uid://bfqyue7s2r0jy" path="res://assets/ui/generated/icon_volume_music.png" id="40_iconmusic"]
+[ext_resource type="Texture2D" uid="uid://fd186uu137hp" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
-[ext_resource type="Texture2D" uid="uid://8me52ubl87hl" path="res://assets/ui/generated/icon_map_range.png" id="43_iconmaprange"]
-[ext_resource type="Texture2D" uid="uid://bw5ue8jdgn1fl" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
+[ext_resource type="Texture2D" uid="uid://dl31hx46la2rr" path="res://assets/ui/generated/icon_map_range.png" id="43_iconmaprange"]
+[ext_resource type="Texture2D" uid="uid://ck3mdlo5c2ihi" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
+[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_30x28"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_64x36"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_30x28"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_64x36"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_72x72"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
@@ -44,15 +40,13 @@
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_settings_row_base.tres" id="frame_settings_row_base_392x48"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_slider_fill.tres" id="frame_slider_fill_170x36"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_slider_track.tres" id="frame_slider_track_170x36"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_speed_toggle_active_overlay.tres" id="frame_speed_toggle_active_overlay_216x82"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_speed"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_speed_toggle_base.tres" id="frame_speed_toggle_base_200x82"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_160x82"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_210x82"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_220x82"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_300x82"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_spawn_card_base.tres" id="frame_wave_spawn_card_base_328x132"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_speed_button"]
@@ -184,7 +178,7 @@ script = ExtResource("2_fvafi")
 panel_path = NodePath("../../../PopupLayer/SettingsPanelSlot/AudioSettingsPanel")
 auto_toggle_panel = false
 
-[node name="PrimaryOverlay" type="Panel" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton"]
+[node name="PrimaryOverlay" type="Panel" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=2142934277]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -195,7 +189,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
 
-[node name="DisabledOverlay" type="Panel" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton"]
+[node name="DisabledOverlay" type="Panel" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=351866394]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -206,7 +200,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
-[node name="ButtonStateOverlay" type="Node" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton"]
+[node name="ButtonStateOverlay" type="Node" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=1354878038]
 script = ExtResource("button_state_overlay")
 
 [node name="TopHudSlot" type="Control" parent="HudChromeLayer" unique_id=1888998177]
@@ -262,7 +256,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_top_status_chip_base_220x82")
+theme_override_styles/panel = ExtResource("frame_top_status_chip_base_300x82")
 
 [node name="QueueLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/StageChip" unique_id=1070513286]
 unique_name_in_owner = true
@@ -312,7 +306,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_top_status_chip_base_210x82")
+theme_override_styles/panel = ExtResource("frame_top_status_chip_base_300x82")
 
 [node name="CoreLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/CoreChip" unique_id=2005078692]
 unique_name_in_owner = true
@@ -398,7 +392,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_top_status_chip_base_160x82")
+theme_override_styles/panel = ExtResource("frame_top_status_chip_base_300x82")
 
 [node name="DeployLabel" type="Label" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/LeftStatusGroup/DeployChip" unique_id=893896498]
 unique_name_in_owner = true
@@ -514,7 +508,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_speed_toggle_active_overlay_216x82")
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_speed")
 
 [node name="TimeMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1207861169]
 layout_mode = 0
@@ -954,7 +948,6 @@ text_overrun_behavior = 3
 
 [node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 0
 offset_left = 66.0
 offset_top = 96.0
@@ -1059,7 +1052,7 @@ toggle_mode = true
 text = "路线"
 icon = ExtResource("43_iconmaprange")
 
-[node name="PrimaryOverlay" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle"]
+[node name="PrimaryOverlay" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle" unique_id=651356011]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -1068,9 +1061,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_64x36")
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
 
-[node name="DisabledOverlay" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle"]
+[node name="DisabledOverlay" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle" unique_id=531848557]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -1079,9 +1072,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_64x36")
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
-[node name="ButtonStateOverlay" type="Node" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle"]
+[node name="ButtonStateOverlay" type="Node" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle" unique_id=611231081]
 script = ExtResource("button_state_overlay")
 
 [node name="WaveLevelNameLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=928858071]
@@ -1145,6 +1138,7 @@ custom_minimum_size = Vector2(0, 132)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_wave_spawn_card_base_328x132")
 
 [node name="SpawnCardRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveSpawnCardTemplate" unique_id=791270326]
 layout_mode = 2
@@ -1612,7 +1606,7 @@ theme_override_styles/hover = ExtResource("frame_button_base_compact")
 theme_override_styles/disabled = ExtResource("frame_button_base_compact")
 icon_alignment = 1
 
-[node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton"]
+[node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=951547175]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -1621,9 +1615,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_30x28")
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
 
-[node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton"]
+[node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=682802959]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -1632,9 +1626,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_30x28")
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
-[node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton"]
+[node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=701524597]
 script = ExtResource("button_state_overlay")
 
 [node name="FittedIcon" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=849751617]
@@ -1988,7 +1982,7 @@ theme_override_styles/disabled = ExtResource("frame_button_base_compact")
 toggle_mode = true
 text = "关闭"
 
-[node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton"]
+[node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=318286713]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -1997,9 +1991,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_30x28")
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
 
-[node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton"]
+[node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=332392885]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -2008,9 +2002,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_30x28")
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
-[node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton"]
+[node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=1352742178]
 script = ExtResource("button_state_overlay")
 
 [node name="RelicPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619765]

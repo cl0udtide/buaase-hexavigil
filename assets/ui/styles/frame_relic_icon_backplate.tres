@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://b4q1idvo27bul"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_icon_backplate.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://b2bov3aojewvh" path="res://assets/ui/generated/frame_relic_icon_backplate.png" id="1_texture"]
 
 [resource]
-content_margin_left = 47.4074
-content_margin_top = 27.5745
-content_margin_right = 47.4074
-content_margin_bottom = 27.5745
+content_margin_left = 1.3333
+content_margin_top = 1.3277
+content_margin_right = 1.3333
+content_margin_bottom = 1.3277
 texture = ExtResource("1_texture")
-texture_margin_left = 79.0123
-texture_margin_top = 45.9574
-texture_margin_right = 79.0123
-texture_margin_bottom = 45.9574
-draw_center = true
+texture_margin_left = 2.2222
+texture_margin_top = 2.2128
+texture_margin_right = 2.2222
+texture_margin_bottom = 2.2128

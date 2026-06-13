@@ -11,6 +11,7 @@ const CONTENT_MARGIN_FILL := Color(0.18, 0.86, 1.0, 0.07)
 var _root: MarginContainer
 var _body: VBoxContainer
 var _actual_sizes: Dictionary = {}
+var _template_styles_by_path: Dictionary = {}
 
 
 class MarginGuideOverlay:
@@ -114,6 +115,7 @@ func _rebuild() -> void:
 	var config := _read_config()
 	var assets: Dictionary = config.get("assets", {})
 	_actual_sizes = _read_actual_sizes()
+	_template_styles_by_path.clear()
 	_body.add_child(_header(assets.size()))
 	var names := assets.keys()
 	names.sort()
@@ -143,6 +145,14 @@ func _header(asset_count: int) -> Control:
 	generate_button.text = "Generate Assets"
 	generate_button.custom_minimum_size = Vector2(150.0, 34.0)
 	var status := _label("Save template margins, then generate.", 13, Color(0.620, 0.700, 0.760, 1.0))
+	var save_all_button := Button.new()
+	save_all_button.text = "Save All Templates"
+	save_all_button.custom_minimum_size = Vector2(156.0, 34.0)
+	save_all_button.pressed.connect(func() -> void:
+		var saved_count := _save_all_templates()
+		status.text = "saved %d templates" % saved_count
+	)
+	button_row.add_child(save_all_button)
 	generate_button.pressed.connect(func() -> void:
 		status.text = "generating..."
 		var exit_code := _run_generator()
@@ -189,17 +199,19 @@ func _add_asset_row(asset_name: String, asset: Dictionary) -> void:
 	var output_guides: Array[MarginGuideOverlay] = []
 	var source_content_guides: Array[MarginGuideOverlay] = []
 	var output_content_guides: Array[MarginGuideOverlay] = []
+	var actual_preview_controls: Array[Control] = []
 	if String(asset.get("kind", "")) == "stylebox_texture":
 		template_style = _load_template_style(String(asset.get("template_style", "")))
 		if template_style != null:
-			preview_style = template_style.duplicate(true) as StyleBoxTexture
-			_apply_template_margins_to_preview(preview_style, template_style, png_scale)
+			preview_style = _make_preview_style(template_style, String(asset.get("output_png", "")), png_scale)
 	var show_margin_guides := String(asset.get("kind", "")) == "stylebox_texture"
-	row.add_child(_texture_block("source_png", String(asset.get("source_png", "")), _texture_margins(template_style), _content_margins(template_style), show_margin_guides, source_guides, source_content_guides))
-	row.add_child(_texture_block("output_png", String(asset.get("output_png", "")), _texture_margins(preview_style), _content_margins(preview_style), show_margin_guides, output_guides, output_content_guides))
+	row.add_child(_texture_block("source_png", String(asset.get("source_png", "")), _texture_margins(template_style), _content_margins(template_style), show_margin_guides, source_guides, source_content_guides, Vector2(520.0, 180.0), 540.0))
+	row.add_child(_texture_block("output_png", String(asset.get("output_png", "")), _texture_margins(preview_style), _content_margins(preview_style), show_margin_guides, output_guides, output_content_guides, Vector2(520.0, 180.0), 540.0))
 
 	if String(asset.get("kind", "")) == "stylebox_texture":
-		row.add_child(_margin_editor_block(asset_name, asset, template_style, preview_style, png_scale, source_guides, output_guides, source_content_guides, output_content_guides))
+		row.add_child(_margin_editor_block(asset_name, asset, template_style, preview_style, png_scale, source_guides, output_guides, source_content_guides, output_content_guides, actual_preview_controls))
+
+	box.add_child(_actual_uses_block(asset, preview_style, actual_preview_controls))
 
 
 func _texture_block(
@@ -209,14 +221,16 @@ func _texture_block(
 	content_margins: Vector4,
 	show_margin_guides: bool,
 	texture_guides: Array[MarginGuideOverlay],
-	content_guides: Array[MarginGuideOverlay]
+	content_guides: Array[MarginGuideOverlay],
+	slot_size: Vector2,
+	block_width: float
 ) -> Control:
 	var block := VBoxContainer.new()
-	block.custom_minimum_size = Vector2(360.0, 0.0)
+	block.custom_minimum_size = Vector2(block_width, 0.0)
 	block.add_theme_constant_override("separation", 5)
 	block.add_child(_label("%s  %s" % [title, path.trim_prefix("res://")], 12, Color(0.730, 0.805, 0.860, 1.0)))
 	var texture := _load_preview_texture(path)
-	var slot := _preview_slot(Vector2(340.0, 120.0))
+	var slot := _preview_slot(slot_size)
 	if texture != null:
 		var rect := TextureRect.new()
 		rect.texture = texture
@@ -249,7 +263,8 @@ func _margin_editor_block(
 	source_guides: Array[MarginGuideOverlay],
 	output_guides: Array[MarginGuideOverlay],
 	source_content_guides: Array[MarginGuideOverlay],
-	output_content_guides: Array[MarginGuideOverlay]
+	output_content_guides: Array[MarginGuideOverlay],
+	actual_preview_controls: Array[Control]
 ) -> Control:
 	var block := VBoxContainer.new()
 	block.custom_minimum_size = Vector2(420.0, 0.0)
@@ -264,6 +279,7 @@ func _margin_editor_block(
 	var callback := func(_value: float) -> void:
 		_apply_template_margins_to_preview(preview_style, template_style, png_scale)
 		_update_margin_guides(template_style, preview_style, source_guides, output_guides, source_content_guides, output_content_guides)
+		_update_actual_preview_styles(preview_style, actual_preview_controls)
 		status.text = "unsaved template margins for %s" % asset_name
 
 	block.add_child(_margin_spin_grid("texture", template_style, true, callback))
@@ -300,6 +316,102 @@ func _margin_editor_block(
 	reset_button.pressed.connect(_reload, CONNECT_DEFERRED)
 	buttons.add_child(reset_button)
 	return block
+
+
+func _actual_uses_block(asset: Dictionary, preview_style: StyleBoxTexture, actual_preview_controls: Array[Control]) -> Control:
+	var block := VBoxContainer.new()
+	block.custom_minimum_size = Vector2(0.0, 0.0)
+	block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	block.add_theme_constant_override("separation", 6)
+	var uses := _actual_uses(asset)
+	block.add_child(_label("actual uses  %d nodes" % uses.size(), 12, Color(0.730, 0.805, 0.860, 1.0)))
+	if uses.is_empty():
+		block.add_child(_label("no scanned scene uses; output falls back to config target", 12, Color(0.820, 0.620, 0.420, 1.0)))
+		return block
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0.0, _actual_uses_scroll_height(uses))
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	block.add_child(scroll)
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	row.add_theme_constant_override("separation", 10)
+	scroll.add_child(row)
+	for raw_use in uses:
+		if raw_use is Dictionary:
+			row.add_child(_actual_use_card(asset, raw_use as Dictionary, preview_style, actual_preview_controls))
+	return block
+
+
+func _actual_use_card(asset: Dictionary, use: Dictionary, preview_style: StyleBoxTexture, actual_preview_controls: Array[Control]) -> Control:
+	var card := VBoxContainer.new()
+	card.add_theme_constant_override("separation", 4)
+	var size := _array_size(use.get("size", []))
+	var preview_size := _actual_use_slot_size(size)
+	card.custom_minimum_size = Vector2(maxf(260.0, preview_size.x), preview_size.y + 42.0)
+	var scene_text := String(use.get("scene", "")).trim_prefix("res://scenes/")
+	var node_text := String(use.get("node", ""))
+	card.add_child(_label("%s  %.0fx%.0f  %s" % [String(use.get("slot", "")), size.x, size.y, scene_text], 11, Color(0.820, 0.900, 0.940, 1.0)))
+	card.add_child(_label(node_text, 10, Color(0.520, 0.610, 0.680, 1.0)))
+	card.add_child(_actual_use_preview(asset, size, preview_style, actual_preview_controls))
+	return card
+
+
+func _actual_use_preview(asset: Dictionary, actual_size: Vector2, preview_style: StyleBoxTexture, actual_preview_controls: Array[Control]) -> Control:
+	var scale := _actual_use_scale(actual_size)
+	var slot_size := _actual_use_slot_size(actual_size)
+	var slot := _preview_slot(slot_size)
+	var preview := Control.new()
+	preview.size = actual_size
+	preview.custom_minimum_size = actual_size
+	preview.scale = Vector2(scale, scale)
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(preview)
+	if String(asset.get("kind", "")) == "stylebox_texture":
+		var panel := Panel.new()
+		panel.size = actual_size
+		panel.custom_minimum_size = actual_size
+		panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var actual_style := _actual_preview_style(asset, preview_style)
+		if actual_style != null:
+			panel.add_theme_stylebox_override("panel", actual_style)
+			actual_preview_controls.append(panel)
+		preview.add_child(panel)
+	else:
+		var texture := _load_preview_texture(String(asset.get("output_png", "")))
+		if texture != null:
+			var rect := TextureRect.new()
+			rect.texture = texture
+			rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			rect.stretch_mode = TextureRect.STRETCH_SCALE
+			rect.size = actual_size
+			rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			preview.add_child(rect)
+	return slot
+
+
+func _actual_use_scale(actual_size: Vector2) -> float:
+	if actual_size.x <= 0.0 or actual_size.y <= 0.0:
+		return 1.0
+	return 1.0
+
+
+func _actual_use_slot_size(actual_size: Vector2) -> Vector2:
+	var scale := _actual_use_scale(actual_size)
+	return Vector2(maxf(1.0, actual_size.x * scale), maxf(1.0, actual_size.y * scale))
+
+
+func _actual_uses_scroll_height(uses: Array) -> float:
+	var max_height := 96.0
+	for raw_use in uses:
+		if not (raw_use is Dictionary):
+			continue
+		var use := raw_use as Dictionary
+		var size := _array_size(use.get("size", []))
+		var preview_size := _actual_use_slot_size(size)
+		max_height = maxf(max_height, preview_size.y + 54.0)
+	return max_height
 
 
 func _margin_spin_grid(title: String, style: StyleBoxTexture, texture_margin: bool, callback: Callable) -> Control:
@@ -377,11 +489,12 @@ func _asset_summary(asset: Dictionary) -> String:
 	var actual_target := _actual_target_size(asset)
 	var config_target := _array_size(asset.get("target_size", []))
 	var target_label := "%.0fx%.0f actual" % [actual_target.x, actual_target.y] if actual_target != Vector2.ZERO else "%.0fx%.0f config" % [config_target.x, config_target.y]
-	return "%s  source/base %.0fx%.0f  target %s  pre_scale %s  interpolation %s" % [
+	return "%s  source/base %.0fx%.0f  target %s  scale %s  pre_scale %s  interpolation %s" % [
 		String(asset.get("kind", "")),
 		base.x,
 		base.y,
 		target_label,
+		"ninepatch_preserve" if String(asset.get("kind", "")) == "stylebox_texture" else "actual_size",
 		String(asset.get("pre_scale", "")),
 		String(asset.get("interpolation", "")),
 	]
@@ -389,10 +502,12 @@ func _asset_summary(asset: Dictionary) -> String:
 
 func _resolved_png_scale(asset: Dictionary) -> Vector2:
 	var source_texture := _load_preview_texture(String(asset.get("source_png", "")))
-	if source_texture != null:
-		var actual_target := _actual_target_size(asset)
-		if actual_target != Vector2.ZERO:
-			return Vector2(actual_target.x / float(source_texture.get_width()), actual_target.y / float(source_texture.get_height()))
+	var output_texture := _load_preview_texture(String(asset.get("output_png", "")))
+	if source_texture != null and output_texture != null:
+		return Vector2(
+			float(output_texture.get_width()) / float(source_texture.get_width()),
+			float(output_texture.get_height()) / float(source_texture.get_height())
+		)
 	var raw: Variant = asset.get("pre_scale", 1)
 	if raw is int or raw is float:
 		var explicit := maxf(1.0, float(raw))
@@ -429,7 +544,45 @@ func _actual_target_size(asset: Dictionary) -> Vector2:
 	var size := Vector2(float((raw_size as Array)[0]), float((raw_size as Array)[1]))
 	if size.x <= 0.0 or size.y <= 0.0:
 		return Vector2.ZERO
+	if String(asset.get("kind", "")) == "stylebox_texture" and (size.x <= 1.0 or size.y <= 1.0):
+		var config_target := _optional_array_size(asset.get("target_size", []))
+		if config_target != Vector2.ZERO:
+			size = Vector2(maxf(size.x, config_target.x), maxf(size.y, config_target.y))
 	return size
+
+
+func _actual_uses(asset: Dictionary) -> Array:
+	var record := _actual_record(asset)
+	var raw_uses: Variant = record.get("uses", [])
+	if raw_uses is Array:
+		return raw_uses as Array
+	return []
+
+
+func _actual_record(asset: Dictionary) -> Dictionary:
+	var kind := String(asset.get("kind", ""))
+	var bucket_name := "styles" if kind == "stylebox_texture" else "textures"
+	var path_key := "output_style" if kind == "stylebox_texture" else "output_png"
+	var asset_path := String(asset.get(path_key, ""))
+	if asset_path.is_empty():
+		return {}
+	var bucket: Dictionary = _actual_sizes.get(bucket_name, {})
+	if not bucket.has(asset_path):
+		return {}
+	var record: Variant = bucket.get(asset_path, {})
+	if record is Dictionary:
+		return record as Dictionary
+	return {}
+
+
+func _update_actual_preview_styles(preview_style: StyleBoxTexture, actual_preview_controls: Array[Control]) -> void:
+	if preview_style == null:
+		return
+	for control in actual_preview_controls:
+		if control == null:
+			continue
+		control.add_theme_stylebox_override("panel", preview_style)
+		control.queue_redraw()
 
 
 func _preview_slot(size: Vector2) -> Control:
@@ -440,7 +593,7 @@ func _preview_slot(size: Vector2) -> Control:
 	slot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var backdrop := ColorRect.new()
 	backdrop.color = Color(0.018, 0.024, 0.031, 1.0)
-	backdrop.size = slot.size
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	slot.add_child(backdrop)
 	return slot
@@ -517,10 +670,24 @@ func _array_size(raw: Variant) -> Vector2:
 	return Vector2(float((raw as Array)[0]), float((raw as Array)[1]))
 
 
+func _optional_array_size(raw: Variant) -> Vector2:
+	if not (raw is Array) or (raw as Array).size() != 2:
+		return Vector2.ZERO
+	var size := Vector2(float((raw as Array)[0]), float((raw as Array)[1]))
+	if size.x <= 0.0 or size.y <= 0.0:
+		return Vector2.ZERO
+	return size
+
+
 func _load_template_style(path: String) -> StyleBoxTexture:
 	if path.is_empty() or not ResourceLoader.exists(path):
 		return null
-	return ResourceLoader.load(path, "StyleBox", ResourceLoader.CACHE_MODE_REPLACE) as StyleBoxTexture
+	if _template_styles_by_path.has(path):
+		return _template_styles_by_path[path] as StyleBoxTexture
+	var style := ResourceLoader.load(path, "StyleBox", ResourceLoader.CACHE_MODE_REPLACE) as StyleBoxTexture
+	if style != null:
+		_template_styles_by_path[path] = style
+	return style
 
 
 func _load_preview_texture(path: String) -> Texture2D:
@@ -533,6 +700,33 @@ func _load_preview_texture(path: String) -> Texture2D:
 	if load_error != OK:
 		return null
 	return ImageTexture.create_from_image(image)
+
+
+func _make_preview_style(template_style: StyleBoxTexture, output_png: String, png_scale: Vector2) -> StyleBoxTexture:
+	var preview_style := template_style.duplicate(true) as StyleBoxTexture
+	var texture := _load_preview_texture(output_png)
+	if texture != null:
+		preview_style.texture = texture
+	_apply_template_margins_to_preview(preview_style, template_style, png_scale)
+	return preview_style
+
+
+func _actual_preview_style(asset: Dictionary, fallback_style: StyleBoxTexture) -> StyleBoxTexture:
+	var output_style_path := String(asset.get("output_style", ""))
+	var loaded_style: StyleBoxTexture = null
+	if not output_style_path.is_empty() and ResourceLoader.exists(output_style_path):
+		loaded_style = ResourceLoader.load(output_style_path, "StyleBox", ResourceLoader.CACHE_MODE_REPLACE) as StyleBoxTexture
+	var style: StyleBoxTexture = null
+	if loaded_style != null:
+		style = loaded_style.duplicate(true) as StyleBoxTexture
+	if style == null and fallback_style != null:
+		style = fallback_style.duplicate(true) as StyleBoxTexture
+	if style == null:
+		return null
+	var texture := _load_preview_texture(String(asset.get("output_png", "")))
+	if texture != null:
+		style.texture = texture
+	return style
 
 
 func _apply_template_margins_to_preview(preview_style: StyleBoxTexture, template_style: StyleBoxTexture, png_scale: Vector2) -> void:
@@ -597,6 +791,23 @@ func _save_template_style(path: String, template_style: StyleBoxTexture) -> Erro
 		return ERR_INVALID_PARAMETER
 	template_style.texture = null
 	return ResourceSaver.save(template_style, path)
+
+
+func _save_all_templates() -> int:
+	var saved_count := 0
+	var paths := _template_styles_by_path.keys()
+	paths.sort()
+	for raw_path in paths:
+		var path := String(raw_path)
+		var style := _template_styles_by_path[path] as StyleBoxTexture
+		if style == null:
+			continue
+		var save_error := _save_template_style(path, style)
+		if save_error == OK:
+			saved_count += 1
+		else:
+			push_error("Failed to save template %s: %s" % [path, error_string(save_error)])
+	return saved_count
 
 
 func _get_margin_value(style: StyleBoxTexture, texture_margin: bool, side: String) -> float:

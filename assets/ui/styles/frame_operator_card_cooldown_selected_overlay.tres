@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://ekv87aidupoa"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_card_cooldown_selected_overlay.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://dxxbs1mv2mviw" path="res://assets/ui/generated/frame_operator_card_cooldown_selected_overlay.png" id="1_texture"]
 
 [resource]
-content_margin_left = 75.7895
-content_margin_top = 28.3465
-content_margin_right = 75.7895
-content_margin_bottom = 28.3465
+content_margin_left = 6.4737
+content_margin_top = 5.4068
+content_margin_right = 6.4737
+content_margin_bottom = 5.4068
 texture = ExtResource("1_texture")
-texture_margin_left = 265.2632
-texture_margin_top = 119.0551
-texture_margin_right = 265.2632
-texture_margin_bottom = 119.0551
-draw_center = true
+texture_margin_left = 22.6579
+texture_margin_top = 22.7087
+texture_margin_right = 22.6579
+texture_margin_bottom = 22.7087
