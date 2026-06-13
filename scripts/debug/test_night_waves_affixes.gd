@@ -86,7 +86,8 @@ func _test_gate_assignment() -> void:
 
 func _test_affix_resolution() -> void:
 	_expect(AffixService.affix_count_for_day(1) == 1, "day1 has 1 affix (act1)")
-	_expect(AffixService.affix_count_for_day(4) == 2, "day4 has 2 affixes")
+	_expect(AffixService.affix_count_for_day(4) == 2, "day4 has 2 affixes (act2)")
+	_expect(AffixService.affix_count_for_day(7) == 3, "day7 has 3 affixes (act3)")
 	var cfgs: Array = [
 		{"id": "a_early", "min_day": 2, "weight": 10},
 		{"id": "b_early", "min_day": 2, "weight": 10},
