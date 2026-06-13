@@ -248,12 +248,12 @@
             "output_png": "res://assets/ui/generated/frame_build_list_card_selected_overlay.png",
             "output_style": "res://assets/ui/styles/frame_build_list_card_selected_overlay.tres",
             "target_size": [
-                156,
+                280,
                 104
             ],
             "base_size": [
-                156,
-                104
+                324,
+                216
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,

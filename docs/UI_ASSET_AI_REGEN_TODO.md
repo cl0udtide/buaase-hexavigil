@@ -1,171 +1,159 @@
 # UI Asset AI Regeneration TODO
 
-本文档记录已经接入离线派生管线、但仍建议用 AI 或美术重新生成的 UI 美术源素材。
+本文档只记录经过现有素材逐张筛查后仍需要 AI 或美术重生成的 UI 框架源素材。不要再默认全量重生 84 个 `stylebox_texture` 资源；每次只处理下表中的一小组，并在替换前完成裁切、alpha、品红残留、分层和九宫格检查。
 
-## 范围
+## 筛查结论
 
-- 已全面接入派生管线：`assets/ui/build/ui_asset_build.json` 当前覆盖 `assets/ui/generated/*.png` 下全部 209 个正式 PNG。
-- 其中 84 个有 `.tres` 的 `stylebox_texture` 资源是可缩放 UI 框、进度条、按钮、overlay、槽位和面板，属于本轮 AI 重生成清单。
-- `icon_*` 等 texture-only 图标已接入管线，但不是本轮重生成目标；只有发现语义错误、文字残留、边缘脏像素或风格明显不一致时才单独重生。
+当前优先问题分两类：
 
-## 生成原则
+1. **上下、左右边框不干净，不适合九宫格拉伸。**
+   很多素材把菱形、徽章、铆钉、机械板、中心牌匾、分隔柱、固定槽位放在四边中段。Godot `StyleBoxTexture` 拉伸时这些细节会被压扁、重复或变形。需要重生成边中段连续、干净、可重复的版本；如果确实需要装饰，装饰应拆成额外 overlay 或角部素材，不要烘进可拉伸边。
 
-沿用 `docs/UI_ASSET_GENERATION_PROMPTS.md` 的全局提示词和对应批次。额外强制要求：
+2. **卡片内的卡片边框与外卡片过于重复，缺少层级设计。**
+   一些内层卡片、属性行、标题条、按钮、徽标直接复制外层卡框语言，导致 UI 像一堆同款边框互相套娃。重生成时必须结合实际节点结构与位置：外层容器更安静，内层卡片更轻，属性行/标题条更简洁，按钮更像可点击件，overlay 只表达状态。
 
-- 所有 `frame_*`、`bar_*`、`*_base`、`*_overlay` 必须适合 Godot NinePatch / 9-slice。
-- 四边拉伸区不能有徽章、符号、文字、数字、独特花纹、断裂机械件或任何不能被拉伸的装饰。
-- 特殊装饰只能放四角，或者单独导出 overlay。
-- overlay 必须是透明背景，只包含叠加效果、描边、冷却遮罩、高亮或禁用效果，不包含底板。
-- 进度条和滑条必须拆成 track/fill/handle，不画固定百分比。
-- 所有文字、数字、图标、头像、费用、状态由 Godot 节点绘制，不进入资产图。
+硬性通过项：所有候选 PNG 必须只有 `{0,255}` alpha，且不透明像素中不能残留品红背景。背景去除必须走 `scripts/dev/crop_ui_assets.py` 或基于它的现有裁切逻辑。
 
-## Agent 生成提示词
+## 工作流
 
-把下面提示词交给负责生成 UI 素材的 Agent。每次只处理一个批次或一个小组，按表格中的 asset key 输出源图与裁切结果。
+1. 先确认目标 key 在 `scenes/` 与 `scripts/` 中的实际位置和层级职责。
+2. 生图前必须为每个小组准备明确上下文包：asset key、目标 UI 节点路径、实际用途、target/base size、当前 source 预览、相邻父子层级、对应 template margins、必须避开的旧图问题。
+3. 提示词必须引用具体参考：同一 UI 区域中应保持的外层/内层/按钮/信息条层级关系，以及可以参考或必须区别开的现有素材。
+4. 子 Agent 可以并行生图，但只能输出到临时目录，例如 `tmp/ui_regen_workers/<worker>/raw/` 与 `tmp/ui_regen_workers/<worker>/candidate/`。
+5. 主 Agent 串行验收：只接收通过检查的候选图，并只替换 `assets/ui/source/<asset_key>.png`。
+6. 保存 raw sheet 到 `assets/raw/`，文件名稳定英文；正式替换后运行派生脚本生成 `generated/styles`。
+7. 不直接手改 `assets/ui/generated/` 或 `assets/ui/styles/`；它们只由派生脚本写入。
 
-```text
-你要为 Godot 塔防游戏重生成一批 UI 框架素材。目标不是做普通网页 UI，而是做有设计感、可九宫格拉伸的游戏 HUD 美术件。
+## 通用重生成规则
 
-项目风格：
-- 清新战术奇幻 UI，低饱和暗色，轻盈、实用、有游戏界面质感。
-- 材质可以混合深冷灰金属、雾蓝灰石材、暗布纹、轻微浅金属边、柔和魔法微光。
-- 不要厚重黄金框、卷轴羊皮纸、宝石堆、过度写实机械、科幻霓虹大面积发光。
+- 背景必须是纯 `#FF00FF`，裁切入库后背景完全透明。
+- 不得生成或保留半透明像素；最终 PNG alpha 只能是 `0` 或 `255`。
+- 不得有文字、数字、字母、水印、签名、假 UI 文案、固定列表、固定按钮组、固定进度。
+- `*_base` 只做底板或承托，不画运行时内容。
+- `*_overlay` 只做状态叠层，不复制底板，不带实心卡面。
+- `*_backplate` 是内容下方托盘，中心应干净可放图标/头像。
+- `*_frame` 是内容上方覆盖框，中心必须是透明孔洞。
+- 进度条与滑条必须拆成 track/fill/handle，不画固定百分比；handle 必须是独立拖柄。
+- 九宫格边中段必须连续、干净、可重复。徽章、菱形、铆钉、独特机械板、断裂结构、中心牌匾只能放四角，或拆成额外 overlay。
 
-核心工程约束：
-- 所有素材必须适合 Godot NinePatch / 9-slice。
-- 四边可拉伸区必须是连续纹理、直线/轻折线边、均匀阴影或可重复材质。
-- 四边中段不要放徽章、符号、文字、数字、独特花纹、断裂机械件、单独铆钉或不可变形装饰。
-- 特殊装饰只能放四角，或者单独导出 overlay。
-- 中心区域保持干净，方便运行时放文字、图标、头像、数值、列表。
-- 不要在图里生成任何文字、数字、字母、水印、签名或假 UI 文案。
-- 背景透明；如果生成工具必须用色键，则使用纯 #FF00FF，裁切入库前转透明。
+## 需要优先重生成的资源
 
-重要审美要求：
-- “适合九宫格”不等于只能做圆角矩形。可以使用轻微切角、阶梯形轮廓、斜切金属角、薄折线边、局部内凹、非对称但可拉伸的边框节奏。
-- 参考 `frame_build_list_card_base.png` 的方向：轮廓有结构、有层次、有战术感，但边中仍然可以拉伸；四角负责设计感，边中负责连续性。
-- 不要让所有卡片和面板共用同一套纹理。外层容器、内层卡片、微型信息条、按钮、徽标必须有明确层级差异。
+| Asset | 位置/用途 | 问题类型 | 重生成重点 |
+|---|---|---|---|
+| `frame_button_base` | 通用按钮底板 | 边中段菱形/装饰不适合九宫格 | 保留可点击感；上下左右边中完全连续，装饰只在四角。 |
+| `frame_button_primary_overlay` | 主按钮状态 | overlay 过像完整边框，边中有装饰 | 透明中心，只保留轻描边/高亮；不复制底板。 |
+| `frame_button_danger_overlay` | 危险按钮状态 | overlay 过像完整边框，边中有装饰 | 透明中心，危险色只做描边或角部状态。 |
+| `frame_button_disabled_overlay` | 禁用按钮状态 | overlay 过像完整边框，边中有装饰 | 透明中心或硬边遮罩，不用半透明像素。 |
+| `frame_tooltip_base` | Tooltip 底板 | 上下边中段有徽章/牌匾 | 大面积中心干净；边中连续。 |
+| `frame_icon_backplate` | 通用图标背板 | 四边中点菱形装饰 | 作为固定托盘可有角装饰，但不要边中徽章。 |
+| `frame_icon_frame` | 通用图标覆盖框 | 四边中点菱形装饰 | 中心孔洞透明；边中干净。 |
+| `frame_scroll_thumb` | 滚动条拖块 | 中段刻线/端饰拉伸风险 | 端点固定，中段纯净可拉伸。 |
+| `bar_progress_track` | HP/SP/Core 底轨 | 边中固定板件/刻线 | 左右端帽固定，中段连续暗槽。 |
+| `bar_progress_fill_hp` | HP 填充 | 像完整满条，运行时裁剪风险 | 不画固定百分比；中段连续，颜色可由运行时裁剪/缩放使用。 |
+| `bar_progress_fill_sp` | SP 填充 | 像完整满条，运行时裁剪风险 | 同上，避免右端固定装饰被裁断。 |
+| `bar_progress_fill_core` | Core 填充 | 像完整满条，运行时裁剪风险 | 同上。 |
+| `frame_slider_track` | 设置滑条轨道 | 中段固定刻线/板件 | 左右端帽固定，中段连续。 |
+| `frame_slider_fill` | 设置滑条填充 | 中段固定装饰/固定比例感 | 完整可裁剪填充，不画百分比。 |
+| `frame_slider_handle` | 设置滑条拖柄 | 画成横向滑轨，不是独立 handle | 生成接近 40x40 的独立拖柄。 |
+| `frame_top_status_bar_base` | 顶部状态栏 | 中段固定槽/板件 | 只做整条承托，不画固定 chip 或槽位。 |
+| `frame_top_status_chip_active_overlay` | 顶部 chip 状态 | 侧板过重，像复制底板 | 透明中心，轻描边/角部高亮。 |
+| `frame_speed_toggle_base` | 倍速容器 | 画死固定分段 | 只做一个容器底板，分段由节点或 overlay 表达。 |
+| `frame_speed_toggle_active_overlay` | 倍速选中态 | 画成整组 overlay | 单个 110x52 可移动选中层，不带整组结构。 |
+| `frame_relic_strip_base` | 遗物摘要条 | 中段固定面板/槽位 | 长条承托，不能画固定遗物槽。 |
+| `frame_left_sidebar_base` | 左侧建筑栏 | 边中段灯条/机械块拉伸风险 | 外层侧栏要安静、薄、背景化。 |
+| `frame_sidebar_tab_base` | 左侧页签底 | 过像卡片，边中装饰 | 页签应比列表卡轻，边中连续。 |
+| `frame_sidebar_tab_selected_overlay` | 左侧页签选中 | 复制完整底板/飘带 | 透明状态层，不带实心底。 |
+| `frame_build_list_card_base` | 建筑列表项 | 造型可参考但需确认边中与内层关系 | 保留战术感；内容区要承托，不要只是空心外框。 |
+| `frame_bottom_deploy_rail_base` | 底部部署栏 | 方向/语义错误风险 | 必须是宽横向 rail，不画固定卡槽。 |
+| `frame_operator_card_base` | 干员卡底 | 与 rail/内层卡重复，语义错位 | 竖向卡片；外层卡面明确但不内置头像框/费用/属性。 |
+| `frame_operator_card_selected_overlay` | 干员卡选中 | 完整边框式 overlay | 只做轻描边/角部高亮，不复制卡底。 |
+| `frame_operator_card_deployed_overlay` | 干员卡已部署 | 完整边框式 overlay | 状态色/角标叠层，不带底板。 |
+| `frame_operator_card_cooldown_overlay` | 干员卡冷却 | 复制完整实心底板 | 使用硬边遮罩/线性遮挡层，不写冷却数字。 |
+| `frame_operator_card_cooldown_selected_overlay` | 冷却且选中 | 完整边框式 overlay | 冷却遮罩 + 轻选中提示，透明中心。 |
+| `frame_operator_title_strip` | 干员卡标题条 | 像小面板，层级太重 | 做轻量嵌入式标题条，不复制外卡边框。 |
+| `frame_operator_portrait_backplate` | 干员头像背板 | 与 frame 职责混淆 | 必须是横向 128x72 不透明托盘。 |
+| `frame_operator_portrait_frame` | 干员头像框 | 中心孔洞/比例需严格 | 横向 128x72 覆盖框，中心透明。 |
+| `frame_operator_stat_row` | 干员属性行 | 边中装饰过重 | 更轻、更低对比，像嵌入式信息槽。 |
+| `frame_right_detail_sidebar_base` | 右侧详情栏 | 边中灯条/机械块拉伸风险 | 外层侧栏背景化，少装饰。 |
+| `frame_unit_header_strip` | 单位详情标题条 | 上下边中牌匾/灯条 | 标题条应轻量，边中连续。 |
+| `frame_detail_section_base` | 详情分组底 | 上下中心牌匾 | 分组底比外框更轻，不要复制卡片边框。 |
+| `frame_unit_stat_row` | 单位属性行 | 边中灯条/装饰 | 嵌入式信息行，低对比，边中干净。 |
+| `frame_skill_desc_box` | 技能描述框 | 上下中心牌匾 | 描述框中心干净，边中连续。 |
+| `frame_relic_panel_base` | 遗物面板 | 上下中心徽章/边中装饰 | 大面板更安静，装饰拆角或 overlay。 |
+| `frame_relic_filter_tab_base` | 遗物筛选 tab | 边中牌匾/侧板 | 小 tab 更轻，不能像完整卡片。 |
+| `frame_relic_filter_selected_overlay` | 筛选选中 | 复制完整 tab 边框 | 透明状态层，轻描边。 |
+| `frame_relic_card_base` | 遗物卡 | 上下徽章/侧板拉伸风险 | 与面板区分，作为中层卡片，不内置图标框/文本。 |
+| `frame_relic_card_hover_overlay` | 遗物卡 hover | 完整卡框式 overlay | 只做高亮/描边，不复制 card base。 |
+| `frame_relic_rarity_common_overlay` | 常见稀有度 | 完整边框/侧板 | 稀有度应是轻叠层，不是另一个卡框。 |
+| `frame_relic_rarity_uncommon_overlay` | 精良稀有度 | 完整边框/侧板 | 同上，颜色可运行时或轻描边体现。 |
+| `frame_relic_rarity_rare_overlay` | 稀有稀有度 | 完整边框/侧板 | 同上，避免厚金框。 |
+| `frame_settings_panel_base` | 设置面板 | 四边中段机械板/螺丝 | 弹窗底板中心干净，边中连续。 |
+| `frame_settings_row_base` | 设置项行 | 上下边中固定机械块 | 设置行应轻量，像嵌入式行底。 |
+| `frame_blessing_panel_base` | 祝福面板 | 顶/底中段宝石装饰 | 大面板装饰拆角或 overlay。 |
+| `frame_blessing_choice_card_base` | 祝福候选卡 | 方向错误，需横向 560x112 | 横向候选卡，区别于遗物卡但同家族。 |
+| `frame_event_panel_base` | 事件面板 | 顶部固定状态条/刻度 | 不画固定标题条或内容结构。 |
+| `frame_event_choice_button_base` | 事件选项按钮 | 比例错误/假刻痕 | 横向 560x64 按钮底，不写文字。 |
+| `frame_map_popup_base` | 地图弹窗 | 像窄条，不是面板 | 360x260 弹窗底板，中心可放动态按钮。 |
+| `frame_dialog_speaker_plate_base` | 对话说话人名牌 | 边中装饰过重 | 名牌底板轻量，不能画名字。 |
+| `frame_result_panel_base` | 结算面板 | 过扁，目标是高面板 | 720x520 高面板，不画统计项。 |
+| `frame_result_stat_row_base` | 结算统计行 | 高度/边饰过重 | 600x44 细行，内层信息槽风格。 |
+| `frame_wave_preview_base` | 今晚敌情面板 | 边中刻度/状态灯 | 不画固定敌人条目或路线槽。 |
+| `frame_legend_panel_base` | 图例面板 | 上下中心 tab 装饰 | 小面板边中连续。 |
+| `frame_legend_row_base` | 图例行 | 端部装饰占比过大 | 220x28 极细行，细节简化。 |
+| `frame_resource_item_base` | 顶部资源项 | 左右固定盒状结构抢内容区 | 小资源项应简洁，给图标/数值留空间。 |
+| `frame_wave_enemy_row_base` | 今晚敌情行 | 中段多个固定卡扣 | 320x32 细行，边中连续。 |
+| `frame_wave_route_toggle_base` | 路线开关底 | 画死分隔柱 | 不画固定多段结构。 |
+| `frame_action_panel_base` | ActionPanel 底 | 固定装饰重，中心纹理抢内容 | 白天操作面板外框安静，按钮由节点生成。 |
 
-层级差异设计：
-- 外层面板/侧栏/大弹窗：更安静、更薄、更像背景承托；边框克制，中心暗而干净。
-- 中层卡片/列表项：轮廓更明确，可以有轻切角、浅内阴影、局部角装饰；要能从外层面板中跳出来。
-- 卡片内的小卡片/信息条/属性行：不要复制外层卡片纹理；使用更轻的材质、更低对比、更简单的线条，像嵌入式信息槽。
-- 按钮：比信息条更可点击，边缘更硬朗，中心更平整；hover/primary/danger/disabled 通过透明 overlay 表达状态，不要复制完整底板。
-- 图标/头像 backplate：像内容托盘，中心简洁；frame 是覆盖框，中心必须透明或可抠空。
-- 进度条/滑条：端帽固定，中心横向连续；track、fill、handle 互相区分，不画固定进度。
+## 暂不优先重生成
 
-输出要求：
-- 按 asset key 命名每个裁切结果，例如 `frame_button_base.png`。
-- overlay 必须透明背景，只包含叠加光效、描边、遮罩或状态效果，不包含底板。
-- base/backplate/frame/overlay 分层清楚，不能把运行时会变化的内容烘进底图。
-- 交付源 sheet 和裁切后的单图。单图替换 `assets/ui/source/<asset_key>.png`，不要直接替换 generated 或 styles。
-```
+以下素材目前没有作为首批问题项处理。后续如果实际 UI 预览中发现九宫格变形、层级重复或视觉冲突，再单独加入上表：
 
-## 裁切与替换流程
+- `frame_build_icon_backplate`
+- `frame_build_icon_frame`
+- `frame_cost_badge_base`
+- `frame_undo_button_base`
+- `frame_operator_cost_badge`
+- `frame_unit_portrait_backplate`
+- `frame_unit_portrait_frame`
+- `frame_skill_icon_backplate`
+- `frame_skill_icon_frame`
+- `frame_relic_icon_backplate`
+- `frame_relic_icon_frame`
+- `frame_relic_entry_button_base`
+- `frame_resource_delta_badge`
+- `frame_dialog_box_base`
+- `frame_action_button_base`
+- `frame_wave_warning_row_base`
+- `frame_top_status_chip_base`
+- `frame_settings_button_base`
+- `frame_scroll_track`
 
-1. 按 `docs/UI_ASSET_GENERATION_PROMPTS.md` 对应批次生成 source sheet，保存到临时目录或 `assets/ui/source/raw/`。
-2. 按提示词中的裁剪顺序裁切，文件名必须等于 asset key，例如 `frame_button_base.png`。
-3. 只替换 `assets/ui/source/<asset_key>.png`，不要直接改 `assets/ui/generated/` 或 `assets/ui/styles/`。
-4. 如果新源图尺寸变化，更新 `assets/ui/build/ui_asset_build.json` 中该 asset 的 `base_size`；`target_size` 保持 UI 设计尺寸，除非场景尺寸也变了。
-5. 检查或调整 `assets/ui/templates/<asset_key>.tres` 的 `texture_margin_*` 与 `content_margin_*`。模板文件只保存 margins，不绑定 texture。
-6. 运行：
+`frame_build_list_card_selected_overlay` 已作为优先案例单独处理过：源图与派生图 alpha 为 `{0,255}`，无不透明品红残留，并按 `frame_build_list_card_base` 的轮廓/尺寸更新了派生配置。仍需在实际 `BuildListCard` hover/selected 态中做人工视觉验收。
+
+## 验收命令
+
+根据改动范围最少运行：
 
 ```powershell
-Godot --headless --path . --script scripts/tools/generate_ui_derived_assets.gd
-Godot --headless --import --path . --quit
+python scripts/dev/crop_ui_assets.py --output-dir tmp/ui_generated_candidate --sheet <source_sheet_name>.png --clean
+godot --headless --path . --script scripts/tools/generate_ui_derived_assets.gd
+godot --headless --import --path . --quit
+git diff --check
 ```
 
-7. 打开或运行 `scenes/debug/UiAssetDerivedPreview.tscn` 和 `scenes/debug/UiNinePatchPreview.tscn` 检查目标尺寸下边角、边中和中心拉伸是否干净。
+每个替换批次还必须记录：
 
-## 需要 AI 重生成的资源
+- raw sheet 路径；
+- 处理的 asset keys；
+- 替换的 `assets/ui/source/*.png`；
+- alpha 集合是否为 `{0,255}`；
+- 不透明品红像素是否为 `0`；
+- 哪些 UI 节点/九宫格目标尺寸已经检查；
+- 仍需人工视觉验收的点。
 
-| Asset | 类型 | target_size | 当前 source_size | 替换源文件 | 重生成注意 |
-|---|---|---:|---:|---|---|
-| `bar_progress_fill_core` | 进度条 | 320x24 | 1372x86 | `res://assets/ui/source/bar_progress_fill_core.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `bar_progress_fill_hp` | 进度条 | 320x24 | 1371x85 | `res://assets/ui/source/bar_progress_fill_hp.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `bar_progress_fill_sp` | 进度条 | 320x24 | 1379x83 | `res://assets/ui/source/bar_progress_fill_sp.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `bar_progress_track` | 进度条 | 320x24 | 1387x153 | `res://assets/ui/source/bar_progress_track.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `frame_action_button_base` | 按钮 | 150x44 | 354x153 | `res://assets/ui/source/frame_action_button_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_action_panel_base` | 九宫格底板 | 520x150 | 646x300 | `res://assets/ui/source/frame_action_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_blessing_choice_card_base` | 九宫格底板 | 560x112 | 267x380 | `res://assets/ui/source/frame_blessing_choice_card_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_blessing_panel_base` | 九宫格底板 | 640x440 | 782x458 | `res://assets/ui/source/frame_blessing_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_bottom_deploy_rail_base` | 九宫格底板 | 980x176 | 350x196 | `res://assets/ui/source/frame_bottom_deploy_rail_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_build_icon_backplate` | 图标/头像槽 | 72x72 | 278x313 | `res://assets/ui/source/frame_build_icon_backplate.png` | 内容承托底，中心简洁可缩放，边中无独特图案。 |
-| `frame_build_icon_frame` | 图标/头像槽 | 72x72 | 271x313 | `res://assets/ui/source/frame_build_icon_frame.png` | 中心孔洞透明，边中不能有独特徽章；角可装饰。 |
-| `frame_build_list_card_base` | 九宫格底板 | 280x104 | 324x216 | `res://assets/ui/source/frame_build_list_card_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_build_list_card_selected_overlay` | 状态 overlay | 156x104 | 156x104 | `res://assets/ui/source/frame_build_list_card_selected_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_button_base` | 按钮 | 320x52 | 409x235 | `res://assets/ui/source/frame_button_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_button_danger_overlay` | 状态 overlay | 320x52 | 377x242 | `res://assets/ui/source/frame_button_danger_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_button_disabled_overlay` | 状态 overlay | 320x52 | 417x284 | `res://assets/ui/source/frame_button_disabled_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_button_primary_overlay` | 状态 overlay | 320x52 | 357x239 | `res://assets/ui/source/frame_button_primary_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_cost_badge_base` | 九宫格底板 | 56x32 | 134x225 | `res://assets/ui/source/frame_cost_badge_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_detail_section_base` | 九宫格底板 | 340x120 | 491x226 | `res://assets/ui/source/frame_detail_section_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_dialog_box_base` | 九宫格底板 | 1100x220 | 701x266 | `res://assets/ui/source/frame_dialog_box_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_dialog_speaker_plate_base` | 九宫格底板 | 240x56 | 460x121 | `res://assets/ui/source/frame_dialog_speaker_plate_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_event_choice_button_base` | 按钮 | 560x64 | 250x253 | `res://assets/ui/source/frame_event_choice_button_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_event_panel_base` | 九宫格底板 | 640x420 | 760x355 | `res://assets/ui/source/frame_event_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_icon_backplate` | 图标/头像槽 | 96x96 | 331x322 | `res://assets/ui/source/frame_icon_backplate.png` | 内容承托底，中心简洁可缩放，边中无独特图案。 |
-| `frame_icon_frame` | 图标/头像槽 | 96x96 | 335x325 | `res://assets/ui/source/frame_icon_frame.png` | 中心孔洞透明，边中不能有独特徽章；角可装饰。 |
-| `frame_left_sidebar_base` | 九宫格底板 | 320x760 | 300x904 | `res://assets/ui/source/frame_left_sidebar_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_legend_panel_base` | 九宫格底板 | 260x220 | 285x318 | `res://assets/ui/source/frame_legend_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_legend_row_base` | 九宫格底板 | 220x28 | 364x99 | `res://assets/ui/source/frame_legend_row_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_map_popup_base` | 九宫格底板 | 360x260 | 329x125 | `res://assets/ui/source/frame_map_popup_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_operator_card_base` | 九宫格底板 | 164x148 | 561x142 | `res://assets/ui/source/frame_operator_card_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_operator_card_cooldown_overlay` | 状态 overlay | 164x148 | 201x332 | `res://assets/ui/source/frame_operator_card_cooldown_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_operator_card_cooldown_selected_overlay` | 状态 overlay | 164x148 | 196x336 | `res://assets/ui/source/frame_operator_card_cooldown_selected_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_operator_card_deployed_overlay` | 状态 overlay | 164x148 | 192x335 | `res://assets/ui/source/frame_operator_card_deployed_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_operator_card_selected_overlay` | 状态 overlay | 164x148 | 201x335 | `res://assets/ui/source/frame_operator_card_selected_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_operator_cost_badge` | 九宫格底板 | 48x36 | 185x115 | `res://assets/ui/source/frame_operator_cost_badge.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_operator_portrait_backplate` | 图标/头像槽 | 128x72 | 199x204 | `res://assets/ui/source/frame_operator_portrait_backplate.png` | 内容承托底，中心简洁可缩放，边中无独特图案。 |
-| `frame_operator_portrait_frame` | 图标/头像槽 | 128x72 | 238x78 | `res://assets/ui/source/frame_operator_portrait_frame.png` | 中心孔洞透明，边中不能有独特徽章；角可装饰。 |
-| `frame_operator_stat_row` | 九宫格底板 | 140x20 | 396x78 | `res://assets/ui/source/frame_operator_stat_row.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_operator_title_strip` | 九宫格底板 | 140x28 | 190x208 | `res://assets/ui/source/frame_operator_title_strip.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_relic_card_base` | 九宫格底板 | 360x112 | 257x408 | `res://assets/ui/source/frame_relic_card_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_relic_card_hover_overlay` | 状态 overlay | 360x112 | 254x409 | `res://assets/ui/source/frame_relic_card_hover_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_relic_entry_button_base` | 按钮 | 128x44 | 228x137 | `res://assets/ui/source/frame_relic_entry_button_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_relic_filter_selected_overlay` | 状态 overlay | 120x40 | 240x134 | `res://assets/ui/source/frame_relic_filter_selected_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_relic_filter_tab_base` | 九宫格底板 | 120x40 | 241x135 | `res://assets/ui/source/frame_relic_filter_tab_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_relic_icon_backplate` | 图标/头像槽 | 80x80 | 243x235 | `res://assets/ui/source/frame_relic_icon_backplate.png` | 内容承托底，中心简洁可缩放，边中无独特图案。 |
-| `frame_relic_icon_frame` | 图标/头像槽 | 80x80 | 244x234 | `res://assets/ui/source/frame_relic_icon_frame.png` | 中心孔洞透明，边中不能有独特徽章；角可装饰。 |
-| `frame_relic_panel_base` | 九宫格底板 | 900x640 | 648x321 | `res://assets/ui/source/frame_relic_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_relic_rarity_common_overlay` | 状态 overlay | 352x202 | 352x202 | `res://assets/ui/source/frame_relic_rarity_common_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_relic_rarity_rare_overlay` | 状态 overlay | 345x201 | 345x201 | `res://assets/ui/source/frame_relic_rarity_rare_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_relic_rarity_uncommon_overlay` | 状态 overlay | 345x202 | 345x202 | `res://assets/ui/source/frame_relic_rarity_uncommon_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_relic_strip_base` | 九宫格底板 | 720x48 | 1038x90 | `res://assets/ui/source/frame_relic_strip_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_resource_delta_badge` | 九宫格底板 | 76x24 | 292x135 | `res://assets/ui/source/frame_resource_delta_badge.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_resource_item_base` | 九宫格底板 | 88x44 | 521x179 | `res://assets/ui/source/frame_resource_item_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_result_panel_base` | 九宫格底板 | 720x520 | 738x239 | `res://assets/ui/source/frame_result_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_result_stat_row_base` | 九宫格底板 | 600x44 | 518x115 | `res://assets/ui/source/frame_result_stat_row_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_right_detail_sidebar_base` | 九宫格底板 | 380x760 | 406x957 | `res://assets/ui/source/frame_right_detail_sidebar_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_scroll_thumb` | 滚动条 | 16x60 | 68x247 | `res://assets/ui/source/frame_scroll_thumb.png` | 端点固定，中段连续；竖横复用时避免方向性独特花纹。 |
-| `frame_scroll_track` | 滚动条 | 16x200 | 69x393 | `res://assets/ui/source/frame_scroll_track.png` | 端点固定，中段连续；竖横复用时避免方向性独特花纹。 |
-| `frame_settings_button_base` | 按钮 | 64x64 | 204x169 | `res://assets/ui/source/frame_settings_button_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_settings_panel_base` | 九宫格底板 | 420x300 | 715x612 | `res://assets/ui/source/frame_settings_panel_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_settings_row_base` | 九宫格底板 | 360x48 | 793x167 | `res://assets/ui/source/frame_settings_row_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_sidebar_tab_base` | 九宫格底板 | 160x48 | 377x527 | `res://assets/ui/source/frame_sidebar_tab_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_sidebar_tab_selected_overlay` | 状态 overlay | 160x48 | 337x211 | `res://assets/ui/source/frame_sidebar_tab_selected_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_skill_desc_box` | 九宫格控件 | 320x150 | 590x273 | `res://assets/ui/source/frame_skill_desc_box.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_skill_icon_backplate` | 图标/头像槽 | 72x72 | 178x191 | `res://assets/ui/source/frame_skill_icon_backplate.png` | 内容承托底，中心简洁可缩放，边中无独特图案。 |
-| `frame_skill_icon_frame` | 图标/头像槽 | 72x72 | 198x205 | `res://assets/ui/source/frame_skill_icon_frame.png` | 中心孔洞透明，边中不能有独特徽章；角可装饰。 |
-| `frame_slider_fill` | 滑条 | 280x24 | 1270x56 | `res://assets/ui/source/frame_slider_fill.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `frame_slider_handle` | 滑条 | 40x40 | 236x119 | `res://assets/ui/source/frame_slider_handle.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `frame_slider_track` | 滑条 | 280x24 | 1338x66 | `res://assets/ui/source/frame_slider_track.png` | 端帽只放两端，中心横向连续可拉伸；不要固定百分比。 |
-| `frame_speed_toggle_active_overlay` | 状态 overlay | 110x52 | 452x111 | `res://assets/ui/source/frame_speed_toggle_active_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_speed_toggle_base` | 九宫格底板 | 220x56 | 601x149 | `res://assets/ui/source/frame_speed_toggle_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_tooltip_base` | 九宫格底板 | 360x160 | 651x321 | `res://assets/ui/source/frame_tooltip_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_top_status_bar_base` | 九宫格底板 | 1200x72 | 1443x192 | `res://assets/ui/source/frame_top_status_bar_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_top_status_chip_active_overlay` | 状态 overlay | 240x64 | 333x147 | `res://assets/ui/source/frame_top_status_chip_active_overlay.png` | 透明背景，只含叠加光效/描边/遮罩，不含底板。 |
-| `frame_top_status_chip_base` | 九宫格底板 | 240x64 | 273x154 | `res://assets/ui/source/frame_top_status_chip_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_undo_button_base` | 按钮 | 160x44 | 207x160 | `res://assets/ui/source/frame_undo_button_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_unit_header_strip` | 九宫格底板 | 340x56 | 797x137 | `res://assets/ui/source/frame_unit_header_strip.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_unit_portrait_backplate` | 图标/头像槽 | 128x128 | 272x273 | `res://assets/ui/source/frame_unit_portrait_backplate.png` | 内容承托底，中心简洁可缩放，边中无独特图案。 |
-| `frame_unit_portrait_frame` | 图标/头像槽 | 128x128 | 271x269 | `res://assets/ui/source/frame_unit_portrait_frame.png` | 中心孔洞透明，边中不能有独特徽章；角可装饰。 |
-| `frame_unit_stat_row` | 九宫格底板 | 320x28 | 429x101 | `res://assets/ui/source/frame_unit_stat_row.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_wave_enemy_row_base` | 九宫格底板 | 320x32 | 1114x218 | `res://assets/ui/source/frame_wave_enemy_row_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_wave_preview_base` | 九宫格底板 | 360x220 | 470x306 | `res://assets/ui/source/frame_wave_preview_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_wave_route_toggle_base` | 九宫格底板 | 120x32 | 388x123 | `res://assets/ui/source/frame_wave_route_toggle_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
-| `frame_wave_warning_row_base` | 九宫格底板 | 320x32 | 655x125 | `res://assets/ui/source/frame_wave_warning_row_base.png` | 角可装饰，四边拉伸区保持连续纹理；不含文字、数字、图标。 |
 ## 不在本轮 AI 重生成范围
 
 - `icon_*` texture-only 图标：已接入派生管线，但通常不做 NinePatch 拉伸；除非出现文字、水印、边缘脏像素、语义错误或风格严重不一致，否则不需要本轮重生。
 - `assets/ui/generated/` 和 `assets/ui/styles/`：这些是离线脚本输出，不手工替换。
-- `assets/ui/templates/`：只维护 margins，不放正式贴图引用。
+- `assets/ui/templates/`：只维护 margins，不放正式贴图引用。仅当新源图尺寸或不可拉伸保护区变化时，才同步调整对应 template margins。
