@@ -1276,7 +1276,9 @@ func _reset_sandbox() -> void:
 	if run_state != null:
 		run_state.reset_for_new_run(1)
 		run_state.set_day(1)
-		run_state.set_phase(GameEnums.PHASE_DAY)
+		# 战斗循环（含阻挡/攻击）只在 PHASE_NIGHT 跑（见 unit_actor._is_combat_simulation_active）。
+		# 沙盒就是用来看战斗的，所以常驻 NIGHT；部署与调试建造都不挑相位，不受影响。
+		run_state.set_phase(GameEnums.PHASE_NIGHT)
 		run_state.set_deploy_limit(99)
 		run_state.reset_action_points(999)
 		run_state.add_prestige(999)
