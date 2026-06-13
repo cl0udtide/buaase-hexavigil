@@ -158,7 +158,7 @@ static func resolve_lane_gate(lane: StringName, group_index: int, main_gate: Str
 ## ---- 激活序与当日活跃集 ----
 
 ## 活跃口数量日程表（占位值）：阶梯取 <= day 的最大键。
-const ACTIVE_COUNT_BY_DAY := {1: 2, 3: 3, 5: 4, 7: 5}
+const ACTIVE_COUNT_BY_DAY := {1: 2, 4: 3, 7: 5}
 
 
 static func active_gate_count_for_day(day: int) -> int:

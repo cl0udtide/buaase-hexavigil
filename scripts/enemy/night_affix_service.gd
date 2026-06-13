@@ -8,15 +8,9 @@ class_name NightAffixService
 
 ## day -> 当晚词缀数量。Boss 晚（第 6 天）刻意减负。
 const AFFIX_COUNT_BY_DAY := {
-	1: 0,
-	2: 1,
-	3: 1,
+	1: 1,
 	4: 2,
-	5: 2,
-	6: 1,
 	7: 2,
-	8: 2,
-	9: 1,
 }
 const DEFAULT_AFFIX_COUNT := 2
 
@@ -24,8 +18,14 @@ const DEFAULT_AFFIX_COUNT := 2
 const INT_STATS: Array[String] = ["max_hp", "atk", "def", "res", "prestige_reward", "core_damage"]
 
 
+## 三幕分档：取 <= 当天的最大键（1/4/7 对应第一/二/三幕）。
 static func affix_count_for_day(day: int) -> int:
-	return int(AFFIX_COUNT_BY_DAY.get(day, DEFAULT_AFFIX_COUNT))
+	var best: int = -1
+	for raw_key: Variant in AFFIX_COUNT_BY_DAY.keys():
+		var k := int(raw_key)
+		if k <= day and k > best:
+			best = k
+	return int(AFFIX_COUNT_BY_DAY[best]) if best >= 0 else DEFAULT_AFFIX_COUNT
 
 
 ## 确定性抽取当晚词缀：min_day 门控 + weight 加权 + 不重复。

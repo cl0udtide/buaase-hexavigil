@@ -64,11 +64,11 @@ func _test_rarity_gating(run_state: Node, buff_manager: Node) -> void:
 			var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
 			_expect(int(cfg.get("rarity", 0)) == 1, "day1 choice %s is common" % buff_id)
 		_expect(distinct.size() == choices.size(), "choices are distinct")
-	run_state.day = 5
+	run_state.day = 7
 	for _round in range(5):
 		for buff_id in buff_manager.get_random_blessing_choices():
 			var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
-			_expect(int(cfg.get("rarity", 0)) >= 2, "day5 choice %s is rare or legendary" % buff_id)
+			_expect(int(cfg.get("rarity", 0)) >= 2, "day7 (act3) choice %s is rare or legendary" % buff_id)
 	run_state.day = 1
 
 
@@ -85,10 +85,10 @@ func _test_economy_slot(run_state: Node, buff_manager: Node, data_repo: Node) ->
 
 
 func _test_covenant_slot(run_state: Node, buff_manager: Node, data_repo: Node) -> void:
-	# 拥有两名坚守干员（去重计数 2）→ 盟约槽应稳定供应坚守钥匙件（rarity 2 需第 3 天起）。
+	# 拥有两名坚守干员（去重计数 2）→ 盟约槽应稳定供应坚守钥匙件（rarity 2 需第 4 天起=第二幕）。
 	run_state.add_owned_operator(&"defender_t1", "测试森蚺")
 	run_state.add_owned_operator(&"penance", "测试斥罪")
-	run_state.day = 3
+	run_state.day = 4
 	var found_steadfast_key := false
 	for _round in range(10):
 		for buff_id in buff_manager.get_random_blessing_choices():

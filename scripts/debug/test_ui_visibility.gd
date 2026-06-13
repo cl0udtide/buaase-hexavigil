@@ -50,8 +50,8 @@ func _run() -> void:
 # --- 1. 三选一槽位来源 ---
 func _test_blessing_slot_sources(run_state: Node, buff_manager: Node, data_repo: Node) -> void:
 	_expect(buff_manager.has_method("get_random_blessing_choices_with_sources"), "buff_manager exposes sourced draw")
-	run_state.day = 3
-	# 凑两名坚守干员，让盟约槽稳定供应（与 relic_draw 测试同口径）。
+	run_state.day = 4
+	# 凑两名坚守干员，让盟约槽稳定供应（与 relic_draw 同口径；稀有度2钥匙第二幕起）。
 	run_state.add_owned_operator(&"defender_t1", "测试森蚺")
 	run_state.add_owned_operator(&"penance", "测试斥罪")
 	var valid_slots := {&"covenant": true, &"economy": true, &"random": true}
@@ -148,7 +148,7 @@ func _test_wave_countdown_getter() -> void:
 	_expect(wave_manager.get_seconds_to_next_wave() < 0.0, "countdown is -1 when not running")
 	# 模拟喘息态：running + 多波 + 已排定下一波时间。
 	wave_manager._running = true
-	wave_manager._wave_template_ids = [&"a", &"b"] as Array
+	wave_manager._wave_template_ids = [&"a", &"b"] as Array[StringName]
 	wave_manager._wave_index = 0
 	wave_manager._elapsed = 10.0
 	wave_manager._next_wave_at = 18.0

@@ -7,29 +7,17 @@ class_name DifficultyScale
 
 ## 杂兵数量系数：乘到每个 group 的 count 上（Boss 条目不缩放）。前期压人数。
 const COUNT_SCALE_BY_DAY := {
-	1: 0.6,
-	2: 0.8,
-	3: 0.9,
+	1: 0.7,
 	4: 1.0,
-	5: 1.1,
-	6: 1.0,
 	7: 1.2,
-	8: 1.3,
-	9: 1.1,
 }
 const DEFAULT_COUNT_SCALE := 1.0
 
 ## 杂兵数值系数：乘到 max_hp/atk/def/res 上。后期追上玩家复利。
 const STAT_SCALE_BY_DAY := {
 	1: 1.0,
-	2: 1.0,
-	3: 1.05,
-	4: 1.1,
-	5: 1.2,
-	6: 1.3,
-	7: 1.45,
-	8: 1.6,
-	9: 1.8,
+	4: 1.25,
+	7: 1.6,
 }
 const DEFAULT_STAT_SCALE := 1.0
 
