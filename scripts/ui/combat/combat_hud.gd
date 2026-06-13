@@ -123,7 +123,10 @@ var _wave_warning_row: Control
 var _wave_warning_label: Label
 var _night_affix_row: PanelContainer
 var _night_affix_label: Label
+var _wave_countdown_row: PanelContainer
+var _wave_countdown_label: Label
 var _active_gates_line: Label = null
+var _event_count_line: Label = null
 var _wave_preview_available := false
 var _right_detail_active := false
 var _level_intro_banner: Control
@@ -1084,6 +1087,49 @@ func hide_night_affixes() -> void:
 		_night_affix_row.visible = false
 
 
+## 波间倒计时横幅：喘息期显示"下一波 N 秒"。seconds < 0 时隐藏。
+func set_wave_countdown(seconds: float) -> void:
+	if seconds < 0.0:
+		hide_wave_countdown()
+		return
+	_ensure_wave_countdown_row()
+	if _wave_countdown_row == null:
+		return
+	_wave_countdown_label.text = "下一波 %d 秒" % int(ceil(seconds))
+	_wave_countdown_row.visible = true
+
+
+func hide_wave_countdown() -> void:
+	if _wave_countdown_row != null:
+		_wave_countdown_row.visible = false
+
+
+func _ensure_wave_countdown_row() -> void:
+	if _wave_countdown_row != null:
+		return
+	_wave_countdown_row = PanelContainer.new()
+	_wave_countdown_row.name = "WaveCountdownRow"
+	_wave_countdown_row.visible = false
+	_wave_countdown_row.z_index = 41
+	_wave_countdown_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wave_countdown_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_wave_countdown_row.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_wave_countdown_row.offset_top = 128.0
+	add_child(_wave_countdown_row)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	_wave_countdown_row.add_child(margin)
+	_wave_countdown_label = Label.new()
+	_wave_countdown_label.add_theme_font_size_override("font_size", 18)
+	_wave_countdown_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	_wave_countdown_label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
+	_wave_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	margin.add_child(_wave_countdown_label)
+
+
 ## 今晚活跃口一行（含已封堵后缀），挂在波次卡片容器的父节点上，重建卡片不会清掉它。
 func set_active_gates_line(text: String) -> void:
 	if _active_gates_line == null:
@@ -1097,6 +1143,23 @@ func set_active_gates_line(text: String) -> void:
 		host.move_child(_active_gates_line, 0)
 	_active_gates_line.text = text
 	_active_gates_line.visible = not text.is_empty()
+
+
+## 活跃事件点一行（"事件点 X/4"），挂在波次预览容器父节点上，重建卡片不会清掉它。
+## warn 为真（达上限）时用警示色，提示玩家先去处理已有事件。
+func set_event_count_line(text: String, warn: bool = false) -> void:
+	if _event_count_line == null:
+		if _wave_spawn_cards_box == null:
+			return
+		var host := _wave_spawn_cards_box.get_parent() as Control
+		if host == null:
+			return
+		_event_count_line = _make_wave_label("EventCountLine", 13, GameUiStyle.AMBER, true)
+		host.add_child(_event_count_line)
+		host.move_child(_event_count_line, 0)
+	_event_count_line.text = text
+	_event_count_line.add_theme_color_override("font_color", GameUiStyle.DANGER if warn else GameUiStyle.AMBER)
+	_event_count_line.visible = not text.is_empty()
 
 
 func _ensure_night_affix_row() -> void:

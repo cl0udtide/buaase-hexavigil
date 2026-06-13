@@ -87,9 +87,18 @@ func enter_blessing() -> void:
 		return
 	run_state.set_phase(GameEnums.PHASE_BLESSING)
 	var buff_manager := get_node_or_null("../BuffManager")
-	if buff_manager != null and buff_manager.has_method("get_random_blessing_choices") and event_bus != null:
-		var choices: Array[StringName] = buff_manager.get_random_blessing_choices()
+	if buff_manager != null and event_bus != null and buff_manager.has_method("get_random_blessing_choices_with_sources"):
+		# 带槽位来源抽取；同步发出兼容旧信号（仅 id）与新信号（含来源）。
+		var entries: Array[Dictionary] = buff_manager.get_random_blessing_choices_with_sources()
+		var choices: Array[StringName] = []
+		for entry in entries:
+			choices.append(StringName(entry.get("buff_id", "")))
+		# 先发带来源信号（UI 优先用它渲染），再发兼容旧信号给纯 id 监听者。
+		event_bus.blessing_choices_with_sources_ready.emit(entries)
 		event_bus.blessing_choices_ready.emit(choices)
+	elif buff_manager != null and buff_manager.has_method("get_random_blessing_choices") and event_bus != null:
+		var fallback_choices: Array[StringName] = buff_manager.get_random_blessing_choices()
+		event_bus.blessing_choices_ready.emit(fallback_choices)
 
 
 func end_run(win: bool) -> void:

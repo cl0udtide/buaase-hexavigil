@@ -130,7 +130,9 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	_res_stat_label.text = "法抗 %d" % int(unit.resistance)
 	_block_stat_label.text = "阻挡 %d" % int(unit.block_count)
 	_aspd_stat_label.text = "攻速 %d" % int(round(unit.get_effective_attack_speed()))
-	_covenant_stat_label.text = "盟约 %s" % _format_covenants(unit.cfg)
+	var unit_id := StringName(unit.unit_id) if "unit_id" in unit else StringName(unit.cfg.get("id", ""))
+	var operator_key := StringName(unit.operator_key) if "operator_key" in unit else StringName()
+	_covenant_stat_label.text = "盟约 %s" % _format_runtime_covenants(unit.cfg, unit_id, operator_key)
 	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
 	var status_lines := PackedStringArray()
 	var active_state := "ready"
@@ -174,7 +176,8 @@ func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, stat
 	var skill_status_text := status_text.strip_edges()
 	if skill_status_text.is_empty():
 		skill_status_text = "冷却" if state == &"cooldown" else "Preview"
-	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(star), skill_status_text)
+	var operator_unit_id := StringName(operator_info.get("unit_id", unit_cfg.get("id", "")))
+	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(star), skill_status_text, operator_unit_id, _preview_operator_key)
 	var can_sell := state == &"ready"
 	var sell_reason := "" if can_sell else "该干员当前不能出售"
 	_set_action_mode(&"preview", false, "", 0, can_sell, sell_reason)
@@ -184,7 +187,7 @@ func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, stat
 func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dictionary, price: int, can_purchase: bool, disabled_reason: String = "") -> void:
 	_preview_operator_key = StringName()
 	var display_name := UiDisplayText.config_name(unit_cfg, unit_id)
-	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(OperatorProgression.DEFAULT_STAR), "Available" if can_purchase else "Locked")
+	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(OperatorProgression.DEFAULT_STAR), "Available" if can_purchase else "Locked", unit_id)
 	_shop_slot_index = slot_index
 	var reason := disabled_reason
 	if can_purchase:
@@ -227,7 +230,7 @@ func clear_unit() -> void:
 	_refresh_action_icons()
 
 
-func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, skill_status_text: String = "Preview") -> void:
+func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, skill_status_text: String = "Preview", unit_id: StringName = StringName(), operator_key: StringName = StringName()) -> void:
 	visible = true
 	_last_skill_scroll_key = ""
 	_title_label.text = display_name
@@ -247,7 +250,7 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_res_stat_label.text = "法抗 %d" % int(cfg.get("res", 0))
 	_block_stat_label.text = "阻挡 %d" % int(cfg.get("block", 0))
 	_aspd_stat_label.text = "攻速 %d" % int(round(float(cfg.get("attack_speed", 100.0))))
-	_covenant_stat_label.text = "盟约 %s" % _format_covenants(cfg)
+	_covenant_stat_label.text = "盟约 %s" % _format_runtime_covenants(cfg, unit_id, operator_key)
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
 	_skill_status_label.text = skill_status_text
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
@@ -257,13 +260,39 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_refresh_action_icons()
 
 
-func _format_covenants(cfg: Dictionary) -> String:
-	var raw = cfg.get("covenants", [])
-	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
+## 运行时盟约展示：合并基础盟约与本局灌注盟约（祭坛），灌注项加 ✦ 角标区分。
+## unit_id 为空时回退静态配置；查 RunState 优先用实例（operator_key），无实例则用单位类型。
+func _format_runtime_covenants(cfg: Dictionary, unit_id: StringName, operator_key: StringName) -> String:
+	var base_covenants: Array[StringName] = []
+	var raw_base: Variant = cfg.get("covenants", [])
+	if typeof(raw_base) == TYPE_ARRAY:
+		for tag in (raw_base as Array):
+			var covenant := StringName(tag)
+			if covenant != StringName() and not base_covenants.has(covenant):
+				base_covenants.append(covenant)
+
+	var effective: Array = []
+	var run_state = AppRefs.run_state()
+	if run_state != null and unit_id != StringName():
+		if operator_key != StringName() and run_state.has_method("get_operator_covenants"):
+			effective = run_state.get_operator_covenants(operator_key)
+		elif run_state.has_method("get_unit_covenants"):
+			effective = run_state.get_unit_covenants(unit_id)
+	if effective.is_empty():
+		effective = base_covenants
+
+	if effective.is_empty():
 		return "无"
 	var names: Array[String] = []
-	for tag in raw:
-		names.append(String(tag))
+	for raw_tag: Variant in effective:
+		var covenant := StringName(raw_tag)
+		if covenant == StringName():
+			continue
+		# 灌注盟约（不在基础配置中）加 ✦ 角标。
+		if base_covenants.has(covenant):
+			names.append(String(covenant))
+		else:
+			names.append("✦%s" % String(covenant))
 	return "·".join(names)
 
 
