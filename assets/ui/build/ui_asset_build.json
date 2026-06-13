@@ -261,6 +261,26 @@
       "content_margin_mode": "scale_from_template",
       "interpolation": "nearest"
     },
+    "frame_build_list_card_selected_overlay": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_build_list_card_selected_overlay.png",
+      "template_style": "res://assets/ui/templates/frame_build_list_card_selected_overlay.tres",
+      "output_png": "res://assets/ui/generated/frame_build_list_card_selected_overlay.png",
+      "output_style": "res://assets/ui/styles/frame_build_list_card_selected_overlay.tres",
+      "target_size": [
+        280,
+        104
+      ],
+      "base_size": [
+        324,
+        216
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
     "frame_button_base": {
       "kind": "stylebox_texture",
       "source_png": "res://assets/ui/source/frame_button_base.png",
@@ -1088,8 +1108,8 @@
       "output_png": "res://assets/ui/generated/frame_sidebar_tab_selected_overlay.png",
       "output_style": "res://assets/ui/styles/frame_sidebar_tab_selected_overlay.tres",
       "target_size": [
-        280,
-        104
+        160,
+        48
       ],
       "base_size": [
         337,

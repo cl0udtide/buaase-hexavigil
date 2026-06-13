@@ -4,34 +4,9 @@
 [ext_resource type="StyleBox" uid="uid://egde0ico5esd" path="res://assets/ui/styles/frame_relic_strip_base.tres" id="2_strip"]
 [ext_resource type="StyleBox" uid="uid://ccs0owrq281ng" path="res://assets/ui/styles/frame_relic_entry_button_base.tres" id="3_entry"]
 [ext_resource type="Texture2D" uid="uid://d08ds42h0ed85" path="res://assets/ui/generated/icon_relic_bag.png" id="4_relicbag"]
-[ext_resource type="Texture2D" uid="uid://65osuuawbq1o" path="res://assets/ui/generated/frame_relic_entry_button_base.png" id="4_sepl8"]
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_u36ps"]
-content_margin_left = 3.2018
-content_margin_top = 1.6058
-content_margin_right = 3.2018
-content_margin_bottom = 1.6058
-texture = ExtResource("4_sepl8")
-texture_margin_left = 25.9342
-texture_margin_top = 10.9197
-texture_margin_right = 25.9342
-texture_margin_bottom = 10.9197
-modulate_color = Color(1.14, 1.14, 1.14, 1)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_xb4fc"]
-content_margin_left = 3.2018
-content_margin_top = 1.6058
-content_margin_right = 3.2018
-content_margin_bottom = 1.6058
-texture = ExtResource("4_sepl8")
-texture_margin_left = 25.9342
-texture_margin_top = 10.9197
-texture_margin_right = 25.9342
-texture_margin_bottom = 10.9197
-modulate_color = Color(1.24, 1.24, 1.24, 1)
 
 [node name="RelicStrip" type="Control" unique_id=625474051]
-custom_minimum_size = Vector2(146, 52)
+custom_minimum_size = Vector2(126, 40)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_c303q")
@@ -68,14 +43,9 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
-size_flags_horizontal = 0
 size_flags_vertical = 4
 focus_mode = 0
 theme_override_styles/normal = ExtResource("3_entry")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_xb4fc")
-theme_override_styles/hover = SubResource("StyleBoxTexture_u36ps")
-theme_override_styles/disabled = ExtResource("3_entry")
-text = ""
 
 [node name="EntryButtonContent" type="MarginContainer" parent="StripMargin/Row/EntryButton" unique_id=524307305]
 layout_mode = 1
@@ -108,8 +78,6 @@ stretch_mode = 5
 [node name="EntryLabel" type="Label" parent="StripMargin/Row/EntryButton/EntryButtonContent/EntryButtonRow" unique_id=1486393541]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.9, 0.94, 0.96, 1)
 text = "遗物 0"
 vertical_alignment = 1
 

@@ -15,7 +15,6 @@ signal retreat_requested
 signal operator_sell_requested(operator_key: StringName)
 signal shop_unit_purchase_requested(slot_index: int)
 signal wave_route_preview_toggled(enabled: bool)
-signal wave_spawn_segment_hovered(spawn_key: String)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone", &"mana"]
@@ -27,11 +26,16 @@ const LEVEL_INTRO_HEIGHT := 178.0
 const LEVEL_INTRO_TOP_RATIO := 0.15
 const LEVEL_INTRO_MIN_TOP := 124.0
 
+const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
+const MESSAGE_WARNING_OVERLAY_ALPHA := 0.92
+const MESSAGE_WARNING_OVERLAY_FRAME := &"frame_button_danger_overlay"
+const MESSAGE_WARNING_OVERLAY_PATCH_MARGIN := 18
 const MESSAGE_CHIP_BASE_Z := 0
+const MESSAGE_CHIP_WARNING_Z := 1
 const MESSAGE_CHIP_CONTENT_Z := 2
-const MESSAGE_NORMAL_ICON := &"top_enemy_queue"
-const MESSAGE_WARNING_ICON := &"button_cancel"
+const DEPLOY_SCROLLBAR_THICKNESS := 26.0
+const DEPLOY_SCROLLBAR_MIN_GRAB := 64
 const DEPLOY_SCROLLBAR_STEP := 48
 const WAVE_PREVIEW_NORMAL_HEIGHT := 316.0
 const WAVE_PREVIEW_COMPACT_HEIGHT := 208.0
@@ -107,7 +111,7 @@ var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
 var _core_hp_current := 0
 var _core_hp_max := 0
-var _message_warning_active := false
+var _message_warning_overlay: NinePatchRect
 var _bullet_time_feedback_tween: Tween
 var _level_intro_tween: Tween
 var _wave_level_name_label: Label
@@ -135,12 +139,6 @@ var _level_intro_line: ColorRect
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
-@onready var _popup_layer: Control = get_node_or_null("PopupLayer") as Control
-@onready var _settings_panel_slot: Control = get_node_or_null("PopupLayer/SettingsPanelSlot") as Control
-@onready var _cheat_panel_slot: Control = get_node_or_null("PopupLayer/CheatPanelSlot") as Control
-@onready var _cheat_panel_center: Control = get_node_or_null("PopupLayer/CheatPanelSlot/CheatPanelCenter") as Control
-@onready var _relic_panel_slot: Control = get_node_or_null("PopupLayer/RelicPanelSlot") as Control
-@onready var _relic_panel_center: Control = get_node_or_null("PopupLayer/RelicPanelSlot/RelicPanelCenter") as Control
 @onready var _top_bar: Control = %TopBar
 @onready var _top_content: MarginContainer = _top_bar.get_node_or_null("TopContent") as MarginContainer
 @onready var _top_content_row: HBoxContainer = _top_bar.get_node_or_null("TopContent/TopContentRow") as HBoxContainer
@@ -152,7 +150,6 @@ var _covenant_row: HBoxContainer = null
 @onready var _time_controls: Control = %TimeControls
 @onready var _speed_toggle_base: Panel = %SpeedToggleBase
 @onready var _speed_active_overlay: Panel = %SpeedActiveOverlay
-@onready var _speed_disabled_overlay: Panel = %SpeedDisabledOverlay
 @onready var _bullet_time_overlay: Control = %BulletTimeOverlay
 @onready var _resource_chip: Control = %ResourceChip
 @onready var _resource_items_row: HBoxContainer = %ResourceItemsRow
@@ -164,12 +161,10 @@ var _covenant_row: HBoxContainer = null
 @onready var _queue_label: Label = %QueueLabel
 @onready var _message_label: Label = %MessageLabel
 @onready var _message_icon_texture: TextureRect = _message_chip.get_node_or_null("ChipIconTexture") as TextureRect
-@onready var _time_row: Control = _time_controls.get_node_or_null("TimeMargin/TimeRow") as Control
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
 @onready var _relic_strip: Control = %RelicStrip
-@onready var _cheat_panel: Control = %CheatPanel
 @onready var _relic_panel: Control = %RelicPanel
 @onready var _wave_preview_panel: Control = %WavePreviewPanel
 @onready var _wave_preview_content: VBoxContainer = _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent") as VBoxContainer
@@ -203,7 +198,7 @@ func _ready() -> void:
 	_core_clip.resized.connect(_refresh_core_fill)
 	_collect_resource_items()
 	_style_top_cards()
-	_setup_message_chip_state()
+	_setup_message_warning_overlay()
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
@@ -219,7 +214,7 @@ func _ready() -> void:
 	_setup_deploy_deck_scroll()
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_speed_disabled_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
 	_bullet_time_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bullet_time_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_bullet_time_overlay.visible = false
@@ -235,7 +230,6 @@ func _ready() -> void:
 	_speed_2_button.pressed.connect(func() -> void: speed_2_pressed.emit())
 	_wave_route_toggle.toggled.connect(func(enabled: bool) -> void: wave_route_preview_toggled.emit(enabled))
 	_bind_overlay_panels()
-	_sync_overlay_panel_layers()
 	if _detail_panel.has_signal("cast_skill_requested"):
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
@@ -291,7 +285,7 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 	_apply_chip_icon(_stage_chip, _phase_icon_id_for_text(queue_text))
 	_apply_chip_icon(_core_chip, &"top_core_hp")
 	_apply_chip_icon(_deploy_chip, &"top_deploy_limit")
-	_apply_message_state(_message_warning_active)
+	_apply_chip_icon(_message_chip, &"top_enemy_queue")
 	_set_core_progress_from_text(core_text)
 
 
@@ -320,8 +314,10 @@ func set_core_hp(current: int, max_value: int) -> void:
 func show_message(text_value: String, warning := false) -> void:
 	var display_text := _localized_message_text(text_value)
 	_message_label.text = display_text
-	var warning_state: bool = warning or _is_warning_message(display_text) or _is_warning_message(text_value)
-	_apply_message_state(warning_state)
+	if _message_warning_overlay == null:
+		_setup_message_warning_overlay()
+	if _message_warning_overlay != null:
+		_message_warning_overlay.visible = warning or _is_warning_message(display_text) or _is_warning_message(text_value)
 
 
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
@@ -484,15 +480,6 @@ func toggle_settings_panel() -> void:
 		_show_overlay_panel(&"settings")
 
 
-func toggle_cheat_panel() -> void:
-	if _cheat_panel == null:
-		return
-	if _cheat_panel.visible:
-		_hide_overlay_panel(&"cheat")
-	else:
-		_show_overlay_panel(&"cheat")
-
-
 func close_top_panel() -> bool:
 	while not _open_panel_stack.is_empty():
 		var panel_name: StringName = _open_panel_stack.pop_back()
@@ -502,9 +489,6 @@ func close_top_panel() -> bool:
 			return true
 	if _settings_panel != null and _settings_panel.visible:
 		_hide_overlay_panel(&"settings")
-		return true
-	if _cheat_panel != null and _cheat_panel.visible:
-		_hide_overlay_panel(&"cheat")
 		return true
 	if _relic_panel != null and _relic_panel.visible:
 		_hide_overlay_panel(&"relic")
@@ -591,7 +575,6 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	_pause_button.disabled = not enabled
 	_speed_1_button.disabled = not enabled
 	_speed_2_button.disabled = not enabled
-	call_deferred("_place_speed_disabled_overlay", not enabled)
 	var effective_paused := paused and enabled
 	var pause_selected := effective_paused
 	var speed_1_selected := false
@@ -897,15 +880,7 @@ func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dict
 		key_label.text = "%s · 主攻" % spawn_key
 	else:
 		key_label.text = spawn_key
-	# 段头按出怪口同色（与地图覆盖/徽标共用 GameUiStyle 色源）+ 左缘同色竖条，作为"侧栏即图例"。
-	var route_color := GameUiStyle.route_color_for_spawn_key(spawn_key)
-	key_label.add_theme_color_override("font_color", route_color)
-	var base_sb := card.get_theme_stylebox("panel")
-	if base_sb is StyleBoxFlat:
-		var accent := (base_sb as StyleBoxFlat).duplicate() as StyleBoxFlat
-		accent.border_color = route_color
-		accent.border_width_left = maxi(accent.border_width_left, 4)
-		card.add_theme_stylebox_override("panel", accent)
+	key_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	var chips := card.get_node_or_null("SpawnCardRow/WaveEnemyCardsFlow") as HFlowContainer
 	for child in chips.get_children():
 		child.queue_free()
@@ -913,19 +888,7 @@ func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dict
 		if typeof(entry_variant) == TYPE_DICTIONARY:
 			var entry: Dictionary = entry_variant
 			chips.add_child(_build_wave_enemy_chip(entry, key_enemies.has(StringName(entry.get("enemy_id", "")))))
-	# 悬停联动：子控件全置 IGNORE 让整段稳定可悬停；段卡发 hover 信号→地图高亮该口、压暗其余。
-	_set_descendants_mouse_ignore(card)
-	card.mouse_filter = Control.MOUSE_FILTER_PASS
-	card.mouse_entered.connect(func() -> void: wave_spawn_segment_hovered.emit(spawn_key))
-	card.mouse_exited.connect(func() -> void: wave_spawn_segment_hovered.emit(""))
 	return card
-
-
-func _set_descendants_mouse_ignore(node: Node) -> void:
-	for child in node.get_children():
-		if child is Control:
-			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_set_descendants_mouse_ignore(child)
 
 
 func _build_wave_enemy_chip(entry: Dictionary, highlighted: bool) -> Control:
@@ -1391,38 +1354,12 @@ func _place_speed_active_overlay(_button: Button) -> void:
 	_speed_active_overlay.visible = true
 
 
-func _place_speed_disabled_overlay(enabled: bool) -> void:
-	if _speed_disabled_overlay == null:
-		return
-	if not enabled:
-		_speed_disabled_overlay.visible = false
-		return
-	if _time_row == null or not _time_row.visible:
-		_speed_disabled_overlay.visible = false
-		return
-	var overlay_parent := _speed_disabled_overlay.get_parent() as Control
-	if overlay_parent == null:
-		_speed_disabled_overlay.visible = false
-		return
-	var row_rect := _time_row.get_global_rect()
-	var parent_to_local := overlay_parent.get_global_transform_with_canvas().affine_inverse()
-	var local_position := parent_to_local * row_rect.position
-	var top_left := local_position
-	var bottom_right := local_position + row_rect.size
-	_speed_disabled_overlay.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
-	_speed_disabled_overlay.offset_left = top_left.x
-	_speed_disabled_overlay.offset_top = top_left.y
-	_speed_disabled_overlay.offset_right = bottom_right.x
-	_speed_disabled_overlay.offset_bottom = bottom_right.y
-	_speed_disabled_overlay.visible = true
-
-
 func _setup_deploy_deck_scroll() -> void:
 	_deck_scroll = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
 	if _deck_scroll == null:
 		push_warning("Deploy deck ScrollContainer is missing; expected DeployDeck/DeckMargin/ScrollContainer.")
 		return
-	_deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	_deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_deck_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_deck_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	_deck_scroll.clip_contents = true
@@ -1432,7 +1369,10 @@ func _setup_deploy_deck_scroll() -> void:
 		_deck_scroll.resized.connect(_refresh_deploy_deck_scroll_content)
 	var horizontal_bar := _deck_scroll.get_h_scroll_bar()
 	if horizontal_bar != null:
-		horizontal_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		horizontal_bar.custom_minimum_size.y = DEPLOY_SCROLLBAR_THICKNESS
+		horizontal_bar.add_theme_constant_override("scroll_width", int(DEPLOY_SCROLLBAR_THICKNESS))
+		horizontal_bar.add_theme_constant_override("minimum_grab_thickness", DEPLOY_SCROLLBAR_MIN_GRAB)
+		horizontal_bar.mouse_filter = Control.MOUSE_FILTER_STOP
 	var vertical_bar := _deck_scroll.get_v_scroll_bar()
 	if vertical_bar != null:
 		vertical_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1511,7 +1451,7 @@ func _style_top_cards() -> void:
 			_apply_resource_delta_label_style(delta, 0)
 
 
-func _setup_message_chip_state() -> void:
+func _setup_message_warning_overlay() -> void:
 	if _message_chip == null:
 		return
 	_message_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1519,29 +1459,36 @@ func _setup_message_chip_state() -> void:
 	if chip_base != null:
 		chip_base.z_index = MESSAGE_CHIP_BASE_Z
 	var existing_overlay := _message_chip.get_node_or_null("MessageWarningOverlay")
-	if existing_overlay != null:
+	if existing_overlay != null and not (existing_overlay is NinePatchRect):
 		_message_chip.remove_child(existing_overlay)
 		existing_overlay.queue_free()
+		existing_overlay = null
+	_message_warning_overlay = existing_overlay as NinePatchRect
+	if _message_warning_overlay == null:
+		_message_warning_overlay = NinePatchRect.new()
+		_message_warning_overlay.name = "MessageWarningOverlay"
+		_message_chip.add_child(_message_warning_overlay)
+	_message_warning_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_message_warning_overlay.offset_left = 0.0
+	_message_warning_overlay.offset_top = 0.0
+	_message_warning_overlay.offset_right = 0.0
+	_message_warning_overlay.offset_bottom = 0.0
+	_message_warning_overlay.z_index = MESSAGE_CHIP_WARNING_Z
+	_message_warning_overlay.z_as_relative = true
+	_message_warning_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_message_warning_overlay.visible = false
+	_message_warning_overlay.modulate = Color(1.0, 1.0, 1.0, MESSAGE_WARNING_OVERLAY_ALPHA)
+	_message_warning_overlay.texture = UiArtRegistry.get_frame_texture(MESSAGE_WARNING_OVERLAY_FRAME)
+	_message_warning_overlay.draw_center = true
+	_message_warning_overlay.patch_margin_left = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_warning_overlay.patch_margin_top = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_warning_overlay.patch_margin_right = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_warning_overlay.patch_margin_bottom = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
+	_message_chip.move_child(_message_warning_overlay, mini(1, _message_chip.get_child_count() - 1))
 	_message_label.z_index = MESSAGE_CHIP_CONTENT_Z
 	if _message_icon_texture != null:
 		_message_icon_texture.z_index = MESSAGE_CHIP_CONTENT_Z
 		_message_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_apply_message_state(false)
-
-
-func _apply_message_state(warning: bool) -> void:
-	_message_warning_active = warning
-	if _message_label != null:
-		var text_color: Color = GameUiStyle.DANGER if warning else GameUiStyle.TEXT_DIM
-		_message_label.add_theme_color_override("font_color", text_color)
-	if _message_icon_texture == null:
-		return
-	var icon_key: StringName = MESSAGE_WARNING_ICON if warning else MESSAGE_NORMAL_ICON
-	var texture := UiArtRegistry.get_catalog_icon(icon_key)
-	if texture == null:
-		return
-	_message_icon_texture.texture = texture
-	_message_icon_texture.visible = true
 
 
 func _is_warning_message(text_value: String) -> bool:
@@ -1730,8 +1677,6 @@ func _bind_overlay_panels() -> void:
 			_settings_button.pressed.connect(_on_settings_button_pressed)
 	if _settings_panel != null and _settings_panel.has_signal("close_requested"):
 		_settings_panel.connect(&"close_requested", Callable(self, "_on_settings_panel_close_requested"))
-	if _settings_panel != null and _settings_panel.has_signal("cheat_panel_requested"):
-		_settings_panel.connect(&"cheat_panel_requested", Callable(self, "_on_cheat_panel_requested"))
 	if _relic_strip != null:
 		if _relic_strip.has_signal("panel_requested"):
 			_relic_strip.connect(&"panel_requested", Callable(self, "_on_relic_panel_requested"))
@@ -1739,8 +1684,6 @@ func _bind_overlay_panels() -> void:
 			_relic_strip.connect(&"relic_pressed", Callable(self, "_on_relic_strip_relic_pressed"))
 	if _relic_panel != null and _relic_panel.has_signal("close_requested"):
 		_relic_panel.connect(&"close_requested", Callable(self, "_on_relic_panel_close_requested"))
-	if _cheat_panel != null and _cheat_panel.has_signal("close_requested"):
-		_cheat_panel.connect(&"close_requested", Callable(self, "_on_cheat_panel_close_requested"))
 
 
 func _on_settings_button_pressed() -> void:
@@ -1749,15 +1692,6 @@ func _on_settings_button_pressed() -> void:
 
 func _on_settings_panel_close_requested() -> void:
 	_hide_overlay_panel(&"settings")
-
-
-func _on_cheat_panel_requested() -> void:
-	_hide_overlay_panel(&"settings")
-	_show_overlay_panel(&"cheat")
-
-
-func _on_cheat_panel_close_requested() -> void:
-	_hide_overlay_panel(&"cheat")
 
 
 func _on_relic_panel_requested() -> void:
@@ -1784,7 +1718,6 @@ func _show_overlay_panel(panel_name: StringName) -> void:
 		panel.visible = true
 	_move_control_to_front(panel)
 	_mark_panel_top(panel_name)
-	_sync_overlay_panel_layers()
 
 
 func _hide_overlay_panel(panel_name: StringName) -> void:
@@ -1796,15 +1729,12 @@ func _hide_overlay_panel(panel_name: StringName) -> void:
 	else:
 		panel.visible = false
 	_remove_panel_from_stack(panel_name)
-	_sync_overlay_panel_layers()
 
 
 func _panel_for_name(panel_name: StringName) -> Control:
 	match panel_name:
 		&"settings":
 			return _settings_panel
-		&"cheat":
-			return _cheat_panel
 		&"relic":
 			return _relic_panel
 		_:
@@ -1835,21 +1765,3 @@ func _show_control_ancestors(control: Control) -> void:
 			var canvas_item: CanvasItem = current as CanvasItem
 			canvas_item.visible = true
 		current = current.get_parent()
-
-
-func _sync_overlay_panel_layers() -> void:
-	var settings_visible := _settings_panel != null and _settings_panel.visible
-	var cheat_visible := _cheat_panel != null and _cheat_panel.visible
-	var relic_visible := _relic_panel != null and _relic_panel.visible
-	if _settings_panel_slot != null:
-		_settings_panel_slot.visible = settings_visible
-	if _cheat_panel_center != null:
-		_cheat_panel_center.visible = cheat_visible
-	if _cheat_panel_slot != null:
-		_cheat_panel_slot.visible = cheat_visible
-	if _relic_panel_center != null:
-		_relic_panel_center.visible = relic_visible
-	if _relic_panel_slot != null:
-		_relic_panel_slot.visible = relic_visible
-	if _popup_layer != null:
-		_popup_layer.visible = settings_visible or cheat_visible or relic_visible

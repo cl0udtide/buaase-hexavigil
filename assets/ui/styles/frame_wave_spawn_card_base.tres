@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://cw5n7g1flw5xa"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_wave_spawn_card_base.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://c0ljni2lhl73r" path="res://assets/ui/generated/frame_wave_spawn_card_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 12.1592
-content_margin_top = 7.9416
-content_margin_right = 12.1592
-content_margin_bottom = 7.9416
+content_margin_left = 12.2331
+content_margin_top = 8.0036
+content_margin_right = 12.2331
+content_margin_bottom = 8.0036
 texture = ExtResource("1_texture")
-texture_margin_left = 26.6567
-texture_margin_top = 26.6277
-texture_margin_right = 26.6567
-texture_margin_bottom = 26.6277
-draw_center = true
+texture_margin_left = 26.8188
+texture_margin_top = 26.8358
+texture_margin_right = 26.8188
+texture_margin_bottom = 26.8358
