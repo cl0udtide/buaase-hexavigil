@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 const BGM_DAY := &"day"
 const BGM_NIGHT := &"night"
@@ -313,7 +314,7 @@ func _on_day_started(_day: int) -> void:
 
 
 func _on_night_started(day: int) -> void:
-	if day >= 6:
+	if NightTemplateResolver.is_boss_night(day):
 		play_boss_bgm()
 	else:
 		play_night_bgm()

@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
+const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
 
 @onready var _day_manager: Node = get_node_or_null("../DayManager")
@@ -168,7 +169,7 @@ func _on_night_cleared(_day: int) -> void:
 	if run_state.night_wager_active and not run_state.night_core_damaged:
 		run_state.pending_extra_blessings += 1
 	run_state.night_wager_active = false
-	if run_state.day >= 6:
+	if run_state.day >= NightTemplateResolver.TOTAL_DAYS:
 		end_run(true)
 	else:
 		enter_blessing()
