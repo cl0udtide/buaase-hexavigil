@@ -84,10 +84,10 @@ func _apply_visual_style() -> void:
 func _on_choice_pressed(buff_id: StringName) -> void:
 	if buff_id == StringName():
 		return
+	hide_panel()
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.blessing_chosen.emit(buff_id)
-	hide_panel()
 
 
 func _clear_choices() -> void:
