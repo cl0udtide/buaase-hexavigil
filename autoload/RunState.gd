@@ -154,7 +154,7 @@ func damage_core(value: int) -> void:
 	var actual_damage := previous_hp - core_hp
 	if actual_damage > 0:
 		EventBus.core_damaged.emit(actual_damage, core_hp, core_hp_max)
-	if core_hp == 0:
+	if previous_hp > 0 and core_hp == 0:
 		EventBus.core_destroyed.emit()
 
 

@@ -4,6 +4,8 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
+const CORE_DESTROYED_RESULT_DELAY := 1.6
+
 
 @onready var _day_manager: Node = get_node_or_null("../DayManager")
 @onready var _night_manager: Node = get_node_or_null("../NightManager")
@@ -12,6 +14,8 @@ const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolv
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _unit_manager: Node = get_node_or_null("../UnitManager")
 @onready var _wave_manager: Node = get_node_or_null("../WaveManager")
+
+var _run_end_requested := false
 
 
 func _ready() -> void:
@@ -103,12 +107,35 @@ func enter_blessing() -> void:
 
 
 func end_run(win: bool) -> void:
+	if _run_end_requested:
+		return
+	_run_end_requested = true
+	_set_result_phase()
+	_emit_run_ended(win)
+
+
+func _set_result_phase() -> void:
 	var run_state = AppRefs.run_state()
-	var event_bus = AppRefs.event_bus()
 	if run_state != null:
 		run_state.set_phase(GameEnums.PHASE_RESULT)
+
+
+func _emit_run_ended(win: bool) -> void:
+	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.run_ended.emit(win)
+
+
+func _end_run_after_delay(win: bool, delay_seconds: float) -> void:
+	if _run_end_requested:
+		return
+	_run_end_requested = true
+	_set_result_phase()
+	if delay_seconds > 0.0 and get_tree() != null:
+		await get_tree().create_timer(delay_seconds).timeout
+	if not is_inside_tree():
+		return
+	_emit_run_ended(win)
 
 
 func get_current_phase() -> int:
@@ -179,7 +206,7 @@ func _on_night_cleared(_day: int) -> void:
 
 
 func _on_core_destroyed() -> void:
-	end_run(false)
+	_end_run_after_delay(false, CORE_DESTROYED_RESULT_DELAY)
 
 
 func _on_blessing_chosen(buff_id: StringName) -> void:

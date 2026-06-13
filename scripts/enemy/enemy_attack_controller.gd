@@ -41,6 +41,13 @@ func process_blocked_attack(delta: float, blocker: Node) -> void:
 		return
 	var damage_type: int = _parse_damage_type(String(_owner_actor.cfg.get("damage_type", "physical")))
 	var damage_value: int = int(_owner_actor.cfg.get("atk", 1))
+	if uses_projectile_blocked_attack_for_cfg(_owner_actor.cfg):
+		_debug_log("敌人 %s#%d 远程攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), _runtime_id(), blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
+		_play_owner_attack_lunge()
+		if _launch_projectile(blocker, damage_value, damage_type) == null:
+			_resolve_range_hit(blocker, damage_value, damage_type)
+		set_attack_cooldown_from_cfg()
+		return
 	_debug_log("敌人 %s#%d 攻击阻挡单位 %s#%d，%s伤害 %d" % [_debug_name(), _runtime_id(), blocker.unit_id, blocker.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	_play_owner_attack_lunge()
 	_play_melee_hit_effect(blocker)
@@ -191,7 +198,11 @@ func _apply_attack_splash(primary_target: Node) -> void:
 
 
 func _uses_projectile_range_attack() -> bool:
-	return _owner_actor != null and StringName(_owner_actor.cfg.get("attack_delivery", "instant")) == &"projectile"
+	return _owner_actor != null and uses_projectile_blocked_attack_for_cfg(_owner_actor.cfg)
+
+
+func uses_projectile_blocked_attack_for_cfg(enemy_cfg: Dictionary) -> bool:
+	return StringName(enemy_cfg.get("attack_delivery", "instant")) == &"projectile"
 
 
 func _launch_projectile(target: Node, damage_value: int, damage_type: int) -> Node:
