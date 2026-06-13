@@ -1,10 +1,8 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/dialog_panel.gd" id="1_dialog_panel"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_box_base.tres" id="2_dialog_box"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_speaker_plate_base.tres" id="3_speaker_plate"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_box_base_fit_1700x238.tres" id="fit_frame_dialog_box_base_1700x238"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_speaker_plate_base_fit_240x42.tres" id="fit_frame_dialog_speaker_plate_base_240x42"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_box_base.tres" id="frame_dialog_box_base_1700x238"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_speaker_plate_base.tres" id="frame_dialog_speaker_plate_base_240x42"]
 
 [node name="DialogPanel" type="Control"]
 layout_mode = 3
@@ -73,7 +71,7 @@ offset_bottom = -44.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 0
-theme_override_styles/panel = ExtResource("fit_frame_dialog_box_base_1700x238")
+theme_override_styles/panel = ExtResource("frame_dialog_box_base_1700x238")
 
 [node name="TextMargin" type="MarginContainer" parent="TextBox"]
 layout_mode = 2
@@ -87,7 +85,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_dialog_speaker_plate_base_240x42")
+theme_override_styles/panel = ExtResource("frame_dialog_speaker_plate_base_240x42")
 
 [node name="SpeakerMargin" type="MarginContainer" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate"]
 layout_mode = 2

@@ -1,6 +1,6 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://bjg8s3bredb45"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_unit_header_strip_fit_refs.png" id="1_header_strip"]
+[ext_resource type="Texture2D" uid="uid://dn0wtc4n8n13r" path="res://assets/ui/generated/frame_unit_header_strip.png" id="1_header_strip"]
 
 [resource]
 content_margin_left = 14.0

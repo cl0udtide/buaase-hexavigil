@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://doumusijd3dr4"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_slider_fill_fit_refs.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://bv3a1i3258f6r" path="res://assets/ui/generated/frame_slider_fill.png" id="1_texture"]
 
 [resource]
-texture = ExtResource("1_texture")
-texture_margin_left = 1.07
-texture_margin_top = 1.00
-texture_margin_right = 1.07
-texture_margin_bottom = 1.00
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-draw_center = true
+texture = ExtResource("1_texture")
+texture_margin_left = 1.07
+texture_margin_top = 1.0
+texture_margin_right = 1.07
+texture_margin_bottom = 1.0

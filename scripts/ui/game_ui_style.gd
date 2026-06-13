@@ -65,7 +65,6 @@ const FRAME_SCROLL_THUMB_HORIZONTAL := UiFrameSpec.SCROLL_THUMB_HORIZONTAL
 const FRAME_SLIDER_TRACK := UiFrameSpec.SLIDER_TRACK
 const FRAME_SLIDER_FILL := UiFrameSpec.SLIDER_FILL
 const FRAME_SLIDER_HANDLE := UiFrameSpec.SLIDER_HANDLE
-const FRAME_CORE_PROGRESS_FILL := &"bar_progress_fill_core"
 
 
 const BG := Color(0.035, 0.045, 0.052, 1.0)
@@ -219,14 +218,17 @@ static func flat_box(fill: Color, border: Color, border_width: float = 1.0, radi
 
 
 static func button(border: Color, fill_alpha: float = 0.18) -> StyleBox:
-	var component := UiFrameSpec.BUTTON
-	if border == ACCENT or border == STROKE_STRONG or border == SUCCESS:
-		component = UiFrameSpec.BUTTON_HOVER
-	elif border == AMBER:
-		component = UiFrameSpec.BUTTON_PRESSED
-	elif fill_alpha <= 0.10 or border == STROKE_SOFT:
-		component = UiFrameSpec.BUTTON_DISABLED if fill_alpha <= 0.10 else UiFrameSpec.BUTTON
-	return frame_box(component, BG_CARD, border)
+	var fill := BG_DISABLED if fill_alpha <= 0.10 else BG_CARD
+	return frame_box(UiFrameSpec.BUTTON, fill, border)
+
+
+static func apply_button_state_styles(button: Button, variant: StringName = &"primary") -> void:
+	if button == null:
+		return
+	button.add_theme_stylebox_override("normal", frame_box(UiFrameSpec.BUTTON, BG_CARD, STROKE_SOFT))
+	button.add_theme_stylebox_override("hover", frame_box(UiFrameSpec.BUTTON, BG_CARD, ACCENT if variant != &"danger" else DANGER))
+	button.add_theme_stylebox_override("pressed", frame_box(UiFrameSpec.BUTTON, BG_CARD, AMBER if variant != &"danger" else DANGER))
+	button.add_theme_stylebox_override("disabled", frame_box(UiFrameSpec.BUTTON, BG_DISABLED, STROKE_SOFT))
 
 
 static func card(border: Color, fill: Color = BG_CARD, border_width: float = 1.0) -> StyleBox:
@@ -507,7 +509,7 @@ static func tab(selected: bool) -> StyleBox:
 
 static func compact_button(selected: bool = false) -> StyleBox:
 	if selected:
-		return frame_box(UiFrameSpec.BUTTON_COMPACT_SELECTED, BG_CARD, AMBER)
+		return frame_box(UiFrameSpec.BUTTON_COMPACT, BG_CARD, AMBER)
 	return frame_box(UiFrameSpec.BUTTON_COMPACT, BG_CARD, STROKE_SOFT)
 
 
@@ -548,7 +550,7 @@ static func accent_button(accent: Color) -> StyleBox:
 
 
 static func skill_button_primary() -> StyleBox:
-	return frame_box(UiFrameSpec.SKILL_BUTTON_PRIMARY, BG_CARD, ACCENT)
+	return frame_box(UiFrameSpec.BUTTON, BG_CARD, ACCENT)
 
 
 static func secondary_button() -> StyleBox:
@@ -556,28 +558,11 @@ static func secondary_button() -> StyleBox:
 
 
 static func danger_button() -> StyleBox:
-	return frame_box(UiFrameSpec.BUTTON_DANGER, BG_CARD, DANGER)
+	return frame_box(UiFrameSpec.BUTTON, BG_CARD, DANGER)
 
 
 static func disabled_button() -> StyleBox:
 	return button(STROKE_SOFT, 0.08)
-
-
-static func progress_background() -> StyleBox:
-	return frame_box(UiFrameSpec.PROGRESS_TRACK, Color(0.075, 0.095, 0.095, 1.0), Color(0.260, 0.280, 0.245, 1.0))
-
-
-static func progress_fill(color: Color) -> StyleBox:
-	var component := UiFrameSpec.PROGRESS_BLUE
-	if color.r > color.b and color.r > color.g:
-		component = UiFrameSpec.PROGRESS_RED
-	elif color.g > color.b or color == AMBER:
-		component = UiFrameSpec.PROGRESS_AMBER
-	return frame_box(component, color, color)
-
-
-static func core_progress_fill() -> StyleBox:
-	return frame_box(FRAME_CORE_PROGRESS_FILL, AMBER, AMBER, false)
 
 
 static func resource_item() -> StyleBox:

@@ -1,30 +1,32 @@
 [gd_scene format=3 uid="uid://dt2d2gea25boo"]
 
 [ext_resource type="Script" uid="uid://ddcsa4amltbei" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_5d67m"]
+[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_track.tres" id="7_progress_track"]
 [ext_resource type="StyleBox" uid="uid://b4phcukgldcr8" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
 [ext_resource type="Texture2D" uid="uid://bve40fshc4erx" path="res://assets/ui/generated/icon_confirm.png" id="18_iconconfirm"]
 [ext_resource type="Texture2D" uid="uid://776t8mbum45w" path="res://assets/ui/generated/icon_cancel.png" id="19_iconcancel"]
 [ext_resource type="Texture2D" uid="uid://bw5ue8jdgn1fl" path="res://assets/ui/generated/icon_skill_ready.png" id="20_iconskillready"]
 [ext_resource type="Texture2D" uid="uid://dmtkqa51h5cwo" path="res://assets/ui/generated/icon_retreat.png" id="22_iconretreat"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_hp_fit_1x30.tres" id="fit_bar_progress_fill_hp_1x30"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_sp_fit_1x30.tres" id="fit_bar_progress_fill_sp_1x30"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base_fit_344x44.tres" id="fit_frame_button_base_344x44"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_danger_overlay_fit_344x44.tres" id="fit_frame_button_danger_overlay_344x44"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay_fit_344x44.tres" id="fit_frame_button_disabled_overlay_344x44"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay_fit_344x60.tres" id="fit_frame_button_disabled_overlay_344x60"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay_fit_344x44.tres" id="fit_frame_button_primary_overlay_344x44"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay_fit_344x60.tres" id="fit_frame_button_primary_overlay_344x60"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base_fit_344x108.tres" id="fit_frame_detail_section_base_344x108"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base_fit_344x116.tres" id="fit_frame_detail_section_base_344x116"]
-[ext_resource type="StyleBox" uid="uid://bohopfctstsk6" path="res://assets/ui/styles/frame_detail_section_base_fit_344x230.tres" id="fit_frame_detail_section_base_344x230"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_right_detail_sidebar_base_fit_384x780.tres" id="fit_frame_right_detail_sidebar_base_384x780"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_backplate_fit_64x64.tres" id="fit_frame_skill_icon_backplate_64x64"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_frame_fit_64x64.tres" id="fit_frame_skill_icon_frame_64x64"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_header_strip_fit_344x72.tres" id="fit_frame_unit_header_strip_344x72"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_portrait_backplate_fit_96x96.tres" id="fit_frame_unit_portrait_backplate_96x96"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_portrait_frame_fit_96x96.tres" id="fit_frame_unit_portrait_frame_96x96"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_stat_row_fit_132x40.tres" id="fit_frame_unit_stat_row_132x40"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_hp.tres" id="bar_progress_fill_hp"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_sp.tres" id="bar_progress_fill_sp"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_344x44"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="frame_button_danger_overlay_344x44"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_344x44"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_344x60"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_344x44"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_344x60"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="frame_detail_section_base_344x108"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="frame_detail_section_base_344x116"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="frame_detail_section_base_344x230"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_right_detail_sidebar_base.tres" id="frame_right_detail_sidebar_base_384x780"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_backplate.tres" id="frame_skill_icon_backplate_64x64"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_icon_frame.tres" id="frame_skill_icon_frame_64x64"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_header_strip.tres" id="frame_unit_header_strip_344x72"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_portrait_backplate.tres" id="frame_unit_portrait_backplate_96x96"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_portrait_frame.tres" id="frame_unit_portrait_frame_96x96"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_unit_stat_row.tres" id="frame_unit_stat_row_132x40"]
 
 [node name="UnitDetailPanel" type="Control" unique_id=740705112]
 layout_mode = 3
@@ -41,7 +43,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_right_detail_sidebar_base_384x780")
+theme_override_styles/panel = ExtResource("frame_right_detail_sidebar_base_384x780")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=61595390]
 layout_mode = 1
@@ -78,7 +80,7 @@ offset_bottom = 5.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_header_strip_344x72")
+theme_override_styles/panel = ExtResource("frame_unit_header_strip_344x72")
 
 [node name="HeaderMargin" type="MarginContainer" parent="ContentMargin/MainVBox/Header" unique_id=195937055]
 layout_mode = 1
@@ -135,7 +137,7 @@ offset_right = -14.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_detail_section_base_344x116")
+theme_override_styles/panel = ExtResource("frame_detail_section_base_344x116")
 
 [node name="VitalsMargin" type="MarginContainer" parent="ContentMargin/MainVBox/VitalsSection" unique_id=91686885]
 layout_mode = 1
@@ -176,7 +178,7 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.94812405, 0.94812405)
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_portrait_backplate_96x96")
+theme_override_styles/panel = ExtResource("frame_unit_portrait_backplate_96x96")
 
 [node name="PortraitTexture" type="TextureRect" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/PortraitStack" unique_id=215726508]
 unique_name_in_owner = true
@@ -228,7 +230,7 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.94812405, 0.94812405)
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_portrait_frame_96x96")
+theme_override_styles/panel = ExtResource("frame_unit_portrait_frame_96x96")
 
 [node name="VitalsColumn" type="VBoxContainer" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow" unique_id=987401178]
 layout_mode = 2
@@ -263,12 +265,28 @@ scale = Vector2(0.88, 0.63999873)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_progress_track")
 
-[node name="HpFill" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/HpBar" unique_id=2106132034]
+[node name="HpClip" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/HpBar" unique_id=206459544]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.999999
+offset_top = 7.0
+offset_right = 6.0
+offset_bottom = 7.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.88, 0.63999873)
+mouse_filter = 2
+
+[node name="HpFill" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/HpBar/HpClip" unique_id=2106132034]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_bottom = 1.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_bar_progress_fill_hp_1x30")
+theme_override_styles/panel = ExtResource("bar_progress_fill_hp")
 
 [node name="SpValueLabel" type="Label" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn" unique_id=1257285730]
 unique_name_in_owner = true
@@ -298,12 +316,28 @@ scale = Vector2(0.88, 0.63999873)
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("7_progress_track")
 
-[node name="SpFill" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/SpBar" unique_id=771368971]
+[node name="SpClip" type="Control" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/SpBar" unique_id=1616210337]
+unique_name_in_owner = true
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.999999
+offset_top = 4.0
+offset_right = 6.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.88, 0.63999873)
+mouse_filter = 2
+
+[node name="SpFill" type="Panel" parent="ContentMargin/MainVBox/VitalsSection/VitalsMargin/VitalsRow/VitalsColumn/SpBar/SpClip" unique_id=771368971]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_bottom = 1.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_bar_progress_fill_sp_1x30")
+theme_override_styles/panel = ExtResource("bar_progress_fill_sp")
 
 [node name="StatsSection" type="Control" parent="ContentMargin/MainVBox" unique_id=1724440287]
 unique_name_in_owner = true
@@ -323,7 +357,7 @@ offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_detail_section_base_344x108")
+theme_override_styles/panel = ExtResource("frame_detail_section_base_344x108")
 
 [node name="StatsMargin" type="MarginContainer" parent="ContentMargin/MainVBox/StatsSection" unique_id=1481552703]
 layout_mode = 1
@@ -352,7 +386,7 @@ columns = 2
 custom_minimum_size = Vector2(132, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
+theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
 
 [node name="AtkStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/AtkStatRow" unique_id=345724679]
 unique_name_in_owner = true
@@ -365,7 +399,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(132, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
+theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
 
 [node name="DefStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/DefStatRow" unique_id=2032588346]
 unique_name_in_owner = true
@@ -378,7 +412,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(132, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
+theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
 
 [node name="ResStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/ResStatRow" unique_id=801542100]
 unique_name_in_owner = true
@@ -391,7 +425,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(132, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
+theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
 
 [node name="BlockStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/BlockStatRow" unique_id=524157900]
 unique_name_in_owner = true
@@ -404,7 +438,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(132, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
+theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
 
 [node name="AspdStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/AspdStatRow" unique_id=336823004]
 unique_name_in_owner = true
@@ -417,7 +451,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_unit_stat_row_132x40")
+theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
 
 [node name="CovenantStatLabel" type="Label" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows/CovenantStatRow" unique_id=336823100]
 unique_name_in_owner = true
@@ -444,7 +478,7 @@ offset_bottom = 10.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_detail_section_base_344x230")
+theme_override_styles/panel = ExtResource("frame_detail_section_base_344x230")
 
 [node name="SkillMargin" type="MarginContainer" parent="ContentMargin/MainVBox/SkillSection" unique_id=119127089]
 layout_mode = 1
@@ -488,7 +522,7 @@ offset_right = 22.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_skill_icon_backplate_64x64")
+theme_override_styles/panel = ExtResource("frame_skill_icon_backplate_64x64")
 
 [node name="SkillIconTexture" type="TextureRect" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow/SkillIconStack" unique_id=1597858128]
 unique_name_in_owner = true
@@ -539,7 +573,7 @@ offset_right = 22.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_skill_icon_frame_64x64")
+theme_override_styles/panel = ExtResource("frame_skill_icon_frame_64x64")
 
 [node name="SkillTitleLabel" type="Label" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=1912957347]
 unique_name_in_owner = true
@@ -622,14 +656,40 @@ size_flags_horizontal = 6
 focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 18
-theme_override_styles/normal = ExtResource("fit_frame_button_primary_overlay_344x60")
-theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_344x60")
-theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_344x60")
-theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_344x60")
+theme_override_styles/normal = ExtResource("frame_button_base")
+theme_override_styles/pressed = ExtResource("frame_button_base")
+theme_override_styles/hover = ExtResource("frame_button_base")
+theme_override_styles/disabled = ExtResource("frame_button_base")
 text = "购买"
+
+[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/PurchaseButton" unique_id=648963733]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_344x60")
+
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/PurchaseButton" unique_id=648963734]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_344x60")
+
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/Actions/PurchaseButton"]
+script = ExtResource("button_state_overlay")
 
 [node name="PurchaseButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/PurchaseButton" unique_id=2034748711]
 unique_name_in_owner = true
+z_index = 2
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -653,14 +713,40 @@ size_flags_horizontal = 6
 focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 18
-theme_override_styles/normal = ExtResource("fit_frame_button_primary_overlay_344x44")
-theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_344x44")
-theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_344x44")
-theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_344x44")
+theme_override_styles/normal = ExtResource("frame_button_base_344x44")
+theme_override_styles/pressed = ExtResource("frame_button_base_344x44")
+theme_override_styles/hover = ExtResource("frame_button_base_344x44")
+theme_override_styles/disabled = ExtResource("frame_button_base_344x44")
 text = "升星"
+
+[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/StarUpButton" unique_id=579740241]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_344x44")
+
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/StarUpButton" unique_id=579740242]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_344x44")
+
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/Actions/StarUpButton"]
+script = ExtResource("button_state_overlay")
 
 [node name="StarUpButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/StarUpButton" unique_id=671203998]
 unique_name_in_owner = true
+z_index = 2
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -684,14 +770,41 @@ size_flags_horizontal = 6
 focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 18
-theme_override_styles/normal = ExtResource("fit_frame_button_base_344x44")
-theme_override_styles/pressed = ExtResource("fit_frame_button_danger_overlay_344x44")
-theme_override_styles/hover = ExtResource("fit_frame_button_danger_overlay_344x44")
-theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_344x44")
+theme_override_styles/normal = ExtResource("frame_button_base_344x44")
+theme_override_styles/pressed = ExtResource("frame_button_base_344x44")
+theme_override_styles/hover = ExtResource("frame_button_base_344x44")
+theme_override_styles/disabled = ExtResource("frame_button_base_344x44")
 text = "出售"
+
+[node name="DangerOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/SellButton" unique_id=748260026]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_danger_overlay_344x44")
+
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/SellButton" unique_id=748260027]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_344x44")
+
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/Actions/SellButton"]
+script = ExtResource("button_state_overlay")
+active_overlay_name = &"DangerOverlay"
 
 [node name="SellButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/SellButton" unique_id=1670725255]
 unique_name_in_owner = true
+z_index = 2
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -714,14 +827,40 @@ size_flags_horizontal = 6
 focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 18
-theme_override_styles/normal = ExtResource("fit_frame_button_primary_overlay_344x44")
-theme_override_styles/pressed = ExtResource("fit_frame_button_primary_overlay_344x44")
-theme_override_styles/hover = ExtResource("fit_frame_button_primary_overlay_344x44")
-theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_344x44")
+theme_override_styles/normal = ExtResource("frame_button_base_344x44")
+theme_override_styles/pressed = ExtResource("frame_button_base_344x44")
+theme_override_styles/hover = ExtResource("frame_button_base_344x44")
+theme_override_styles/disabled = ExtResource("frame_button_base_344x44")
 text = "激活技能"
+
+[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/CastSkillButton" unique_id=907807664]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_344x44")
+
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/CastSkillButton" unique_id=907807665]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_344x44")
+
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/Actions/CastSkillButton"]
+script = ExtResource("button_state_overlay")
 
 [node name="CastSkillButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/CastSkillButton" unique_id=1341597023]
 unique_name_in_owner = true
+z_index = 2
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -744,14 +883,41 @@ size_flags_horizontal = 6
 focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 18
-theme_override_styles/normal = ExtResource("fit_frame_button_base_344x44")
-theme_override_styles/pressed = ExtResource("fit_frame_button_danger_overlay_344x44")
-theme_override_styles/hover = ExtResource("fit_frame_button_danger_overlay_344x44")
-theme_override_styles/disabled = ExtResource("fit_frame_button_disabled_overlay_344x44")
+theme_override_styles/normal = ExtResource("frame_button_base_344x44")
+theme_override_styles/pressed = ExtResource("frame_button_base_344x44")
+theme_override_styles/hover = ExtResource("frame_button_base_344x44")
+theme_override_styles/disabled = ExtResource("frame_button_base_344x44")
 text = "撤退"
+
+[node name="DangerOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/RetreatButton" unique_id=1465338669]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_danger_overlay_344x44")
+
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/Actions/RetreatButton" unique_id=1465338670]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_344x44")
+
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/Actions/RetreatButton"]
+script = ExtResource("button_state_overlay")
+active_overlay_name = &"DangerOverlay"
 
 [node name="RetreatButtonIcon" type="TextureRect" parent="ContentMargin/MainVBox/Actions/RetreatButton" unique_id=208887704]
 unique_name_in_owner = true
+z_index = 2
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5

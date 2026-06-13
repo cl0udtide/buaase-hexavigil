@@ -37,11 +37,6 @@ func _apply_visual_style() -> void:
 	tooltip_text = "设置"
 	var gear_texture := UiArtRegistry.get_catalog_icon(&"button_settings")
 	GameUiStyle.set_button_texture_icon(self, gear_texture, &"center")
-	var gear_label := get_node_or_null("GearIcon") as Label
-	if gear_label != null:
-		gear_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if gear_texture != null:
-			gear_label.visible = false
 	GameUiStyle.center_button_text(self)
 	add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
