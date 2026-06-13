@@ -1,139 +1,113 @@
 # UI Asset AI Regeneration TODO
 
-本文档只记录经过现有素材逐张筛查后仍需要 AI 或美术重生成的 UI 框架源素材。不要再默认全量重生 84 个 `stylebox_texture` 资源；每次只处理下表中的一小组，并在替换前完成裁切、alpha、品红残留、分层和九宫格检查。
+本文档只记录经过“源图外观 + 实际 UI 位置 + 九宫格拉伸方向”复核后，仍值得重新生成的少量 UI 框架素材。不要全量重生；每次只处理一个 UI 区域或一小组强相关素材。
 
-## 筛查结论
+## 纳入标准
 
-当前优先问题分两类：
+只有同时满足以下条件之一，才进入本轮重生成列表：
 
-1. **上下、左右边框不干净，不适合九宫格拉伸。**
-   很多素材把菱形、徽章、铆钉、机械板、中心牌匾、分隔柱、固定槽位放在四边中段。Godot `StyleBoxTexture` 拉伸时这些细节会被压扁、重复或变形。需要重生成边中段连续、干净、可重复的版本；如果确实需要装饰，装饰应拆成额外 overlay 或角部素材，不要烘进可拉伸边。
+- 实际组件会被明显横向或纵向拉伸，且当前图在该拉伸方向的边中段有徽章、分隔柱、固定槽位、断裂结构、中心牌匾等不可重复装饰。
+- 源图比例或语义与实际节点明显不符，例如竖卡被当宽条、宽条被当高面板、整组选中框被当单个选中态。
+- 内层卡片/标题条/状态 overlay 复制外层卡片边框，导致卡片套卡片、状态层像第二张底板，且该问题在实际节点层级中很显眼。
 
-2. **卡片内的卡片边框与外卡片过于重复，缺少层级设计。**
-   一些内层卡片、属性行、标题条、按钮、徽标直接复制外层卡框语言，导致 UI 像一堆同款边框互相套娃。重生成时必须结合实际节点结构与位置：外层容器更安静，内层卡片更轻，属性行/标题条更简洁，按钮更像可点击件，overlay 只表达状态。
+不纳入本轮的情况：
 
-硬性通过项：所有候选 PNG 必须只有 `{0,255}` alpha，且不透明像素中不能残留品红背景。背景去除必须走 `scripts/dev/crop_ui_assets.py` 或基于它的现有裁切逻辑。
+- 实际使用主要是缩小，而不是过度拉伸。
+- 问题可以通过 Godot 运行时 modulation、裁剪或 template margins 缓解。
+- 图标、头像框、小徽章、进度填充、滑条轨道/填充/拖柄等目前没有明显九宫格拉伸破坏。
 
-## 工作流
+## 必须遵守
 
-1. 先确认目标 key 在 `scenes/` 与 `scripts/` 中的实际位置和层级职责。
-2. 生图前必须为每个小组准备明确上下文包：asset key、目标 UI 节点路径、实际用途、target/base size、当前 source 预览、相邻父子层级、对应 template margins、必须避开的旧图问题。
-3. 提示词必须引用具体参考：同一 UI 区域中应保持的外层/内层/按钮/信息条层级关系，以及可以参考或必须区别开的现有素材。
-4. 子 Agent 可以并行生图，但只能输出到临时目录，例如 `tmp/ui_regen_workers/<worker>/raw/` 与 `tmp/ui_regen_workers/<worker>/candidate/`。
-5. 主 Agent 串行验收：只接收通过检查的候选图，并只替换 `assets/ui/source/<asset_key>.png`。
-6. 保存 raw sheet 到 `assets/raw/`，文件名稳定英文；正式替换后运行派生脚本生成 `generated/styles`。
-7. 不直接手改 `assets/ui/generated/` 或 `assets/ui/styles/`；它们只由派生脚本写入。
-
-## 通用重生成规则
-
-- 背景必须是纯 `#FF00FF`，裁切入库后背景完全透明。
-- 不得生成或保留半透明像素；最终 PNG alpha 只能是 `0` 或 `255`。
+- 生图只能用 imagegen；Python 只能裁切、去背景、检测、校验，不能程序化绘制新 UI。
+- 生图背景必须是纯 `#FF00FF`；入库后背景完全透明。
+- 最终 PNG alpha 只能是 `{0,255}`，不得有半透明像素。
 - 不得有文字、数字、字母、水印、签名、假 UI 文案、固定列表、固定按钮组、固定进度。
+- 只替换 `assets/ui/source/<asset_key>.png`；`assets/ui/generated/` 与 `assets/ui/styles/` 由派生脚本生成。
 - `*_base` 只做底板或承托，不画运行时内容。
-- `*_overlay` 只做状态叠层，不复制底板，不带实心卡面。
-- `*_backplate` 是内容下方托盘，中心应干净可放图标/头像。
-- `*_frame` 是内容上方覆盖框，中心必须是透明孔洞。
-- 进度条与滑条必须拆成 track/fill/handle，不画固定百分比；handle 必须是独立拖柄。
-- 九宫格边中段必须连续、干净、可重复。徽章、菱形、铆钉、独特机械板、断裂结构、中心牌匾只能放四角，或拆成额外 overlay。
+- `*_overlay` 只表达状态，不复制底板，不带实心卡面。
+- 九宫格边中段必须连续、干净、可重复；装饰只放四角，或拆成额外 overlay。
 
-## 需要优先重生成的资源
+## 优先重生成清单
 
-| Asset | 位置/用途 | 问题类型 | 重生成重点 |
+| Asset | 实际位置/尺寸依据 | 为什么必须重生成 | 重生成成什么样 |
 |---|---|---|---|
-| `frame_button_base` | 通用按钮底板 | 边中段菱形/装饰不适合九宫格 | 保留可点击感；上下左右边中完全连续，装饰只在四角。 |
-| `frame_button_primary_overlay` | 主按钮状态 | overlay 过像完整边框，边中有装饰 | 透明中心，只保留轻描边/高亮；不复制底板。 |
-| `frame_button_danger_overlay` | 危险按钮状态 | overlay 过像完整边框，边中有装饰 | 透明中心，危险色只做描边或角部状态。 |
-| `frame_button_disabled_overlay` | 禁用按钮状态 | overlay 过像完整边框，边中有装饰 | 透明中心或硬边遮罩，不用半透明像素。 |
-| `frame_tooltip_base` | Tooltip 底板 | 上下边中段有徽章/牌匾 | 大面积中心干净；边中连续。 |
-| `frame_icon_backplate` | 通用图标背板 | 四边中点菱形装饰 | 作为固定托盘可有角装饰，但不要边中徽章。 |
-| `frame_icon_frame` | 通用图标覆盖框 | 四边中点菱形装饰 | 中心孔洞透明；边中干净。 |
-| `frame_scroll_thumb` | 滚动条拖块 | 中段刻线/端饰拉伸风险 | 端点固定，中段纯净可拉伸。 |
-| `bar_progress_track` | HP/SP/Core 底轨 | 边中固定板件/刻线 | 左右端帽固定，中段连续暗槽。 |
-| `bar_progress_fill_hp` | HP 填充 | 像完整满条，运行时裁剪风险 | 不画固定百分比；中段连续，颜色可由运行时裁剪/缩放使用。 |
-| `bar_progress_fill_sp` | SP 填充 | 像完整满条，运行时裁剪风险 | 同上，避免右端固定装饰被裁断。 |
-| `bar_progress_fill_core` | Core 填充 | 像完整满条，运行时裁剪风险 | 同上。 |
-| `frame_slider_track` | 设置滑条轨道 | 中段固定刻线/板件 | 左右端帽固定，中段连续。 |
-| `frame_slider_fill` | 设置滑条填充 | 中段固定装饰/固定比例感 | 完整可裁剪填充，不画百分比。 |
-| `frame_slider_handle` | 设置滑条拖柄 | 画成横向滑轨，不是独立 handle | 生成接近 40x40 的独立拖柄。 |
-| `frame_top_status_bar_base` | 顶部状态栏 | 中段固定槽/板件 | 只做整条承托，不画固定 chip 或槽位。 |
-| `frame_top_status_chip_active_overlay` | 顶部 chip 状态 | 侧板过重，像复制底板 | 透明中心，轻描边/角部高亮。 |
-| `frame_speed_toggle_base` | 倍速容器 | 画死固定分段 | 只做一个容器底板，分段由节点或 overlay 表达。 |
-| `frame_speed_toggle_active_overlay` | 倍速选中态 | 画成整组 overlay | 单个 110x52 可移动选中层，不带整组结构。 |
-| `frame_relic_strip_base` | 遗物摘要条 | 中段固定面板/槽位 | 长条承托，不能画固定遗物槽。 |
-| `frame_left_sidebar_base` | 左侧建筑栏 | 边中段灯条/机械块拉伸风险 | 外层侧栏要安静、薄、背景化。 |
-| `frame_sidebar_tab_base` | 左侧页签底 | 过像卡片，边中装饰 | 页签应比列表卡轻，边中连续。 |
-| `frame_sidebar_tab_selected_overlay` | 左侧页签选中 | 复制完整底板/飘带 | 透明状态层，不带实心底。 |
-| `frame_build_list_card_base` | 建筑列表项 | 造型可参考但需确认边中与内层关系 | 保留战术感；内容区要承托，不要只是空心外框。 |
-| `frame_bottom_deploy_rail_base` | 底部部署栏 | 方向/语义错误风险 | 必须是宽横向 rail，不画固定卡槽。 |
-| `frame_operator_card_base` | 干员卡底 | 与 rail/内层卡重复，语义错位 | 竖向卡片；外层卡面明确但不内置头像框/费用/属性。 |
-| `frame_operator_card_selected_overlay` | 干员卡选中 | 完整边框式 overlay | 只做轻描边/角部高亮，不复制卡底。 |
-| `frame_operator_card_deployed_overlay` | 干员卡已部署 | 完整边框式 overlay | 状态色/角标叠层，不带底板。 |
-| `frame_operator_card_cooldown_overlay` | 干员卡冷却 | 复制完整实心底板 | 使用硬边遮罩/线性遮挡层，不写冷却数字。 |
-| `frame_operator_card_cooldown_selected_overlay` | 冷却且选中 | 完整边框式 overlay | 冷却遮罩 + 轻选中提示，透明中心。 |
-| `frame_operator_title_strip` | 干员卡标题条 | 像小面板，层级太重 | 做轻量嵌入式标题条，不复制外卡边框。 |
-| `frame_operator_portrait_backplate` | 干员头像背板 | 与 frame 职责混淆 | 必须是横向 128x72 不透明托盘。 |
-| `frame_operator_portrait_frame` | 干员头像框 | 中心孔洞/比例需严格 | 横向 128x72 覆盖框，中心透明。 |
-| `frame_operator_stat_row` | 干员属性行 | 边中装饰过重 | 更轻、更低对比，像嵌入式信息槽。 |
-| `frame_right_detail_sidebar_base` | 右侧详情栏 | 边中灯条/机械块拉伸风险 | 外层侧栏背景化，少装饰。 |
-| `frame_unit_header_strip` | 单位详情标题条 | 上下边中牌匾/灯条 | 标题条应轻量，边中连续。 |
-| `frame_detail_section_base` | 详情分组底 | 上下中心牌匾 | 分组底比外框更轻，不要复制卡片边框。 |
-| `frame_unit_stat_row` | 单位属性行 | 边中灯条/装饰 | 嵌入式信息行，低对比，边中干净。 |
-| `frame_skill_desc_box` | 技能描述框 | 上下中心牌匾 | 描述框中心干净，边中连续。 |
-| `frame_relic_panel_base` | 遗物面板 | 上下中心徽章/边中装饰 | 大面板更安静，装饰拆角或 overlay。 |
-| `frame_relic_filter_tab_base` | 遗物筛选 tab | 边中牌匾/侧板 | 小 tab 更轻，不能像完整卡片。 |
-| `frame_relic_filter_selected_overlay` | 筛选选中 | 复制完整 tab 边框 | 透明状态层，轻描边。 |
-| `frame_relic_card_base` | 遗物卡 | 上下徽章/侧板拉伸风险 | 与面板区分，作为中层卡片，不内置图标框/文本。 |
-| `frame_relic_card_hover_overlay` | 遗物卡 hover | 完整卡框式 overlay | 只做高亮/描边，不复制 card base。 |
-| `frame_relic_rarity_common_overlay` | 常见稀有度 | 完整边框/侧板 | 稀有度应是轻叠层，不是另一个卡框。 |
-| `frame_relic_rarity_uncommon_overlay` | 精良稀有度 | 完整边框/侧板 | 同上，颜色可运行时或轻描边体现。 |
-| `frame_relic_rarity_rare_overlay` | 稀有稀有度 | 完整边框/侧板 | 同上，避免厚金框。 |
-| `frame_settings_panel_base` | 设置面板 | 四边中段机械板/螺丝 | 弹窗底板中心干净，边中连续。 |
-| `frame_settings_row_base` | 设置项行 | 上下边中固定机械块 | 设置行应轻量，像嵌入式行底。 |
-| `frame_blessing_panel_base` | 祝福面板 | 顶/底中段宝石装饰 | 大面板装饰拆角或 overlay。 |
-| `frame_blessing_choice_card_base` | 祝福候选卡 | 方向错误，需横向 560x112 | 横向候选卡，区别于遗物卡但同家族。 |
-| `frame_event_panel_base` | 事件面板 | 顶部固定状态条/刻度 | 不画固定标题条或内容结构。 |
-| `frame_event_choice_button_base` | 事件选项按钮 | 比例错误/假刻痕 | 横向 560x64 按钮底，不写文字。 |
-| `frame_map_popup_base` | 地图弹窗 | 像窄条，不是面板 | 360x260 弹窗底板，中心可放动态按钮。 |
-| `frame_dialog_speaker_plate_base` | 对话说话人名牌 | 边中装饰过重 | 名牌底板轻量，不能画名字。 |
-| `frame_result_panel_base` | 结算面板 | 过扁，目标是高面板 | 720x520 高面板，不画统计项。 |
-| `frame_result_stat_row_base` | 结算统计行 | 高度/边饰过重 | 600x44 细行，内层信息槽风格。 |
-| `frame_wave_preview_base` | 今晚敌情面板 | 边中刻度/状态灯 | 不画固定敌人条目或路线槽。 |
-| `frame_legend_panel_base` | 图例面板 | 上下中心 tab 装饰 | 小面板边中连续。 |
-| `frame_legend_row_base` | 图例行 | 端部装饰占比过大 | 220x28 极细行，细节简化。 |
-| `frame_resource_item_base` | 顶部资源项 | 左右固定盒状结构抢内容区 | 小资源项应简洁，给图标/数值留空间。 |
-| `frame_wave_enemy_row_base` | 今晚敌情行 | 中段多个固定卡扣 | 320x32 细行，边中连续。 |
-| `frame_wave_route_toggle_base` | 路线开关底 | 画死分隔柱 | 不画固定多段结构。 |
-| `frame_action_panel_base` | ActionPanel 底 | 固定装饰重，中心纹理抢内容 | 白天操作面板外框安静，按钮由节点生成。 |
+| `frame_bottom_deploy_rail_base` | `scenes/ui/combat/CombatHud.tscn` 底部部署栏；配置目标约 `980x176`，当前源图约 `350x196` | 实际是横向很宽的部署 rail，当前更像竖向/短面板，横向拉伸约 2.8 倍；若边中有固定板件或槽位会被拉长，且会和干员卡外框重复 | 宽横向战术部署栏底板；中段是连续暗色承托面，不画固定卡槽、按钮组、角色位；角部可有轻装饰 |
+| `frame_operator_card_base` | `scenes/ui/combat/OperatorCard.tscn` 根卡片 `164x184` | 实际是竖向干员卡，当前源图比例接近横条，压缩/拉伸后层级和留白都不对；如果内置头像/属性区会和真实子节点重复 | 竖向干员卡底板；外轮廓清晰但中部干净，不内置头像框、费用徽章、属性行或文字 |
+| `frame_operator_title_strip` | `OperatorCard.tscn` 标题条 `132x42` | 实际是卡片内部的轻量标题条，当前像完整小面板，被压扁后形成卡片套卡片 | 横向短标题条，低对比、薄边、嵌入式；不要复制 `frame_operator_card_base` 的厚边框 |
+| `frame_operator_card_selected_overlay` | `OperatorCard.tscn` 选中态覆盖整张卡 `164x184` | 状态层若复制完整卡框，会在干员卡上叠出第二层边框；这是实际 hover/selected 最显眼的问题 | 透明中心的轻描边/角部高亮；严格贴合干员卡外轮廓，不带实心底板 |
+| `frame_operator_card_deployed_overlay` | `OperatorCard.tscn` 已部署状态覆盖整张卡 `164x184` | 与选中态同类，完整边框式 overlay 会和底卡重复；状态语义应轻，不应改变卡片结构 | 透明状态叠层，可用角部标记或边缘色块表达已部署，不写文字、不复制底板 |
+| `frame_operator_card_cooldown_overlay` | `OperatorCard.tscn` 冷却遮罩覆盖整张卡 `164x184` | 当前若是完整实心卡面，会遮住运行时内容并形成第三层卡框；冷却应由遮罩/调制表达 | 硬边、二值 alpha 的冷却遮罩或边缘压暗层；不写冷却数字，不带半透明像素 |
+| `frame_operator_card_cooldown_selected_overlay` | `OperatorCard.tscn` 冷却且选中覆盖整张卡 `164x184` | 同时承担冷却和选中，最容易叠出重复边框；需要和上面两个状态层保持同一轮廓体系 | 冷却遮罩 + 轻选中描边，透明中心优先，不能像另一张完整卡片 |
+| `frame_blessing_choice_card_base` | 祝福候选卡；配置目标 `560x112`，当前源图约 `267x380` | 实际是宽横向选择卡，当前像竖卡；横向拉伸超过 2 倍、纵向压缩明显，会破坏边中装饰和内部视觉重心 | 宽横向候选卡；比大面板轻，比普通按钮丰富；不画固定图标、文字、稀有度或子卡框 |
+| `frame_event_choice_button_base` | `scripts/ui/event_panel.gd` 动态选项按钮；配置目标 `560x64`，场景中作为横向选项 | 实际是横向按钮/选项，当前偏方/偏竖；拉伸后边中装饰会变形，且不像可点击选项 | 横向事件选项按钮底；左右端帽固定，中段连续；不写选项文字，不画固定图标 |
+| `frame_map_popup_base` | 地图弹窗；配置目标 `360x260`，当前源图约 `329x125` | 实际是中等高度弹窗，当前像窄条；纵向拉伸约 2 倍，顶部/底部中心装饰会被拉开 | 360x260 弹窗底板；中心干净可放动态按钮和说明，装饰仅角部或拆 overlay |
+| `frame_result_panel_base` | `scenes/ui/ResultPanel.tscn` 面板 `520x260`，配置目标 `720x520`，当前源图约 `738x239` | 实际是高面板，当前过扁；纵向拉伸明显，若上下边中有牌匾/分隔会被拉坏 | 结算高面板底；不画统计行、评级、固定列表；边中连续，中心大面积干净 |
+| `frame_relic_panel_base` | `scenes/ui/relic/RelicPanel.tscn` 面板 `668x430`，配置目标 `900x640`，当前源图约 `648x321` | 实际大面板纵向扩展明显；当前上/下边中装饰会在拉伸时变形，并和内部遗物卡抢层级 | 大型遗物面板底；外框安静，中心暗色承托，装饰只在四角或拆成 overlay |
+| `frame_relic_card_base` | `scripts/ui/relic/relic_card.gd` 高度 `96/108` 的横向遗物卡；配置目标 `360x112`，当前源图约 `257x408` | 实际是横向列表卡，当前像竖卡；横向拉伸、纵向压缩都很大，且容易画出内置图标框/文本区与真实子节点重复 | 横向遗物卡底；区分于外层遗物面板，但不要内置图标背板、文字、稀有度框或固定按钮 |
+| `frame_relic_card_hover_overlay` | 遗物卡 hover/selected 覆盖层；目标同 `frame_relic_card_base` | 当前若是完整卡框，会和遗物卡底重复；比例也跟横向卡不吻合 | 透明中心的 hover 高亮/描边，严格贴合横向遗物卡，不带实心卡面 |
+| `frame_speed_toggle_active_overlay` | `CombatHud.tscn` 倍速选中层 `216x82`，覆盖三段倍速按钮区域 | 实际节点是选中态覆盖层，但当前问题是容易画成整组分段框；选中层不应包含固定 `1x/2x` 结构或整组分隔柱 | 单个可移动/可定位的选中态视觉，或只覆盖当前 active 区域的轻高亮；不画三段容器、不写数字、不带固定分隔 |
 
-## 暂不优先重生成
+## 暂缓，不需要本轮重生成
 
-以下素材目前没有作为首批问题项处理。后续如果实际 UI 预览中发现九宫格变形、层级重复或视觉冲突，再单独加入上表：
+这些素材之前被列入过，但按“实际拉伸破坏严重”标准复核后先移出本轮：
 
-- `frame_build_icon_backplate`
-- `frame_build_icon_frame`
-- `frame_cost_badge_base`
-- `frame_undo_button_base`
-- `frame_operator_cost_badge`
-- `frame_unit_portrait_backplate`
-- `frame_unit_portrait_frame`
-- `frame_skill_icon_backplate`
-- `frame_skill_icon_frame`
-- `frame_relic_icon_backplate`
-- `frame_relic_icon_frame`
-- `frame_relic_entry_button_base`
-- `frame_resource_delta_badge`
-- `frame_dialog_box_base`
-- `frame_action_button_base`
-- `frame_wave_warning_row_base`
-- `frame_top_status_chip_base`
-- `frame_settings_button_base`
-- `frame_scroll_track`
+| Asset | 暂缓原因 |
+|---|---|
+| `bar_progress_fill_hp` | 实际作为进度填充被裁剪/缩放使用，主要风险是运行时裁切表现，不是九宫格过度拉伸；当前不优先生图 |
+| `bar_progress_fill_sp` | 同上 |
+| `bar_progress_fill_core` | 同上 |
+| `bar_progress_track` | 在详情/状态区域主要作为细轨使用，当前先通过 margins 与运行时尺寸观察，不作为首批重生 |
+| `frame_slider_track` | 设置面板中实际宽度约 `170`，当前源图主要是缩小；不是过度拉伸破坏 |
+| `frame_slider_fill` | 同上，作为 slider 填充由控件裁剪/绘制，先不重生 |
+| `frame_slider_handle` | 当前问题更像控件使用/尺寸语义问题，未发现实际九宫格拉伸破坏到必须生图 |
+| `frame_button_base` / `frame_button_*_overlay` | 多处使用但尺寸以小按钮/普通按钮为主；先不全局替换，避免影响面过大 |
+| `frame_left_sidebar_base` / `frame_right_detail_sidebar_base` | 虽然是大容器，但当前更需要在整体 UI 预览中判断，不作为第一批生图 |
+| `frame_detail_section_base` / `frame_unit_stat_row` / `frame_operator_stat_row` | 当前主要是内层信息槽，实际尺寸没有明显过度拉伸；若后续视觉验收仍有“卡片套卡片”，再单独处理 |
+| `frame_resource_item_base` / `frame_wave_enemy_row_base` / `frame_legend_row_base` | 实际多为小型信息行或缩小使用，不符合本轮“过度拉伸且破坏大”的条件 |
+| `frame_wave_route_toggle_base` | 实际 `64x36`，主要缩小；若后续发现分段语义错误，再结合按钮结构单独改 |
+| `frame_icon_*` / `frame_*_portrait_*` / `frame_relic_icon_*` / `frame_skill_icon_*` | 多为固定尺寸图标/头像承托，不按本轮 NinePatch 拉伸问题处理 |
 
-`frame_build_list_card_selected_overlay` 已作为优先案例单独处理过：源图与派生图 alpha 为 `{0,255}`，无不透明品红残留，并按 `frame_build_list_card_base` 的轮廓/尺寸更新了派生配置。仍需在实际 `BuildListCard` hover/selected 态中做人工视觉验收。
+`frame_build_list_card_selected_overlay` 已作为单独案例修复：源图和派生图 alpha 为 `{0,255}`，无不透明品红残留，并按 `frame_build_list_card_base` 的轮廓/尺寸更新。后续只需在实际 `BuildListCard` hover/selected 态中人工视觉验收，不列入本轮重生。
+
+## 子 Agent 生图提示词骨架
+
+每个子 Agent 只负责一个 UI 区域。主 Agent 串行验收，不合格直接废弃，不靠程序画图补救。
+
+```text
+你要为 Godot 塔防游戏重生成一小组 UI 框架素材，必须贴近现有清新战术奇幻、低饱和暗色风格。
+
+仓库路径：
+e:\资料\课程资料\大三下\软工\BUAASE-HexaVigil
+
+必须先读：
+- AGENTS.md
+- docs/UI_ASSET_AI_REGEN_TODO.md
+- docs/UI_ASSET_GENERATION_PROMPTS.md
+- docs/UI_SYSTEM.md
+- scripts/dev/crop_ui_assets.py
+- assets/ui/build/ui_asset_build.json
+- 本组 asset 对应的 .tscn / .gd 实际使用位置
+
+本组目标：
+- asset keys: <只填本组 keys>
+- UI 位置: <节点路径/场景/脚本>
+- 实际尺寸: <实际节点尺寸与 target size>
+- 当前源图问题: <比例错误、拉伸方向装饰、卡片套卡片、overlay 复制底板等>
+- 参考素材: <同区域应保持一致的现有 source png>
+
+生成要求：
+1. 只能用 imagegen 创作，不得用 Python/Pillow/程序化绘制新图。
+2. sheet 背景必须是纯 #FF00FF，不要透明背景。
+3. 最终 PNG alpha 只能是 0 或 255；不要半透明高光、阴影、禁用、冷却。
+4. 不要文字、数字、字母、水印、头像、固定列表、固定按钮组、固定进度。
+5. NinePatch 边中段必须连续、干净、可重复；装饰只放四角，或拆成 overlay。
+6. base 只做承托；overlay 只做状态，不复制底板；frame 中心孔洞要透明；backplate 中心要干净。
+7. 生图后保存 raw sheet 到临时目录，由主 Agent 用 crop_ui_assets.py 裁切和验收。
+```
 
 ## 验收命令
 
-根据改动范围最少运行：
+每个替换批次至少运行：
 
 ```powershell
 python scripts/dev/crop_ui_assets.py --output-dir tmp/ui_generated_candidate --sheet <source_sheet_name>.png --clean
@@ -142,18 +116,13 @@ godot --headless --import --path . --quit
 git diff --check
 ```
 
-每个替换批次还必须记录：
+每个批次最终记录：
 
+- 当前分支；
 - raw sheet 路径；
 - 处理的 asset keys；
 - 替换的 `assets/ui/source/*.png`；
 - alpha 集合是否为 `{0,255}`；
 - 不透明品红像素是否为 `0`；
-- 哪些 UI 节点/九宫格目标尺寸已经检查；
+- 检查过的 UI 节点、实际尺寸和 template margins；
 - 仍需人工视觉验收的点。
-
-## 不在本轮 AI 重生成范围
-
-- `icon_*` texture-only 图标：已接入派生管线，但通常不做 NinePatch 拉伸；除非出现文字、水印、边缘脏像素、语义错误或风格严重不一致，否则不需要本轮重生。
-- `assets/ui/generated/` 和 `assets/ui/styles/`：这些是离线脚本输出，不手工替换。
-- `assets/ui/templates/`：只维护 margins，不放正式贴图引用。仅当新源图尺寸或不可拉伸保护区变化时，才同步调整对应 template margins。
