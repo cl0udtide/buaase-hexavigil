@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_panel_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 16.8936
+content_margin_left = 18.7650
 content_margin_top = 14.0727
-content_margin_right = 16.8936
+content_margin_right = 18.7650
 content_margin_bottom = 14.0727
 texture = ExtResource("1_texture")
-texture_margin_left = 45.0495
+texture_margin_left = 50.0400
 texture_margin_top = 50.0364
-texture_margin_right = 45.0495
+texture_margin_right = 50.0400
 texture_margin_bottom = 50.0364
 draw_center = true

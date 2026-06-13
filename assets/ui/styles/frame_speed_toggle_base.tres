@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_speed_toggle_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 2.6622
+content_margin_left = 4.4060
 content_margin_top = 7.1544
-content_margin_right = 2.6622
+content_margin_right = 4.4060
 content_margin_bottom = 7.1544
 texture = ExtResource("1_texture")
-texture_margin_left = 1.9933
+texture_margin_left = 3.2990
 texture_margin_top = 3.2965
-texture_margin_right = 1.9933
+texture_margin_right = 3.2990
 texture_margin_bottom = 3.2965
 draw_center = true

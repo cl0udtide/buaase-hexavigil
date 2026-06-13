@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_blessing_panel_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 18.0000
-content_margin_top = 16.0000
-content_margin_right = 18.0000
-content_margin_bottom = 16.0000
+content_margin_left = 17.2864
+content_margin_top = 15.3712
+content_margin_right = 17.2864
+content_margin_bottom = 15.3712
 texture = ExtResource("1_texture")
-texture_margin_left = 18.0000
-texture_margin_top = 18.0000
-texture_margin_right = 18.0000
-texture_margin_bottom = 18.0000
+texture_margin_left = 17.2864
+texture_margin_top = 17.2926
+texture_margin_right = 17.2864
+texture_margin_bottom = 17.2926
 draw_center = true

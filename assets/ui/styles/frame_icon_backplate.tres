@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_icon_backplate.png" id="1_texture"]
 
 [resource]
-content_margin_left = 8.0000
-content_margin_top = 8.0000
-content_margin_right = 8.0000
-content_margin_bottom = 8.0000
+content_margin_left = 2.3927
+content_margin_top = 2.3851
+content_margin_right = 2.3927
+content_margin_bottom = 2.3851
 texture = ExtResource("1_texture")
-texture_margin_left = 10.0000
-texture_margin_top = 10.0000
-texture_margin_right = 10.0000
-texture_margin_bottom = 10.0000
+texture_margin_left = 2.9909
+texture_margin_top = 2.9814
+texture_margin_right = 2.9909
+texture_margin_bottom = 2.9814
 draw_center = true

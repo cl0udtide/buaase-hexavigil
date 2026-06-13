@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://et0lbv4tijfy"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_card_base.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://chquv5tvosb5v" path="res://assets/ui/generated/frame_operator_card_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 72.2257
-content_margin_top = 27.6923
-content_margin_right = 72.2257
-content_margin_bottom = 27.6923
+content_margin_left = 6.1693
+content_margin_top = 5.1538
+content_margin_right = 6.1693
+content_margin_bottom = 5.1538
 texture = ExtResource("1_texture")
-texture_margin_left = 276.8652
-texture_margin_top = 132.9231
-texture_margin_right = 276.8652
-texture_margin_bottom = 132.9231
-draw_center = true
+texture_margin_left = 23.6489
+texture_margin_top = 24.7385
+texture_margin_right = 23.6489
+texture_margin_bottom = 24.7385

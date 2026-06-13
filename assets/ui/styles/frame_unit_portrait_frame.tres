@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_unit_portrait_frame.png" id="1_texture"]
 
 [resource]
-content_margin_left = 2.8339
+content_margin_left = 2.8635
 content_margin_top = 2.8550
-content_margin_right = 2.8339
+content_margin_right = 2.8635
 content_margin_bottom = 2.8550
 texture = ExtResource("1_texture")
-texture_margin_left = 1.2540
+texture_margin_left = 1.2671
 texture_margin_top = 1.2633
-texture_margin_right = 1.2540
+texture_margin_right = 1.2671
 texture_margin_bottom = 1.2633
 draw_center = false

@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_blessing_choice_card_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 12.0000
-content_margin_top = 8.0000
-content_margin_right = 12.0000
-content_margin_bottom = 8.0000
+content_margin_left = 10.7520
+content_margin_top = 7.1579
+content_margin_right = 10.7520
+content_margin_bottom = 7.1579
 texture = ExtResource("1_texture")
-texture_margin_left = 58.0000
-texture_margin_top = 40.0000
-texture_margin_right = 58.0000
-texture_margin_bottom = 40.0000
+texture_margin_left = 63.6160
+texture_margin_top = 56.3684
+texture_margin_right = 63.6160
+texture_margin_bottom = 56.3684
 draw_center = true

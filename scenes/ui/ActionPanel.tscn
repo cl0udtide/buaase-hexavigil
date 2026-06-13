@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://crcftpqnt88jv" path="res://assets/ui/generated/icon_phase_night.png" id="2_phase_night"]
 [ext_resource type="StyleBox" uid="uid://dbo4buqebt4fl" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="4_button_primary"]
 [ext_resource type="StyleBox" uid="uid://cgd8d0dv2dush" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="5_button_disabled"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_action_button_base.tres" id="frame_action_button_base_318x76"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_318x76"]
 
 [node name="ActionPanel" type="Control" unique_id=921141590]
 layout_mode = 3
@@ -38,10 +38,10 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(318, 76)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("frame_action_button_base_318x76")
-theme_override_styles/pressed = ExtResource("frame_action_button_base_318x76")
-theme_override_styles/hover = ExtResource("frame_action_button_base_318x76")
-theme_override_styles/disabled = ExtResource("frame_action_button_base_318x76")
+theme_override_styles/normal = ExtResource("frame_button_base_318x76")
+theme_override_styles/pressed = ExtResource("frame_button_base_318x76")
+theme_override_styles/hover = ExtResource("frame_button_base_318x76")
+theme_override_styles/disabled = ExtResource("frame_button_base_318x76")
 
 [node name="PrimaryOverlay" type="Panel" parent="ContentMargin/CenterContainer/StartNightButton"]
 visible = false

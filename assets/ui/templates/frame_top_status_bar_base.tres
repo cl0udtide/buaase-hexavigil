@@ -1,13 +1,11 @@
-[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
-
+[gd_resource type="StyleBoxTexture" format=3]
 
 [resource]
-texture_margin_left = 72.60
-texture_margin_top = 7.69
-texture_margin_right = 72.60
-texture_margin_bottom = 7.69
 content_margin_left = 24.0
 content_margin_top = 8.0
 content_margin_right = 24.0
 content_margin_bottom = 8.0
-draw_center = true
+texture_margin_left = 72.6
+texture_margin_top = 7.69
+texture_margin_right = 72.6
+texture_margin_bottom = 7.69

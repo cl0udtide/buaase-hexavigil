@@ -1,6 +1,66 @@
 {
     "version": 1,
     "assets": {
+        "bar_actor_status_fill_hp": {
+            "kind": "stylebox_texture",
+            "source_png": "res://assets/ui/source/bar_actor_status_fill_hp.png",
+            "template_style": "res://assets/ui/templates/bar_actor_status_fill_hp.tres",
+            "output_png": "res://assets/ui/generated/bar_actor_status_fill_hp.png",
+            "output_style": "res://assets/ui/styles/bar_actor_status_fill_hp.tres",
+            "target_size": [
+                46,
+                6
+            ],
+            "base_size": [
+                1371,
+                85
+            ],
+            "pre_scale": "auto_integer",
+            "max_pre_scale": 4,
+            "margin_mode": "scale_from_template",
+            "content_margin_mode": "scale_from_template",
+            "interpolation": "nearest"
+        },
+        "bar_actor_status_fill_sp": {
+            "kind": "stylebox_texture",
+            "source_png": "res://assets/ui/source/bar_actor_status_fill_sp.png",
+            "template_style": "res://assets/ui/templates/bar_actor_status_fill_sp.tres",
+            "output_png": "res://assets/ui/generated/bar_actor_status_fill_sp.png",
+            "output_style": "res://assets/ui/styles/bar_actor_status_fill_sp.tres",
+            "target_size": [
+                46,
+                4
+            ],
+            "base_size": [
+                1379,
+                83
+            ],
+            "pre_scale": "auto_integer",
+            "max_pre_scale": 4,
+            "margin_mode": "scale_from_template",
+            "content_margin_mode": "scale_from_template",
+            "interpolation": "nearest"
+        },
+        "bar_actor_status_track": {
+            "kind": "stylebox_texture",
+            "source_png": "res://assets/ui/source/bar_actor_status_track.png",
+            "template_style": "res://assets/ui/templates/bar_actor_status_track.tres",
+            "output_png": "res://assets/ui/generated/bar_actor_status_track.png",
+            "output_style": "res://assets/ui/styles/bar_actor_status_track.tres",
+            "target_size": [
+                46,
+                6
+            ],
+            "base_size": [
+                1387,
+                153
+            ],
+            "pre_scale": "auto_integer",
+            "max_pre_scale": 4,
+            "margin_mode": "scale_from_template",
+            "content_margin_mode": "scale_from_template",
+            "interpolation": "nearest"
+        },
         "bar_progress_fill_core": {
             "kind": "stylebox_texture",
             "source_png": "res://assets/ui/source/bar_progress_fill_core.png",
@@ -73,26 +133,6 @@
             ],
             "base_size": [
                 1387,
-                153
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
-        "frame_action_button_base": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_action_button_base.png",
-            "template_style": "res://assets/ui/templates/frame_action_button_base.tres",
-            "output_png": "res://assets/ui/generated/frame_action_button_base.png",
-            "output_style": "res://assets/ui/styles/frame_action_button_base.tres",
-            "target_size": [
-                150,
-                44
-            ],
-            "base_size": [
-                354,
                 153
             ],
             "pre_scale": "auto_integer",
@@ -368,12 +408,12 @@
             "output_png": "res://assets/ui/generated/frame_detail_section_base.png",
             "output_style": "res://assets/ui/styles/frame_detail_section_base.tres",
             "target_size": [
-                340,
-                120
+                344,
+                116
             ],
             "base_size": [
-                491,
-                226
+                828,
+                309
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -748,12 +788,12 @@
             "output_png": "res://assets/ui/generated/frame_operator_stat_row.png",
             "output_style": "res://assets/ui/styles/frame_operator_stat_row.tres",
             "target_size": [
-                140,
-                20
+                132,
+                30
             ],
             "base_size": [
-                396,
-                78
+                333,
+                107
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -801,26 +841,6 @@
             "content_margin_mode": "scale_from_template",
             "interpolation": "nearest"
         },
-        "frame_relic_card_hover_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_relic_card_hover_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_relic_card_hover_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_relic_card_hover_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_relic_card_hover_overlay.tres",
-            "target_size": [
-                360,
-                112
-            ],
-            "base_size": [
-                519,
-                134
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
         "frame_relic_entry_button_base": {
             "kind": "stylebox_texture",
             "source_png": "res://assets/ui/source/frame_relic_entry_button_base.png",
@@ -834,26 +854,6 @@
             "base_size": [
                 228,
                 137
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
-        "frame_relic_filter_selected_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_relic_filter_selected_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_relic_filter_selected_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_relic_filter_selected_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_relic_filter_selected_overlay.tres",
-            "target_size": [
-                120,
-                40
-            ],
-            "base_size": [
-                240,
-                134
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -934,66 +934,6 @@
             "base_size": [
                 949,
                 550
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
-        "frame_relic_rarity_common_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_relic_rarity_common_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_relic_rarity_common_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_relic_rarity_common_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_relic_rarity_common_overlay.tres",
-            "target_size": [
-                352,
-                202
-            ],
-            "base_size": [
-                352,
-                202
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
-        "frame_relic_rarity_rare_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_relic_rarity_rare_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_relic_rarity_rare_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_relic_rarity_rare_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_relic_rarity_rare_overlay.tres",
-            "target_size": [
-                345,
-                201
-            ],
-            "base_size": [
-                345,
-                201
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
-        "frame_relic_rarity_uncommon_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_relic_rarity_uncommon_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_relic_rarity_uncommon_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_relic_rarity_uncommon_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_relic_rarity_uncommon_overlay.tres",
-            "target_size": [
-                345,
-                202
-            ],
-            "base_size": [
-                345,
-                202
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1381,26 +1321,6 @@
             "content_margin_mode": "scale_from_template",
             "interpolation": "nearest"
         },
-        "frame_speed_toggle_active_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_speed_toggle_active_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_speed_toggle_active_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_speed_toggle_active_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_speed_toggle_active_overlay.tres",
-            "target_size": [
-                110,
-                52
-            ],
-            "base_size": [
-                216,
-                123
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
         "frame_speed_toggle_base": {
             "kind": "stylebox_texture",
             "source_png": "res://assets/ui/source/frame_speed_toggle_base.png",
@@ -1454,26 +1374,6 @@
             "base_size": [
                 1443,
                 192
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "margin_mode": "scale_from_template",
-            "content_margin_mode": "scale_from_template",
-            "interpolation": "nearest"
-        },
-        "frame_top_status_chip_active_overlay": {
-            "kind": "stylebox_texture",
-            "source_png": "res://assets/ui/source/frame_top_status_chip_active_overlay.png",
-            "template_style": "res://assets/ui/templates/frame_top_status_chip_active_overlay.tres",
-            "output_png": "res://assets/ui/generated/frame_top_status_chip_active_overlay.png",
-            "output_style": "res://assets/ui/styles/frame_top_status_chip_active_overlay.tres",
-            "target_size": [
-                240,
-                64
-            ],
-            "base_size": [
-                333,
-                147
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1588,12 +1488,12 @@
             "output_png": "res://assets/ui/generated/frame_unit_stat_row.png",
             "output_style": "res://assets/ui/styles/frame_unit_stat_row.tres",
             "target_size": [
-                320,
-                28
+                132,
+                40
             ],
             "base_size": [
-                429,
-                101
+                463,
+                159
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1612,8 +1512,8 @@
                 126
             ],
             "base_size": [
-                1114,
-                218
+                312,
+                321
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1632,8 +1532,8 @@
                 316
             ],
             "base_size": [
-                470,
-                306
+                491,
+                569
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1652,8 +1552,28 @@
                 36
             ],
             "base_size": [
-                388,
-                123
+                226,
+                121
+            ],
+            "pre_scale": "auto_integer",
+            "max_pre_scale": 4,
+            "margin_mode": "scale_from_template",
+            "content_margin_mode": "scale_from_template",
+            "interpolation": "nearest"
+        },
+        "frame_wave_spawn_card_base": {
+            "kind": "stylebox_texture",
+            "source_png": "res://assets/ui/source/frame_wave_spawn_card_base.png",
+            "template_style": "res://assets/ui/templates/frame_wave_spawn_card_base.tres",
+            "output_png": "res://assets/ui/generated/frame_wave_spawn_card_base.png",
+            "output_style": "res://assets/ui/styles/frame_wave_spawn_card_base.tres",
+            "target_size": [
+                328,
+                132
+            ],
+            "base_size": [
+                1407,
+                548
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -1672,8 +1592,8 @@
                 38
             ],
             "base_size": [
-                655,
-                125
+                530,
+                98
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,
@@ -2481,22 +2401,6 @@
             "max_pre_scale": 4,
             "interpolation": "nearest"
         },
-        "icon_relic_aura_lens": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_aura_lens.png",
-            "output_png": "res://assets/ui/generated/icon_relic_aura_lens.png",
-            "target_size": [
-                272,
-                353
-            ],
-            "base_size": [
-                272,
-                353
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
         "icon_relic_bag": {
             "kind": "texture",
             "source_png": "res://assets/ui/source/icon_relic_bag.png",
@@ -2508,486 +2412,6 @@
             "base_size": [
                 227,
                 243
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_bastion_anchor": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_bastion_anchor.png",
-            "output_png": "res://assets/ui/generated/icon_relic_bastion_anchor.png",
-            "target_size": [
-                267,
-                404
-            ],
-            "base_size": [
-                267,
-                404
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_battle_standard": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_battle_standard.png",
-            "output_png": "res://assets/ui/generated/icon_relic_battle_standard.png",
-            "target_size": [
-                248,
-                419
-            ],
-            "base_size": [
-                248,
-                419
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_bayonet_drill": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_bayonet_drill.png",
-            "output_png": "res://assets/ui/generated/icon_relic_bayonet_drill.png",
-            "target_size": [
-                267,
-                313
-            ],
-            "base_size": [
-                267,
-                313
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_black_market_token": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_black_market_token.png",
-            "output_png": "res://assets/ui/generated/icon_relic_black_market_token.png",
-            "target_size": [
-                274,
-                286
-            ],
-            "base_size": [
-                274,
-                286
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_bounty_ledger": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_bounty_ledger.png",
-            "output_png": "res://assets/ui/generated/icon_relic_bounty_ledger.png",
-            "target_size": [
-                311,
-                338
-            ],
-            "base_size": [
-                311,
-                338
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_caster_focus": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_caster_focus.png",
-            "output_png": "res://assets/ui/generated/icon_relic_caster_focus.png",
-            "target_size": [
-                243,
-                295
-            ],
-            "base_size": [
-                243,
-                295
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_compressed_bulwark": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_compressed_bulwark.png",
-            "output_png": "res://assets/ui/generated/icon_relic_compressed_bulwark.png",
-            "target_size": [
-                323,
-                357
-            ],
-            "base_size": [
-                323,
-                357
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_core_capacitor": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_core_capacitor.png",
-            "output_png": "res://assets/ui/generated/icon_relic_core_capacitor.png",
-            "target_size": [
-                255,
-                326
-            ],
-            "base_size": [
-                255,
-                326
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_core_patch": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_core_patch.png",
-            "output_png": "res://assets/ui/generated/icon_relic_core_patch.png",
-            "target_size": [
-                269,
-                322
-            ],
-            "base_size": [
-                269,
-                322
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_defender_plate": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_defender_plate.png",
-            "output_png": "res://assets/ui/generated/icon_relic_defender_plate.png",
-            "target_size": [
-                283,
-                307
-            ],
-            "base_size": [
-                283,
-                307
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_duelist_contract": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_duelist_contract.png",
-            "output_png": "res://assets/ui/generated/icon_relic_duelist_contract.png",
-            "target_size": [
-                286,
-                294
-            ],
-            "base_size": [
-                286,
-                294
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_glass_barrel": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_glass_barrel.png",
-            "output_png": "res://assets/ui/generated/icon_relic_glass_barrel.png",
-            "target_size": [
-                277,
-                306
-            ],
-            "base_size": [
-                277,
-                306
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_greedy_seal": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_greedy_seal.png",
-            "output_png": "res://assets/ui/generated/icon_relic_greedy_seal.png",
-            "target_size": [
-                271,
-                345
-            ],
-            "base_size": [
-                271,
-                345
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_guard_manual": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_guard_manual.png",
-            "output_png": "res://assets/ui/generated/icon_relic_guard_manual.png",
-            "target_size": [
-                319,
-                326
-            ],
-            "base_size": [
-                319,
-                326
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_industrial_blueprint": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_industrial_blueprint.png",
-            "output_png": "res://assets/ui/generated/icon_relic_industrial_blueprint.png",
-            "target_size": [
-                347,
-                316
-            ],
-            "base_size": [
-                347,
-                316
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_iron_patience": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_iron_patience.png",
-            "output_png": "res://assets/ui/generated/icon_relic_iron_patience.png",
-            "target_size": [
-                292,
-                347
-            ],
-            "base_size": [
-                292,
-                347
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_lumber_contract": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_lumber_contract.png",
-            "output_png": "res://assets/ui/generated/icon_relic_lumber_contract.png",
-            "target_size": [
-                320,
-                333
-            ],
-            "base_size": [
-                320,
-                333
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_mana_resonator": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_mana_resonator.png",
-            "output_png": "res://assets/ui/generated/icon_relic_mana_resonator.png",
-            "target_size": [
-                198,
-                336
-            ],
-            "base_size": [
-                198,
-                336
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_mana_siphon": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_mana_siphon.png",
-            "output_png": "res://assets/ui/generated/icon_relic_mana_siphon.png",
-            "target_size": [
-                290,
-                356
-            ],
-            "base_size": [
-                290,
-                356
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_mobile_command": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_mobile_command.png",
-            "output_png": "res://assets/ui/generated/icon_relic_mobile_command.png",
-            "target_size": [
-                269,
-                339
-            ],
-            "base_size": [
-                269,
-                339
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_overclocked_core": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_overclocked_core.png",
-            "output_png": "res://assets/ui/generated/icon_relic_overclocked_core.png",
-            "target_size": [
-                281,
-                303
-            ],
-            "base_size": [
-                281,
-                303
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_quarry_glyph": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_quarry_glyph.png",
-            "output_png": "res://assets/ui/generated/icon_relic_quarry_glyph.png",
-            "target_size": [
-                278,
-                353
-            ],
-            "base_size": [
-                278,
-                353
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_range_pylon": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_range_pylon.png",
-            "output_png": "res://assets/ui/generated/icon_relic_range_pylon.png",
-            "target_size": [
-                284,
-                361
-            ],
-            "base_size": [
-                284,
-                361
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_rapid_recall": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_rapid_recall.png",
-            "output_png": "res://assets/ui/generated/icon_relic_rapid_recall.png",
-            "target_size": [
-                267,
-                350
-            ],
-            "base_size": [
-                267,
-                350
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_recurve_string": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_recurve_string.png",
-            "output_png": "res://assets/ui/generated/icon_relic_recurve_string.png",
-            "target_size": [
-                267,
-                313
-            ],
-            "base_size": [
-                267,
-                313
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_sharpened_orders": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_sharpened_orders.png",
-            "output_png": "res://assets/ui/generated/icon_relic_sharpened_orders.png",
-            "target_size": [
-                273,
-                351
-            ],
-            "base_size": [
-                273,
-                351
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_sniper_scope": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_sniper_scope.png",
-            "output_png": "res://assets/ui/generated/icon_relic_sniper_scope.png",
-            "target_size": [
-                297,
-                260
-            ],
-            "base_size": [
-                297,
-                260
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_travel_pack": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_travel_pack.png",
-            "output_png": "res://assets/ui/generated/icon_relic_travel_pack.png",
-            "target_size": [
-                330,
-                335
-            ],
-            "base_size": [
-                330,
-                335
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_vanguard_frame": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_vanguard_frame.png",
-            "output_png": "res://assets/ui/generated/icon_relic_vanguard_frame.png",
-            "target_size": [
-                272,
-                317
-            ],
-            "base_size": [
-                272,
-                317
-            ],
-            "pre_scale": "auto_integer",
-            "max_pre_scale": 4,
-            "interpolation": "nearest"
-        },
-        "icon_relic_wallwright_kit": {
-            "kind": "texture",
-            "source_png": "res://assets/ui/source/icon_relic_wallwright_kit.png",
-            "output_png": "res://assets/ui/generated/icon_relic_wallwright_kit.png",
-            "target_size": [
-                354,
-                341
-            ],
-            "base_size": [
-                354,
-                341
             ],
             "pre_scale": "auto_integer",
             "max_pre_scale": 4,

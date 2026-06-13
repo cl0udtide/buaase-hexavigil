@@ -1,6 +1,6 @@
 extends SceneTree
 
-const GENERATOR_VERSION := "ui-derived-assets-v2-fit-actual-size"
+const GENERATOR_VERSION := "ui-derived-assets-v5-ninepatch-preserve-scale"
 const CONFIG_PATH := "res://assets/ui/build/ui_asset_build.json"
 const MANIFEST_PATH := "res://assets/ui/build/ui_asset_build_manifest.json"
 const ACTUAL_SIZE_PATH := "res://assets/ui/build/ui_asset_actual_sizes.json"
@@ -114,6 +114,10 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 		return
 
 	var actual_target := _actual_target_size(asset_config)
+	if actual_target == Vector2i.ZERO:
+		actual_target = _optional_size(asset_config, "target_size")
+	elif String(asset_config.get("kind", "")) == "stylebox_texture" and (actual_target.x <= 1 or actual_target.y <= 1):
+		actual_target = _with_optional_target_floor(actual_target, asset_config)
 	var pre_scale := _resolve_pre_scale(asset_name, asset_config)
 	if pre_scale <= 0:
 		return
@@ -131,7 +135,7 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 		print("skip %s" % asset_name)
 		return
 
-	var png_scale := _generate_png(asset_name, source_png, output_png, pre_scale, actual_target, String(asset_config.get("interpolation", "nearest")))
+	var png_scale := _generate_png(asset_name, source_png, output_png, pre_scale, actual_target, asset_config, String(asset_config.get("interpolation", "nearest")))
 	if kind == "stylebox_texture":
 		_generate_style(asset_name, template_style, output_png, output_style, png_scale, asset_config)
 	if _failed:
@@ -150,7 +154,7 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 	print("generated %s" % asset_name)
 
 
-func _generate_png(asset_name: String, source_png: String, output_png: String, pre_scale: int, target_size: Vector2i, interpolation: String) -> Vector2:
+func _generate_png(asset_name: String, source_png: String, output_png: String, pre_scale: int, target_size: Vector2i, asset_config: Dictionary, interpolation: String) -> Vector2:
 	var image := Image.new()
 	var load_error := image.load(ProjectSettings.globalize_path(source_png))
 	if load_error != OK:
@@ -161,8 +165,13 @@ func _generate_png(asset_name: String, source_png: String, output_png: String, p
 	var output_width := source_width
 	var output_height := source_height
 	if target_size.x > 0 and target_size.y > 0:
-		output_width = target_size.x
-		output_height = target_size.y
+		if String(asset_config.get("kind", "")) == "stylebox_texture":
+			var scale := _ninepatch_preserve_scale(Vector2i(source_width, source_height), target_size)
+			output_width = maxi(1, int(round(float(source_width) * scale)))
+			output_height = maxi(1, int(round(float(source_height) * scale)))
+		else:
+			output_width = target_size.x
+			output_height = target_size.y
 	elif pre_scale != 1:
 		output_width = source_width * pre_scale
 		output_height = source_height * pre_scale
@@ -186,6 +195,13 @@ func _interpolation_mode(asset_name: String, interpolation: String) -> int:
 		return Image.INTERPOLATE_BILINEAR
 	_fail("%s has unsupported interpolation '%s'." % [asset_name, interpolation])
 	return Image.INTERPOLATE_NEAREST
+
+
+func _ninepatch_preserve_scale(source_size: Vector2i, target_size: Vector2i) -> float:
+	if source_size.x <= 0 or source_size.y <= 0 or target_size.x <= 0 or target_size.y <= 0:
+		return 1.0
+	var cover_scale := maxf(float(target_size.x) / float(source_size.x), float(target_size.y) / float(source_size.y))
+	return minf(1.0, maxf(cover_scale, 0.0))
 
 
 func _generate_style(asset_name: String, template_style: String, output_png: String, output_style: String, png_scale: Vector2, asset_config: Dictionary) -> void:
@@ -288,6 +304,13 @@ func _actual_target_size(asset_config: Dictionary) -> Vector2i:
 	if size.x <= 0 or size.y <= 0:
 		return Vector2i.ZERO
 	return size
+
+
+func _with_optional_target_floor(actual_target: Vector2i, asset_config: Dictionary) -> Vector2i:
+	var config_target := _optional_size(asset_config, "target_size")
+	if config_target == Vector2i.ZERO:
+		return actual_target
+	return Vector2i(maxi(actual_target.x, config_target.x), maxi(actual_target.y, config_target.y))
 
 
 func _input_hash(source_png: String, template_style: String, asset_config: Dictionary, actual_target: Vector2i) -> String:
@@ -407,6 +430,16 @@ func _required_size(asset_name: String, asset_config: Dictionary, key: String) -
 	var size := Vector2i(int((raw as Array)[0]), int((raw as Array)[1]))
 	if size.x <= 0 or size.y <= 0:
 		_fail("%s %s must contain positive dimensions." % [asset_name, key])
+		return Vector2i.ZERO
+	return size
+
+
+func _optional_size(asset_config: Dictionary, key: String) -> Vector2i:
+	var raw: Variant = asset_config.get(key, [])
+	if not (raw is Array) or (raw as Array).size() != 2:
+		return Vector2i.ZERO
+	var size := Vector2i(int((raw as Array)[0]), int((raw as Array)[1]))
+	if size.x <= 0 or size.y <= 0:
 		return Vector2i.ZERO
 	return size
 

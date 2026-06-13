@@ -4,12 +4,12 @@
 
 [resource]
 content_margin_left = 6.8460
-content_margin_top = 0.9191
+content_margin_top = 4.1106
 content_margin_right = 6.8460
-content_margin_bottom = 0.9191
+content_margin_bottom = 4.1106
 texture = ExtResource("1_texture")
-texture_margin_left = 0.6846
-texture_margin_top = 0.1532
-texture_margin_right = 0.6846
-texture_margin_bottom = 0.1532
+texture_margin_left = 52.7139
+texture_margin_top = 52.7532
+texture_margin_right = 52.7139
+texture_margin_bottom = 52.7532
 draw_center = true
