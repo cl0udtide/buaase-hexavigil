@@ -264,6 +264,26 @@ func _draw() -> void:
 	var map_manager := _get_map_manager()
 	if map_manager == null:
 		return
+	# Pass 1：已探明格地形瓦片 + 装饰（位于路线之下）。
+	for y in range(map_manager.height):
+		for x in range(map_manager.width):
+			var cell := Vector2i(x, y)
+			var data = map_manager.get_cell_data(cell)
+			if data == null or not data.discovered:
+				continue
+			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
+			_draw_cell_tile(rect, data)
+			if data.terrain == CellData.TERRAIN_WATER:
+				_draw_shore_bands(rect, cell, map_manager)
+				_draw_water_sparkles(rect, cell)
+			else:
+				_draw_feature_cast_shadow(rect, cell, map_manager, data)
+			if _is_quiet_plain(data):
+				_draw_plain_decals(rect, cell)
+	# Pass 2：完整路线线条（贯穿未探明段；随后被迷雾遮挡）。编号留到雾后再画。
+	_draw_range_outlines(map_manager)
+	var route_label_infos := _draw_wave_route_lines(map_manager)
+	# Pass 3：迷雾瓦片（未探明格盖住路线）+ 已探明格羽化边 + 网格 + 交互覆盖。
 	for y in range(map_manager.height):
 		for x in range(map_manager.width):
 			var cell := Vector2i(x, y)
@@ -271,15 +291,9 @@ func _draw() -> void:
 			if data == null:
 				continue
 			var rect := Rect2(Vector2(x, y) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
-			_draw_cell_tile(rect, data)
-			if data.discovered:
-				if data.terrain == CellData.TERRAIN_WATER:
-					_draw_shore_bands(rect, cell, map_manager)
-					_draw_water_sparkles(rect, cell)
-				else:
-					_draw_feature_cast_shadow(rect, cell, map_manager, data)
-				if _is_quiet_plain(data):
-					_draw_plain_decals(rect, cell)
+			if not data.discovered:
+				_draw_cell_tile(rect, data)
+			else:
 				_draw_fog_feather(rect, cell, map_manager)
 			draw_rect(rect, GRID_COLOR, false, 1.0)
 			if _deploy_range_preview_cells.has(cell):
@@ -297,8 +311,8 @@ func _draw() -> void:
 				_draw_cell_overlay(OVERLAY_MAP_HOVER, rect, hover_tint, Color.TRANSPARENT, 2.0, 0.0, hover_tint)
 			if cell == _selected_cell:
 				_draw_cell_overlay(OVERLAY_MAP_SELECTED, rect, SELECT_COLOR, Color.TRANSPARENT, 6.0, 0.0)
-	_draw_range_outlines(map_manager)
-	_draw_wave_route_previews(map_manager)
+	# Pass 4：路线编号（锚点本就只落已探明格）+ 部署预览/事件气泡/朝向箭头。
+	_draw_route_label_badges(route_label_infos)
 	_draw_deploy_visual_preview(map_manager)
 	_draw_event_bubbles(map_manager)
 	if _deploy_locked_cell.x >= 0 and _deploy_preview_facing != Vector2i.ZERO:
@@ -792,10 +806,11 @@ func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: floa
 	draw_colored_polygon(points, color)
 
 
-func _draw_wave_route_previews(map_manager: Node) -> void:
-	if _wave_route_previews.is_empty():
-		return
+## 只画路线线条，返回编号信息（编号在迷雾之后单独画，保证锚点已探明且不被雾盖）。
+func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	var label_infos: Array[Dictionary] = []
+	if _wave_route_previews.is_empty():
+		return label_infos
 	for index in range(_wave_route_previews.size()):
 		var route: Dictionary = _wave_route_previews[index]
 		var color := _get_route_color(route, index)
@@ -806,17 +821,19 @@ func _draw_wave_route_previews(map_manager: Node) -> void:
 			var label_info := _make_route_label_info(map_manager, path, offset, color, route)
 			if not label_info.is_empty():
 				label_infos.append(label_info)
-	_draw_route_label_badges(label_infos)
+	return label_infos
 
 
 func _draw_route_path(map_manager: Node, path: Array, color: Color, offset: Vector2, path_mode: StringName) -> void:
 	if path.size() <= 1:
 		return
+	# 画完整连续线（含未探明段）；Pass 3 的迷雾瓦片会盖住雾里的部分，
+	# 形成"线条从迷雾中钻出"的效果。只在出图时断开（正常路径不会发生）。
 	var segments: Array[PackedVector2Array] = []
 	var points := PackedVector2Array()
 	for cell_variant: Variant in path:
 		var cell: Vector2i = cell_variant
-		if not map_manager.is_inside(cell) or not map_manager.is_discovered(cell):
+		if not map_manager.is_inside(cell):
 			if points.size() > 1:
 				segments.append(points)
 			points = PackedVector2Array()
