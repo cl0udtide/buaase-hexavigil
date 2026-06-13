@@ -65,12 +65,18 @@ static func next_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase
 	var cur_d: int = int(dist.get(cell, 0))
 	var cur_index: int = int(round(float(f.get("frac", 0.0)) * float(max(width - 1, 1))))
 	var desired_index: int = _desired_index(width, phase, half_width)
-	# 1) 横向纠偏到相位槽位（slack 内允许 dist 略升，否则开阔地无法铺开）
+	# 1) 横向纠偏到相位槽位（slack 内允许 dist 略升，否则开阔地无法铺开）。
+	#    只许"向外"（远离正面中心）铺开；不许向内拽回——回中心交给梯度漏斗，
+	#    否则近核心梯度转向时会与槽位对冲、在两格间来回震荡。
 	if axis != Vector2i.ZERO and cur_index != desired_index:
-		var lat_dir: Vector2i = axis if desired_index > cur_index else -axis
-		var lat_cell: Vector2i = cell + lat_dir
-		if _can_enter(dist, extra_blocked, lat_cell) and int(dist[lat_cell]) <= cur_d + LATERAL_SLACK:
-			return lat_cell
+		var step_sign: int = 1 if desired_index > cur_index else -1
+		var new_index: int = cur_index + step_sign
+		var center: float = float(width - 1) * 0.5
+		if absf(float(new_index) - center) >= absf(float(cur_index) - center) - 0.001:
+			var lat_dir: Vector2i = axis if step_sign > 0 else -axis
+			var lat_cell: Vector2i = cell + lat_dir
+			if _can_enter(dist, extra_blocked, lat_cell) and int(dist[lat_cell]) <= cur_d + LATERAL_SLACK:
+				return lat_cell
 	# 2) 前进（严格降 dist）
 	var fwd: Vector2i = cell + g
 	if _can_enter(dist, extra_blocked, fwd) and int(dist[fwd]) < cur_d:

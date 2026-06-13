@@ -1,5 +1,7 @@
 extends Node
 
+const FlowField = preload("res://scripts/map/flow_field.gd")
+
 const PATH_MODE_NORMAL: StringName = &"normal"
 const PATH_MODE_DEMOLISHER: StringName = &"demolisher"
 const PATH_MODE_FLYING: StringName = &"flying"
@@ -15,13 +17,17 @@ const BLOCK_SPREAD_DISTANCE := CELL_SIZE * 0.22
 const BLOCK_SNAP_SPEED := CELL_SIZE * 6.0
 const CROWD_SPREAD_DISTANCE := CELL_SIZE * 0.18
 const CROWD_SNAP_SPEED := CELL_SIZE * 5.0
+# 横向相位：黄金比低差异序列，相邻 runtime_id 错开左右翼。
+const PHASE_GOLDEN := 0.6180339887498949
+# 正面半宽 = clamp(K*sqrt(本波怪量), 1, CAP)（平衡占位）。
+const HALF_WIDTH_K := 0.6
+const HALF_WIDTH_CAP := 8
 
 var _owner_actor: Node2D = null
-var _path: Array[Vector2i] = []
-var _path_index := 0
 var _blocked_by := -1
 var _base_path_mode: StringName = PATH_MODE_NORMAL
 var _path_mode: StringName = PATH_MODE_NORMAL
+var _lateral_phase: float = 0.0
 var _block_slot := 0
 var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
@@ -31,12 +37,11 @@ var _external_move_speed_multiplier: float = 1.0
 
 func setup(owner_actor: Node2D) -> void:
 	_owner_actor = owner_actor
+	_lateral_phase = _derive_phase()
 	reset()
 
 
 func reset() -> void:
-	_path.clear()
-	_path_index = 0
 	_blocked_by = -1
 	_block_slot = 0
 	_block_slot_count = 1
@@ -51,38 +56,49 @@ func refresh_path_mode() -> void:
 	_path_mode = _base_path_mode
 
 
+## 重判路径模式：普通怪在 normal 场到不了核心、但 demolisher 场能到 → 切拆墙。
 func recalc_path() -> void:
-	var path_service: Node = _owner_actor.get_node_or_null("../../../Managers/PathService") if _owner_actor != null else null
-	var map_manager: Node = _get_map_manager()
-	if map_manager == null or path_service == null:
-		return
 	refresh_path_mode()
-	var core_cell: Vector2i = map_manager.get_core_cell()
-	_path = path_service.find_path(_owner_actor.current_cell, core_cell, _base_path_mode)
-	_path_mode = _base_path_mode
-	if _path.is_empty() and _base_path_mode == PATH_MODE_NORMAL and _is_core_enclosed_by_path_blockers(map_manager, core_cell):
-		var forced_path: Array[Vector2i] = path_service.find_path(_owner_actor.current_cell, core_cell, PATH_MODE_DEMOLISHER)
-		if not forced_path.is_empty():
-			_path = forced_path
-			_path_mode = PATH_MODE_DEMOLISHER
-			_debug_log("核心被挡路建筑封闭，敌人 %s#%d 临时切换为拆墙路径" % [_debug_name(), _runtime_id()])
-	_path_index = min(1, _path.size() - 1) if not _path.is_empty() else 0
-	if not _path.is_empty() and not has_arrived():
+	var path_service := _path_service()
+	if path_service == null or _owner_actor == null:
+		return
+	if _base_path_mode == PATH_MODE_NORMAL \
+			and not path_service.has_route(_owner_actor.current_cell, PATH_MODE_NORMAL) \
+			and path_service.has_route(_owner_actor.current_cell, PATH_MODE_DEMOLISHER):
+		_path_mode = PATH_MODE_DEMOLISHER
+		_debug_log("核心 normal 场不可达，敌人 %s#%d 切换拆墙路径" % [_debug_name(), _runtime_id()])
+	else:
+		_path_mode = _base_path_mode
+	if has_path() and not has_arrived():
 		_update_owner_facing_from_cell_delta(get_next_path_cell() - _owner_actor.current_cell)
 
 
 func has_path() -> bool:
-	return not _path.is_empty()
+	if _owner_actor == null:
+		return false
+	if _path_mode == PATH_MODE_FLYING:
+		return not has_arrived()
+	var path_service := _path_service()
+	return path_service != null and path_service.has_route(_owner_actor.current_cell, _path_mode)
 
 
 func has_arrived() -> bool:
-	return not _path.is_empty() and _path_index >= _path.size()
+	if _owner_actor == null:
+		return false
+	var map_manager := _get_map_manager()
+	return map_manager != null and _owner_actor.current_cell == map_manager.get_core_cell()
 
 
+## 朝核心的梯度前进格（attack_controller 用它判路上是否有可拆的墙）。
 func get_next_path_cell() -> Vector2i:
-	if _path.is_empty() or _path_index >= _path.size():
+	if _owner_actor == null:
+		return Vector2i.ZERO
+	if has_arrived():
 		return _owner_actor.current_cell
-	return _path[_path_index]
+	if _path_mode == PATH_MODE_FLYING:
+		return _straight_step_toward_core()
+	var g := _gradient_dir()
+	return _owner_actor.current_cell + g if g != Vector2i.ZERO else _owner_actor.current_cell
 
 
 func get_path_mode() -> StringName:
@@ -90,21 +106,23 @@ func get_path_mode() -> StringName:
 
 
 func process_path_movement(delta: float) -> bool:
-	if _path.is_empty():
+	if _owner_actor == null:
 		return false
-	if _path_index >= _path.size():
+	if has_arrived():
 		return true
+	if not has_path():
+		return false
 	var map_manager: Node = _get_map_manager()
 	if map_manager == null:
 		return false
+	var step_cell: Vector2i = _next_step_cell()
 	_update_crowd_offset()
-	_update_owner_facing_from_cell_delta(_path[_path_index] - _owner_actor.current_cell)
-	var target_pos: Vector2 = map_manager.cell_to_world(_path[_path_index]) + _crowd_offset
+	_update_owner_facing_from_cell_delta(step_cell - _owner_actor.current_cell)
+	var target_pos: Vector2 = map_manager.cell_to_world(step_cell) + _crowd_offset
 	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, get_effective_move_speed() * CELL_SIZE * delta)
 	if _owner_actor.global_position.distance_to(target_pos) < 2.0:
-		_owner_actor.current_cell = _path[_path_index]
-		_path_index += 1
-		return _path_index >= _path.size()
+		_owner_actor.current_cell = step_cell
+		return has_arrived()
 	return false
 
 
@@ -177,12 +195,20 @@ func get_blocker_runtime_id() -> int:
 	return _blocked_by
 
 
+## 进度分：越靠近核心分越高（阻挡排序/技能选敌用）。无路时退化为到核心曼哈顿。
 func get_path_progress_score() -> float:
-	var core_distance: float = 0.0
-	var map_manager: Node = _get_map_manager()
-	if map_manager != null:
-		core_distance = float(_owner_actor.current_cell.distance_squared_to(map_manager.get_core_cell()))
-	return float(_path_index) * 100000.0 - core_distance
+	if _owner_actor == null:
+		return 0.0
+	var dist := -1
+	var path_service := _path_service()
+	if path_service != null:
+		dist = path_service.get_core_distance(_owner_actor.current_cell, _path_mode)
+	if dist < 0:
+		var map_manager := _get_map_manager()
+		if map_manager != null:
+			var core: Vector2i = map_manager.get_core_cell()
+			dist = absi(_owner_actor.current_cell.x - core.x) + absi(_owner_actor.current_cell.y - core.y)
+	return -float(dist)
 
 
 func get_effective_move_speed() -> float:
@@ -192,6 +218,68 @@ func get_effective_move_speed() -> float:
 func set_external_move_speed_multiplier(value: float) -> void:
 	_external_move_speed_multiplier = max(value, 0.1)
 
+
+# ── 沿场决策 ──────────────────────────────────────────────────
+
+func _derive_phase() -> float:
+	return fposmod(float(_runtime_id()) * PHASE_GOLDEN, 1.0)
+
+
+func _path_service() -> Node:
+	return _owner_actor.get_node_or_null("../../../Managers/PathService") if _owner_actor != null else null
+
+
+func _next_step_cell() -> Vector2i:
+	if _path_mode == PATH_MODE_FLYING:
+		return _straight_step_toward_core()
+	var path_service := _path_service()
+	if path_service == null:
+		return _owner_actor.current_cell
+	return FlowField.next_step(
+		path_service.get_dist_map(_path_mode),
+		path_service.get_front_map(_path_mode),
+		_owner_actor.current_cell,
+		_lateral_phase,
+		_half_width(),
+		_extra_blocked()
+	)
+
+
+func _gradient_dir() -> Vector2i:
+	var path_service := _path_service()
+	if path_service == null:
+		return Vector2i.ZERO
+	var front: Dictionary = path_service.get_front_map(_path_mode).get(_owner_actor.current_cell, {})
+	return front.get("g", Vector2i.ZERO)
+
+
+func _straight_step_toward_core() -> Vector2i:
+	var map_manager := _get_map_manager()
+	if map_manager == null:
+		return _owner_actor.current_cell
+	var core: Vector2i = map_manager.get_core_cell()
+	var cur: Vector2i = _owner_actor.current_cell
+	if cur.x != core.x:
+		return cur + (Vector2i.RIGHT if core.x > cur.x else Vector2i.LEFT)
+	if cur.y != core.y:
+		return cur + (Vector2i.DOWN if core.y > cur.y else Vector2i.UP)
+	return cur
+
+
+func _half_width() -> int:
+	var count := 1
+	var enemy_manager: Node = _owner_actor.get_enemy_manager() if _owner_actor != null else null
+	if enemy_manager != null and enemy_manager.has_method("get_alive_enemy_count"):
+		count = max(int(enemy_manager.get_alive_enemy_count()), 1)
+	return clampi(int(round(HALF_WIDTH_K * sqrt(float(count)))), 1, HALF_WIDTH_CAP)
+
+
+## 怪需绕开的占用格（Phase 4 填入拦路单位格；当前为空 = 与旧行为一致穿过）。
+func _extra_blocked() -> Dictionary:
+	return {}
+
+
+# ── 拥挤 / 阻挡 走位（沿用旧逻辑）────────────────────────────────
 
 func _update_crowd_offset() -> void:
 	if _owner_actor == null or _blocked_by != -1:
@@ -259,15 +347,12 @@ func _resolve_block_anchor_dir(blocker_runtime_id: int) -> Vector2:
 
 func _get_current_move_direction() -> Vector2:
 	var map_manager: Node = _get_map_manager()
-	if map_manager == null or _path.is_empty():
+	if map_manager == null or _owner_actor == null:
 		return Vector2.ZERO
-	var from_cell: Vector2i = _owner_actor.current_cell
-	var to_cell: Vector2i = _path[min(_path_index, _path.size() - 1)]
-	if _path_index > 0 and _path_index < _path.size():
-		from_cell = _path[_path_index - 1]
-	var from_pos: Vector2 = map_manager.cell_to_world(from_cell)
-	var to_pos: Vector2 = map_manager.cell_to_world(to_cell)
-	return to_pos - from_pos
+	var next_cell: Vector2i = get_next_path_cell()
+	if next_cell == _owner_actor.current_cell:
+		return Vector2.ZERO
+	return map_manager.cell_to_world(next_cell) - map_manager.cell_to_world(_owner_actor.current_cell)
 
 
 func _can_push_to_cell(cell: Vector2i) -> bool:
@@ -315,70 +400,12 @@ func _get_map_manager() -> Node:
 	return _owner_actor.get_map_manager() if _owner_actor != null else null
 
 
-func _is_core_enclosed_by_path_blockers(map_manager: Node, core_cell: Vector2i) -> bool:
-	if map_manager == null or not map_manager.is_inside(core_cell):
-		return false
-	var queue: Array[Vector2i] = [core_cell]
-	var visited: Dictionary = {core_cell: true}
-	var head := 0
-	var found_path_blocker := false
-	while head < queue.size():
-		var current: Vector2i = queue[head]
-		head += 1
-		if _is_edge_cell(map_manager, current):
-			return false
-		for direction in CARDINAL_DIRECTIONS:
-			var neighbor: Vector2i = current + direction
-			if not map_manager.is_inside(neighbor) or visited.has(neighbor):
-				continue
-			var data: CellData = map_manager.get_cell_data(neighbor)
-			if data == null or not data.walkable:
-				continue
-			if _has_active_path_blocking_building(data):
-				found_path_blocker = true
-				continue
-			visited[neighbor] = true
-			queue.append(neighbor)
-	return found_path_blocker
-
-
-func _is_edge_cell(map_manager: Node, cell: Vector2i) -> bool:
-	return cell.x <= 0 or cell.y <= 0 or cell.x >= int(map_manager.width) - 1 or cell.y >= int(map_manager.height) - 1
-
-
-func _has_active_path_blocking_building(data: CellData) -> bool:
-	if data == null or data.building_runtime_id < 0 or _owner_actor == null:
-		return false
-	var building_manager: Node = _owner_actor.get_building_manager()
-	if building_manager == null or not building_manager.has_method("get_building_by_runtime_id"):
-		return false
-	var building: Node = building_manager.get_building_by_runtime_id(data.building_runtime_id)
-	if building == null or _is_building_destroyed(building):
-		return false
-	if StringName(building.get("building_id")) == &"wood_wall":
-		return true
-	var cfg_variant: Variant = building.get("cfg")
-	if typeof(cfg_variant) != TYPE_DICTIONARY:
-		return false
-	return bool((cfg_variant as Dictionary).get("blocks_path", false))
-
-
-func _is_building_destroyed(building: Node) -> bool:
-	if building == null:
-		return false
-	if building.has_method("is_destroyed"):
-		return bool(building.is_destroyed())
-	var current_hp_variant: Variant = building.get("current_hp")
-	return current_hp_variant != null and int(current_hp_variant) <= 0
-
-
 func _resolve_path_mode() -> StringName:
 	if _owner_actor == null:
 		return PATH_MODE_NORMAL
 	var move_type: StringName = StringName(_owner_actor.cfg.get("move_type", "ground"))
 	if move_type == PATH_MODE_FLYING:
 		return PATH_MODE_FLYING
-
 	var behavior_type: StringName = StringName(_owner_actor.cfg.get("behavior_type", "normal"))
 	return PATH_MODE_DEMOLISHER if behavior_type == &"demolisher" else PATH_MODE_NORMAL
 

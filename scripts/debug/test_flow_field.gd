@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_front_open()
 	_test_distance_wall()
 	_test_next_step()
+	_test_front_simulation()
 	_test_determinism()
 	if _failures == 0:
 		print("ALL FLOW_FIELD TESTS PASSED")
@@ -114,6 +115,72 @@ func _test_next_step() -> void:
 	var blocked_step: Dictionary = {Vector2i(1, 2): true}
 	var around := FlowField.next_step(dist, front, Vector2i(0, 2), 0.5, 8, blocked_step)
 	_expect(around != Vector2i(1, 2) and dist.has(around), "detours around occupied forward cell")
+
+
+## 仿真：一只怪从 start 逐步走到 core，记录首次跨过 mid_x 时所在的行。
+func _sim_enemy(dist: Dictionary, front: Dictionary, start: Vector2i, core: Vector2i, phase: float, half_width: int, mid_x: int) -> Dictionary:
+	var cell := start
+	var steps := 0
+	var row_at_mid := -999
+	while cell != core and steps < 300:
+		if cell.x >= mid_x and row_at_mid == -999:
+			row_at_mid = cell.y
+		var nxt: Vector2i = FlowField.next_step(dist, front, cell, phase, half_width, {})
+		if nxt == cell:
+			break
+		cell = nxt
+		steps += 1
+	if cell.x >= mid_x and row_at_mid == -999:
+		row_at_mid = cell.y
+	return {"reached": cell == core, "row_at_mid": row_at_mid}
+
+
+func _phases(n: int) -> Array:
+	var out: Array = []
+	for i in range(1, n + 1):
+		out.append(fposmod(float(i) * 0.6180339887498949, 1.0))
+	return out
+
+
+func _test_front_simulation() -> void:
+	print("[front simulation: 开阔铺面 / 走廊收拢 / 封顶]")
+	var core := Vector2i(10, 3)
+	var gate := Vector2i(0, 3)
+	var mid_x := 5
+	var cells := _grid(11, 7)
+	var dist: Dictionary = FlowField.compute_distance(cells, core, {})
+	var front: Dictionary = FlowField.compute_front(cells, dist, {})
+	var phases := _phases(7)
+	# 真实半宽（7 只 → 2）：铺开多行且都到核心
+	var rows: Dictionary = {}
+	var all_reached := true
+	for p: float in phases:
+		var r := _sim_enemy(dist, front, gate, core, float(p), 2, mid_x)
+		all_reached = all_reached and bool(r["reached"])
+		rows[r["row_at_mid"]] = true
+	_expect(all_reached, "开阔图所有怪都到核心(half=2)")
+	_expect(rows.size() >= 3, "正面在中段铺开 >=3 行(实得 %d)" % rows.size())
+	# 封顶对比：half=8 比 half=0 铺得更宽
+	var rows_wide: Dictionary = {}
+	var rows_narrow: Dictionary = {}
+	for p2: float in phases:
+		rows_wide[_sim_enemy(dist, front, gate, core, float(p2), 8, mid_x)["row_at_mid"]] = true
+		rows_narrow[_sim_enemy(dist, front, gate, core, float(p2), 0, mid_x)["row_at_mid"]] = true
+	_expect(rows_wide.size() > rows_narrow.size(), "半宽越大铺越宽(%d > %d)" % [rows_wide.size(), rows_narrow.size()])
+	_expect(rows_narrow.size() <= 2, "半宽0 退化成单股(实得 %d 行)" % rows_narrow.size())
+	# 走廊：都收成一行、都到核心
+	var ccells := _grid(11, 1)
+	var ccore := Vector2i(10, 0)
+	var cdist: Dictionary = FlowField.compute_distance(ccells, ccore, {})
+	var cfront: Dictionary = FlowField.compute_front(ccells, cdist, {})
+	var crows: Dictionary = {}
+	var creached := true
+	for p3: float in phases:
+		var rc := _sim_enemy(cdist, cfront, Vector2i(0, 0), ccore, float(p3), 8, 5)
+		creached = creached and bool(rc["reached"])
+		crows[rc["row_at_mid"]] = true
+	_expect(creached, "走廊所有怪都到核心")
+	_expect(crows.size() == 1, "走廊收成单行(实得 %d)" % crows.size())
 
 
 func _test_determinism() -> void:
