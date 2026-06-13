@@ -4,6 +4,7 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
 const EnemyPrestigeReward = preload("res://scripts/enemy/enemy_prestige_reward.gd")
+const DifficultyScale = preload("res://scripts/enemy/difficulty_scale.gd")
 
 
 # 波间喘息时长：上一波清场后到下一波开始的间隔。
@@ -40,7 +41,7 @@ func _process(delta: float) -> void:
 		var entry: Dictionary = _pending_spawns.pop_front()
 		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(StringName(entry.get("spawn_key", "")))
 		var enemy_id := StringName(entry.get("enemy_id", ""))
-		_enemy_manager.spawn_enemy(enemy_id, spawn_cell, _affixed_enemy_cfg_override(enemy_id))
+		_enemy_manager.spawn_enemy(enemy_id, spawn_cell, _enemy_spawn_cfg_override(enemy_id))
 	if _pending_spawns.is_empty() and _wave_spawns_done_at < 0.0:
 		_wave_spawns_done_at = _elapsed
 	_update_wave_flow()
@@ -311,6 +312,9 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 		enemy_cfg = EnemyPrestigeReward.apply_base_for_day(enemy_cfg, day_value)
 		if not affix_cfgs.is_empty():
 			enemy_cfg = NightAffixService.apply_to_enemy_cfg(enemy_cfg, affix_cfgs)
+		var preview_run_state = AppRefs.run_state()
+		var preview_day: int = int(preview_run_state.day) if preview_run_state != null else seed_day
+		DifficultyScale.apply_stat_scale(enemy_cfg, DifficultyScale.stat_scale_for_enemy(enemy_cfg, preview_day))
 		var aggregate_key := "%s|%s" % [String(spawn_key), String(enemy_id)]
 		if not entries_by_key.has(aggregate_key):
 			entries_by_key[aggregate_key] = {
@@ -410,10 +414,14 @@ func _build_resolved_entries(cfg: Dictionary, template_id: StringName, wave_inde
 			var lane := StringName(String(entry.get("lane", "any")))
 			entry["spawn_key"] = NightTemplateResolver.resolve_lane_gate(lane, entry_index, main_gate, active_gates, run_seed, day, wave_index)
 		resolved.append(entry)
+	var final_entries: Array[Dictionary]
 	if affix_cfgs.is_empty():
-		return resolved
-	var spawn_keys: Array = _collect_spawn_keys(resolved)
-	return NightAffixService.transform_entries(resolved, affix_cfgs, spawn_keys, _entry_transform_seed(template_id, wave_index))
+		final_entries = resolved
+	else:
+		var spawn_keys: Array = _collect_spawn_keys(resolved)
+		final_entries = NightAffixService.transform_entries(resolved, affix_cfgs, spawn_keys, _entry_transform_seed(template_id, wave_index))
+	_apply_count_scale(final_entries, day)
+	return final_entries
 
 
 func _collect_spawn_keys(entries: Array) -> Array:
@@ -426,6 +434,22 @@ func _collect_spawn_keys(entries: Array) -> Array:
 			keys.append(key)
 	keys.sort()
 	return keys
+
+
+## 把当天的杂兵数量系数乘到各条目 count 上（Boss 条目不缩放，免把 1 个 Boss 翻倍）。
+func _apply_count_scale(entries: Array, day: int) -> void:
+	var scale := DifficultyScale.count_scale_for_day(day)
+	if is_equal_approx(scale, 1.0):
+		return
+	var data_repo = AppRefs.data_repo()
+	for raw_entry: Variant in entries:
+		if typeof(raw_entry) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = raw_entry
+		var enemy_cfg: Dictionary = data_repo.get_enemy_cfg(StringName(entry.get("enemy_id", ""))) if data_repo != null else {}
+		if DifficultyScale.is_boss_cfg(enemy_cfg):
+			continue
+		entry["count"] = DifficultyScale.scaled_count(int(entry.get("count", 1)), scale)
 
 
 func _active_spawn_keys() -> Array:
@@ -472,7 +496,8 @@ func _load_affix_cfgs(affix_ids: Array) -> Array[Dictionary]:
 	return cfgs
 
 
-func _affixed_enemy_cfg_override(enemy_id: StringName) -> Dictionary:
+## spawn 时的 cfg 覆盖：当天赏金缩放 + 词缀修饰（若有）+ 当晚数值系数 _stat_scale（enemy_actor 读取并套用，含阶段切换）。
+func _enemy_spawn_cfg_override(enemy_id: StringName) -> Dictionary:
 	if enemy_id == StringName():
 		return {}
 	if _enemy_cfg_override_cache.has(enemy_id):
@@ -484,6 +509,7 @@ func _affixed_enemy_cfg_override(enemy_id: StringName) -> Dictionary:
 	var override: Dictionary = EnemyPrestigeReward.apply_base_for_day(base_cfg, day)
 	if not _affix_cfgs.is_empty():
 		override = NightAffixService.apply_to_enemy_cfg(override, _affix_cfgs)
+	override["_stat_scale"] = DifficultyScale.stat_scale_for_enemy(base_cfg, day)
 	_enemy_cfg_override_cache[enemy_id] = override
 	return override
 

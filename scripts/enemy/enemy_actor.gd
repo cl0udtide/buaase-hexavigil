@@ -7,6 +7,7 @@ const EnemyMovementController = preload("res://scripts/enemy/enemy_movement_cont
 const EnemyAttackController = preload("res://scripts/enemy/enemy_attack_controller.gd")
 const OneShotEffect = preload("res://scripts/effects/one_shot_effect.gd")
 const ContactShadow = preload("res://scripts/effects/contact_shadow.gd")
+const DifficultyScale = preload("res://scripts/enemy/difficulty_scale.gd")
 
 const DEBUG_SIZE := 40.0
 const DEBUG_COLOR := Color(1.0, 0.25, 0.25, 0.95)
@@ -58,6 +59,7 @@ var _bind_timer := 0.0
 var _shield_hp := 0
 var _max_shield_hp := 0
 var _regen_carry := 0.0
+var _stat_scale := 1.0
 var _regen_effect_cooldown := 0.0
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
@@ -126,6 +128,8 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	enemy_id = new_enemy_id
 	cfg = new_cfg.duplicate(true)
 	cfg["id"] = new_enemy_id
+	_stat_scale = float(cfg.get("_stat_scale", 1.0))
+	DifficultyScale.apply_stat_scale(cfg, _stat_scale)
 	max_hp = int(cfg.get("max_hp", 1))
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_enemy"):
@@ -842,7 +846,9 @@ func _setup_boss_controller() -> void:
 
 
 func _apply_phase_cfg(phase_cfg: Dictionary) -> void:
-	cfg.merge(phase_cfg, true)
+	var scaled_phase := phase_cfg.duplicate(true)
+	DifficultyScale.apply_stat_scale(scaled_phase, _stat_scale)
+	cfg.merge(scaled_phase, true)
 	if _movement_controller != null:
 		_movement_controller.refresh_path_mode()
 	max_hp = int(cfg.get("max_hp", max_hp))
