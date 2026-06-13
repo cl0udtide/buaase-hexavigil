@@ -36,7 +36,7 @@ func _load_templates() -> Array:
 
 
 func _check_data(templates: Array) -> void:
-	_expect(templates.size() == 16, "16 templates (got %d)" % templates.size())
+	_expect(templates.size() == 21, "21 templates (got %d)" % templates.size())
 
 	var enemies_parsed: Variant = _load_json("res://data/enemies.json")
 	var enemy_ids: Dictionary = {}
@@ -53,6 +53,7 @@ func _check_data(templates: Array) -> void:
 	var valid_lanes := {"main": true, "flank": true, "any": true}
 	var seen_ids: Dictionary = {}
 	var tier_counts: Dictionary = {}
+	var choices_used := 0
 	for template_variant: Variant in templates:
 		_expect(typeof(template_variant) == TYPE_DICTIONARY, "template is dict")
 		if typeof(template_variant) != TYPE_DICTIONARY:
@@ -82,6 +83,8 @@ func _check_data(templates: Array) -> void:
 			var group: Dictionary = group_variant
 			var enemy_id := StringName(group.get("enemy_id", ""))
 			var choices: Array = group.get("enemy_choices", [])
+			if not choices.is_empty():
+				choices_used += 1
 			if enemy_id != StringName():
 				_expect(enemy_ids.has(enemy_id), "%s enemy_id valid: %s" % [id, enemy_id])
 			else:
@@ -101,10 +104,11 @@ func _check_data(templates: Array) -> void:
 			_expect(float(group.get("time", -1.0)) >= 0.0, "%s time non-negative" % id)
 			_expect(float(group.get("interval", -1.0)) >= 0.0, "%s interval non-negative" % id)
 		_expect(main_count >= 1, "%s has at least one main group" % id)
-	_expect(int(tier_counts.get(&"early", 0)) == 4, "early template count")
-	_expect(int(tier_counts.get(&"mid", 0)) == 5, "mid template count")
-	_expect(int(tier_counts.get(&"late", 0)) == 4, "late template count")
+	_expect(int(tier_counts.get(&"early", 0)) == 5, "early template count")
+	_expect(int(tier_counts.get(&"mid", 0)) == 6, "mid template count")
+	_expect(int(tier_counts.get(&"late", 0)) == 7, "late template count")
 	_expect(int(tier_counts.get(&"boss", 0)) == 3, "boss template count")
+	_expect(choices_used >= 3, "enemy_choices(换脸) used in templates (got %d)" % choices_used)
 
 
 func _ids_by_tier(templates: Array, tier: StringName) -> Array[StringName]:
