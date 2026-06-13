@@ -17,9 +17,11 @@ var _tick_timer := 0.0
 var _carry := 0.0
 var _unit_manager: Node = null
 var _map_manager: Node = null
+var _enemy_manager: Node = null
+var _permanent := false
 
 
-func setup(cells: Array, damage_per_sec: float, damage_type: int, duration: float, tick_interval: float, unit_manager: Node, map_manager: Node) -> void:
+func setup(cells: Array, damage_per_sec: float, damage_type: int, duration: float, tick_interval: float, unit_manager: Node, map_manager: Node, permanent: bool = false, enemy_manager: Node = null) -> void:
 	_cells.clear()
 	for raw_cell: Variant in cells:
 		if raw_cell is Vector2i:
@@ -32,16 +34,24 @@ func setup(cells: Array, damage_per_sec: float, damage_type: int, duration: floa
 	_carry = 0.0
 	_unit_manager = unit_manager
 	_map_manager = map_manager
+	_enemy_manager = enemy_manager
+	_permanent = permanent
 	z_index = 1
 	position = Vector2.ZERO
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
-	if _remaining <= 0.0:
-		queue_free()
-		return
-	_remaining -= delta
+	if _permanent:
+		# 永久火雨：不计时，战斗结束（场上无敌人）时才清理，避免跨夜/重置残留。
+		if _enemy_manager == null or not is_instance_valid(_enemy_manager) or (_enemy_manager.has_method("get_alive_enemy_count") and int(_enemy_manager.get_alive_enemy_count()) <= 0):
+			queue_free()
+			return
+	else:
+		if _remaining <= 0.0:
+			queue_free()
+			return
+		_remaining -= delta
 	_tick_timer -= delta
 	if _tick_timer <= 0.0:
 		_tick_timer += _tick_interval
@@ -50,7 +60,7 @@ func _process(delta: float) -> void:
 		if damage > 0:
 			_carry -= float(damage)
 			_damage_units(damage)
-	if _remaining <= 0.0:
+	if not _permanent and _remaining <= 0.0:
 		queue_free()
 
 

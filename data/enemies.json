@@ -553,7 +553,8 @@
           "damage_per_sec": 22.0,
           "duration": 8.0,
           "tick_interval": 1.0,
-          "damage_type": "magic"
+          "damage_type": "magic",
+          "permanent": true
         }
       }
     ],

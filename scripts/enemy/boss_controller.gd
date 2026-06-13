@@ -110,6 +110,7 @@ func _apply_fire_rain() -> void:
 	var dps := float(fire_cfg.get("damage_per_sec", 10.0))
 	var duration := float(fire_cfg.get("duration", 6.0))
 	var tick := float(fire_cfg.get("tick_interval", 1.0))
+	var permanent := bool(fire_cfg.get("permanent", false))
 	var damage_type: int = _parse_damage_type(String(fire_cfg.get("damage_type", "magic")))
 	var facing: Vector2i = _owner_actor.facing
 	if facing == Vector2i.ZERO:
@@ -125,7 +126,7 @@ func _apply_fire_rain() -> void:
 		return
 	var zone := GroundHazardZone.new()
 	parent.add_child(zone)
-	zone.setup(cells, dps, damage_type, duration, tick, _owner_actor.get_unit_manager(), _owner_actor.get_map_manager())
+	zone.setup(cells, dps, damage_type, duration, tick, _owner_actor.get_unit_manager(), _owner_actor.get_map_manager(), permanent, _owner_actor.get_enemy_manager())
 	_debug_log("敌人 %s#%d 释放火雨，覆盖 %d 格，持续 %.1f 秒" % [_debug_name(), _runtime_id(), cells.size(), duration])
 
 
