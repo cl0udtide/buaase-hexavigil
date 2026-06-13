@@ -40,19 +40,20 @@ func _expect_approx(a: float, b: float, msg: String) -> void:
 
 func _test_count_scale() -> void:
 	# 九天数量系数：前期 <1 压人数，后期 >1。
-	var expected := {1: 0.6, 2: 0.8, 3: 0.9, 4: 1.0, 5: 1.1, 6: 1.0, 7: 1.2, 8: 1.3, 9: 1.1}
+	# 三幕分档：1-3=0.7 / 4-6=1.0 / 7-9=1.2。
+	var expected := {1: 0.7, 3: 0.7, 4: 1.0, 6: 1.0, 7: 1.2, 9: 1.2}
 	for day in expected:
 		_expect_approx(DifficultyScale.count_scale_for_day(day), float(expected[day]), "count_scale day %d" % day)
-	# 阶梯回退：超过 9 天取第 9 天值。
-	_expect_approx(DifficultyScale.count_scale_for_day(12), 1.1, "count_scale fallback >9 -> day9")
+	_expect_approx(DifficultyScale.count_scale_for_day(12), 1.2, "count_scale fallback -> act3")
 
 
 func _test_stat_scale() -> void:
 	# 九天数值系数：单调上升，后期追上玩家复利。
-	var expected := {1: 1.0, 2: 1.0, 3: 1.05, 4: 1.1, 5: 1.2, 6: 1.3, 7: 1.45, 8: 1.6, 9: 1.8}
+	# 三幕分档：1-3=1.0 / 4-6=1.25 / 7-9=1.6。
+	var expected := {1: 1.0, 3: 1.0, 4: 1.25, 6: 1.25, 7: 1.6, 9: 1.6}
 	for day in expected:
 		_expect_approx(DifficultyScale.stat_scale_for_day(day), float(expected[day]), "stat_scale day %d" % day)
-	_expect_approx(DifficultyScale.stat_scale_for_day(20), 1.8, "stat_scale fallback >9 -> day9")
+	_expect_approx(DifficultyScale.stat_scale_for_day(20), 1.6, "stat_scale fallback -> act3")
 
 
 func _test_boss_stat_scale() -> void:
@@ -100,7 +101,7 @@ func _test_stat_scale_for_enemy() -> void:
 	_expect(not DifficultyScale.is_boss_cfg(normal_cfg), "is_boss_cfg false")
 	# 同一天：Boss 走 boss 曲线，杂兵走 stat 曲线。
 	_expect_approx(DifficultyScale.stat_scale_for_enemy(boss_cfg, 6), 1.5, "boss enemy d6 -> boss scale")
-	_expect_approx(DifficultyScale.stat_scale_for_enemy(normal_cfg, 6), 1.3, "normal enemy d6 -> stat scale")
+	_expect_approx(DifficultyScale.stat_scale_for_enemy(normal_cfg, 6), 1.25, "normal enemy d6 -> stat scale")
 
 
 func _test_nine_day_schedule() -> void:

@@ -100,9 +100,10 @@ func get_random_blessing_choices_with_sources(count: int = 0) -> Array[Dictionar
 
 
 func _allowed_rarities_for_day(day: int) -> Array[int]:
-	if day <= 2:
+	# 三幕分档（369）：第一幕(1-3)普通、第二幕(4-6)加稀有、第三幕(7-9)稀有+传说。
+	if day <= 3:
 		return [1]
-	if day <= 4:
+	if day <= 6:
 		return [1, 2]
 	return [2, 3]
 

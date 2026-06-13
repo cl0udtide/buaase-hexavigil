@@ -84,9 +84,9 @@ func _test_activation() -> void:
 	_expect(varied, "activation order varies across seeds")
 	_expect(ResolverScript.active_gate_count_for_day(1) == 2, "day1 count 2")
 	_expect(ResolverScript.active_gate_count_for_day(2) == 2, "day2 count 2")
-	_expect(ResolverScript.active_gate_count_for_day(3) == 3, "day3 count 3")
-	_expect(ResolverScript.active_gate_count_for_day(5) == 4, "day5 count 4")
-	_expect(ResolverScript.active_gate_count_for_day(9) == 5, "day9 count 5")
+	_expect(ResolverScript.active_gate_count_for_day(3) == 2, "day3 count 2 (act1)")
+	_expect(ResolverScript.active_gate_count_for_day(5) == 3, "day5 count 3 (act2)")
+	_expect(ResolverScript.active_gate_count_for_day(9) == 5, "day9 count 5 (act3)")
 	var prev: Array = []
 	for day in range(1, 10):
 		var active: Array = ResolverScript.resolve_active_gates(gates, 777, day)
@@ -96,7 +96,7 @@ func _test_activation() -> void:
 		prev = active
 	var with_closed: Array = ResolverScript.resolve_active_gates(gates, 777, 3, [order_a[0]])
 	_expect(not with_closed.has(String(order_a[0])), "closed gate excluded")
-	_expect(with_closed.size() == 2, "closed shrinks active set")
+	_expect(with_closed.size() == 1, "closed shrinks active set (day3 act1=2, -1=1)")
 	var silent_gate := String(order_a[4])
 	var with_extra: Array = ResolverScript.resolve_active_gates(gates, 777, 1, [], [silent_gate])
 	_expect(with_extra.has(silent_gate), "extra gate included")
