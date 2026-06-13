@@ -1593,7 +1593,8 @@ func _fit_camera_to_map(reset_view: bool = true) -> void:
 	_fit_zoom = max(_fit_zoom, 0.01)
 	if reset_view:
 		_zoom_scalar = _fit_zoom
-		_camera.position = _get_map_center(map_manager)
+		# 核心不一定落在地图几何中心，开局把镜头锚到核心所在格（越界由 _clamp_camera_center 收回）。
+		_camera.position = _get_core_world(map_manager)
 	else:
 		var zoom_ratio: float = previous_zoom_scalar / max(previous_fit_zoom, 0.001)
 		_zoom_scalar = clamp(_fit_zoom * zoom_ratio, _fit_zoom, _fit_zoom * MAX_ZOOM_MULTIPLIER)
@@ -1624,8 +1625,8 @@ func _get_map_size(map_manager: Node) -> Vector2:
 	return Vector2(map_manager.width, map_manager.height) * CELL_SIZE
 
 
-func _get_map_center(map_manager: Node) -> Vector2:
-	return _get_map_size(map_manager) * 0.5
+func _get_core_world(map_manager: Node) -> Vector2:
+	return map_manager.cell_to_world(map_manager.get_core_cell())
 
 
 func get_debug_info() -> String:
