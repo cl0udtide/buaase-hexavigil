@@ -1,7 +1,7 @@
 {
   "width": 30,
   "height": 30,
-  "generator": "skeleton_v2",
+  "generator": "terrain_first",
   "spawn_count": 5,
   "resources_per_type": 12,
   "near_resources_per_type": 2,
