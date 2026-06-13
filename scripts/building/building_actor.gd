@@ -16,6 +16,7 @@ const VISUAL_Z_INDEX := 2
 const OVERLAY_Z_INDEX := 20
 const DESTROYED_VISUAL_KEY := "generic_destroyed_building"
 const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
+const SFX_BUILDING_HIT := &"building_hit"
 
 var building_id: StringName
 var runtime_id := -1
@@ -375,6 +376,8 @@ func _play_hit_effect(damage_type_value: int = GameEnums.DAMAGE_PHYSICAL) -> voi
 		"size": DEFAULT_IMPACT_SIZE,
 		"z_index": 24
 	})
+	if current_hp > 0:
+		_request_audio_cue(SFX_BUILDING_HIT)
 
 
 func _play_repair_effect() -> void:
@@ -393,6 +396,12 @@ func _play_repair_effect() -> void:
 		"size": Vector2(112.0, 112.0),
 		"z_index": 24
 	})
+
+
+func _request_audio_cue(cue_key: StringName) -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.audio_cue_requested.emit(cue_key)
 
 
 func _get_effect_root() -> Node:

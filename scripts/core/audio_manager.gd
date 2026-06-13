@@ -35,9 +35,17 @@ const SFX_IMPACT_ARTS := &"impact_arts"
 const SFX_PROJECTILE_PHYSICAL := &"projectile_physical"
 const SFX_PROJECTILE_ARTS := &"projectile_arts"
 const SFX_SKILL_CAST := &"skill_cast"
+const SFX_CORE_HIT := &"core_hit"
+const SFX_CORE_DESTROYED := &"core_destroyed"
+const SFX_BUILDING_HIT := &"building_hit"
+const SFX_BUILDING_DESTROYED := &"building_destroyed"
+const SFX_ENEMY_DEATH_SMALL := &"enemy_death_small"
+const SFX_ENEMY_DEATH_LARGE := &"enemy_death_large"
 
 const FADE_SECONDS := 0.65
 const SFX_POOL_SIZE := 8
+const SFX_GLOBAL_VOLUME_SCALE := 1.18
+const SFX_MAX_VOLUME_SCALE := 1.75
 const SETTINGS_PATH := "user://audio_settings.cfg"
 const SETTINGS_SECTION := "audio"
 
@@ -78,13 +86,13 @@ var sfx_paths := {
 	SFX_IMPACT_ARTS: "res://assets/audio/sfx/impact_arts.ogg",
 	SFX_PROJECTILE_PHYSICAL: "res://assets/audio/sfx/projectile_physical.ogg",
 	SFX_PROJECTILE_ARTS: "res://assets/audio/sfx/projectile_arts.ogg",
-	SFX_SKILL_CAST: "res://assets/audio/sfx/skill_cast.ogg"
-}
-var sfx_cooldowns := {
-	SFX_IMPACT_PHYSICAL: 0.045,
-	SFX_IMPACT_ARTS: 0.055,
-	SFX_PROJECTILE_PHYSICAL: 0.04,
-	SFX_PROJECTILE_ARTS: 0.05
+	SFX_SKILL_CAST: "res://assets/audio/sfx/skill_cast.ogg",
+	SFX_CORE_HIT: "res://assets/audio/sfx/core_hit.ogg",
+	SFX_CORE_DESTROYED: "res://assets/audio/sfx/core_destroyed.ogg",
+	SFX_BUILDING_HIT: "res://assets/audio/sfx/building_hit.ogg",
+	SFX_BUILDING_DESTROYED: "res://assets/audio/sfx/building_destroyed.ogg",
+	SFX_ENEMY_DEATH_SMALL: "res://assets/audio/sfx/enemy_death_small.ogg",
+	SFX_ENEMY_DEATH_LARGE: "res://assets/audio/sfx/enemy_death_large.ogg"
 }
 
 var _bgm_player: AudioStreamPlayer
@@ -92,13 +100,25 @@ var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_cursor := 0
 var _current_bgm_key := StringName()
 var _fade_tween: Tween
+var _stream_cache := {}
 var _last_sfx_played_msec := {}
+var sfx_cooldowns := {
+	SFX_IMPACT_PHYSICAL: 0.045,
+	SFX_IMPACT_ARTS: 0.055,
+	SFX_PROJECTILE_PHYSICAL: 0.04,
+	SFX_PROJECTILE_ARTS: 0.05,
+	SFX_CORE_HIT: 0.25,
+	SFX_BUILDING_HIT: 0.12,
+	SFX_ENEMY_DEATH_SMALL: 0.08,
+	SFX_ENEMY_DEATH_LARGE: 0.15,
+}
 
 
 func _ready() -> void:
 	_setup_players()
 	_load_settings()
 	_apply_volumes()
+	_prewarm_sfx([SFX_CORE_HIT, SFX_CORE_DESTROYED, SFX_BUILDING_HIT, SFX_BUILDING_DESTROYED])
 	_bind_events()
 
 
@@ -154,8 +174,7 @@ func play_sfx(sfx_key: StringName) -> void:
 	if stream == null:
 		push_warning("Missing SFX stream for key: %s" % sfx_key)
 		return
-	var pitch_scale := 0.74 if sfx_key == SFX_UI_BULLET_TIME else 1.0
-	play_sfx_stream(stream, pitch_scale)
+	play_sfx_stream(stream, _get_sfx_pitch_scale(sfx_key), _get_sfx_volume_scale(sfx_key))
 
 
 func play_unit_deploy_sfx() -> void:
@@ -178,7 +197,7 @@ func play_resource_collect_sfx() -> void:
 	play_sfx(SFX_RESOURCE_COLLECT)
 
 
-func play_sfx_stream(stream: AudioStream, pitch_scale: float = 1.0) -> void:
+func play_sfx_stream(stream: AudioStream, pitch_scale: float = 1.0, volume_scale: float = 1.0) -> void:
 	if stream == null or _sfx_players.is_empty():
 		return
 	var player := _sfx_players[_sfx_cursor]
@@ -186,7 +205,7 @@ func play_sfx_stream(stream: AudioStream, pitch_scale: float = 1.0) -> void:
 	player.stop()
 	player.stream = stream
 	player.pitch_scale = pitch_scale
-	player.volume_db = _linear_to_db(master_volume * sfx_volume)
+	player.volume_db = _linear_to_db(_base_sfx_linear_volume() * clampf(volume_scale, 0.0, SFX_MAX_VOLUME_SCALE))
 	player.play()
 
 
@@ -234,13 +253,17 @@ func _bind_events() -> void:
 	event_bus.day_started.connect(_on_day_started)
 	event_bus.night_started.connect(_on_night_started)
 	event_bus.run_ended.connect(_on_run_ended)
+	event_bus.core_damaged.connect(_on_core_damaged)
+	event_bus.core_destroyed.connect(_on_core_destroyed)
 	event_bus.unit_deployed.connect(_on_unit_deployed)
 	event_bus.building_placed.connect(_on_building_placed)
+	event_bus.building_destroyed.connect(_on_building_destroyed)
 	event_bus.build_action_result.connect(_on_build_action_result)
 	event_bus.fog_revealed.connect(_on_fog_revealed)
 	event_bus.random_event_triggered.connect(_on_random_event_triggered)
 	event_bus.resource_collected.connect(_on_resource_collected)
 	event_bus.unit_removed.connect(_on_unit_removed)
+	event_bus.enemy_died.connect(_on_enemy_died)
 	event_bus.shop_action_result.connect(_on_shop_action_result)
 	event_bus.blessing_chosen.connect(_on_blessing_chosen)
 	event_bus.audio_cue_requested.connect(_on_audio_cue_requested)
@@ -251,7 +274,7 @@ func _apply_volumes() -> void:
 	if _bgm_player != null:
 		_bgm_player.volume_db = _linear_to_db(master_volume * music_volume)
 	for player in _sfx_players:
-		player.volume_db = _linear_to_db(master_volume * sfx_volume)
+		player.volume_db = _linear_to_db(_base_sfx_linear_volume())
 
 
 func _load_settings() -> void:
@@ -274,7 +297,19 @@ func _save_settings() -> void:
 func _load_stream(path: String) -> AudioStream:
 	if path.is_empty() or not ResourceLoader.exists(path):
 		return null
-	return load(path) as AudioStream
+	if _stream_cache.has(path):
+		return _stream_cache[path] as AudioStream
+	var stream := load(path) as AudioStream
+	if stream != null:
+		_stream_cache[path] = stream
+	return stream
+
+
+func _prewarm_sfx(sfx_keys: Array[StringName]) -> void:
+	for sfx_key in sfx_keys:
+		var path := String(sfx_paths.get(sfx_key, ""))
+		if not path.is_empty():
+			_load_stream(path)
 
 
 func _enable_stream_loop(stream: AudioStream) -> void:
@@ -296,6 +331,10 @@ func _linear_to_db(value: float) -> float:
 	return linear_to_db(value)
 
 
+func _base_sfx_linear_volume() -> float:
+	return master_volume * sfx_volume * SFX_GLOBAL_VOLUME_SCALE
+
+
 func _is_sfx_throttled(sfx_key: StringName) -> bool:
 	var cooldown_seconds := float(sfx_cooldowns.get(sfx_key, 0.0))
 	if cooldown_seconds <= 0.0:
@@ -306,6 +345,30 @@ func _is_sfx_throttled(sfx_key: StringName) -> bool:
 		return true
 	_last_sfx_played_msec[sfx_key] = now_msec
 	return false
+
+
+func _get_sfx_pitch_scale(sfx_key: StringName) -> float:
+	match sfx_key:
+		SFX_UI_BULLET_TIME:
+			return 0.74
+		SFX_ENEMY_DEATH_SMALL:
+			return randf_range(0.94, 1.08)
+		SFX_ENEMY_DEATH_LARGE:
+			return randf_range(0.90, 1.04)
+	return 1.0
+
+
+func _get_sfx_volume_scale(sfx_key: StringName) -> float:
+	match sfx_key:
+		SFX_CORE_HIT:
+			return 1.35
+		SFX_CORE_DESTROYED:
+			return 1.15
+		SFX_ENEMY_DEATH_SMALL:
+			return randf_range(0.78, 0.96)
+		SFX_ENEMY_DEATH_LARGE:
+			return randf_range(0.86, 1.0)
+	return 1.0
 
 
 func _on_day_started(_day: int) -> void:
@@ -323,12 +386,25 @@ func _on_run_ended(_win: bool) -> void:
 	stop_bgm()
 
 
+func _on_core_damaged(_amount: int, current: int, _max_value: int) -> void:
+	if current > 0:
+		play_sfx(SFX_CORE_HIT)
+
+
+func _on_core_destroyed() -> void:
+	play_sfx(SFX_CORE_DESTROYED)
+
+
 func _on_unit_deployed(_unit_runtime_id: int, _operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
 	play_unit_deploy_sfx()
 
 
 func _on_building_placed(_building_runtime_id: int, _building_id: StringName, _cell: Vector2i) -> void:
 	play_build_place_sfx()
+
+
+func _on_building_destroyed(_building_runtime_id: int, _building_id: StringName, _cell: Vector2i) -> void:
+	play_sfx(SFX_BUILDING_DESTROYED)
 
 
 func _on_build_action_result(_building_id: StringName, _cell: Vector2i, result: Dictionary) -> void:
@@ -352,6 +428,10 @@ func _on_unit_removed(_unit_runtime_id: int, _reason: int) -> void:
 	play_sfx(SFX_UNIT_REMOVED)
 
 
+func _on_enemy_died(_enemy_runtime_id: int, enemy_id: StringName) -> void:
+	play_sfx(get_enemy_death_sfx_key(enemy_id))
+
+
 func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 	if not bool(result.get("ok", false)):
 		play_sfx(SFX_UI_ERROR)
@@ -373,3 +453,21 @@ func _on_unit_skill_cast(_unit_runtime_id: int, _unit_id: StringName) -> void:
 
 func _on_audio_cue_requested(cue_key: StringName) -> void:
 	play_sfx(cue_key)
+
+
+func get_enemy_death_sfx_key(enemy_id: StringName) -> StringName:
+	var data_repo = AppRefs.data_repo()
+	var cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id) if data_repo != null and data_repo.has_method("get_enemy_cfg") else {}
+	return get_enemy_death_sfx_key_for_cfg(cfg)
+
+
+func get_enemy_death_sfx_key_for_cfg(enemy_cfg: Dictionary) -> StringName:
+	if StringName(enemy_cfg.get("behavior_type", "normal")) == &"boss":
+		return SFX_ENEMY_DEATH_LARGE
+	if int(enemy_cfg.get("max_hp", 0)) >= 400:
+		return SFX_ENEMY_DEATH_LARGE
+	if int(enemy_cfg.get("core_damage", 1)) >= 2:
+		return SFX_ENEMY_DEATH_LARGE
+	if int(enemy_cfg.get("block_weight", 1)) >= 2:
+		return SFX_ENEMY_DEATH_LARGE
+	return SFX_ENEMY_DEATH_SMALL
