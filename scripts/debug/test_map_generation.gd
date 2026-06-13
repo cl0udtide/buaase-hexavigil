@@ -14,6 +14,7 @@ const NaturalGen = preload("res://scripts/map/generation/natural.gd")
 const GenRepairMod = preload("res://scripts/map/generation/gen_repair.gd")
 const MesaGen = preload("res://scripts/map/generation/mesa.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
+const TerrainField = preload("res://scripts/map/generation/terrain_field.gd")
 
 var _failures: int = 0
 
@@ -24,6 +25,13 @@ func _init() -> void:
 
 func _run() -> void:
 	_test_int_noise()
+	_test_terrain_field_ridged()
+	_test_terrain_field_height()
+	_test_terrain_field_moisture()
+	_test_terrain_field_classify()
+	_test_terrain_field_despeckle()
+	_test_terrain_field_dump()
+	_test_terrain_field_presets()
 	_test_stage_stream_isolation()
 	_test_detour_repair()
 	_test_cards_archetypes_wind()
@@ -126,6 +134,133 @@ func _test_int_noise() -> void:
 	var neg: float = IntNoise.value_noise(-13, -7, 42, 8)
 	_expect(neg >= 0.0 and neg < 1.0, "value_noise handles negative coords (v=%f)" % neg)
 	_expect(absf(IntNoise.value_noise(-13, -7, 42, 8) - neg) == 0.0, "negative coords deterministic")
+
+
+func _test_terrain_field_ridged() -> void:
+	# ridged(n) = 1 - |2n-1|：脊在 n=0.5 处达峰 1.0，两端 0。
+	_expect(absf(TerrainField._ridged(0.5) - 1.0) < 1e-6, "ridged peak at 0.5")
+	_expect(absf(TerrainField._ridged(0.0) - 0.0) < 1e-6, "ridged 0 at low end")
+	_expect(absf(TerrainField._ridged(1.0) - 0.0) < 1e-6, "ridged 0 at high end")
+	_expect(TerrainField._ridged(0.25) > TerrainField._ridged(0.0), "ridged rising on left half")
+	_expect(TerrainField._ridged(0.75) > TerrainField._ridged(1.0), "ridged falling on right half")
+	for n in [0.0, 0.3, 0.5, 0.7, 0.99]:
+		var r: float = TerrainField._ridged(n)
+		_expect(r >= 0.0 and r <= 1.0, "ridged in [0,1] for n=%f" % n)
+
+
+func _test_terrain_field_height() -> void:
+	var c: Dictionary = TerrainField.DEFAULT_CLIMATE
+	var f1: Dictionary = TerrainField.build_height(30, 30, 12345, 0, c)
+	var f2: Dictionary = TerrainField.build_height(30, 30, 12345, 0, c)
+	var f3: Dictionary = TerrainField.build_height(30, 30, 99999, 0, c)
+	_expect(f1.size() == 900, "height field covers 30x30 (%d)" % f1.size())
+	var identical := true
+	var differs := false
+	for y in range(30):
+		for x in range(30):
+			var k := Vector2i(x, y)
+			if int(f1[k]) != int(f2[k]):
+				identical = false
+			if int(f1[k]) != int(f3.get(k, -1)):
+				differs = true
+	_expect(identical, "same seed -> identical height field")
+	_expect(differs, "different seed -> different height field")
+	var lo: int = 256
+	var hi: int = -1
+	for v in f1.values():
+		lo = mini(lo, int(v))
+		hi = maxi(hi, int(v))
+	_expect(lo >= 0 and hi <= 255, "height in [0,255] (lo=%d hi=%d)" % [lo, hi])
+	_expect(hi - lo > 60, "height field has relief (span=%d)" % (hi - lo))
+
+
+func _test_terrain_field_moisture() -> void:
+	var c: Dictionary = TerrainField.DEFAULT_CLIMATE
+	var m1: Dictionary = TerrainField.build_moisture(30, 30, 12345, 0, c)
+	var m2: Dictionary = TerrainField.build_moisture(30, 30, 12345, 0, c)
+	_expect(m1.size() == 900, "moisture covers 30x30")
+	var same := true
+	for k in m1.keys():
+		if int(m1[k]) != int(m2[k]):
+			same = false
+	_expect(same, "moisture deterministic")
+	var h1: Dictionary = TerrainField.build_height(30, 30, 12345, 0, c)
+	var equalcount := 0
+	for k in m1.keys():
+		if int(m1[k]) == int(h1[k]):
+			equalcount += 1
+	_expect(equalcount < 200, "moisture decoupled from height (equal=%d)" % equalcount)
+	var lo := 256
+	var hi := -1
+	for v in m1.values():
+		lo = mini(lo, int(v)); hi = maxi(hi, int(v))
+	_expect(lo >= 0 and hi <= 255, "moisture in [0,255]")
+
+
+func _test_terrain_field_classify() -> void:
+	var c: Dictionary = TerrainField.DEFAULT_CLIMATE
+	var terr: Dictionary = TerrainField.classify(30, 30, 12345, 0, c)
+	_expect(terr.size() == 900, "classified terrain covers 30x30")
+	var counts := {CellDataRef.TERRAIN_PLAIN: 0, CellDataRef.TERRAIN_MOUNTAIN: 0,
+		CellDataRef.TERRAIN_HIGHLAND: 0, CellDataRef.TERRAIN_WATER: 0}
+	for v in terr.values():
+		_expect(counts.has(v), "terrain is one of 4 known types")
+		counts[v] = int(counts[v]) + 1
+	_expect(int(counts[CellDataRef.TERRAIN_PLAIN]) > 0, "has plain")
+	_expect(int(counts[CellDataRef.TERRAIN_MOUNTAIN]) > 0, "has mountain")
+	_expect(int(counts[CellDataRef.TERRAIN_HIGHLAND]) > 0, "has highland")
+	var block: int = int(counts[CellDataRef.TERRAIN_MOUNTAIN]) + int(counts[CellDataRef.TERRAIN_WATER]) + int(counts[CellDataRef.TERRAIN_HIGHLAND])
+	_expect(block > 30 and block < 600, "blocking terrain is a sparse minority (block=%d)" % block)
+	var terr2: Dictionary = TerrainField.classify(30, 30, 12345, 0, c)
+	var same := true
+	for k in terr.keys():
+		if terr[k] != terr2[k]:
+			same = false
+	_expect(same, "classify deterministic")
+
+
+func _test_terrain_field_despeckle() -> void:
+	var t: Dictionary = {}
+	for y in range(5):
+		for x in range(5):
+			t[Vector2i(x, y)] = CellDataRef.TERRAIN_PLAIN
+	t[Vector2i(2, 2)] = CellDataRef.TERRAIN_HIGHLAND          # 1 格孤点 → 应被清
+	t[Vector2i(0, 0)] = CellDataRef.TERRAIN_MOUNTAIN
+	t[Vector2i(1, 0)] = CellDataRef.TERRAIN_MOUNTAIN
+	t[Vector2i(0, 1)] = CellDataRef.TERRAIN_MOUNTAIN          # 3 格山 → 应留
+	var out: Dictionary = TerrainField._despeckle(t, 5, 5)
+	_expect(out[Vector2i(2, 2)] == CellDataRef.TERRAIN_PLAIN, "1-cell highland speck removed")
+	_expect(out[Vector2i(0, 0)] == CellDataRef.TERRAIN_MOUNTAIN, "3-cell mountain survives")
+	_expect(out[Vector2i(0, 1)] == CellDataRef.TERRAIN_MOUNTAIN, "3-cell mountain survives (2)")
+
+
+func _test_terrain_field_dump() -> void:
+	var c: Dictionary = TerrainField.DEFAULT_CLIMATE
+	var terr: Dictionary = TerrainField.classify(30, 30, 12345, 0, c)
+	var s1: String = TerrainField.ascii_dump(terr, 30, 30)
+	var s2: String = TerrainField.ascii_dump(terr, 30, 30)
+	_expect(s1 == s2, "ascii_dump deterministic")
+	_expect(s1.length() >= 900, "ascii_dump covers grid")
+	print("\n=== terrain_field DEFAULT seed=12345 ===\n", s1)
+
+
+func _test_terrain_field_presets() -> void:
+	var pre: Dictionary = TerrainField.CLIMATE_PRESETS
+	_expect(pre.has("highland_run") and pre.has("riverine_run") and pre.has("open_run"), "3 presets exist")
+	var seeds: Array = [11, 222, 3333, 44444, 555555]
+	var block_frac := func(preset_name: String) -> float:
+		var total := 0
+		for s in seeds:
+			var t: Dictionary = TerrainField.classify(30, 30, int(s), 0, pre[preset_name])
+			for v in t.values():
+				if v != CellDataRef.TERRAIN_PLAIN and v != CellDataRef.TERRAIN_WATER:
+					total += 1
+		return float(total) / float(seeds.size() * 900)
+	var highland: float = block_frac.call("highland_run")
+	var open: float = block_frac.call("open_run")
+	_expect(highland > open + 0.05, "highland preset rockier than open (h=%.3f o=%.3f)" % [highland, open])
+	for preset_name in ["highland_run", "riverine_run", "open_run"]:
+		print("\n=== preset %s seed=11 ===\n" % preset_name, TerrainField.ascii_dump(TerrainField.classify(30, 30, 11, 0, pre[preset_name]), 30, 30))
 
 
 func _expect(cond: bool, msg: String) -> void:
