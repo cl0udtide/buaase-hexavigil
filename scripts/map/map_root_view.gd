@@ -1096,7 +1096,7 @@ func _get_route_offset(index: int) -> Vector2:
 
 
 func _get_cell_color(data) -> Color:
-	if not data.discovered:
+	if not data.discovered and data.spawn_key == StringName():
 		return COLOR_HIDDEN
 	if data.is_core:
 		return COLOR_CORE
@@ -1311,7 +1311,8 @@ func _draw_cell_tile(rect: Rect2, data) -> void:
 
 
 func _get_cell_texture(data) -> Texture2D:
-	if not data.discovered:
+	# 出怪口格"穿透迷雾"显示真实地块（discovered 仍为 false，探索经济不变）。
+	if not data.discovered and data.spawn_key == StringName():
 		return TILE_HIDDEN
 	if data.is_core:
 		return TILE_PLAIN
