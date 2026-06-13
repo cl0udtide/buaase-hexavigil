@@ -1474,10 +1474,12 @@ func _sync_block_slots() -> void:
 
 
 func _is_enemy_in_attack_range(enemy: Node) -> bool:
-	var enemy_cell: Vector2i = enemy.get_current_cell()
-	var relative: Vector2i = enemy_cell - current_cell
+	# 用怪的 footprint（身体覆盖的格子集合）判定：范围图案罩住其中任一格即命中，
+	# 而非只看单一 current_cell——修掉怪卡在格子交界时被漏打的手感问题。
+	var enemy_cells: Array = enemy.get_footprint_cells() if enemy.has_method("get_footprint_cells") else [enemy.get_current_cell()]
 	for offset in range_pattern:
-		if _rotate_offset(offset, facing) == relative:
+		var target_cell: Vector2i = current_cell + _rotate_offset(offset, facing)
+		if enemy_cells.has(target_cell):
 			return true
 	return false
 

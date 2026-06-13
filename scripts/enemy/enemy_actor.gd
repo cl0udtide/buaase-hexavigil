@@ -35,6 +35,10 @@ const DEFAULT_IMPACT_SIZE := Vector2(96.0, 96.0)
 const DEFAULT_STATUS_EFFECT_SIZE := Vector2(112.0, 112.0)
 const SFX_IMPACT_PHYSICAL := &"impact_physical"
 const SFX_IMPACT_ARTS := &"impact_arts"
+const CELL_SIZE := 64.0
+# 瞄准用的“身体半径”（格数）：怪身体覆盖到的每个格子都算它所在，干员范围罩住任一格即可命中。
+# 0.3 格 → 居中时只占 1 格；卡在格子交界（被阻挡/跨格行进）时占 2 格，修掉“贴图横跨两格却打不到”的手感问题。
+const FOOTPRINT_RADIUS_TILES := 0.3
 
 var enemy_id: StringName
 var runtime_id := -1
@@ -383,6 +387,23 @@ func get_runtime_id() -> int:
 
 func get_current_cell() -> Vector2i:
 	return current_cell
+
+
+## 怪当前身体覆盖到的格子集合（按 global_position ± footprint 半径采四角去重）。
+## 居中时返回 1 格；卡在格子交界时返回 2 格（极少数贴角 4 格）。瞄准命中判定用它而非单一 current_cell。
+func get_footprint_cells() -> Array[Vector2i]:
+	var map_manager: Node = get_map_manager()
+	if map_manager == null or not map_manager.has_method("world_to_cell"):
+		return [current_cell]
+	var radius: float = float(cfg.get("footprint_radius_tiles", FOOTPRINT_RADIUS_TILES)) * CELL_SIZE
+	var cells: Array[Vector2i] = []
+	for corner: Vector2 in [Vector2(-radius, -radius), Vector2(radius, -radius), Vector2(-radius, radius), Vector2(radius, radius)]:
+		var c: Vector2i = map_manager.world_to_cell(global_position + corner)
+		if not cells.has(c):
+			cells.append(c)
+	if cells.is_empty():
+		cells.append(current_cell)
+	return cells
 
 
 func get_attack_range_tiles() -> int:
