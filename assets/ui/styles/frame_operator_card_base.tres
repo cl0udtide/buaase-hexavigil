@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_card_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 24.0000
-content_margin_top = 20.0000
-content_margin_right = 24.0000
-content_margin_bottom = 20.0000
+content_margin_left = 72.2257
+content_margin_top = 27.6923
+content_margin_right = 72.2257
+content_margin_bottom = 27.6923
 texture = ExtResource("1_texture")
-texture_margin_left = 53.2000
-texture_margin_top = 29.2400
-texture_margin_right = 53.2000
-texture_margin_bottom = 29.2400
+texture_margin_left = 276.8652
+texture_margin_top = 132.9231
+texture_margin_right = 276.8652
+texture_margin_bottom = 132.9231
 draw_center = true

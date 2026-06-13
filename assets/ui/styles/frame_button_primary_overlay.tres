@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_button_primary_overlay.png" id="1_texture"]
 
 [resource]
-content_margin_left = 10.0000
-content_margin_top = 6.0000
-content_margin_right = 10.0000
-content_margin_bottom = 6.0000
+content_margin_left = 8.9076
+content_margin_top = 1.9079
+content_margin_right = 8.9076
+content_margin_bottom = 1.9079
 texture = ExtResource("1_texture")
-texture_margin_left = 1.0100
-texture_margin_top = 1.0000
-texture_margin_right = 1.0100
-texture_margin_bottom = 1.0000
+texture_margin_left = 0.8997
+texture_margin_top = 0.3180
+texture_margin_right = 0.8997
+texture_margin_bottom = 0.3180
 draw_center = true

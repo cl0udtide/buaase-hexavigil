@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_skill_icon_frame.png" id="1_texture"]
 
 [resource]
-content_margin_left = 6.0000
-content_margin_top = 6.0000
-content_margin_right = 6.0000
-content_margin_bottom = 6.0000
+content_margin_left = 1.9394
+content_margin_top = 1.8732
+content_margin_right = 1.9394
+content_margin_bottom = 1.8732
 texture = ExtResource("1_texture")
-texture_margin_left = 3.1200
-texture_margin_top = 3.1200
-texture_margin_right = 3.1200
-texture_margin_bottom = 3.1200
+texture_margin_left = 1.0085
+texture_margin_top = 0.9740
+texture_margin_right = 1.0085
+texture_margin_bottom = 0.9740
 draw_center = false

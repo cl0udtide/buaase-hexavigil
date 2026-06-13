@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_card_cooldown_selected_overlay.png" id="1_texture"]
 
 [resource]
-content_margin_left = 12.0000
-content_margin_top = 10.0000
-content_margin_right = 12.0000
-content_margin_bottom = 10.0000
+content_margin_left = 75.7895
+content_margin_top = 28.3465
+content_margin_right = 75.7895
+content_margin_bottom = 28.3465
 texture = ExtResource("1_texture")
-texture_margin_left = 9.8600
-texture_margin_top = 9.8600
-texture_margin_right = 9.8600
-texture_margin_bottom = 9.8600
+texture_margin_left = 265.2632
+texture_margin_top = 119.0551
+texture_margin_right = 265.2632
+texture_margin_bottom = 119.0551
 draw_center = true

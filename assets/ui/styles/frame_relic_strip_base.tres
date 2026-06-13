@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_strip_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 10.0000
-content_margin_top = 6.0000
-content_margin_right = 10.0000
-content_margin_bottom = 6.0000
+content_margin_left = 1.2139
+content_margin_top = 5.6000
+content_margin_right = 1.2139
+content_margin_bottom = 5.6000
 texture = ExtResource("1_texture")
-texture_margin_left = 18.0000
-texture_margin_top = 10.0000
-texture_margin_right = 18.0000
-texture_margin_bottom = 10.0000
+texture_margin_left = 2.1850
+texture_margin_top = 9.3333
+texture_margin_right = 2.1850
+texture_margin_bottom = 9.3333
 draw_center = true

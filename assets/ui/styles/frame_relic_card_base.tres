@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_card_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 32.0000
-content_margin_top = 20.0000
-content_margin_right = 32.0000
-content_margin_bottom = 20.0000
+content_margin_left = 16.0000
+content_margin_top = 10.0000
+content_margin_right = 16.0000
+content_margin_bottom = 10.0000
 texture = ExtResource("1_texture")
-texture_margin_left = 36.0000
+texture_margin_left = 58.0000
 texture_margin_top = 36.0000
-texture_margin_right = 36.0000
+texture_margin_right = 58.0000
 texture_margin_bottom = 36.0000
 draw_center = true

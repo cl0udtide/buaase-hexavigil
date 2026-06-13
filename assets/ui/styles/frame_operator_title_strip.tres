@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" uid="uid://cdetoia24mkc3" path="res://assets/ui/generated/frame_operator_title_strip.png" id="1_texture"]
 
 [resource]
-content_margin_left = 8.0000
-content_margin_top = 4.0000
-content_margin_right = 8.0000
-content_margin_bottom = 4.0000
+content_margin_left = 49.3595
+content_margin_top = 2.2400
+content_margin_right = 49.3595
+content_margin_bottom = 2.2400
 texture = ExtResource("1_texture")
-texture_margin_left = 8.0800
-texture_margin_top = 2.0200
-texture_margin_right = 8.0800
-texture_margin_bottom = 2.0200
+texture_margin_left = 172.7582
+texture_margin_top = 6.7200
+texture_margin_right = 172.7582
+texture_margin_bottom = 6.7200
 draw_center = true

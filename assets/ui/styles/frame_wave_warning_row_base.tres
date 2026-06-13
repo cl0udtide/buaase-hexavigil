@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_wave_warning_row_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 10.0000
-content_margin_top = 4.0000
-content_margin_right = 10.0000
-content_margin_bottom = 4.0000
+content_margin_left = 0.5649
+content_margin_top = 1.0880
+content_margin_right = 0.5649
+content_margin_bottom = 1.0880
 texture = ExtResource("1_texture")
-texture_margin_left = 18.0000
-texture_margin_top = 12.0000
-texture_margin_right = 18.0000
-texture_margin_bottom = 12.0000
+texture_margin_left = 1.0168
+texture_margin_top = 3.2640
+texture_margin_right = 1.0168
+texture_margin_bottom = 3.2640
 draw_center = true

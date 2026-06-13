@@ -51,7 +51,9 @@
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_220x82"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_300x82"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_speed_button"]
 
@@ -1036,7 +1038,8 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "        今晚敌情"
+theme_override_font_sizes/font_size = 17
+text = "今晚敌情"
 vertical_alignment = 1
 
 [node name="WaveRouteToggle" type="Button" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1668780302]
@@ -1138,7 +1141,7 @@ theme_override_constants/separation = 6
 
 [node name="WaveSpawnCardTemplate" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent" unique_id=148228821]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 132)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
@@ -1163,17 +1166,18 @@ theme_override_constants/v_separation = 4
 
 [node name="WaveEnemyCardTemplate" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent" unique_id=1782606940]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(142, 130)
+custom_minimum_size = Vector2(150, 126)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_wave_enemy_row_base_150x126")
 
 [node name="EnemyCardMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate" unique_id=1472379943]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 7
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 7
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="EnemyCardBody" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin" unique_id=1587822907]
 layout_mode = 2
@@ -1233,7 +1237,7 @@ text = "物理"
 text_overrun_behavior = 3
 
 [node name="WaveEnemyPreview" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody" unique_id=1577585574]
-custom_minimum_size = Vector2(78, 100)
+custom_minimum_size = Vector2(66, 96)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 3
@@ -1268,6 +1272,7 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_wave_warning_row_base_328x38")
 
 [node name="WarningMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WaveWarningRow" unique_id=1254677363]
 layout_mode = 2

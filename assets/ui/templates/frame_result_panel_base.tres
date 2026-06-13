@@ -2,10 +2,10 @@
 
 
 [resource]
-texture_margin_left = 56.37
-texture_margin_top = 49.32
-texture_margin_right = 56.37
-texture_margin_bottom = 49.32
+texture_margin_left = 64.0
+texture_margin_top = 64.0
+texture_margin_right = 64.0
+texture_margin_bottom = 64.0
 content_margin_left = 28.0
 content_margin_top = 24.0
 content_margin_right = 28.0

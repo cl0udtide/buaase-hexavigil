@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_sidebar_tab_selected_overlay.png" id="1_texture"]
 
 [resource]
-content_margin_left = 12.0000
-content_margin_top = 6.0000
-content_margin_right = 12.0000
-content_margin_bottom = 6.0000
+content_margin_left = 4.7715
+content_margin_top = 1.4218
+content_margin_right = 4.7715
+content_margin_bottom = 1.4218
 texture = ExtResource("1_texture")
-texture_margin_left = 18.0000
-texture_margin_top = 18.0000
-texture_margin_right = 18.0000
-texture_margin_bottom = 18.0000
+texture_margin_left = 7.1573
+texture_margin_top = 4.2654
+texture_margin_right = 7.1573
+texture_margin_bottom = 4.2654
 draw_center = true

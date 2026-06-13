@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_entry_button_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 10.0000
-content_margin_top = 5.0000
-content_margin_right = 10.0000
-content_margin_bottom = 5.0000
+content_margin_left = 3.7719
+content_margin_top = 1.2409
+content_margin_right = 3.7719
+content_margin_bottom = 1.2409
 texture = ExtResource("1_texture")
-texture_margin_left = 12.0000
-texture_margin_top = 10.0000
-texture_margin_right = 12.0000
-texture_margin_bottom = 10.0000
+texture_margin_left = 4.5263
+texture_margin_top = 2.4818
+texture_margin_right = 4.5263
+texture_margin_bottom = 2.4818
 draw_center = true
