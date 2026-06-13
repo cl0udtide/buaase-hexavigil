@@ -808,7 +808,7 @@ func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: floa
 	draw_colored_polygon(points, color)
 
 
-## 只画路线线条，返回编号信息（编号在迷雾之后单独画，保证锚点已探明且不被雾盖）。
+## 画各出怪口的覆盖面（按口异色、半透明填格），返回编号信息（编号在迷雾之后单独画）。
 func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	var label_infos: Array[Dictionary] = []
 	if _wave_route_previews.is_empty():
@@ -816,14 +816,25 @@ func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	for index in range(_wave_route_previews.size()):
 		var route: Dictionary = _wave_route_previews[index]
 		var color := _get_route_color(route, index)
-		var offset := _get_route_offset(index)
-		var path: Array = route.get("path", [])
-		if not path.is_empty():
-			_draw_route_path(map_manager, path, color, offset, StringName(route.get("effective_path_mode", route.get("path_mode", &"normal"))))
-			var label_info := _make_route_label_info(map_manager, path, offset, color, route)
+		for cell_variant: Variant in route.get("coverage", []):
+			var cell: Vector2i = cell_variant
+			if not map_manager.is_inside(cell):
+				continue
+			var rect := Rect2(Vector2(float(cell.x), float(cell.y)) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
+			_draw_coverage_cell(rect, color)
+		var centerline: Array = route.get("centerline", [])
+		if not centerline.is_empty():
+			var label_info := _make_route_label_info(map_manager, centerline, _get_route_offset(index), color, route)
 			if not label_info.is_empty():
 				label_infos.append(label_info)
 	return label_infos
+
+
+## 单格覆盖染色：半透明填充 + 描边；多口重叠区因 alpha 叠加而更显著。
+func _draw_coverage_cell(rect: Rect2, color: Color) -> void:
+	var inner := rect.grow(-2.0)
+	draw_rect(inner, Color(color.r, color.g, color.b, 0.16))
+	draw_rect(inner, Color(color.r, color.g, color.b, 0.5), false, 1.5)
 
 
 func _draw_route_path(map_manager: Node, path: Array, color: Color, offset: Vector2, path_mode: StringName) -> void:
@@ -1066,14 +1077,10 @@ func _event_bubble_center(map_manager: Node, cell: Vector2i) -> Vector2:
 	return map_manager.cell_to_world(cell) + EVENT_BUBBLE_FLOAT_OFFSET
 
 
+## 每个出怪口一色（高对比调色板按序取）便于读图；模式信息走标签/摘要文本。
 func _get_route_color(route: Dictionary, index: int) -> Color:
 	if not bool(route.get("ok", false)):
 		return ROUTE_WARNING_COLOR
-	var effective_path_mode := StringName(route.get("effective_path_mode", route.get("path_mode", &"normal")))
-	if effective_path_mode == &"flying":
-		return ROUTE_FLYING_COLOR
-	if effective_path_mode == &"demolisher":
-		return ROUTE_DEMOLISHER_COLOR
 	return ROUTE_PREVIEW_COLORS[index % ROUTE_PREVIEW_COLORS.size()]
 
 
