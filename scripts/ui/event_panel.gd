@@ -104,11 +104,21 @@ func _build_choices(choice_defs: Array) -> void:
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0.0, 46.0)
 		button.focus_mode = Control.FOCUS_NONE
-		button.text = String(choice.get("text", "选项"))
-		button.tooltip_text = _choice_tooltip_text(choice)
+		var base_text := String(choice.get("text", "选项"))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_style_choice_button(button, StringName(choice.get("kind", &"secondary")))
 		var choice_id := StringName(choice.get("id", "choice"))
+		# 预检该选项指向子事件的 requires；不满足时禁用并在文案/tooltip 标出缺口。
+		var requirement := _preview_choice_requirements(choice_id)
+		var tooltip := _choice_tooltip_text(choice)
+		if not bool(requirement.get("ok", true)):
+			var reason := String(requirement.get("reason", "条件不足"))
+			button.disabled = true
+			button.text = "%s（%s）" % [base_text, reason]
+			tooltip = reason if tooltip.is_empty() else "%s\n%s" % [tooltip, reason]
+		else:
+			button.text = base_text
+		button.tooltip_text = tooltip
 		button.pressed.connect(_on_choice_pressed.bind(choice_id))
 		_choice_list.add_child(button)
 		_choice_buttons.append(button)
@@ -319,6 +329,16 @@ func _style_choice_button(button: Button, kind: StringName) -> void:
 func _get_event_cfg(event_id: StringName) -> Dictionary:
 	var data_repo = AppRefs.data_repo()
 	return data_repo.get_event_cfg(event_id) if data_repo != null and data_repo.has_method("get_event_cfg") else {}
+
+
+## 预检选项前置资源：返回 {ok, reason, shortfalls}；管理器不可用时按满足处理。
+func _preview_choice_requirements(choice_id: StringName) -> Dictionary:
+	if _current_event_id == StringName() or choice_id == StringName():
+		return {"ok": true}
+	var random_event_manager := _get_random_event_manager()
+	if random_event_manager == null or not random_event_manager.has_method("preview_choice_requirements"):
+		return {"ok": true}
+	return random_event_manager.preview_choice_requirements(_current_event_id, choice_id)
 
 
 func _choice_tooltip_text(choice: Dictionary) -> String:

@@ -80,6 +80,16 @@ func get_event_cells() -> Array[Vector2i]:
 	return cells
 
 
+## 当前地图上未触发的活跃事件点数量（供 HUD 显示 X/上限）。
+func get_active_event_count() -> int:
+	return _events_by_cell.size()
+
+
+## 活跃事件点上限（每日刷新到此值即停止；供 HUD 显示与达上限提示）。
+func get_max_active_event_points() -> int:
+	return MAX_ACTIVE_EVENT_POINTS
+
+
 func mark_event_triggered(cell: Vector2i) -> void:
 	_events_by_cell.erase(cell)
 	_altar_offers_by_cell.erase(cell)
@@ -138,6 +148,67 @@ func _check_requirements(cfg: Dictionary, run_state: Node) -> Dictionary:
 			or int(requires.get("mana", 0)) > int(run_state.mana):
 		return ActionResult.err(&"NOT_ENOUGH_MATERIALS", "材料不足，交易取消")
 	return ActionResult.ok()
+
+
+## UI 预检：给定事件选项，返回它指向子事件的 requires 满足情况与缺口明细。
+## 不修改任何状态，供 event_panel 在建按钮时禁用 + 提示"还需 X"。
+## 返回：{ ok: bool, requires: Dictionary, shortfalls: Array[{key,label,need,have,missing}], reason: String }
+func preview_choice_requirements(event_id: StringName, choice_id: StringName) -> Dictionary:
+	var requires := _requires_for_choice(event_id, choice_id)
+	return preview_requirements(requires)
+
+
+## 把一份 requires 与 RunState 当前资源比对，列出缺口。requires 为空时恒满足。
+func preview_requirements(requires: Dictionary) -> Dictionary:
+	var result := {"ok": true, "requires": requires, "shortfalls": [], "reason": ""}
+	if requires == null or requires.is_empty():
+		return result
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return result
+	var checks := [
+		{"key": "prestige", "label": "声望", "have": int(run_state.prestige)},
+		{"key": "mana", "label": "魔力矿", "have": int(run_state.mana)},
+		{"key": "wood", "label": "木材", "have": int(run_state.wood)},
+		{"key": "stone", "label": "石材", "have": int(run_state.stone)},
+	]
+	var shortfalls: Array = []
+	var reason_parts: PackedStringArray = PackedStringArray()
+	for check_variant: Variant in checks:
+		var check: Dictionary = check_variant
+		var key := String(check.get("key", ""))
+		var need := int(requires.get(key, 0))
+		if need <= 0:
+			continue
+		var have := int(check.get("have", 0))
+		if have < need:
+			var missing := need - have
+			shortfalls.append({
+				"key": key,
+				"label": String(check.get("label", key)),
+				"need": need,
+				"have": have,
+				"missing": missing,
+			})
+			reason_parts.append("%d %s" % [missing, String(check.get("label", key))])
+	if not shortfalls.is_empty():
+		result["ok"] = false
+		result["shortfalls"] = shortfalls
+		result["reason"] = "还需 %s" % " / ".join(reason_parts)
+	return result
+
+
+## 解析某事件选项最终触发子事件的 requires（祭坛/塌方动态选项无静态 requires，返回空）。
+func _requires_for_choice(event_id: StringName, choice_id: StringName) -> Dictionary:
+	if choice_id == StringName():
+		return {}
+	var target_event_id := event_id
+	var choice_result := _resolve_choice_event_id(event_id, choice_id)
+	if choice_result.get("ok", false):
+		target_event_id = StringName(choice_result.get("payload", {}).get("event_id", event_id))
+	var target_cfg := get_event_cfg(target_event_id)
+	var requires: Variant = target_cfg.get("requires", {})
+	return requires if requires is Dictionary else {}
 
 
 ## 契约类效果：核心上限增减、随机遗物、追加夜晚词缀、不漏怪赌约。

@@ -154,6 +154,31 @@ static func relic_tag_text(cfg: Dictionary) -> String:
 	return " / ".join(relic_category_labels(cfg))
 
 
+## 三选一槽位来源显示名：盟约导向 / 经济 / 随机。供 relic_card 标注分槽抽取机制。
+static func relic_slot_source_label(slot: StringName) -> String:
+	match slot:
+		&"covenant":
+			return "盟约导向"
+		&"economy":
+			return "经济"
+		&"random":
+			return "随机"
+		_:
+			return ""
+
+
+static func relic_slot_source_color(slot: StringName) -> Color:
+	match slot:
+		&"covenant":
+			return Color(0.760, 0.560, 0.940, 1.0)
+		&"economy":
+			return Color(0.290, 0.700, 0.430, 1.0)
+		&"random":
+			return Color(0.560, 0.620, 0.720, 1.0)
+		_:
+			return Color(0.560, 0.620, 0.720, 1.0)
+
+
 static func relic_matches_category(cfg: Dictionary, category: StringName) -> bool:
 	if category == &"all" or category == StringName():
 		return true

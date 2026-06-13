@@ -65,6 +65,7 @@ var _bullet_time_suspended := false
 @onready var _unit_manager: Node = get_node_or_null("../../Managers/UnitManager")
 @onready var _enemy_manager: Node = get_node_or_null("../../Managers/EnemyManager")
 @onready var _building_manager: Node = get_node_or_null("../../Managers/BuildingManager")
+@onready var _random_event_manager: Node = get_node_or_null("../../Managers/RandomEventManager")
 
 
 func _ready() -> void:
@@ -83,9 +84,34 @@ func _process(_delta: float) -> void:
 	_refresh_top_hud()
 	_refresh_detail_panel()
 	_refresh_wave_preview()
+	_refresh_wave_countdown()
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
 	_sync_bullet_time_from_selection()
+
+
+## 波间倒计时：喘息期（已排定下一波且场上无敌人）显示"下一波 N 秒"，否则隐藏。
+func _refresh_wave_countdown() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_wave_countdown"):
+		return
+	if _wave_manager == null or not _wave_manager.has_method("get_seconds_to_next_wave"):
+		return
+	_combat_hud.set_wave_countdown(float(_wave_manager.get_seconds_to_next_wave()))
+
+
+## 活跃事件点计数："事件点 X/上限"，达上限时给警示提示。
+func _refresh_event_count_line() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_event_count_line"):
+		return
+	if _random_event_manager == null or not _random_event_manager.has_method("get_active_event_count"):
+		return
+	var count := int(_random_event_manager.get_active_event_count())
+	var limit := int(_random_event_manager.get_max_active_event_points()) if _random_event_manager.has_method("get_max_active_event_points") else 4
+	var at_limit := count >= limit
+	var text := "事件点 %d/%d" % [count, limit]
+	if at_limit:
+		text += "（已满，先去处理）"
+	_combat_hud.set_event_count_line(text, at_limit)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -215,6 +241,7 @@ func _bootstrap_hud() -> void:
 	_refresh_bullet_time_feedback()
 	_show_message("拖拽底部干员卡开始部署")
 	_force_wave_preview_refresh()
+	_refresh_event_count_line()
 
 
 func _on_owned_operators_changed(operators: Array[Dictionary]) -> void:
@@ -283,6 +310,7 @@ func _on_day_started(day: int) -> void:
 	_play_level_intro(day)
 	_show_night_affix_banner()
 	_refresh_active_gates_line()
+	_refresh_event_count_line()
 	_announce_gate_expansion(day)
 
 
@@ -1140,6 +1168,7 @@ func _on_random_event_triggered(_event_id: StringName, _cell: Vector2i) -> void:
 	_force_wave_preview_refresh()
 	_refresh_wave_preview()
 	_show_night_affix_banner()
+	_refresh_event_count_line()
 
 
 func _on_night_wave_started(wave_index: int, wave_count: int) -> void:

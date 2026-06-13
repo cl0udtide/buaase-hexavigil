@@ -15,6 +15,8 @@ var _compact := false
 var _choice_mode := false
 var _show_effect := true
 var _hovered := false
+var _slot_source := StringName()
+var _slot_source_label: Label = null
 
 @onready var _card_base: Panel = %CardBase
 @onready var _icon_stack: Control = %IconStack
@@ -66,6 +68,7 @@ func configure(new_buff_id: StringName, cfg: Dictionary, options: Dictionary = {
 	_compact = bool(options.get("compact", false))
 	_choice_mode = bool(options.get("choice_mode", false))
 	_show_effect = bool(options.get("show_effect", true))
+	_slot_source = StringName(options.get("slot_source", ""))
 	if is_node_ready():
 		_apply_config()
 
@@ -99,8 +102,42 @@ func _apply_config() -> void:
 	_desc_label.visible = _show_effect
 	_tag_label.text = UiDisplayText.relic_tag_text(_cfg)
 	tooltip_text = UiDisplayText.relic_tooltip_text(buff_id, _cfg)
+	_refresh_slot_source_badge()
 	_apply_density()
 	_apply_style()
+
+
+## 三选一槽位来源角标：仅在抽取模式 + 有来源时显示，标注盟约导向/经济/随机。
+func _refresh_slot_source_badge() -> void:
+	var label_text := UiDisplayText.relic_slot_source_label(_slot_source)
+	var should_show := _choice_mode and not label_text.is_empty()
+	if not should_show:
+		if _slot_source_label != null:
+			_slot_source_label.visible = false
+		return
+	_ensure_slot_source_label()
+	if _slot_source_label == null:
+		return
+	_slot_source_label.text = label_text
+	_slot_source_label.add_theme_color_override("font_color", UiDisplayText.relic_slot_source_color(_slot_source))
+	_slot_source_label.visible = true
+
+
+func _ensure_slot_source_label() -> void:
+	if _slot_source_label != null and is_instance_valid(_slot_source_label):
+		return
+	var header := _name_label.get_parent() as Control
+	if header == null:
+		return
+	_slot_source_label = Label.new()
+	_slot_source_label.name = "SlotSourceLabel"
+	_slot_source_label.add_theme_font_size_override("font_size", 12)
+	_slot_source_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_slot_source_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_add_label_shadow(_slot_source_label)
+	header.add_child(_slot_source_label)
+	# 放在名称之后、稀有度之前。
+	header.move_child(_slot_source_label, _name_label.get_index() + 1)
 
 
 func _apply_density() -> void:

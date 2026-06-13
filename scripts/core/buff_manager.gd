@@ -29,6 +29,16 @@ func _ready() -> void:
 ## 槽 C 经济/通用保底；不足时从槽 B 池补齐。稀有度门控：第 1-2 天仅普通(1)，
 ## 第 3-4 天普通+稀有(1,2)，第 5 天起稀有+传说(2,3)；门控池不足时回退全池。
 func get_random_blessing_choices(count: int = 0) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for entry in get_random_blessing_choices_with_sources(count):
+		ids.append(StringName(entry.get("buff_id", "")))
+	return ids
+
+
+## 同 get_random_blessing_choices，但每个条目带槽位来源，供 UI 标注"盟约导向/经济/随机"。
+## 返回：Array[{buff_id: StringName, slot: StringName}]，buff_id 与 slot 始终对齐（打乱时同步）。
+## slot 取值：covenant（盟约导向槽）/ economy（经济槽）/ random（稀有度随机/保底槽）。
+func get_random_blessing_choices_with_sources(count: int = 0) -> Array[Dictionary]:
 	var data_repo = AppRefs.data_repo()
 	var run_state = AppRefs.run_state()
 	if data_repo == null:
@@ -74,16 +84,19 @@ func get_random_blessing_choices(count: int = 0) -> Array[StringName]:
 		if StringName(cfg.get("category", "")) == &"covenant":
 			covenant_pool.append(cfg)
 
-	var result: Array[StringName] = []
-	_append_random_choice(covenant_pool, result)
-	_append_random_choice(rarity_pool, result)
+	# entries 保持 (buff_id, slot) 配对；后续打乱以条目为单位，绝不丢来源对应关系。
+	var entries: Array[Dictionary] = []
+	var picked_ids: Array[StringName] = []
+	_append_sourced_choice(covenant_pool, picked_ids, entries, &"covenant")
+	_append_sourced_choice(rarity_pool, picked_ids, entries, &"random")
 	if choice_count >= 3:
-		_append_random_choice(economy_pool, result)
-	while result.size() < choice_count:
-		if not _append_random_choice(rarity_pool, result) and not _append_random_choice(unowned, result):
+		_append_sourced_choice(economy_pool, picked_ids, entries, &"economy")
+	while entries.size() < choice_count:
+		if not _append_sourced_choice(rarity_pool, picked_ids, entries, &"random") \
+				and not _append_sourced_choice(unowned, picked_ids, entries, &"random"):
 			break
-	result.shuffle()
-	return result
+	entries.shuffle()
+	return entries
 
 
 func _allowed_rarities_for_day(day: int) -> Array[int]:
@@ -132,6 +145,21 @@ func _append_random_choice(pool: Array[Dictionary], result: Array[StringName]) -
 	if candidates.is_empty():
 		return false
 	result.append(candidates.pick_random())
+	return true
+
+
+## 从 pool 抽一张未重复的牌，记录其槽位来源 slot；picked_ids 用于去重，entries 收 (buff_id, slot)。
+func _append_sourced_choice(pool: Array[Dictionary], picked_ids: Array[StringName], entries: Array[Dictionary], slot: StringName) -> bool:
+	var candidates: Array[StringName] = []
+	for cfg in pool:
+		var buff_id := StringName(cfg.get("id", ""))
+		if buff_id != StringName() and not picked_ids.has(buff_id):
+			candidates.append(buff_id)
+	if candidates.is_empty():
+		return false
+	var picked: StringName = candidates.pick_random()
+	picked_ids.append(picked)
+	entries.append({"buff_id": picked, "slot": slot})
 	return true
 
 

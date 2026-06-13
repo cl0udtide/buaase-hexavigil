@@ -153,6 +153,16 @@ func _has_more_waves() -> bool:
 	return _wave_index + 1 < _wave_template_ids.size()
 
 
+## 波间喘息倒计时（秒）：仅在已排定下一波时间且尚未开波时返回剩余秒数，否则返回 -1。
+## 供 HUD 在喘息期显示"下一波 N 秒"；不参与出怪/档位逻辑。
+func get_seconds_to_next_wave() -> float:
+	if not _running or _next_wave_at < 0.0:
+		return -1.0
+	if not _has_more_waves():
+		return -1.0
+	return maxf(0.0, _next_wave_at - _elapsed)
+
+
 func _update_wave_flow() -> void:
 	if not _running or not _pending_spawns.is_empty():
 		return

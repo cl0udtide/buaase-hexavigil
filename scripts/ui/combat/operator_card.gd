@@ -24,6 +24,7 @@ var _operator_info: Dictionary = {}
 var _unit_cfg: Dictionary = {}
 var _class_icon_label: Label
 var _cooldown_icon_texture: TextureRect
+var _covenant_badge: Label
 
 @onready var _class_icon_texture: TextureRect = %ClassIcon
 @onready var _name_label: Label = %NameLabel
@@ -245,6 +246,78 @@ func _apply_unit_art() -> void:
 	if _class_icon_label != null:
 		_class_icon_label.visible = class_texture == null
 		_class_icon_label.text = UiDisplayText.class_label(String(_unit_cfg.get("class", ""))).substr(0, 1)
+	_refresh_covenant_badge()
+
+
+## 部署卡盟约角标：右上角显示盟约（含祭坛灌注），灌注项加 ✦；tooltip 给全名。
+func _refresh_covenant_badge() -> void:
+	var base_covenants: Array[StringName] = []
+	var raw_base: Variant = _unit_cfg.get("covenants", [])
+	if typeof(raw_base) == TYPE_ARRAY:
+		for tag in (raw_base as Array):
+			var covenant := StringName(tag)
+			if covenant != StringName() and not base_covenants.has(covenant):
+				base_covenants.append(covenant)
+
+	var effective: Array = []
+	var run_state = AppRefs.run_state()
+	var unit_id := StringName(_operator_info.get("unit_id", ""))
+	if run_state != null:
+		if operator_key != StringName() and run_state.has_method("get_operator_covenants"):
+			effective = run_state.get_operator_covenants(operator_key)
+		elif unit_id != StringName() and run_state.has_method("get_unit_covenants"):
+			effective = run_state.get_unit_covenants(unit_id)
+	if effective.is_empty():
+		effective = base_covenants
+
+	if effective.is_empty():
+		if _covenant_badge != null:
+			_covenant_badge.visible = false
+		tooltip_text = ""
+		return
+
+	var has_infused := false
+	var full_names: PackedStringArray = PackedStringArray()
+	for raw_tag: Variant in effective:
+		var covenant := StringName(raw_tag)
+		if covenant == StringName():
+			continue
+		if base_covenants.has(covenant):
+			full_names.append(String(covenant))
+		else:
+			has_infused = true
+			full_names.append("✦%s" % String(covenant))
+	_ensure_covenant_badge()
+	if _covenant_badge == null:
+		return
+	# 角标紧凑：取每个盟约首字 + 灌注标记，完整名进 tooltip。
+	var badge_text := "✦" if has_infused else ""
+	badge_text += "盟"
+	_covenant_badge.text = badge_text
+	_covenant_badge.visible = true
+	tooltip_text = "盟约：%s" % "·".join(full_names)
+
+
+func _ensure_covenant_badge() -> void:
+	if _covenant_badge != null and is_instance_valid(_covenant_badge):
+		return
+	_covenant_badge = Label.new()
+	_covenant_badge.name = "CovenantBadge"
+	_covenant_badge.z_index = 12
+	_covenant_badge.add_theme_font_size_override("font_size", 11)
+	_covenant_badge.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	_covenant_badge.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
+	_covenant_badge.add_theme_constant_override("shadow_offset_x", 0)
+	_covenant_badge.add_theme_constant_override("shadow_offset_y", 0)
+	_covenant_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_covenant_badge.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_covenant_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_covenant_badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_covenant_badge.offset_left = -40.0
+	_covenant_badge.offset_top = 4.0
+	_covenant_badge.offset_right = -6.0
+	_covenant_badge.offset_bottom = 22.0
+	add_child(_covenant_badge)
 
 
 func _apply_name_tier_color() -> void:
