@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://b2q4s7qot20nm"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://dq3npkfyuft5f"]
 
-[ext_resource type="Texture2D" uid="uid://dntquvlcnpvpu" path="res://assets/ui/generated/frame_button_danger_overlay.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://ci11jxcejvkq0" path="res://assets/ui/generated/frame_button_danger_overlay.png" id="1_texture"]
 
 [resource]
-content_margin_left = 7.4271
-content_margin_top = 4.4628
-content_margin_right = 7.4271
-content_margin_bottom = 4.4628
+content_margin_left = 2.1485
+content_margin_top = 1.2893
+content_margin_right = 2.1485
+content_margin_bottom = 1.2893
 texture = ExtResource("1_texture")
-texture_margin_left = 1.6191
-texture_margin_top = 1.3537
-texture_margin_right = 1.6191
-texture_margin_bottom = 1.3537
-draw_center = true
+texture_margin_left = 21.4854
+texture_margin_top = 19.3388
+texture_margin_right = 21.4854
+texture_margin_bottom = 19.3388

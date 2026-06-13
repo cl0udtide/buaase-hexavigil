@@ -52,7 +52,8 @@ func _sync() -> void:
 		return
 	var active_overlay := _button.get_node_or_null(NodePath(String(active_overlay_name))) as CanvasItem
 	var disabled_overlay := _button.get_node_or_null(NodePath(String(disabled_overlay_name))) as CanvasItem
-	var active := _button.visible and not _button.disabled and (_hovered or _pressed)
+	var toggled_active: bool = _button.toggle_mode and _button.button_pressed
+	var active := _button.visible and not _button.disabled and (_hovered or _pressed or toggled_active)
 	if active_overlay != null:
 		active_overlay.visible = active
 	if disabled_overlay != null:

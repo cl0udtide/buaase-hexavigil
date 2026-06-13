@@ -5,7 +5,6 @@ const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 const STYLE_DIR := "res://assets/ui/styles/"
 
-const TOP_HUD := &"frame_top_status_bar_base"
 const TOP_CARD := &"frame_top_status_chip_base"
 const TOP_CARD_ACTIVE := &"frame_top_status_chip_base"
 const HUD_CELL := &"frame_top_status_chip_base"
@@ -40,9 +39,6 @@ const BUTTON_COMPACT := &"frame_button_base"
 const SETTINGS_BUTTON := &"frame_settings_button_base"
 const TAB := &"frame_sidebar_tab_base"
 const TAB_SELECTED := &"frame_sidebar_tab_selected_overlay"
-const ICON_BACKPLATE := &"frame_icon_backplate"
-const ICON_FRAME := &"frame_icon_frame"
-const ICON_TILE := &"frame_icon_backplate"
 const RELIC_STRIP := &"frame_relic_strip_base"
 const RELIC_ENTRY_BUTTON := &"frame_relic_entry_button_base"
 const RELIC_ICON := &"frame_relic_icon_frame"
@@ -64,7 +60,6 @@ const BLESSING_PANEL := &"frame_blessing_panel_base"
 const BLESSING_CHOICE_CARD := &"frame_blessing_choice_card_base"
 const LEGEND_PANEL := &"frame_legend_panel_base"
 const LEGEND_ROW := &"frame_legend_row_base"
-const ACTION_PANEL := &"frame_action_panel_base"
 const ACTION_BUTTON := &"frame_button_base"
 const MAP_POPUP := &"frame_map_popup_base"
 const EVENT_PANEL := &"frame_event_panel_base"
@@ -72,7 +67,6 @@ const EVENT_CHOICE_BUTTON := &"frame_event_choice_button_base"
 const DIALOG_BOX := &"frame_dialog_box_base"
 const DIALOG_SPEAKER := &"frame_dialog_speaker_plate_base"
 const RESULT_PANEL := &"frame_result_panel_base"
-const RESULT_STAT_ROW := &"frame_result_stat_row_base"
 const WAVE_PREVIEW := &"frame_wave_preview_base"
 const WAVE_ENEMY_ROW := &"frame_wave_enemy_row_base"
 const WAVE_ROUTE_TOGGLE := &"frame_wave_route_toggle_base"
@@ -80,7 +74,6 @@ const WAVE_WARNING_ROW := &"frame_wave_warning_row_base"
 const SKILL_BUTTON_PRIMARY := &"frame_button_base"
 const BUTTON_SECONDARY := &"frame_button_base"
 const BUTTON_DANGER := &"frame_button_base"
-const UNDO_BUTTON := &"frame_undo_button_base"
 const SPEED_TOGGLE := &"frame_speed_toggle_base"
 const SPEED_TOGGLE_ACTIVE := &"frame_button_primary_overlay"
 const SKILL_ICON_BACKPLATE := &"frame_skill_icon_backplate"
@@ -111,7 +104,6 @@ const DEFAULT_INSETS := Vector4(12.0, 9.0, 12.0, 9.0)
 # Frame textures are resolved only here; component scripts request semantic
 # frames and rely on offline-generated stable style resources.
 const SPECS := {
-	TOP_HUD: {"content": Vector4(24.0, 8.0, 24.0, 8.0)},
 	HUD_CELL: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
 	RIGHT_DETAIL_SIDEBAR: {"content": Vector4(20.0, 18.0, 20.0, 20.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUILD_SIDE_PANEL: {"content": Vector4(24.0, 20.0, 24.0, 28.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
@@ -135,7 +127,6 @@ const SPECS := {
 	SETTINGS_BUTTON: {"content": Vector4(4.0, 4.0, 4.0, 4.0)},
 	TAB: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	TAB_SELECTED: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	ICON_TILE: {"content": Vector4(8.0, 8.0, 8.0, 8.0)},
 	RELIC_STRIP: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
 	RELIC_ENTRY_BUTTON: {"content": Vector4(10.0, 5.0, 10.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
 	RELIC_ICON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
@@ -159,8 +150,6 @@ const SPECS := {
 	SKILL_ICON_BACKPLATE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	SKILL_ICON_FRAME: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	SKILL_DESC_BOX: {"content": Vector4(12.0, 10.0, 12.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	ACTION_PANEL: {"content": Vector4(12.0, 8.0, 12.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	UNDO_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	PROGRESS_TRACK: {"content": ZERO_INSETS},
 	PROGRESS_BLUE: {"content": ZERO_INSETS},
 	PROGRESS_AMBER: {"content": ZERO_INSETS},

@@ -1,4 +1,4 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://ekv87aidupoa"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://brn6b5dn3qke7"]
 
 [ext_resource type="Texture2D" uid="uid://dxxbs1mv2mviw" path="res://assets/ui/generated/frame_operator_card_cooldown_selected_overlay.png" id="1_texture"]
 
@@ -8,7 +8,7 @@ content_margin_top = 5.4068
 content_margin_right = 6.4737
 content_margin_bottom = 5.4068
 texture = ExtResource("1_texture")
-texture_margin_left = 22.6579
-texture_margin_top = 22.7087
-texture_margin_right = 22.6579
-texture_margin_bottom = 22.7087
+texture_margin_left = 34.5263
+texture_margin_top = 34.6037
+texture_margin_right = 34.5263
+texture_margin_bottom = 34.6037

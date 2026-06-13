@@ -1,14 +1,10 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://bfbay2n5s52rl"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://xpv8ddg2vr1n"]
 
 [ext_resource type="Texture2D" uid="uid://b82cn3m0clmw0" path="res://assets/ui/generated/frame_build_icon_backplate.png" id="1_texture"]
 
 [resource]
-content_margin_left = 1.554
-content_margin_top = 1.5527
-content_margin_right = 1.554
-content_margin_bottom = 1.5527
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
 texture = ExtResource("1_texture")
-texture_margin_left = 0.6708
-texture_margin_top = 0.6703
-texture_margin_right = 0.6708
-texture_margin_bottom = 0.6703

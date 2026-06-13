@@ -1,6 +1,6 @@
 extends SceneTree
 
-const GENERATOR_VERSION := "ui-derived-assets-v5-ninepatch-preserve-scale"
+const GENERATOR_VERSION := "ui-derived-assets-v7-ninepatch-short-axis-scale"
 const CONFIG_PATH := "res://assets/ui/build/ui_asset_build.json"
 const MANIFEST_PATH := "res://assets/ui/build/ui_asset_build_manifest.json"
 const ACTUAL_SIZE_PATH := "res://assets/ui/build/ui_asset_actual_sizes.json"
@@ -113,11 +113,7 @@ func _process_asset(asset_name: String, asset_config: Dictionary) -> void:
 	if _failed:
 		return
 
-	var actual_target := _actual_target_size(asset_config)
-	if actual_target == Vector2i.ZERO:
-		actual_target = _optional_size(asset_config, "target_size")
-	elif String(asset_config.get("kind", "")) == "stylebox_texture" and (actual_target.x <= 1 or actual_target.y <= 1):
-		actual_target = _with_optional_target_floor(actual_target, asset_config)
+	var actual_target := _resolved_target_size(asset_config)
 	var pre_scale := _resolve_pre_scale(asset_name, asset_config)
 	if pre_scale <= 0:
 		return
@@ -200,8 +196,9 @@ func _interpolation_mode(asset_name: String, interpolation: String) -> int:
 func _ninepatch_preserve_scale(source_size: Vector2i, target_size: Vector2i) -> float:
 	if source_size.x <= 0 or source_size.y <= 0 or target_size.x <= 0 or target_size.y <= 0:
 		return 1.0
-	var cover_scale := maxf(float(target_size.x) / float(source_size.x), float(target_size.y) / float(source_size.y))
-	return minf(1.0, maxf(cover_scale, 0.0))
+	var target_is_landscape := target_size.x >= target_size.y
+	var scale := float(target_size.y) / float(source_size.y) if target_is_landscape else float(target_size.x) / float(source_size.x)
+	return minf(1.0, maxf(scale, 0.0))
 
 
 func _generate_style(asset_name: String, template_style: String, output_png: String, output_style: String, png_scale: Vector2, asset_config: Dictionary) -> void:
@@ -225,10 +222,49 @@ func _generate_style(asset_name: String, template_style: String, output_png: Str
 	style.content_margin_top = style.content_margin_top * png_scale.y
 	style.content_margin_right = style.content_margin_right * png_scale.x
 	style.content_margin_bottom = style.content_margin_bottom * png_scale.y
+	var output_png_size := _png_size(output_png)
+	_clamp_style_margins_to_size(style, output_png_size)
 	_ensure_parent_dir(output_style)
 	var save_error := _save_stylebox_texture(output_style, output_png, style)
 	if save_error != OK:
 		_fail("%s failed to save output style %s: %s" % [asset_name, output_style, error_string(save_error)])
+
+
+func _png_size(path: String) -> Vector2:
+	var image := Image.new()
+	var load_error := image.load(ProjectSettings.globalize_path(path))
+	if load_error != OK:
+		_fail("Failed to read generated PNG size %s: %s" % [path, error_string(load_error)])
+		return Vector2.ZERO
+	return Vector2(float(image.get_width()), float(image.get_height()))
+
+
+func _clamp_style_margins_to_size(style: StyleBoxTexture, png_size: Vector2) -> void:
+	if png_size.x <= 0.0 or png_size.y <= 0.0:
+		return
+	var texture_horizontal := _clamped_margin_pair(style.texture_margin_left, style.texture_margin_right, png_size.x)
+	var texture_vertical := _clamped_margin_pair(style.texture_margin_top, style.texture_margin_bottom, png_size.y)
+	var content_horizontal := _clamped_margin_pair(style.content_margin_left, style.content_margin_right, png_size.x)
+	var content_vertical := _clamped_margin_pair(style.content_margin_top, style.content_margin_bottom, png_size.y)
+	style.texture_margin_left = texture_horizontal.x
+	style.texture_margin_right = texture_horizontal.y
+	style.texture_margin_top = texture_vertical.x
+	style.texture_margin_bottom = texture_vertical.y
+	style.content_margin_left = content_horizontal.x
+	style.content_margin_right = content_horizontal.y
+	style.content_margin_top = content_vertical.x
+	style.content_margin_bottom = content_vertical.y
+
+
+func _clamped_margin_pair(first: float, second: float, limit: float) -> Vector2:
+	var max_total := maxf(0.0, limit - 1.0)
+	var total := first + second
+	if total <= max_total:
+		return Vector2(maxf(0.0, first), maxf(0.0, second))
+	if total <= 0.0:
+		return Vector2.ZERO
+	var scale := max_total / total
+	return Vector2(maxf(0.0, first * scale), maxf(0.0, second * scale))
 
 
 func _save_stylebox_texture(output_style: String, output_png: String, style: StyleBoxTexture) -> Error:
@@ -271,7 +307,7 @@ func _resolve_pre_scale(asset_name: String, asset_config: Dictionary) -> int:
 	if String(raw) != "auto_integer":
 		_fail("%s pre_scale must be an integer or auto_integer." % asset_name)
 		return 0
-	var target := _actual_target_size(asset_config)
+	var target := _resolved_target_size(asset_config)
 	if target == Vector2i.ZERO:
 		target = _required_size(asset_name, asset_config, "target_size")
 	var base := _required_size(asset_name, asset_config, "base_size")
@@ -304,6 +340,15 @@ func _actual_target_size(asset_config: Dictionary) -> Vector2i:
 	if size.x <= 0 or size.y <= 0:
 		return Vector2i.ZERO
 	return size
+
+
+func _resolved_target_size(asset_config: Dictionary) -> Vector2i:
+	var actual_target := _actual_target_size(asset_config)
+	if actual_target == Vector2i.ZERO:
+		return _optional_size(asset_config, "target_size")
+	if String(asset_config.get("kind", "")) == "stylebox_texture":
+		return _with_optional_target_floor(actual_target, asset_config)
+	return actual_target
 
 
 func _with_optional_target_floor(actual_target: Vector2i, asset_config: Dictionary) -> Vector2i:

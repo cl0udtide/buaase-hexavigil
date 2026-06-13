@@ -1,0 +1,11 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://bggbdoopci3ee"]
+
+[resource]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+texture_margin_left = 58.0
+texture_margin_top = 36.0
+texture_margin_right = 58.0
+texture_margin_bottom = 36.0

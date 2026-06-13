@@ -12,48 +12,56 @@
 - 正式 UI 引用了但未纳入 build 的真实资源：0。扫描到的 `res://assets/ui/generated/%s.png` 是 `UiFrameSpec.texture_path()` 的格式化模板，不是实际资源路径。
 - 正式 `scenes` 与 `scripts/ui` 直接引用 `assets/ui/source` / `assets/ui/templates`：0。
 - `StyleBoxTexture` margin 越界：0。
-- 未被正式场景、UI 脚本或数据显式引用的 build 资产：31，均为遗物图标候选。
-- 需要重点人工视觉验收的尺寸族冲突：按钮状态 overlay、进度条 track、详情 section、遗物入口/卡片、wave spawn/warning、speed toggle。
+- 已删除冗余 build 资产：45 个，包括 31 个未接入遗物图标、5 个未正确接入的遗物 overlay、`frame_action_button_base`、`frame_speed_toggle_active_overlay`、`frame_top_status_chip_active_overlay`，以及 6 个只有 `UiFrameSpec` 死常量、无场景/数据/业务脚本使用的 frame。
+- 需要重点人工视觉验收的尺寸族冲突：按钮状态 overlay、进度条 track、详情 section、遗物入口/卡片、wave spawn/warning。
 
 ## 未使用资产列表
 
-这些 asset 均在 build 配置中存在，且 `source_png`、`output_png` 都齐全，但当前正式扫描没有 `actual_sizes` 使用记录，`scenes/scripts/data` 也没有显式路径引用。建议暂时保留，原因是遗物系统文档已有图标目录规划，但当前 `data/ui_icons.json` 只接入了 `relic_bag`。
+这些 asset 原本在 build 配置中存在，且 `source_png`、`output_png` 都齐全，但正式扫描没有 `actual_sizes` 使用记录，`scenes/scripts/data` 也没有显式路径引用。2026-06-13 已按精简要求从 build 配置、manifest、source/generated 产物中删除。
 
 | Asset key | 路径 | 判断依据 | 建议 |
 |---|---|---|---|
-| `icon_relic_aura_lens` | `assets/ui/source/<key>.png` + `assets/ui/generated/<key>.png` | 无 actual use，无正式引用 | 待确认遗物数据后接入或删除 |
-| `icon_relic_bastion_anchor` | 同上 | 同上 | 待确认 |
-| `icon_relic_battle_standard` | 同上 | 同上 | 待确认 |
-| `icon_relic_bayonet_drill` | 同上 | 同上 | 待确认 |
-| `icon_relic_black_market_token` | 同上 | 同上 | 待确认 |
-| `icon_relic_bounty_ledger` | 同上 | 同上 | 待确认 |
-| `icon_relic_caster_focus` | 同上 | 同上 | 待确认 |
-| `icon_relic_compressed_bulwark` | 同上 | 同上 | 待确认 |
-| `icon_relic_core_capacitor` | 同上 | 同上 | 待确认 |
-| `icon_relic_core_patch` | 同上 | 同上 | 待确认 |
-| `icon_relic_defender_plate` | 同上 | 同上 | 待确认 |
-| `icon_relic_duelist_contract` | 同上 | 同上 | 待确认 |
-| `icon_relic_glass_barrel` | 同上 | 同上 | 待确认 |
-| `icon_relic_greedy_seal` | 同上 | 同上 | 待确认 |
-| `icon_relic_guard_manual` | 同上 | 同上 | 待确认 |
-| `icon_relic_industrial_blueprint` | 同上 | 同上 | 待确认 |
-| `icon_relic_iron_patience` | 同上 | 同上 | 待确认 |
-| `icon_relic_lumber_contract` | 同上 | 同上 | 待确认 |
-| `icon_relic_mana_resonator` | 同上 | 同上 | 待确认 |
-| `icon_relic_mana_siphon` | 同上 | 同上 | 待确认 |
-| `icon_relic_mobile_command` | 同上 | 同上 | 待确认 |
-| `icon_relic_overclocked_core` | 同上 | 同上 | 待确认 |
-| `icon_relic_quarry_glyph` | 同上 | 同上 | 待确认 |
-| `icon_relic_range_pylon` | 同上 | 同上 | 待确认 |
-| `icon_relic_rapid_recall` | 同上 | 同上 | 待确认 |
-| `icon_relic_recurve_string` | 同上 | 同上 | 待确认 |
-| `icon_relic_sharpened_orders` | 同上 | 同上 | 待确认 |
-| `icon_relic_sniper_scope` | 同上 | 同上 | 待确认 |
-| `icon_relic_travel_pack` | 同上 | 同上 | 待确认 |
-| `icon_relic_vanguard_frame` | 同上 | 同上 | 待确认 |
-| `icon_relic_wallwright_kit` | 同上 | 同上 | 待确认 |
+| `icon_relic_aura_lens` | `assets/ui/source/<key>.png` + `assets/ui/generated/<key>.png` | 无 actual use，无正式引用 | 已删除 |
+| `icon_relic_bastion_anchor` | 同上 | 同上 | 已删除 |
+| `icon_relic_battle_standard` | 同上 | 同上 | 已删除 |
+| `icon_relic_bayonet_drill` | 同上 | 同上 | 已删除 |
+| `icon_relic_black_market_token` | 同上 | 同上 | 已删除 |
+| `icon_relic_bounty_ledger` | 同上 | 同上 | 已删除 |
+| `icon_relic_caster_focus` | 同上 | 同上 | 已删除 |
+| `icon_relic_compressed_bulwark` | 同上 | 同上 | 已删除 |
+| `icon_relic_core_capacitor` | 同上 | 同上 | 已删除 |
+| `icon_relic_core_patch` | 同上 | 同上 | 已删除 |
+| `icon_relic_defender_plate` | 同上 | 同上 | 已删除 |
+| `icon_relic_duelist_contract` | 同上 | 同上 | 已删除 |
+| `icon_relic_glass_barrel` | 同上 | 同上 | 已删除 |
+| `icon_relic_greedy_seal` | 同上 | 同上 | 已删除 |
+| `icon_relic_guard_manual` | 同上 | 同上 | 已删除 |
+| `icon_relic_industrial_blueprint` | 同上 | 同上 | 已删除 |
+| `icon_relic_iron_patience` | 同上 | 同上 | 已删除 |
+| `icon_relic_lumber_contract` | 同上 | 同上 | 已删除 |
+| `icon_relic_mana_resonator` | 同上 | 同上 | 已删除 |
+| `icon_relic_mana_siphon` | 同上 | 同上 | 已删除 |
+| `icon_relic_mobile_command` | 同上 | 同上 | 已删除 |
+| `icon_relic_overclocked_core` | 同上 | 同上 | 已删除 |
+| `icon_relic_quarry_glyph` | 同上 | 同上 | 已删除 |
+| `icon_relic_range_pylon` | 同上 | 同上 | 已删除 |
+| `icon_relic_rapid_recall` | 同上 | 同上 | 已删除 |
+| `icon_relic_recurve_string` | 同上 | 同上 | 已删除 |
+| `icon_relic_sharpened_orders` | 同上 | 同上 | 已删除 |
+| `icon_relic_sniper_scope` | 同上 | 同上 | 已删除 |
+| `icon_relic_travel_pack` | 同上 | 同上 | 已删除 |
+| `icon_relic_vanguard_frame` | 同上 | 同上 | 已删除 |
+| `icon_relic_wallwright_kit` | 同上 | 同上 | 已删除 |
+| `frame_action_panel_base` | `assets/ui/source/<key>.png` + `assets/ui/generated/<key>.png` | 无 actual use，无 `.tscn` 直引，`GameUiStyle.action_bar_panel()` 无调用 | 已删除 |
+| `frame_icon_backplate` | 同上 | 无 actual use，无 `.tscn` 直引，通用 `icon_tile()` wrapper 无调用 | 已删除 |
+| `frame_icon_frame` | 同上 | 无 actual use，无 `.tscn` 直引，通用 `icon_frame()` wrapper 无调用 | 已删除 |
+| `frame_result_stat_row_base` | 同上 | 无 actual use，无 `.tscn` 直引，`result_stat_row()` wrapper 无调用 | 已删除 |
+| `frame_top_status_bar_base` | 同上 | 无 actual use，无 `.tscn` 直引，`top_hud_panel()` wrapper 无调用 | 已删除 |
+| `frame_undo_button_base` | 同上 | 无 actual use，无 `.tscn` 直引，无业务脚本调用 | 已删除 |
 
 说明：表中路径表示同名 `source_png` 与 `output_png` 成组存在，即 `assets/ui/source/<key>.png` 和 `assets/ui/generated/<key>.png`。
+
+注意：不能只按 `.tscn` 直引判断。`frame_blessing_panel_base` 没有 `.tscn` 直引，但 `scenes/ui/BlessingPanel.tscn` 挂载 `scripts/ui/blessing_panel.gd`，运行时通过 `GameUiStyle.blessing_panel()` 与 `GameUiStyle.apply_frame_margin(..., FRAME_BLESSING_PANEL)` 使用；因此它不是精简对象。
 
 ## 未纳入 Build 的正式 UI 资源
 
@@ -68,12 +76,12 @@
 | `frame_button_disabled_overlay` | `frame_button_base` | overlay `318x76`，base `280x36` | 不同 | 同上；尤其被 `72x72`、`318x76`、`280x33` 共用 |
 | `frame_button_danger_overlay` | `frame_button_base` | overlay `280x33`，base `280x36` | 高度接近但 PNG 不同 | 可短期保留，仍建议与普通按钮族统一 |
 | `frame_operator_card_*_overlay` | `frame_operator_card_base` | 全部 `164x184` | PNG 高度相差 3-5px | actual 对齐，输出图高度略不一致；需人工确认透明 overlay 未复制底板 |
-| `frame_relic_card_hover_overlay` | `frame_relic_card_base` | 未被正式扫描使用 | PNG `434x112` vs base `425x112` | 当前未使用；如接入需重生成或重裁确保同轮廓 |
-| `frame_relic_filter_selected_overlay` | `frame_relic_filter_tab_base` | 未被正式扫描使用 | 只配置自身；未见正式引用 | 保留待接入或删除 |
-| `frame_relic_rarity_*_overlay` | `frame_relic_card_base` / icon frame | 未被正式扫描使用 | `345-352x201-202` 与 card/icon 尺寸族不一致 | 当前不应作为 icon/card 通用 overlay，建议拆分或重生成 |
+| `frame_relic_card_hover_overlay` | `frame_relic_card_base` | 未被正式扫描使用 | PNG `434x112` vs base `425x112` | 已删除，hover 改由代码色块表达 |
+| `frame_relic_filter_selected_overlay` | `frame_relic_filter_tab_base` | 未被正式扫描使用 | 只配置自身；未见正式引用 | 已删除，selected 复用 filter tab base |
+| `frame_relic_rarity_*_overlay` | `frame_relic_card_base` / icon frame | 未被正式扫描使用 | `345-352x201-202` 与 card/icon 尺寸族不一致 | 已删除，rarity 改由代码色块表达 |
 | `frame_sidebar_tab_selected_overlay` | `frame_sidebar_tab_base` | 两者 `134x50` | PNG 高度不同 | actual 对齐，输出图语义需验收是否只含状态层 |
-| `frame_speed_toggle_active_overlay` | `frame_speed_toggle_base` | overlay `216x82`，base `200x82` | PNG `216x123` vs base `331x82` | 明显不匹配；建议重生成或拆成单段 active 高亮 |
-| `frame_top_status_chip_active_overlay` | `frame_top_status_chip_base` | 未被正式扫描使用 | PNG `240x106` vs base `273x154` | 当前未接入；接入前需调整尺寸族 |
+| `frame_speed_toggle_active_overlay` | `frame_speed_toggle_base` | overlay `216x82`，base `200x82` | PNG `216x123` vs base `331x82` | 已删除，`SpeedActiveOverlay` 复用通用 primary overlay |
+| `frame_top_status_chip_active_overlay` | `frame_top_status_chip_base` | 未被正式扫描使用 | PNG `240x106` vs base `273x154` | 已删除，selected hud cell 改为代码色块 |
 
 ## Margin 越界列表
 
@@ -106,9 +114,7 @@
 
 继续沿用 `docs/UI_ASSET_AI_REGEN_TODO.md` 的优先级。基于本次审计，新增确认点：
 
-- `frame_speed_toggle_active_overlay`：actual 与 base 宽度不一致，输出 PNG 高度也不一致；应生成单段 active 高亮或重设场景节点尺寸。
 - `frame_button_primary_overlay`、`frame_button_disabled_overlay`：被多尺寸按钮共用，建议先拆分语义资源，再决定是否重生成。
-- `frame_relic_rarity_common_overlay`、`frame_relic_rarity_uncommon_overlay`、`frame_relic_rarity_rare_overlay`：当前尺寸族不适合同时覆盖 relic card 与 relic icon，应拆成 card/icon 两套后再生成。
 - `frame_wave_spawn_card_base`、`frame_wave_warning_row_base`：扫描尺寸差异异常，需先在 `CombatHud.tscn` 实际画面确认布局，再重生成。
 
 ## Preview 修复记录

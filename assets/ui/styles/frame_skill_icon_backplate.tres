@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://cu0scjm0vlidp"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_skill_icon_backplate.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://bf3iuaxcbwgd" path="res://assets/ui/generated/frame_skill_icon_backplate.png" id="1_texture"]
 
 [resource]
-content_margin_left = 2.1573
-content_margin_top = 2.1675
-content_margin_right = 2.1573
-content_margin_bottom = 2.1675
+content_margin_left = 2.2584
+content_margin_top = 2.2618
+content_margin_right = 2.2584
+content_margin_bottom = 2.2618
 texture = ExtResource("1_texture")
-texture_margin_left = 1.2045
-texture_margin_top = 1.2102
-texture_margin_right = 1.2045
-texture_margin_bottom = 1.2102
-draw_center = true
+texture_margin_left = 1.261
+texture_margin_top = 1.2628
+texture_margin_right = 1.261
+texture_margin_bottom = 1.2628

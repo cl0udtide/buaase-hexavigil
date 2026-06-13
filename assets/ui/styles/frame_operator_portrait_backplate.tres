@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_portrait_backplate.png" id="1_texture"]
 
 [resource]
-content_margin_left = 3.8593
-content_margin_top = 3.8529
-content_margin_right = 3.8593
-content_margin_bottom = 3.8529
+content_margin_left = 2.1106
+content_margin_top = 2.1176
+content_margin_right = 2.1106
+content_margin_bottom = 2.1176
 texture = ExtResource("1_texture")
-texture_margin_left = 7.7186
-texture_margin_top = 7.7059
-texture_margin_right = 7.7186
-texture_margin_bottom = 7.7059
+texture_margin_left = 13.7186
+texture_margin_top = 23.6471
+texture_margin_right = 13.7186
+texture_margin_bottom = 23.6471
 draw_center = true

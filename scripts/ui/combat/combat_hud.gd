@@ -37,6 +37,8 @@ const MESSAGE_CHIP_CONTENT_Z := 2
 const DEPLOY_SCROLLBAR_THICKNESS := 26.0
 const DEPLOY_SCROLLBAR_MIN_GRAB := 64
 const DEPLOY_SCROLLBAR_STEP := 48
+const WAVE_PREVIEW_NORMAL_HEIGHT := 316.0
+const WAVE_PREVIEW_COMPACT_HEIGHT := 208.0
 const RESOURCE_DELTA_GAIN_COLOR := Color(0.440, 0.650, 0.470, 1.0)
 const RESOURCE_DELTA_LOSS_COLOR := Color(0.720, 0.340, 0.310, 1.0)
 const RESOURCE_DELTA_NEUTRAL_COLOR := Color(0.850, 0.850, 0.800, 1.0)
@@ -698,7 +700,11 @@ func _set_right_detail_active(active: bool) -> void:
 
 func _apply_right_column_visibility() -> void:
 	if _wave_preview_panel != null:
-		_wave_preview_panel.visible = _wave_preview_available and not _right_detail_active
+		_wave_preview_panel.visible = _wave_preview_available
+		_wave_preview_panel.custom_minimum_size.y = WAVE_PREVIEW_COMPACT_HEIGHT if _right_detail_active else WAVE_PREVIEW_NORMAL_HEIGHT
+		_wave_preview_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _right_detail_active else Control.SIZE_EXPAND_FILL
+	if _wave_preview_scroll != null:
+		_wave_preview_scroll.visible = _wave_preview_available and not _right_detail_active
 	if _detail_panel != null:
 		if not _right_detail_active:
 			_detail_panel.visible = false
@@ -1705,6 +1711,7 @@ func _show_overlay_panel(panel_name: StringName) -> void:
 	var panel := _panel_for_name(panel_name)
 	if panel == null:
 		return
+	_show_control_ancestors(panel)
 	if panel.has_method("show_panel"):
 		panel.show_panel()
 	else:
@@ -1749,3 +1756,12 @@ func _move_control_to_front(control: Control) -> void:
 		return
 	var parent := control.get_parent()
 	parent.move_child(control, parent.get_child_count() - 1)
+
+
+func _show_control_ancestors(control: Control) -> void:
+	var current: Node = control.get_parent()
+	while current != null and current != self:
+		if current is CanvasItem:
+			var canvas_item: CanvasItem = current as CanvasItem
+			canvas_item.visible = true
+		current = current.get_parent()

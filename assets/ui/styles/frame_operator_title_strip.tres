@@ -1,4 +1,4 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://b14oe1avaf30o"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://csdhjbtdi6o1v"]
 
 [ext_resource type="Texture2D" uid="uid://cb10x2lthnunc" path="res://assets/ui/generated/frame_operator_title_strip.png" id="1_texture"]
 
@@ -8,7 +8,7 @@ content_margin_top = 2.24
 content_margin_right = 4.4706
 content_margin_bottom = 2.24
 texture = ExtResource("1_texture")
-texture_margin_left = 15.6471
-texture_margin_top = 6.72
-texture_margin_right = 15.6471
-texture_margin_bottom = 6.72
+texture_margin_left = 24.5882
+texture_margin_top = 15.12
+texture_margin_right = 22.3529
+texture_margin_bottom = 15.12

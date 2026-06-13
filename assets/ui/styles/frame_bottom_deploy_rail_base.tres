@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://uvivb585047e"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_bottom_deploy_rail_base.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://d0ve7u0bknjdc" path="res://assets/ui/generated/frame_bottom_deploy_rail_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 30.0000
-content_margin_top = 14.0000
-content_margin_right = 30.0000
-content_margin_bottom = 14.0000
+content_margin_left = 30.0
+content_margin_top = 14.0
+content_margin_right = 30.0
+content_margin_bottom = 14.0
 texture = ExtResource("1_texture")
-texture_margin_left = 98.0000
-texture_margin_top = 69.0000
-texture_margin_right = 98.0000
-texture_margin_bottom = 69.0000
-draw_center = true
+texture_margin_left = 98.0
+texture_margin_top = 69.0
+texture_margin_right = 98.0
+texture_margin_bottom = 69.0
