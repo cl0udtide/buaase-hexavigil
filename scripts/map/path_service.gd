@@ -90,6 +90,71 @@ func get_core_distance(cell: Vector2i, path_mode: StringName) -> int:
 	return int((_dist_by_mode.get(path_mode, {}) as Dictionary).get(cell, -1))
 
 
+## 出怪口覆盖面预览：从口沿场下行的中心线 + 按 half_width 的横向带之并集。
+## 与敌人移动共用同一套场（预览即实际会扫过的范围）。
+## 返回 {ok, status, message, coverage:Array[Vector2i], centerline:Array[Vector2i], effective_path_mode}。
+func compute_coverage(spawn_cell: Vector2i, requested_mode: StringName, half_width: int) -> Dictionary:
+	if _map_manager == null:
+		return {"ok": false, "status": &"no_path", "message": "", "coverage": [], "centerline": [], "effective_path_mode": requested_mode}
+	if not _grid_ready:
+		rebuild_from_map()
+	var core: Vector2i = _map_manager.get_core_cell()
+	if requested_mode == PATH_MODE_FLYING:
+		var line: Array[Vector2i] = _make_flying_path(spawn_cell, core)
+		return {"ok": true, "status": &"ok", "message": "", "coverage": line.duplicate(), "centerline": line, "effective_path_mode": PATH_MODE_FLYING}
+	var mode := requested_mode
+	var status: StringName = &"ok"
+	var message := ""
+	if not has_route(spawn_cell, mode):
+		if mode == PATH_MODE_NORMAL and has_route(spawn_cell, PATH_MODE_DEMOLISHER):
+			mode = PATH_MODE_DEMOLISHER
+			status = &"core_enclosed"
+			message = "普通路线封闭：敌人将改走拆墙路径"
+		else:
+			return {"ok": false, "status": &"no_path", "message": "无法生成从出怪点到核心的有效路径", "coverage": [], "centerline": [], "effective_path_mode": requested_mode}
+	var centerline := _trace_gradient_line(spawn_cell, mode)
+	var coverage := _coverage_band(centerline, mode, maxi(half_width, 0))
+	return {"ok": true, "status": status, "message": message, "coverage": coverage, "centerline": centerline, "effective_path_mode": mode}
+
+
+func _trace_gradient_line(spawn_cell: Vector2i, mode: StringName) -> Array[Vector2i]:
+	var front: Dictionary = _front_by_mode.get(mode, {})
+	var line: Array[Vector2i] = []
+	var cell := spawn_cell
+	var guard := 0
+	var limit := _cells.size() + 1
+	while front.has(cell) and guard < limit:
+		line.append(cell)
+		var g: Vector2i = (front[cell] as Dictionary).get("g", Vector2i.ZERO)
+		if g == Vector2i.ZERO:
+			break
+		cell += g
+		guard += 1
+	return line
+
+
+func _coverage_band(centerline: Array[Vector2i], mode: StringName, half_width: int) -> Array[Vector2i]:
+	var dist: Dictionary = _dist_by_mode.get(mode, {})
+	var front: Dictionary = _front_by_mode.get(mode, {})
+	var covered: Dictionary = {}
+	for c: Vector2i in centerline:
+		covered[c] = true
+		var axis: Vector2i = (front.get(c, {}) as Dictionary).get("axis", Vector2i.ZERO)
+		if axis == Vector2i.ZERO:
+			continue
+		for sign_dir: Vector2i in [axis, -axis]:
+			var probe: Vector2i = c + sign_dir
+			var steps := 0
+			while steps < half_width and dist.has(probe):
+				covered[probe] = true
+				probe += sign_dir
+				steps += 1
+	var out: Array[Vector2i] = []
+	for key: Vector2i in covered.keys():
+		out.append(key)
+	return out
+
+
 func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]:
 	if _map_manager == null:
 		return []

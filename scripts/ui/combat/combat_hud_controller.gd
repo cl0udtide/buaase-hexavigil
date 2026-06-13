@@ -1224,18 +1224,10 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			existing["count"] = int(existing.get("count", 0)) + int(entry.get("count", 0))
 			_add_enemy_to_route(existing, entry)
 			continue
-		var spawn_cell: Vector2i = _map_manager.get_spawn_cell_by_key(spawn_key)
-		var core_cell: Vector2i = _map_manager.get_core_cell()
-		var path_result: Dictionary = _path_service.find_path_preview(spawn_cell, core_cell, path_mode, extra_blocked_cells) if _path_service.has_method("find_path_preview") else {}
 		var route := {
 			"spawn_key": spawn_key,
-			"spawn_cell": spawn_cell,
+			"spawn_cell": _map_manager.get_spawn_cell_by_key(spawn_key),
 			"path_mode": path_mode,
-			"effective_path_mode": StringName(path_result.get("effective_path_mode", path_mode)),
-			"path": path_result.get("path", []),
-			"ok": bool(path_result.get("ok", false)),
-			"status": StringName(path_result.get("status", &"no_path")),
-			"message": String(path_result.get("message", "")),
 			"count": int(entry.get("count", 0)),
 			"enemies": []
 		}
@@ -1251,12 +1243,30 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			return String(a.get("path_mode", "")) < String(b.get("path_mode", ""))
 		return spawn_a < spawn_b
 	)
+	# 计数累加完成后，按本路线怪量算覆盖面（与移动共用 path_service 的场）。
+	# 注：覆盖基于当前已落地的墙；放墙后由 path_grid_changed 刷新（不再做悬停假设性预览）。
 	for index in range(routes.size()):
 		var route: Dictionary = routes[index]
+		var path_mode := StringName(route.get("path_mode", &"normal"))
+		var half_width := _coverage_half_width(int(route.get("count", 0)))
+		var coverage_result: Dictionary = {}
+		if _path_service != null and _path_service.has_method("compute_coverage"):
+			coverage_result = _path_service.compute_coverage(route.get("spawn_cell", Vector2i.ZERO), path_mode, half_width)
+		route["coverage"] = coverage_result.get("coverage", [])
+		route["centerline"] = coverage_result.get("centerline", [])
+		route["ok"] = bool(coverage_result.get("ok", false))
+		route["status"] = StringName(coverage_result.get("status", &"no_path"))
+		route["message"] = String(coverage_result.get("message", ""))
+		route["effective_path_mode"] = StringName(coverage_result.get("effective_path_mode", path_mode))
 		route["route_label"] = _route_label_for_index(index)
 		route["route_summary"] = _format_route_enemy_summary(route)
 		routes[index] = route
 	return routes
+
+
+## 覆盖正面半宽：随本路线来袭怪量增长（与 enemy_movement_controller 同公式，平衡占位）。
+func _coverage_half_width(count: int) -> int:
+	return clampi(int(round(0.6 * sqrt(float(maxi(count, 1))))), 1, 8)
 
 
 func _add_enemy_to_route(route: Dictionary, entry: Dictionary) -> void:
