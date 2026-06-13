@@ -28,6 +28,7 @@ const VISUAL_TEXTURE_SIZE := 128.0
 const VISUAL_DISPLAY_SIZE := 72.0
 const VISUAL_OFFSET := Vector2(0.0, -8.0)
 # 高台格部署时整体上抬，让脚落在台顶面而不是崖底（tile_highland 顶面中心偏上）。
+# 人工高台建筑（ranged_deployable）的台顶与自然高台等高，复用同一抬升量。
 const HIGHLAND_VISUAL_LIFT := Vector2(0.0, -24.0)
 const CONTACT_SHADOW_Y := 26.0
 const VISUAL_Z_INDEX := 2
@@ -175,7 +176,7 @@ func setup_from_cfg(new_unit_id: StringName, new_cfg: Dictionary, spawn_cell: Ve
 	global_position = get_map_manager().cell_to_world(spawn_cell) if get_map_manager() != null else Vector2.ZERO
 	if get_map_manager() != null:
 		var spawn_data = get_map_manager().get_cell_data(spawn_cell)
-		if spawn_data != null and spawn_data.terrain == &"highland":
+		if spawn_data != null and _spawn_cell_lifts_unit(spawn_data):
 			global_position += HIGHLAND_VISUAL_LIFT
 	_ensure_contact_shadow()
 	var label := get_node_or_null("%TitleLabel") as Label
@@ -598,6 +599,28 @@ func get_map_root() -> Node:
 
 func get_unit_manager() -> Node:
 	return get_node_or_null("../../../Managers/UnitManager")
+
+
+func get_building_manager() -> Node:
+	return get_node_or_null("../../../Managers/BuildingManager")
+
+
+## 落点是否为“高台面”：自然高台地形，或同格存活的人工高台建筑（ranged_deployable）。
+## 与 unit_manager._validate_deploy_cell 的放行条件保持一致，避免台上干员站到台底。
+func _spawn_cell_lifts_unit(spawn_data) -> bool:
+	if spawn_data.terrain == &"highland":
+		return true
+	if int(spawn_data.building_runtime_id) < 0:
+		return false
+	var building_manager := get_building_manager()
+	if building_manager == null or not building_manager.has_method("get_building_by_runtime_id"):
+		return false
+	var building: Node = building_manager.get_building_by_runtime_id(int(spawn_data.building_runtime_id))
+	if building == null or not is_instance_valid(building):
+		return false
+	var cfg_variant: Variant = building.get("cfg")
+	var building_cfg: Dictionary = cfg_variant if typeof(cfg_variant) == TYPE_DICTIONARY else {}
+	return bool(building_cfg.get("ranged_deployable", false))
 
 
 func get_covenant_manager() -> Node:

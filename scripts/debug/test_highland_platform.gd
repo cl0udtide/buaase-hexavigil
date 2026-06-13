@@ -4,6 +4,7 @@ extends SceneTree
 ## 运行：Godot --headless --path . --script scripts/debug/test_highland_platform.gd
 
 const CellDataScript = preload("res://scripts/map/cell_data.gd")
+const UnitActorScript = preload("res://scripts/combat/unit_actor.gd")
 
 var _failures: int = 0
 
@@ -115,6 +116,7 @@ func _test_highland_deploy() -> void:
 	_expect(not guard_result.get("ok", false), "melee rejected on highland")
 	var sniper_result: Dictionary = unit_manager.try_deploy_operator(sniper_key, highland_cell, Vector2i.LEFT)
 	_expect(sniper_result.get("ok", false), "ranged deploys on highland")
+	_expect_lifted_onto_platform(unit_manager, map_manager, sniper_result, highland_cell, "highland occupant lifted onto platform top")
 	var second_sniper_info: Dictionary = run_state.add_owned_operator(&"sniper_t1", "测试占位狙击")
 	var second_sniper_key := StringName(second_sniper_info.get("key", ""))
 	var stacked: Dictionary = unit_manager.try_deploy_operator(second_sniper_key, highland_cell, Vector2i.LEFT)
@@ -160,6 +162,7 @@ func _test_artificial_platform() -> void:
 	var sniper_key := StringName(sniper_info.get("key", ""))
 	var deploy_result: Dictionary = unit_manager.try_deploy_operator(sniper_key, platform_cell, Vector2i.RIGHT)
 	_expect(deploy_result.get("ok", false), "ranged deploys onto living platform")
+	_expect_lifted_onto_platform(unit_manager, map_manager, deploy_result, platform_cell, "artificial platform occupant lifted onto platform top")
 	var other_cell := Vector2i(core.x, core.y - 2)
 	var other_data: CellData = map_manager.get_cell_data(other_cell)
 	other_data.resource_type = &""
@@ -219,6 +222,17 @@ func _test_reveal_skips_gates() -> void:
 			_expect(int(run_state.action_points) == 30, "gate explore attempt costs no ap")
 	game.queue_free()
 	await process_frame
+
+
+## 校验干员落点已整体上抬到台顶面：global_position == 格中心 + HIGHLAND_VISUAL_LIFT。
+func _expect_lifted_onto_platform(unit_manager: Node, map_manager: Node, deploy_result: Dictionary, cell: Vector2i, msg: String) -> void:
+	var runtime_id := int((deploy_result.get("payload", {}) as Dictionary).get("runtime_id", -1))
+	var actor := unit_manager.get_unit_by_runtime_id(runtime_id) as Node2D
+	if actor == null:
+		_expect(false, "%s（找不到部署的干员）" % msg)
+		return
+	var expected: Vector2 = map_manager.cell_to_world(cell) + UnitActorScript.HIGHLAND_VISUAL_LIFT
+	_expect(actor.global_position.is_equal_approx(expected), msg)
 
 
 func _expect(cond: bool, msg: String) -> void:
