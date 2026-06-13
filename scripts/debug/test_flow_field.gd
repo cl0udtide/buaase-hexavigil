@@ -111,10 +111,12 @@ func _test_next_step() -> void:
 	var cdist: Dictionary = FlowField.compute_distance(corridor, Vector2i(4, 0), {})
 	var cfront: Dictionary = FlowField.compute_front(corridor, cdist, {})
 	_expect(FlowField.next_step(cdist, cfront, Vector2i(0, 0), 0.2, 8, {}) == Vector2i(1, 0), "corridor only forward")
-	# 绕行：前进格被占 → 改走未占的更低 dist 邻
+	# 开阔绕行：前进格被干员占 → 横向绕过（不走进去）
 	var blocked_step: Dictionary = {Vector2i(1, 2): true}
 	var around := FlowField.next_step(dist, front, Vector2i(0, 2), 0.5, 8, blocked_step)
-	_expect(around != Vector2i(1, 2) and dist.has(around), "detours around occupied forward cell")
+	_expect(around != Vector2i(1, 2) and dist.has(around), "open: detours around occupied cell (got %s)" % str(around))
+	# 窄口接敌：走廊前格被干员占、无横向可绕 → 照走进去（软避让兜底）
+	_expect(FlowField.next_step(cdist, cfront, Vector2i(1, 0), 0.5, 8, {Vector2i(2, 0): true}) == Vector2i(2, 0), "choke: walks into blocker when no detour")
 
 
 ## 仿真：一只怪从 start 逐步走到 core，记录首次跨过 mid_x 时所在的行。

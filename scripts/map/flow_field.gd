@@ -49,6 +49,7 @@ static func compute_front(cells: Dictionary, dist: Dictionary, blocked: Dictiona
 
 
 const LATERAL_SLACK := 1
+const SCORE_INF := 1_000_000_000
 
 
 ## 单只怪的下一步格：沿梯度前进 + 朝相位槽位横向铺开 + 避让 extra_blocked（占用格）。
@@ -65,10 +66,11 @@ static func next_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase
 	var cur_d: int = int(dist.get(cell, 0))
 	var cur_index: int = int(round(float(f.get("frac", 0.0)) * float(max(width - 1, 1))))
 	var desired_index: int = _desired_index(width, phase, half_width)
-	# 1) 横向纠偏到相位槽位（slack 内允许 dist 略升，否则开阔地无法铺开）。
-	#    只许"向外"（远离正面中心）铺开；不许向内拽回——回中心交给梯度漏斗，
-	#    否则近核心梯度转向时会与槽位对冲、在两格间来回震荡。
-	if axis != Vector2i.ZERO and cur_index != desired_index:
+	var fwd: Vector2i = cell + g
+	var fwd_ok: bool = _can_enter(dist, extra_blocked, fwd) and int(dist[fwd]) < cur_d
+	# 1) 前进可行时，先按相位"向外"铺开（slack 内允许 dist 略升，否则开阔地无法铺开）。
+	#    只许远离正面中心、不许向内拽回——回中心交给梯度漏斗，避免近核心来回震荡。
+	if fwd_ok and axis != Vector2i.ZERO and cur_index != desired_index:
 		var step_sign: int = 1 if desired_index > cur_index else -1
 		var new_index: int = cur_index + step_sign
 		var center: float = float(width - 1) * 0.5
@@ -78,19 +80,29 @@ static func next_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase
 			if _can_enter(dist, extra_blocked, lat_cell) and int(dist[lat_cell]) <= cur_d + LATERAL_SLACK:
 				return lat_cell
 	# 2) 前进（严格降 dist）
-	var fwd: Vector2i = cell + g
-	if _can_enter(dist, extra_blocked, fwd) and int(dist[fwd]) < cur_d:
+	if fwd_ok:
 		return fwd
-	# 3) 前进格被占（绕单位）：任一未占、dist 更低的邻
-	for dir in CARDINALS:
-		var nb: Vector2i = cell + dir
-		if _can_enter(dist, extra_blocked, nb) and int(dist[nb]) < cur_d:
-			return nb
-	# 4) 全堵：同 dist 的未占邻（绕行/等待），否则原地
+	# 3) 前进格被占 → 垂直绕行：只看横向邻（垂直于前进向），避免把"后退"误判成绕行。
+	#    开阔有横向空位即绕过一个干员；窄口无横向空位则落到第 5 步。
+	if axis != Vector2i.ZERO:
+		var around: Vector2i = Vector2i.ZERO
+		var around_d: int = SCORE_INF
+		for lat_dir2: Vector2i in [axis, -axis]:
+			var nb: Vector2i = cell + lat_dir2
+			if _can_enter(dist, extra_blocked, nb) and int(dist[nb]) <= cur_d + LATERAL_SLACK and int(dist[nb]) < around_d:
+				around = nb
+				around_d = int(dist[nb])
+		if around_d < SCORE_INF:
+			return around
+	# 4) 任一 dist 更低的未占邻（一般绕行兜底）
 	for dir in CARDINALS:
 		var nb2: Vector2i = cell + dir
-		if _can_enter(dist, extra_blocked, nb2) and int(dist[nb2]) <= cur_d:
+		if _can_enter(dist, extra_blocked, nb2) and int(dist[nb2]) < cur_d:
 			return nb2
+	# 5) 窄口无绕行余地：忽略 extra_blocked 照走梯度前进格（走进干员接敌，由阻挡半径拦下）。
+	#    extra_blocked 因此是"能绕就绕"的软避让，而非硬墙——避免怪卡在前一格够不到阻挡半径而死锁。
+	if dist.has(fwd) and int(dist[fwd]) < cur_d:
+		return fwd
 	return cell
 
 
