@@ -678,9 +678,9 @@ func show_unit_detail(unit: Node, display_name: String, damage_label: String, di
 	_set_right_detail_active(unit != null)
 
 
-func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
+func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "", sell_refund: int = 1) -> void:
 	if _detail_panel.has_method("show_operator_preview"):
-		_detail_panel.show_operator_preview(operator_info, unit_cfg, state, status_text)
+		_detail_panel.show_operator_preview(operator_info, unit_cfg, state, status_text, sell_refund)
 	_set_right_detail_active(true)
 
 
