@@ -9,6 +9,9 @@ const NaturalGen = preload("res://scripts/map/generation/natural.gd")
 const GenRepair = preload("res://scripts/map/generation/gen_repair.gd")
 const MesaGen = preload("res://scripts/map/generation/mesa.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
+const TerrainField = preload("res://scripts/map/generation/terrain_field.gd")
+const CorePicker = preload("res://scripts/map/generation/core_picker.gd")
+const MapLayout = preload("res://scripts/map/generation/map_layout.gd")
 
 const STAGE_SPAWNS := 1
 const STAGE_OBSTACLES := 2
@@ -73,9 +76,64 @@ static func _stage_rng_v2(run_seed: int, attempt: int, stage_id: int) -> RandomN
 
 
 static func generate(width: int, height: int, seed: int = -1, cfg: Dictionary = {}, event_ids: Array[StringName] = []) -> Dictionary:
-	if String(cfg.get("generator", "legacy")) == "skeleton_v2":
+	var gen := String(cfg.get("generator", "legacy"))
+	if gen == "terrain_first":
+		return generate_terrain_first(width, height, seed, cfg, event_ids)
+	if gen == "skeleton_v2":
 		return generate_v2(width, height, seed, cfg, event_ids)
 	return _generate_legacy(width, height, seed, cfg, event_ids)
+
+
+## Terrain-first 生成（新地基接入，与 legacy/skeleton_v2 并存，json generator 开关切换）。
+## 先长自然地貌 → 选浮动核心 → 均匀放口 + 连通 → 盖到 CellData → 资源/事件（复用 legacy 助手）。
+## 不做强制公平评估；连通由 MapLayout.ensure_connectivity 保证，单次尝试即可。
+static func generate_terrain_first(width: int, height: int, seed: int, cfg: Dictionary, event_ids: Array[StringName]) -> Dictionary:
+	var actual_seed: int = seed
+	if actual_seed < 0:
+		var boot_rng := RandomNumberGenerator.new()
+		boot_rng.randomize()
+		actual_seed = int(boot_rng.randi())
+	var attempt: int = 0
+	# 气候预设：复用 archetype 加权抽取，id → 气候参数（presets 键 == archetype id）。
+	var arch_rng := _stage_rng_v2(actual_seed, attempt, STAGE_CARDS)
+	var archetype: Dictionary = SkeletonGen.draw_archetype(cfg, arch_rng)
+	var arch_id := String(archetype.get("id", "highland_run"))
+	var climate: Dictionary = TerrainField.CLIMATE_PRESETS.get(arch_id, TerrainField.DEFAULT_CLIMATE)
+	# 自然地貌 → 浮动核心 → 出怪口 + 连通（ensure_connectivity 直接改写 terrain）。
+	var terrain: Dictionary = TerrainField.classify(width, height, actual_seed, attempt, climate)
+	var core_cell: Vector2i = CorePicker.pick_core(terrain, width, height, actual_seed, attempt)
+	var spawn_count: int = maxi(int(cfg.get("spawn_count", SPAWN_COUNT)), 1)
+	var gates: Array = MapLayout.place_gates(width, height, spawn_count)
+	MapLayout.ensure_connectivity(terrain, width, height, core_cell, gates)
+	# 盖到 CellData 网格（set_base_terrain 自动设 walkable/buildable）。
+	var cells := _create_plain_cells(width, height)
+	for raw_k in terrain.keys():
+		var k: Vector2i = raw_k
+		(cells[k] as CellData).set_base_terrain(terrain[k])
+	_setup_core_and_initial_fog(cells, core_cell)   # 核心强制平原 + 揭 5×5 雾（吃浮动核心）
+	# 出怪口标记。
+	var spawn_cells: Array[Vector2i] = []
+	for i in range(gates.size()):
+		var g: Vector2i = gates[i]
+		var d: CellData = cells[g]
+		d.set_base_terrain(CellData.TERRAIN_PLAIN)
+		d.spawn_key = StringName("S%d" % (i + 1))
+		d.buildable = false
+		spawn_cells.append(g)
+	# 资源 + 事件（复用 legacy，无扇区依赖；相对浮动核心）。
+	_place_resources(cells, width, height, spawn_cells, core_cell, _stage_rng_v2(actual_seed, attempt, STAGE_RESOURCES), cfg)
+	var event_points := _place_event_points(cells, width, height, spawn_cells, core_cell, _stage_rng_v2(actual_seed, attempt, STAGE_EVENTS), cfg, event_ids)
+	return {
+		"cells": cells,
+		"core_cell": core_cell,
+		"spawn_cells": spawn_cells,
+		"event_points": event_points,
+		"sectors": {},
+		"gen_report": {
+			"generator": "terrain_first", "archetype": arch_id,
+			"attempts": 1, "fallback": false, "core_cell": core_cell,
+		},
+	}
 
 
 ## 旧管线整体提取（B2-10）：行为与提取前 generate() 逐位等价，仅返回 dict 增补

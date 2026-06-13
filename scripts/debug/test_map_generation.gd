@@ -36,6 +36,7 @@ func _run() -> void:
 	_test_terrain_field_presets()
 	_test_core_picker()
 	_test_map_layout()
+	_test_generate_terrain_first()
 	_test_stage_stream_isolation()
 	_test_detour_repair()
 	_test_cards_archetypes_wind()
@@ -265,6 +266,66 @@ func _test_terrain_field_presets() -> void:
 	_expect(highland > open + 0.05, "highland preset rockier than open (h=%.3f o=%.3f)" % [highland, open])
 	for preset_name in ["highland_run", "riverine_run", "open_run"]:
 		print("\n=== preset %s seed=11 ===\n" % preset_name, TerrainField.ascii_dump(TerrainField.classify(30, 30, 11, 0, pre[preset_name]), 30, 30))
+
+
+func _terrain_first_cfg() -> Dictionary:
+	return {
+		"width": 30, "height": 30, "spawn_count": 5,
+		"generator": "terrain_first",
+		"resources_per_type": 12, "near_resources_per_type": 2, "event_point_count": 0,
+		"archetypes": [
+			{"id": "highland_run", "weight": 1.0},
+			{"id": "riverine_run", "weight": 1.0},
+			{"id": "open_run", "weight": 1.0},
+		],
+	}
+
+
+func _tf_reachable(cells: Dictionary, start: Vector2i, goal: Vector2i) -> bool:
+	var seen: Dictionary = {start: true}
+	var queue: Array[Vector2i] = [start]
+	var head: int = 0
+	while head < queue.size():
+		var cur: Vector2i = queue[head]
+		head += 1
+		if cur == goal:
+			return true
+		for d in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+			var nb: Vector2i = cur + d
+			if seen.has(nb) or not cells.has(nb):
+				continue
+			if not (cells[nb] as CellDataRef).walkable:
+				continue
+			seen[nb] = true
+			queue.append(nb)
+	return false
+
+
+func _test_generate_terrain_first() -> void:
+	var cfg := _terrain_first_cfg()
+	var r1: Dictionary = MapGeneratorScript.generate(30, 30, 4242, cfg, [])
+	var cells: Dictionary = r1.get("cells", {})
+	_expect(cells.size() == 900, "tf cells cover 30x30 (%d)" % cells.size())
+	var core: Vector2i = r1.get("core_cell", Vector2i(-1, -1))
+	_expect(cells.has(core) and (cells[core] as CellDataRef).is_core, "tf core marked is_core")
+	_expect((cells[core] as CellDataRef).terrain == CellDataRef.TERRAIN_PLAIN, "tf core is plain")
+	_expect(not (cells[core] as CellDataRef).buildable, "tf core not buildable")
+	# 浮动核心：大概率不在正中（弱断言，仅观测）。
+	var spawns: Array = r1.get("spawn_cells", [])
+	_expect(spawns.size() == 5, "tf 5 spawns (%d)" % spawns.size())
+	for si in range(spawns.size()):
+		var sc: Vector2i = spawns[si]
+		_expect(sc.x == 0 or sc.x == 29 or sc.y == 0 or sc.y == 29, "tf spawn on border %s" % str(sc))
+		_expect((cells[sc] as CellDataRef).spawn_key != StringName(), "tf spawn has key %s" % str(sc))
+		_expect(_tf_reachable(cells, sc, core), "tf spawn %s reaches core" % str(sc))
+	var r2: Dictionary = MapGeneratorScript.generate(30, 30, 4242, cfg, [])
+	var cells2: Dictionary = r2.get("cells", {})
+	var same := true
+	for k in cells.keys():
+		if (cells[k] as CellDataRef).terrain != (cells2[k] as CellDataRef).terrain:
+			same = false
+	_expect(same and r1.get("core_cell") == r2.get("core_cell"), "tf deterministic")
+	print("\n=== generate_terrain_first seed=4242 core=%s arch=%s ===" % [str(core), str(r1.get("gen_report", {}).get("archetype", "?"))])
 
 
 func _test_map_layout() -> void:
