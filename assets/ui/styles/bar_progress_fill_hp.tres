@@ -1,10 +1,15 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://daox4lqnwr4uk"]
+[gd_resource type="StyleBoxTexture" format=3]
 
-[ext_resource type="Texture2D" uid="uid://c1fmonsjxxfd4" path="res://assets/ui/generated/bar_progress_fill_hp.png" id="1_progress_hp"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/bar_progress_fill_hp.png" id="1_texture"]
 
 [resource]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-texture = ExtResource("1_progress_hp")
+content_margin_left = 0.0000
+content_margin_top = 0.0000
+content_margin_right = 0.0000
+content_margin_bottom = 0.0000
+texture = ExtResource("1_texture")
+texture_margin_left = 0.0000
+texture_margin_top = 0.0000
+texture_margin_right = 0.0000
+texture_margin_bottom = 0.0000
+draw_center = true

@@ -1,15 +1,15 @@
-[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+[gd_resource type="StyleBoxTexture" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_wave_warning_row_base.png" id="1_wave_warning"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_wave_warning_row_base.png" id="1_texture"]
 
 [resource]
-texture = ExtResource("1_wave_warning")
-texture_margin_left = 18.0
-texture_margin_top = 12.0
-texture_margin_right = 18.0
-texture_margin_bottom = 12.0
-content_margin_left = 10.0
-content_margin_top = 4.0
-content_margin_right = 10.0
-content_margin_bottom = 4.0
+content_margin_left = 10.0000
+content_margin_top = 4.0000
+content_margin_right = 10.0000
+content_margin_bottom = 4.0000
+texture = ExtResource("1_texture")
+texture_margin_left = 18.0000
+texture_margin_top = 12.0000
+texture_margin_right = 18.0000
+texture_margin_bottom = 12.0000
 draw_center = true

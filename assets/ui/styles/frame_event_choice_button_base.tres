@@ -1,15 +1,15 @@
-[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+[gd_resource type="StyleBoxTexture" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_event_choice_button_base.png" id="1_event_choice_button"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_event_choice_button_base.png" id="1_texture"]
 
 [resource]
-texture = ExtResource("1_event_choice_button")
-texture_margin_left = 2.28
-texture_margin_top = 1.52
-texture_margin_right = 2.28
-texture_margin_bottom = 1.52
-content_margin_left = 14.0
-content_margin_top = 8.0
-content_margin_right = 14.0
-content_margin_bottom = 8.0
+content_margin_left = 42.0000
+content_margin_top = 24.0000
+content_margin_right = 42.0000
+content_margin_bottom = 24.0000
+texture = ExtResource("1_texture")
+texture_margin_left = 6.8400
+texture_margin_top = 4.5600
+texture_margin_right = 6.8400
+texture_margin_bottom = 4.5600
 draw_center = true

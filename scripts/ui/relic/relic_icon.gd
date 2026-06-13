@@ -15,17 +15,12 @@ var _highlighted := false
 @onready var _icon_frame: Panel = %IconFrame
 @onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _new_highlight_overlay: Panel = %NewHighlightOverlay
-@onready var _icon_label: Label = %IconLabel
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	gui_input.connect(_on_gui_input)
-	_icon_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	_icon_label.add_theme_font_size_override("font_size", 18)
-	_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(24.0, 24.0))
@@ -53,9 +48,6 @@ func _apply_config() -> void:
 	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
-	_icon_label.visible = texture == null
-	_icon_label.text = UiDisplayText.icon_text(_cfg, "遗")
-	_icon_label.add_theme_color_override("font_color", UiDisplayText.relic_rarity_color(rarity))
 	tooltip_text = UiDisplayText.relic_tooltip_text(buff_id, _cfg)
 	_apply_style()
 

@@ -24,7 +24,6 @@ var _slot_source_label: Label = null
 @onready var _icon_frame: Panel = %IconFrame
 @onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _hover_overlay: Panel = %HoverOverlay
-@onready var _icon_label: Label = %IconLabel
 @onready var _name_label: Label = %NameLabel
 @onready var _rarity_label: Label = %RarityLabel
 @onready var _desc_label: Label = %DescLabel
@@ -47,10 +46,7 @@ func _ready() -> void:
 	_rarity_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_desc_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_tag_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	_icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_icon_label.add_theme_font_size_override("font_size", 22)
-	for label in [_name_label, _rarity_label, _desc_label, _tag_label, _icon_label]:
+	for label in [_name_label, _rarity_label, _desc_label, _tag_label]:
 		_add_label_shadow(label)
 	_name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_rarity_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -92,9 +88,6 @@ func _apply_config() -> void:
 	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
-	_icon_label.visible = texture == null
-	_icon_label.text = UiDisplayText.icon_text(_cfg, "遗")
-	_icon_label.add_theme_color_override("font_color", UiDisplayText.relic_rarity_color(rarity))
 	_name_label.text = UiDisplayText.config_name(_cfg, buff_id)
 	_rarity_label.text = UiDisplayText.relic_rarity_label(rarity)
 	_rarity_label.add_theme_color_override("font_color", UiDisplayText.relic_rarity_color(rarity))
