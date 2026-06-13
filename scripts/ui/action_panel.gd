@@ -2,8 +2,10 @@ extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const DayManagerScript = preload("res://scripts/core/day_manager.gd")
 
-const EXPLORE_AP_COST := 2
+# 探索行动力消耗的唯一来源是 DayManager，此处引用以保持可用性判断与实际扣费一致。
+const EXPLORE_AP_COST := DayManagerScript.EXPLORE_AP_COST
 
 var _current_mode: StringName = &"idle"
 var _current_building_id: StringName = &""

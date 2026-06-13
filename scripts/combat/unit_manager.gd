@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
+const RunStateScript = preload("res://autoload/RunState.gd")
 
 const RANGED_DEPLOY_CLASSES: Array[StringName] = [&"sniper", &"caster"]
 
@@ -246,6 +247,17 @@ func _foresight_sell_refund(run_state, operator_key: StringName) -> int:
 	var operator_info: Dictionary = run_state.get_owned_operator(operator_key)
 	var cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator_info.get("unit_id", "")))
 	return CovenantDefs.foresight_sell_value(int(cfg.get("cost_prestige", 0)))
+
+
+# 出售该干员实际可得声望（含远见三人折半），与 try_sell_operator 口径一致，供 UI 文案显示。
+func get_operator_sell_refund(operator_key: StringName) -> int:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return RunStateScript.OPERATOR_SELL_PRESTIGE
+	var refund := _foresight_sell_refund(run_state, operator_key)
+	if refund >= 0:
+		return refund
+	return RunStateScript.OPERATOR_SELL_PRESTIGE
 
 
 func get_unit_by_runtime_id(unit_runtime_id: int) -> Node:

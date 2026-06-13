@@ -703,8 +703,11 @@ func _refresh_owned_operator_preview() -> void:
 	var status_text := ""
 	if state == &"cooldown" and _unit_manager != null and _unit_manager.has_method("get_operator_redeploy_remaining"):
 		status_text = "%.1fs" % float(_unit_manager.get_operator_redeploy_remaining(_selected_operator_key))
+	var sell_refund := 1
+	if _unit_manager != null and _unit_manager.has_method("get_operator_sell_refund"):
+		sell_refund = int(_unit_manager.get_operator_sell_refund(_selected_operator_key))
 	if _combat_hud.has_method("show_operator_preview"):
-		_combat_hud.show_operator_preview(operator_info, _get_effective_unit_cfg(unit_id, star), state, status_text)
+		_combat_hud.show_operator_preview(operator_info, _get_effective_unit_cfg(unit_id, star), state, status_text, sell_refund)
 
 
 func _refresh_shop_unit_preview() -> void:

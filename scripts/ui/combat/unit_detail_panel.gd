@@ -52,6 +52,7 @@ var _sp_ratio := 0.0
 var _shop_slot_index := -1
 var _preview_operator_key := StringName()
 var _preview_operator_state := StringName()
+var _preview_sell_refund := 1
 
 
 func _ready() -> void:
@@ -167,10 +168,11 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	_refresh_action_icons()
 
 
-func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "") -> void:
+func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, state: StringName, status_text: String = "", sell_refund: int = 1) -> void:
 	_shop_slot_index = -1
 	_preview_operator_key = StringName(operator_info.get("key", ""))
 	_preview_operator_state = state
+	_preview_sell_refund = sell_refund
 	var display_name := String(operator_info.get("name", unit_cfg.get("name", operator_info.get("unit_id", ""))))
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var skill_status_text := status_text.strip_edges()
@@ -180,7 +182,7 @@ func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, stat
 	_show_cfg_preview(display_name, unit_cfg, OperatorProgression.format_star_label(star), skill_status_text, operator_unit_id, _preview_operator_key)
 	var can_sell := state == &"ready"
 	var sell_reason := "" if can_sell else "该干员当前不能出售"
-	_set_action_mode(&"preview", false, "", 0, can_sell, sell_reason)
+	_set_action_mode(&"preview", false, "", 0, can_sell, sell_reason, sell_refund)
 	_refresh_star_up_button()
 
 
@@ -296,7 +298,7 @@ func _format_runtime_covenants(cfg: Dictionary, unit_id: StringName, operator_ke
 	return "·".join(names)
 
 
-func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, price: int = 0, can_sell: bool = false, sell_reason: String = "") -> void:
+func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, price: int = 0, can_sell: bool = false, sell_reason: String = "", sell_refund: int = 1) -> void:
 	var is_shop := mode == &"shop"
 	var is_deployed := mode == &"deployed"
 	var is_preview := mode == &"preview"
@@ -307,7 +309,7 @@ func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, pric
 	_sell_button.visible = is_preview
 	_sell_button.disabled = not can_sell
 	_sell_button.tooltip_text = sell_reason if is_preview and not sell_reason.strip_edges().is_empty() else ""
-	_sell_button.text = "出售 1 声望"
+	_sell_button.text = "出售 %d 声望" % sell_refund
 	_star_up_button.visible = is_preview
 	if not is_preview:
 		_star_up_button.disabled = true
@@ -393,7 +395,8 @@ func _refresh_owned_operator_preview_from_state() -> void:
 		return
 	var star := OperatorProgression.normalize_star(operator_info.get("star", OperatorProgression.DEFAULT_STAR))
 	var unit_cfg: Dictionary = data_repo.get_unit_cfg(StringName(operator_info.get("unit_id", "")))
-	show_operator_preview(operator_info, OperatorProgression.make_effective_unit_cfg(unit_cfg, star), _preview_operator_state)
+	# 升星不改变 cost_prestige，故沿用上次算好的出售退款，避免重置回默认 1。
+	show_operator_preview(operator_info, OperatorProgression.make_effective_unit_cfg(unit_cfg, star), _preview_operator_state, "", _preview_sell_refund)
 
 
 func _on_materials_changed_for_star_up(_wood: int, _stone: int, _mana: int) -> void:

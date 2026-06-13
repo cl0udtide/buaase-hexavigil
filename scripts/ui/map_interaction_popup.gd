@@ -5,10 +5,11 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 const DayManagerScript = preload("res://scripts/core/day_manager.gd")
 
-const EVENT_TRIGGER_AP_COST := 2
-const RESOURCE_COLLECT_AP_COST := 1
-const WOOD_RESOURCE_COLLECT_AMOUNT := 2
-const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
+# 这些数值的唯一来源是 DayManager，此处仅作引用，避免文案与实际消耗/产出脱节。
+const EVENT_TRIGGER_AP_COST := DayManagerScript.EVENT_TRIGGER_AP_COST
+const RESOURCE_COLLECT_AP_COST := DayManagerScript.RESOURCE_COLLECT_AP_COST
+const WOOD_RESOURCE_COLLECT_AMOUNT := DayManagerScript.WOOD_RESOURCE_COLLECT_AMOUNT
+const DEFAULT_RESOURCE_COLLECT_AMOUNT := DayManagerScript.DEFAULT_RESOURCE_COLLECT_AMOUNT
 const POPUP_MIN_WIDTH := 300.0
 const POPUP_OFFSET := Vector2(14.0, 14.0)
 const INVALID_CELL := Vector2i(-1, -1)

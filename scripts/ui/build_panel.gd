@@ -4,13 +4,15 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
+const ShopManagerScript = preload("res://scripts/combat/shop_manager.gd")
 
 const MODE_BUILD: StringName = &"build"
 const MODE_SHOP: StringName = &"shop"
 const CATEGORY_RESOURCE: StringName = &"resource"
 const CATEGORY_AURA: StringName = &"aura"
 const CATEGORY_BLOCK: StringName = &"block"
-const REFRESH_COST := 2
+# 刷新基价的唯一来源是 ShopManager；此处仅作 ShopManager 不可用时的兜底，引用以防脱节。
+const REFRESH_COST := ShopManagerScript.REFRESH_COST
 
 signal shop_unit_preview_requested(slot_index: int, unit_id: StringName, price: int, can_purchase: bool, disabled_reason: String)
 signal building_card_drag_started(building_id: StringName)
