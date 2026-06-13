@@ -2623,14 +2623,25 @@ func _populate_enemy_options() -> void:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
 		return
-	_enemy_ids = data_repo.get_all_enemy_ids()
+	# Boss 排到最前并标注【BOSS】，方便直接拉出来打；非 Boss 保持原顺序。
+	var bosses: Array[StringName] = []
+	var others: Array[StringName] = []
+	for enemy_id in data_repo.get_all_enemy_ids():
+		if StringName(data_repo.get_enemy_cfg(enemy_id).get("behavior_type", "normal")) == &"boss":
+			bosses.append(enemy_id)
+		else:
+			others.append(enemy_id)
+	_enemy_ids.assign(bosses + others)
 	for option in [_enemy_option, _item_enemy_option]:
 		if option == null:
 			continue
 		option.clear()
 		for enemy_id in _enemy_ids:
 			var cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id)
-			option.add_item(String(cfg.get("name", enemy_id)))
+			var label := String(cfg.get("name", enemy_id))
+			if StringName(cfg.get("behavior_type", "normal")) == &"boss":
+				label = "【BOSS】" + label
+			option.add_item(label)
 
 
 func _populate_building_options() -> void:
