@@ -14,7 +14,7 @@ const SIDE_PANEL := &"frame_detail_section_base"
 const RIGHT_DETAIL_SIDEBAR := &"frame_right_detail_sidebar_base"
 const BUILD_SIDE_PANEL := &"frame_left_sidebar_base"
 const DECK_PANEL := &"frame_bottom_deploy_rail_base"
-const HUD_BOTTOM_RAIL := &"hud_bottom_rail"
+const HUD_BOTTOM_RAIL := &"frame_bottom_deploy_rail_base"
 const DETAIL_SECTION := &"frame_detail_section_base"
 const CARD := &"frame_detail_section_base"
 const LIST_CARD := &"frame_build_list_card_base"
@@ -33,11 +33,10 @@ const OPERATOR_PORTRAIT_SLOT := &"frame_operator_portrait_backplate"
 const OPERATOR_COST_BADGE := &"frame_operator_cost_badge"
 const OPERATOR_STAT_ROW := &"frame_operator_stat_row"
 const BUTTON := &"frame_button_base"
-const BUTTON_HOVER := &"frame_button_primary_overlay"
-const BUTTON_PRESSED := &"frame_button_primary_overlay"
-const BUTTON_DISABLED := &"frame_button_disabled_overlay"
+const BUTTON_PRIMARY_OVERLAY := &"frame_button_primary_overlay"
+const BUTTON_DANGER_OVERLAY := &"frame_button_danger_overlay"
+const BUTTON_DISABLED_OVERLAY := &"frame_button_disabled_overlay"
 const BUTTON_COMPACT := &"frame_button_base"
-const BUTTON_COMPACT_SELECTED := &"frame_button_primary_overlay"
 const SETTINGS_BUTTON := &"frame_settings_button_base"
 const TAB := &"frame_sidebar_tab_base"
 const TAB_SELECTED := &"frame_sidebar_tab_selected_overlay"
@@ -78,9 +77,9 @@ const WAVE_PREVIEW := &"frame_wave_preview_base"
 const WAVE_ENEMY_ROW := &"frame_wave_enemy_row_base"
 const WAVE_ROUTE_TOGGLE := &"frame_wave_route_toggle_base"
 const WAVE_WARNING_ROW := &"frame_wave_warning_row_base"
-const SKILL_BUTTON_PRIMARY := &"frame_button_primary_overlay"
+const SKILL_BUTTON_PRIMARY := &"frame_button_base"
 const BUTTON_SECONDARY := &"frame_button_base"
-const BUTTON_DANGER := &"frame_button_danger_overlay"
+const BUTTON_DANGER := &"frame_button_base"
 const UNDO_BUTTON := &"frame_undo_button_base"
 const SPEED_TOGGLE := &"frame_speed_toggle_base"
 const SPEED_TOGGLE_ACTIVE := &"frame_speed_toggle_active_overlay"
@@ -96,8 +95,8 @@ const RESOURCE_DELTA_BADGE := &"frame_resource_delta_badge"
 const TOOLTIP := &"frame_tooltip_base"
 const SCROLL_TRACK := &"frame_scroll_track"
 const SCROLL_THUMB := &"frame_scroll_thumb"
-const SCROLL_TRACK_HORIZONTAL := &"frame_scroll_track_horizontal"
-const SCROLL_THUMB_HORIZONTAL := &"frame_scroll_thumb_horizontal"
+const SCROLL_TRACK_HORIZONTAL := &"frame_scroll_track"
+const SCROLL_THUMB_HORIZONTAL := &"frame_scroll_thumb"
 const SLIDER_TRACK := &"frame_slider_track"
 const SLIDER_FILL := &"frame_slider_fill"
 const SLIDER_HANDLE := &"frame_slider_handle"
@@ -118,7 +117,6 @@ const SPECS := {
 	RIGHT_DETAIL_SIDEBAR: {"content": Vector4(20.0, 18.0, 20.0, 20.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUILD_SIDE_PANEL: {"content": Vector4(24.0, 20.0, 24.0, 28.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	DECK_PANEL: {"content": Vector4(24.0, 10.0, 24.0, 10.0)},
-	HUD_BOTTOM_RAIL: {"content": ZERO_INSETS},
 	DETAIL_SECTION: {"content": Vector4(14.0, 10.0, 14.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	LIST_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUILD_ICON_BACKPLATE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
@@ -132,8 +130,9 @@ const SPECS := {
 	OPERATOR_COST_BADGE: {"content": Vector4(6.0, 4.0, 6.0, 4.0)},
 	OPERATOR_STAT_ROW: {"content": Vector4(6.0, 2.0, 6.0, 2.0)},
 	BUTTON: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
-	BUTTON_HOVER: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
-	BUTTON_DISABLED: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
+	BUTTON_PRIMARY_OVERLAY: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
+	BUTTON_DANGER_OVERLAY: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
+	BUTTON_DISABLED_OVERLAY: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
 	SETTINGS_BUTTON: {"content": Vector4(4.0, 4.0, 4.0, 4.0)},
 	TAB: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	TAB_SELECTED: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
@@ -169,7 +168,6 @@ const SPECS := {
 	ACTION_PANEL: {"content": Vector4(12.0, 8.0, 12.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	ACTION_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	UNDO_BUTTON: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	BUTTON_DANGER: {"content": Vector4(12.0, 8.0, 12.0, 8.0)},
 	PROGRESS_TRACK: {"content": ZERO_INSETS},
 	PROGRESS_BLUE: {"content": ZERO_INSETS},
 	PROGRESS_AMBER: {"content": ZERO_INSETS},

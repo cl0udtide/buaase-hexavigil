@@ -1,15 +1,8 @@
 [gd_scene format=3 uid="uid://c0oceoqeshmf3"]
 
 [ext_resource type="Script" uid="uid://byr08164d6piu" path="res://scripts/ui/event_panel.gd" id="1_0pxnh"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_panel_base.tres" id="2_event_panel"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_choice_button_base.tres" id="4_choice_button"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="5_button_primary"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="6_button_disabled"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay_fit_150x40.tres" id="fit_frame_button_disabled_overlay_150x40"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay_fit_150x40.tres" id="fit_frame_button_primary_overlay_150x40"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_choice_button_base_fit_150x40.tres" id="fit_frame_event_choice_button_base_150x40"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_panel_base_fit_540x260.tres" id="fit_frame_event_panel_base_540x260"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_panel_base.tres" id="frame_event_panel_base_540x260"]
 
 [node name="EventPanel" type="PanelContainer" unique_id=239470582]
 visible = false
@@ -24,7 +17,7 @@ offset_right = 460.0
 offset_bottom = 300.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = ExtResource("fit_frame_event_panel_base_540x260")
+theme_override_styles/panel = ExtResource("frame_event_panel_base_540x260")
 script = ExtResource("1_0pxnh")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000105]

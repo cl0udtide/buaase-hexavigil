@@ -1,19 +1,13 @@
 [gd_scene format=3 uid="uid://c7jldlop83igt"]
 
 [ext_resource type="Script" uid="uid://dvngnxtdahi02" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_base.tres" id="2_cardbase"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="3_titlestrip"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="7_statrow"]
 [ext_resource type="StyleBox" uid="uid://bh2epfexus27p" path="res://assets/ui/styles/frame_operator_card_selected_overlay.tres" id="8_selected"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_deployed_overlay.tres" id="9_deployed"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_cooldown_overlay.tres" id="10_cooldown"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres" id="11_cooldownselected"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_base_fit_164x184.tres" id="fit_frame_operator_card_base_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_overlay_fit_164x184.tres" id="fit_frame_operator_card_cooldown_overlay_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay_fit_164x184.tres" id="fit_frame_operator_card_cooldown_selected_overlay_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_deployed_overlay_fit_164x184.tres" id="fit_frame_operator_card_deployed_overlay_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_stat_row_fit_132x30.tres" id="fit_frame_operator_stat_row_132x30"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_title_strip_fit_132x42.tres" id="fit_frame_operator_title_strip_132x42"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_base.tres" id="frame_operator_card_base_164x184"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_overlay.tres" id="frame_operator_card_cooldown_overlay_164x184"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres" id="frame_operator_card_cooldown_selected_overlay_164x184"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_deployed_overlay.tres" id="frame_operator_card_deployed_overlay_164x184"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="frame_operator_stat_row_132x30"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="frame_operator_title_strip_132x42"]
 
 [node name="OperatorCard" type="Control" unique_id=1219481180]
 custom_minimum_size = Vector2(164, 184)
@@ -31,7 +25,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_card_base_164x184")
+theme_override_styles/panel = ExtResource("frame_operator_card_base_164x184")
 
 [node name="CardContent" type="MarginContainer" parent="." unique_id=1076543747]
 unique_name_in_owner = true
@@ -58,7 +52,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_title_strip_132x42")
+theme_override_styles/panel = ExtResource("frame_operator_title_strip_132x42")
 
 [node name="TitleMargin" type="MarginContainer" parent="CardContent/VBox/TitleStrip" unique_id=401894519]
 layout_mode = 0
@@ -122,7 +116,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_stat_row_132x30")
+theme_override_styles/panel = ExtResource("frame_operator_stat_row_132x30")
 
 [node name="HpStatLabel" type="Label" parent="CardContent/VBox/StatRows/HpStatRow" unique_id=804832331]
 unique_name_in_owner = true
@@ -144,7 +138,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_stat_row_132x30")
+theme_override_styles/panel = ExtResource("frame_operator_stat_row_132x30")
 
 [node name="SpStatLabel" type="Label" parent="CardContent/VBox/StatRows/SpStatRow" unique_id=672416314]
 unique_name_in_owner = true
@@ -167,7 +161,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_stat_row_132x30")
+theme_override_styles/panel = ExtResource("frame_operator_stat_row_132x30")
 
 [node name="CdStatLabel" type="Label" parent="CardContent/VBox/StatRows/CdStatRow" unique_id=747651217]
 unique_name_in_owner = true
@@ -207,7 +201,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_card_deployed_overlay_164x184")
+theme_override_styles/panel = ExtResource("frame_operator_card_deployed_overlay_164x184")
 
 [node name="CooldownOverlay" type="Panel" parent="." unique_id=1011898872]
 unique_name_in_owner = true
@@ -219,7 +213,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_card_cooldown_overlay_164x184")
+theme_override_styles/panel = ExtResource("frame_operator_card_cooldown_overlay_164x184")
 
 [node name="CooldownSelectedOverlay" type="Panel" parent="." unique_id=1800497857]
 unique_name_in_owner = true
@@ -231,7 +225,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_operator_card_cooldown_selected_overlay_164x184")
+theme_override_styles/panel = ExtResource("frame_operator_card_cooldown_selected_overlay_164x184")
 
 [node name="CooldownTopContent" type="Control" parent="." unique_id=1948928943]
 unique_name_in_owner = true

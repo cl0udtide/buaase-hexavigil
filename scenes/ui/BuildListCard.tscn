@@ -1,16 +1,11 @@
 [gd_scene format=3 uid="uid://df1k2dhjj7vn8"]
 
 [ext_resource type="Script" uid="uid://ck4s65hv2aoxq" path="res://scripts/ui/build_list_card.gd" id="1_1uyh3"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_list_card_base.tres" id="2_card_base"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_icon_backplate.tres" id="3_icon_backplate"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_icon_frame.tres" id="4_icon_frame"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_cost_badge_base.tres" id="5_cost_badge"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_build_list_card_selected_overlay.tres" id="6_selected_overlay"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_icon_backplate_fit_72x88.tres" id="fit_frame_build_icon_backplate_72x88"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_icon_frame_fit_72x88.tres" id="fit_frame_build_icon_frame_72x88"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_list_card_base_fit_280x104.tres" id="fit_frame_build_list_card_base_280x104"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_list_card_selected_overlay_fit_280x104.tres" id="fit_frame_build_list_card_selected_overlay_280x104"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_cost_badge_base_fit_40x88.tres" id="fit_frame_cost_badge_base_40x88"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_icon_backplate.tres" id="frame_build_icon_backplate_72x88"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_icon_frame.tres" id="frame_build_icon_frame_72x88"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_list_card_base.tres" id="frame_build_list_card_base_280x104"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_build_list_card_selected_overlay.tres" id="frame_build_list_card_selected_overlay_280x104"]
+[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_cost_badge_base.tres" id="frame_cost_badge_base_40x88"]
 
 [node name="BuildListCard" type="Control" unique_id=420263796]
 custom_minimum_size = Vector2(0, 104)
@@ -29,7 +24,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_build_list_card_base_280x104")
+theme_override_styles/panel = ExtResource("frame_build_list_card_base_280x104")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=145550266]
 z_index = 5
@@ -63,7 +58,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_build_icon_backplate_72x88")
+theme_override_styles/panel = ExtResource("frame_build_icon_backplate_72x88")
 
 [node name="IconTexture" type="TextureRect" parent="ContentMargin/Row/IconStack" unique_id=779279736]
 unique_name_in_owner = true
@@ -108,7 +103,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_build_icon_frame_72x88")
+theme_override_styles/panel = ExtResource("frame_build_icon_frame_72x88")
 
 [node name="TextMargin" type="MarginContainer" parent="ContentMargin/Row" unique_id=1832461001]
 layout_mode = 2
@@ -160,7 +155,7 @@ custom_minimum_size = Vector2(40, 32)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_cost_badge_base_40x88")
+theme_override_styles/panel = ExtResource("frame_cost_badge_base_40x88")
 
 [node name="CostLabel" type="Label" parent="ContentMargin/Row/CostBadge" unique_id=234878401]
 unique_name_in_owner = true
@@ -187,7 +182,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("fit_frame_build_list_card_selected_overlay_280x104")
+theme_override_styles/panel = ExtResource("frame_build_list_card_selected_overlay_280x104")
 
 [node name="DisabledOverlay" type="ColorRect" parent="." unique_id=1226576112]
 unique_name_in_owner = true

@@ -35,7 +35,6 @@ const MESSAGE_WARNING_OVERLAY_PATCH_MARGIN := 18
 const MESSAGE_CHIP_BASE_Z := 0
 const MESSAGE_CHIP_WARNING_Z := 1
 const MESSAGE_CHIP_CONTENT_Z := 2
-const CORE_FILL_INSET := 2.0
 const DEPLOY_SCROLLBAR_THICKNESS := 26.0
 const DEPLOY_SCROLLBAR_MIN_GRAB := 64
 const DEPLOY_SCROLLBAR_STEP := 48
@@ -140,7 +139,6 @@ var _level_intro_line: ColorRect
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
 @onready var _top_bar: Control = %TopBar
-@onready var _top_bar_base: Panel = %TopBarBase
 @onready var _top_content: MarginContainer = _top_bar.get_node_or_null("TopContent") as MarginContainer
 @onready var _top_content_row: HBoxContainer = _top_bar.get_node_or_null("TopContent/TopContentRow") as HBoxContainer
 var _covenant_row: HBoxContainer = null
@@ -156,12 +154,12 @@ var _covenant_row: HBoxContainer = null
 @onready var _resource_items_row: HBoxContainer = %ResourceItemsRow
 @onready var _core_label: Label = %CoreLabel
 @onready var _core_track: Panel = %CoreTrack
+@onready var _core_clip: Control = %CoreClip
 @onready var _core_fill: Panel = %CoreFill
 @onready var _deploy_label: Label = %DeployLabel
 @onready var _queue_label: Label = %QueueLabel
 @onready var _message_label: Label = %MessageLabel
 @onready var _message_icon_texture: TextureRect = _message_chip.get_node_or_null("ChipIconTexture") as TextureRect
-@onready var _resource_label: Label = %ResourceLabel
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
@@ -190,16 +188,13 @@ func _ready() -> void:
 	set_process_unhandled_input(true)
 	AppTheme.apply(self)
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speed_toggle_base.visible = true
 	_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
-	if resource_base != null:
-		resource_base.visible = false
-		resource_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_core_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_core_track.resized.connect(_refresh_core_fill)
+	_core_clip.resized.connect(_refresh_core_fill)
 	_collect_resource_items()
 	_style_top_cards()
 	_setup_message_warning_overlay()
@@ -301,6 +296,7 @@ func set_core_hp(current: int, max_value: int) -> void:
 		var tooltip_missing := "%s --/--" % CORE_HP_TITLE
 		_core_chip.tooltip_text = tooltip_missing
 		_core_track.tooltip_text = tooltip_missing
+		_core_clip.tooltip_text = tooltip_missing
 		_core_fill.tooltip_text = tooltip_missing
 	else:
 		_core_hp_current = mini(_core_hp_current, _core_hp_max)
@@ -308,6 +304,7 @@ func set_core_hp(current: int, max_value: int) -> void:
 		var tooltip_value := "%s %d/%d" % [CORE_HP_TITLE, _core_hp_current, _core_hp_max]
 		_core_chip.tooltip_text = tooltip_value
 		_core_track.tooltip_text = tooltip_value
+		_core_clip.tooltip_text = tooltip_value
 		_core_fill.tooltip_text = tooltip_value
 	_core_label.text = _format_core_hp_label()
 	_refresh_core_fill()
@@ -323,10 +320,8 @@ func show_message(text_value: String, warning := false) -> void:
 
 
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
-	_resource_label.text = resource_text
-	_resource_label.tooltip_text = tooltip_text_value
 	set_resource_items({
-		&"ap": {"icon": "AP", "value": resource_text.replace("\n", " ")}
+		&"ap": {"value": resource_text.replace("\n", " ")}
 	}, tooltip_text_value)
 
 
@@ -336,12 +331,11 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 		if item.is_empty():
 			continue
 		var root := item.get("root") as Control
-		var icon_label := item.get("icon") as Label
 		var icon_texture := item.get("icon_texture") as TextureRect
 		var value_label := item.get("value") as Label
 		var delta_label := item.get("delta") as Label
 		var delta_badge := item.get("delta_badge") as Control
-		if root == null or icon_label == null or icon_texture == null or value_label == null:
+		if root == null or icon_texture == null or value_label == null:
 			continue
 		var data: Dictionary = resource_items.get(resource_key, {})
 		if data.is_empty():
@@ -352,8 +346,6 @@ func set_resource_items(resource_items: Dictionary, tooltip_text_value: String =
 		var texture := UiArtRegistry.get_catalog_icon(StringName(data.get("icon_key", "resource_%s" % String(resource_key))))
 		icon_texture.texture = texture
 		icon_texture.visible = texture != null
-		icon_label.visible = texture == null
-		icon_label.text = String(data.get("icon", _resource_default_icon(resource_key)))
 		value_label.text = "%s\n%s" % [
 			String(data.get("label", _resource_display_name(resource_key))),
 			String(data.get("value", "--"))
@@ -1250,9 +1242,6 @@ func _ensure_level_intro_banner() -> void:
 func _collect_resource_items() -> void:
 	if _resource_chip == null:
 		return
-	if _resource_label != null:
-		_resource_label.visible = false
-		_resource_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _resource_items_row == null:
 		push_warning("ResourceItemsRow is missing from CombatHud scene.")
 		return
@@ -1271,7 +1260,6 @@ func _collect_resource_items() -> void:
 			"root": item_root,
 			"base": item_root.get_node_or_null("ResourceItemBase"),
 			"margin": item_root.get_node_or_null("ItemMargin"),
-			"icon": item_root.get_node_or_null("ItemMargin/ItemRow/IconLabel"),
 			"icon_texture": item_root.get_node_or_null("ItemMargin/ItemRow/IconTexture"),
 			"value": item_root.get_node_or_null("ItemMargin/ItemRow/ValueLabel"),
 			"delta_badge": projected_delta_badge,
@@ -1324,22 +1312,6 @@ func _resource_display_name(resource_key: StringName) -> String:
 			return "魔力矿"
 		_:
 			return String(resource_key)
-
-
-func _resource_default_icon(resource_key: StringName) -> String:
-	match resource_key:
-		&"ap":
-			return "AP"
-		&"wood":
-			return "W"
-		&"stone":
-			return "S"
-		&"mana":
-			return "M"
-		&"prestige":
-			return "P"
-		_:
-			return "?"
 
 
 func _phase_icon_id_for_text(text_value: String) -> StringName:
@@ -1449,8 +1421,6 @@ func _refresh_deploy_deck_scroll_content() -> void:
 
 
 func _style_top_cards() -> void:
-	if _top_bar_base != null:
-		_top_bar_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for card in [
 		_stage_chip.get_node_or_null("ChipBase") as Panel,
 		_core_chip.get_node_or_null("ChipBase") as Panel,
@@ -1461,10 +1431,6 @@ func _style_top_cards() -> void:
 			card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _speed_toggle_base != null:
 		_speed_toggle_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var resource_base := _resource_chip.get_node_or_null("ChipBase") as Panel
-	if resource_base != null:
-		resource_base.visible = false
-		resource_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for item in _resource_item_controls.values():
 		var item_base := (item as Dictionary).get("base") as Panel
 		if item_base != null:
@@ -1479,14 +1445,14 @@ func _style_top_cards() -> void:
 		label.add_theme_constant_override("shadow_offset_y", 0)
 		label.add_theme_constant_override("line_spacing", 0)
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	for label in [_queue_label, _core_label, _deploy_label, _resource_label]:
+	for label in [_queue_label, _core_label, _deploy_label]:
 		GameUiStyle.center_label_text(label)
 	for label in [_message_label]:
 		GameUiStyle.center_label_text(label)
 	_message_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	for item in _resource_item_controls.values():
 		var item_dict := item as Dictionary
-		for label_key in ["icon", "value", "delta"]:
+		for label_key in ["value", "delta"]:
 			var label := item_dict.get(label_key) as Label
 			if label == null:
 				continue
@@ -1706,17 +1672,16 @@ func _set_core_progress_from_text(core_text: String) -> void:
 
 
 func _refresh_core_fill() -> void:
-	if _core_track == null or _core_fill == null:
+	if _core_clip == null or _core_fill == null:
 		return
-	_core_fill.anchor_left = _core_track.anchor_left
-	_core_fill.anchor_top = _core_track.anchor_top
-	_core_fill.anchor_right = _core_track.anchor_left
-	_core_fill.anchor_bottom = _core_track.anchor_bottom
-	var fill_width := maxf(0.0, (_core_track.size.x - CORE_FILL_INSET * 2.0) * _core_hp_ratio)
-	_core_fill.offset_left = _core_track.offset_left + CORE_FILL_INSET
-	_core_fill.offset_top = _core_track.offset_top + CORE_FILL_INSET
-	_core_fill.offset_right = _core_track.offset_left + CORE_FILL_INSET + fill_width
-	_core_fill.offset_bottom = _core_track.offset_bottom - CORE_FILL_INSET
+	_core_fill.anchor_left = 0.0
+	_core_fill.anchor_top = 0.0
+	_core_fill.anchor_right = 0.0
+	_core_fill.anchor_bottom = 1.0
+	_core_fill.offset_left = 0.0
+	_core_fill.offset_top = 0.0
+	_core_fill.offset_right = maxf(0.0, _core_clip.size.x * clampf(_core_hp_ratio, 0.0, 1.0))
+	_core_fill.offset_bottom = 0.0
 
 
 func _bind_overlay_panels() -> void:

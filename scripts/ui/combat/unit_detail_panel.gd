@@ -18,9 +18,11 @@ signal sell_requested(operator_key: StringName)
 @onready var _portrait_label: Label = %PortraitLabel
 @onready var _hp_value_label: Label = %HpValueLabel
 @onready var _hp_bar: Control = %HpBar
+@onready var _hp_clip: Control = %HpClip
 @onready var _hp_fill: Panel = %HpFill
 @onready var _sp_value_label: Label = %SpValueLabel
 @onready var _sp_bar: Control = %SpBar
+@onready var _sp_clip: Control = %SpClip
 @onready var _sp_fill: Panel = %SpFill
 @onready var _atk_stat_label: Label = %AtkStatLabel
 @onready var _def_stat_label: Label = %DefStatLabel
@@ -82,6 +84,8 @@ func _ready() -> void:
 	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_hp_bar.resized.connect(_refresh_progress_fills)
 	_sp_bar.resized.connect(_refresh_progress_fills)
+	_hp_clip.resized.connect(_refresh_progress_fills)
+	_sp_clip.resized.connect(_refresh_progress_fills)
 	_skill_clip_area.resized.connect(_refresh_skill_text_scroll_size)
 	_skill_scroll.resized.connect(_refresh_skill_text_scroll_size)
 	_style_action_button(_cast_button, GameUiStyle.ACCENT)
@@ -444,13 +448,16 @@ func _refresh_progress_fills() -> void:
 func _update_fill(bar: Control, fill: Control, ratio: float) -> void:
 	if bar == null or fill == null:
 		return
+	var clip := fill.get_parent() as Control
+	if clip == null:
+		return
 	fill.anchor_left = 0.0
 	fill.anchor_top = 0.0
 	fill.anchor_right = 0.0
 	fill.anchor_bottom = 1.0
 	fill.offset_left = 0.0
 	fill.offset_top = 0.0
-	fill.offset_right = maxf(0.0, bar.size.x * ratio)
+	fill.offset_right = maxf(0.0, clip.size.x * clampf(ratio, 0.0, 1.0))
 	fill.offset_bottom = 0.0
 
 

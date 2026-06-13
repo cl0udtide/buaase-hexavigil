@@ -119,14 +119,23 @@ func _sync_runtime_state() -> void:
 
 
 func _refresh_mode_buttons() -> void:
-	_build_mode_button.disabled = _current_mode == MODE_BUILD
-	_shop_mode_button.disabled = _current_mode == MODE_SHOP
+	_set_tab_selected(_build_mode_button, _current_mode == MODE_BUILD)
+	_set_tab_selected(_shop_mode_button, _current_mode == MODE_SHOP)
 
 
 func _refresh_category_buttons() -> void:
-	_resource_button.disabled = _current_category == CATEGORY_RESOURCE
-	_aura_button.disabled = _current_category == CATEGORY_AURA
-	_block_button.disabled = _current_category == CATEGORY_BLOCK
+	_set_tab_selected(_resource_button, _current_category == CATEGORY_RESOURCE)
+	_set_tab_selected(_aura_button, _current_category == CATEGORY_AURA)
+	_set_tab_selected(_block_button, _current_category == CATEGORY_BLOCK)
+
+
+func _set_tab_selected(button: Button, selected: bool) -> void:
+	if button == null:
+		return
+	button.disabled = selected
+	var overlay := button.get_node_or_null("SelectedOverlay") as Panel
+	if overlay != null:
+		overlay.visible = selected
 
 
 func _refresh_bottom_controls() -> void:

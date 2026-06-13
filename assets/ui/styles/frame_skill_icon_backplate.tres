@@ -1,6 +1,6 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://cptw280e6hq6u"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_skill_icon_backplate_fit_refs.png" id="1_skill_backplate"]
+[ext_resource type="Texture2D" uid="uid://cjat6dkspef3j" path="res://assets/ui/generated/frame_skill_icon_backplate.png" id="1_skill_backplate"]
 
 [resource]
 content_margin_left = 6.0

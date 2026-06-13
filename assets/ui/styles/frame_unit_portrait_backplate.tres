@@ -1,6 +1,6 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://dyd8s3sgrw4kw"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_unit_portrait_backplate_fit_refs.png" id="1_portrait_backplate"]
+[ext_resource type="Texture2D" uid="uid://m4ebuu7idlm7" path="res://assets/ui/generated/frame_unit_portrait_backplate.png" id="1_portrait_backplate"]
 
 [resource]
 content_margin_left = 8.0
