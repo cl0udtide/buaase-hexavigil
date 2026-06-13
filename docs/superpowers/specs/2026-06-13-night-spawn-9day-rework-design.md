@@ -40,8 +40,8 @@
 
 ## 2. Boss 动态数值 + boss 池（按"不写死哪天"要求）
 
-- `DifficultyScale.BOSS_STAT_SCALE_BY_DAY = {3:1.0, 6:1.6, 9:2.4}`（占位，阶梯回退）。Boss 走这条独立曲线，**不吃杂兵 `STAT_SCALE`**（免双重缩放）；复用 §1 的实例字段机制（spawn 时按 boss/非 boss 决定写入哪条系数）。
-- 三只 Boss 基础数值统一到同一参考档（P1 hp ≈ 1400 量级占位，奶龙从 2400、爱国者从 2250 下放重定），差异体现在机制不在硬数值；`BOSS_STAT_SCALE` 把它缩放到出场夜体量（d3≈1400 / d6≈2240 / d9≈3360）。缩放同样覆盖各 phase 的 hp/atk/def/res。
+- `DifficultyScale.BOSS_STAT_SCALE_BY_DAY = {3:1.0, 6:1.5, 9:2.2}`（占位，阶梯回退）。Boss 走这条独立曲线，**不吃杂兵 `STAT_SCALE`**（免双重缩放）；复用 §1 的实例字段机制（spawn 时按 boss/非 boss 决定写入哪条系数）。
+- **Boss 数值不下放**（现有 Boss 在终局已偏简单，只能更难、不能更弱）：保留奶龙/爱国者现数值（P1 hp 2400 / 2250）作为基准，第三 Boss 取相近量级（~2300），三只基准相当、差异体现在机制。`BOSS_STAT_SCALE` 以最早出场夜 d3=1.0 为下限（即不低于现状）、越晚越强：d3≈现状 / d6≈×1.5 / d9≈×2.2，没有任何 Boss 弱于现状，终局 Boss 明显更硬。缩放覆盖各 phase 的 hp/atk/def/res。
 - **boss 不写死哪天**：boss tier 模板池含三个 boss 模板，`resolve_night_plan` 对 boss tier 已做抽取 + 局内去重 → d3/d6/d9 抽到三只不同 Boss，顺序随种子。
 - 软闸：boss 模板支持可选 `min_day`；新 Boss「焦壳奶龙」`min_day=4`（≥幕二才登场，避免第一幕就上机制最重的 Boss）。其余两只无闸。pool 组装时（`wave_manager.resolve_night_plan` / 调用方）按 `min_day` 过滤当日 boss 池。
 
@@ -173,7 +173,7 @@ else  [2,3]      # d5-9：稀有为主 + 传说兑现（band 拉长 = 构筑 pay
 | `scripts/core/audio_manager.gd` | `day>=6` 阈值重估 |
 | `scripts/core/buff_manager.gd` | rarity 9 天曲线；幕收尾保底槽 |
 | `scripts/combat/shop_manager.gd` | `TIER_WEIGHTS_BY_DAY` |
-| `data/enemies.json` | 第三 Boss 条目 + 两 Boss 基础数值下放重定 |
+| `data/enemies.json` | 新增第三 Boss 条目（两 Boss 现数值不动，靠 boss 曲线越晚越强） |
 | `data/wave_templates.json` | ~21 模板 + enemy_choices + boss 池 |
 | `data/events.json` | 6 天遗留 min_day/max_day 重估 |
 | `scripts/debug/test_*.gd` | 新增 1 套 + 改 wave_templates/含 6 天假设的套件 |
