@@ -274,9 +274,18 @@ func _half_width() -> int:
 	return clampi(int(round(HALF_WIDTH_K * sqrt(float(count)))), 1, HALF_WIDTH_CAP)
 
 
-## 怪需绕开的占用格（Phase 4 填入拦路单位格；当前为空 = 与旧行为一致穿过）。
+## 怪应"能绕则绕"的占用格 = 已部署干员所在格。开阔处绕行、窄口无路则照走进去接敌
+## （软避让，见 FlowField.next_step 第 5 步）。被某干员阻挡中的怪走 process_blocked_motion，
+## 不经此处，故无需排除自己的阻挡者。
 func _extra_blocked() -> Dictionary:
-	return {}
+	var blocked: Dictionary = {}
+	var unit_manager: Node = _owner_actor.get_unit_manager() if _owner_actor != null else null
+	if unit_manager == null or not unit_manager.has_method("get_all_units"):
+		return blocked
+	for unit in unit_manager.get_all_units():
+		if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
+			blocked[unit.get_current_cell()] = true
+	return blocked
 
 
 # ── 拥挤 / 阻挡 走位（沿用旧逻辑）────────────────────────────────
