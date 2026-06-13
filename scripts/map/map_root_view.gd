@@ -118,6 +118,8 @@ const SPARKLE_COLOR := Color(0.93, 1.0, 1.0)
 const SPARKLE_REDRAW_HZ := 3.0
 const VIEW_PADDING := 0.0
 const MAX_ZOOM_MULTIPLIER := 3.0
+# 开局相对铺满全图(fit)再放大的倍数，让镜头聚焦核心附近而不是看全图。
+const START_ZOOM_MULTIPLIER := 1.5
 const ZOOM_STEP := 0.9
 const PAN_OVERSCROLL_VIEWPORT_RATIO := 0.75
 const RANGE_TEXTURE_FRAME_COUNT := 6
@@ -1575,8 +1577,8 @@ func _fit_camera_to_map(reset_view: bool = true) -> void:
 	_fit_zoom = max(viewport_size.x / map_size.x, viewport_size.y / map_size.y)
 	_fit_zoom = max(_fit_zoom, 0.01)
 	if reset_view:
-		_zoom_scalar = _fit_zoom
-		# 核心不一定落在地图几何中心，开局把镜头锚到核心所在格（越界由 _clamp_camera_center 收回）。
+		# 开局放大一档并把镜头锚到核心所在格（核心不一定在几何中心；越界由 _clamp_camera_center 收回）。
+		_zoom_scalar = clamp(_fit_zoom * START_ZOOM_MULTIPLIER, _fit_zoom, _fit_zoom * MAX_ZOOM_MULTIPLIER)
 		_camera.position = _get_core_world(map_manager)
 	else:
 		var zoom_ratio: float = previous_zoom_scalar / max(previous_fit_zoom, 0.001)
