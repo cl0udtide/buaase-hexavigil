@@ -34,6 +34,7 @@ func _run() -> void:
 	_test_terrain_field_despeckle()
 	_test_terrain_field_dump()
 	_test_terrain_field_presets()
+	_test_terrain_field_rivers()
 	_test_core_picker()
 	_test_map_layout()
 	_test_generate_terrain_first()
@@ -237,6 +238,29 @@ func _test_terrain_field_despeckle() -> void:
 	_expect(out[Vector2i(2, 2)] == CellDataRef.TERRAIN_PLAIN, "1-cell highland speck removed")
 	_expect(out[Vector2i(0, 0)] == CellDataRef.TERRAIN_MOUNTAIN, "3-cell mountain survives")
 	_expect(out[Vector2i(0, 1)] == CellDataRef.TERRAIN_MOUNTAIN, "3-cell mountain survives (2)")
+
+
+func _test_terrain_field_rivers() -> void:
+	var dry_climate: Dictionary = TerrainField.DEFAULT_CLIMATE.duplicate()
+	dry_climate["river_count"] = 0
+	var wet_climate: Dictionary = TerrainField.DEFAULT_CLIMATE.duplicate()
+	wet_climate["river_count"] = 4
+	var dry: Dictionary = TerrainField.classify(30, 30, 777, 0, dry_climate)
+	var wet: Dictionary = TerrainField.classify(30, 30, 777, 0, wet_climate)
+	var dry_water := 0
+	var wet_water := 0
+	for k in dry.keys():
+		if dry[k] == CellDataRef.TERRAIN_WATER:
+			dry_water += 1
+		if wet[k] == CellDataRef.TERRAIN_WATER:
+			wet_water += 1
+	_expect(wet_water > dry_water, "rivers add water (dry=%d wet=%d)" % [dry_water, wet_water])
+	var wet2: Dictionary = TerrainField.classify(30, 30, 777, 0, wet_climate)
+	var same := true
+	for k in wet.keys():
+		if wet[k] != wet2[k]:
+			same = false
+	_expect(same, "rivers deterministic")
 
 
 func _test_terrain_field_dump() -> void:
@@ -565,7 +589,7 @@ func _test_cards_archetypes_wind() -> void:
 			"moisture_gradient_strength", "pass", "mesa", "economy",
 			"detour_floor", "lane_jitter_base", "corridor_slack", "gate_slide_jitter", "max_retries"]:
 		_expect(parsed.has(key), "json has key %s" % key)
-	_expect(["legacy", "skeleton_v2"].has(String(parsed.get("generator", ""))), "generator value sane")
+	_expect(["legacy", "skeleton_v2", "terrain_first"].has(String(parsed.get("generator", ""))), "generator value sane")
 	_expect(int(parsed.get("spawn_safe_radius", 0)) == 2, "spawn_safe_radius raised to 2 (spec 4.4)")
 	_expect((parsed.get("sector_cards", {}) as Dictionary).size() == 4, "4 sector cards in json")
 	_expect((parsed.get("archetypes", []) as Array).size() == 3, "3 archetypes in json")
@@ -1529,7 +1553,7 @@ func _test_skeleton_sweep() -> void:
 	# + 生产形态（不强制）40 种子兜底率扫描。
 	var file := FileAccess.open("res://data/map_generation.json", FileAccess.READ)
 	var parsed: Dictionary = JSON.parse_string(file.get_as_text())
-	_expect(String(parsed.get("generator", "")) == "skeleton_v2", "json generator flipped to skeleton_v2")
+	_expect(String(parsed.get("generator", "")) == "terrain_first", "json generator 为 terrain_first（线上）")
 	var base_cfg := _v2_cfg()
 	var card_seen: Dictionary = {}
 	var dual_count: int = 0
