@@ -38,6 +38,7 @@ var night_affix_ids: Array[StringName] = []
 # 战争赌局契约：当晚激活、核心是否失血、待发放的额外遗物三选一次数。
 var night_wager_active := false
 var night_core_damaged := false
+var pending_milestone_blessing := false
 var pending_extra_blessings := 0
 # 一夜覆盖项：玩家当晚手动封闭/额外开启的出怪口 key 列表，黎明由 clear_night_gate_overrides 清空。
 var night_gate_closed_keys: Array[String] = []
@@ -74,6 +75,7 @@ func reset_for_new_run(seed: int, mode: StringName = RUN_MODE_STANDARD) -> void:
 	night_affix_ids.clear()
 	night_wager_active = false
 	night_core_damaged = false
+	pending_milestone_blessing = false
 	pending_extra_blessings = 0
 	clear_night_gate_overrides()
 	used_template_ids.clear()
