@@ -6,6 +6,8 @@ extends SceneTree
 
 const MapManagerScript = preload("res://scripts/map/map_manager.gd")
 const PathServiceScript = preload("res://scripts/map/path_service.gd")
+const MapRootView = preload("res://scripts/map/map_root_view.gd")
+const CellDataRef = preload("res://scripts/map/cell_data.gd")
 
 var _failures: int = 0
 
@@ -58,8 +60,31 @@ func _run() -> void:
 	_expect((cov2["coverage"] as Array).size() == (cov2["centerline"] as Array).size(), "走廊: 覆盖=中心线(无横向余地)")
 	(corr["managers"] as Node).free()
 
+	_test_fog_gate()
+
 	if _failures == 0:
 		print("ALL INTEGRATION TESTS PASSED")
 	else:
 		printerr("INTEGRATION FAILURES: %d" % _failures)
 	quit(1 if _failures > 0 else 0)
+
+
+## 出怪口穿透迷雾：未探索的出怪口格应显示出怪口贴图、而非迷雾，且 discovered 不变。
+func _test_fog_gate() -> void:
+	print("[fog: 出怪口穿透迷雾]")
+	var view = MapRootView.new()
+	var gate = CellDataRef.new()
+	gate.spawn_key = &"S1"
+	gate.discovered = false
+	var gate_seen = CellDataRef.new()
+	gate_seen.spawn_key = &"S1"
+	gate_seen.discovered = true
+	var plain = CellDataRef.new()
+	plain.discovered = false
+	var t_gate = view._get_cell_texture(gate)
+	_expect(t_gate != MapRootView.TILE_HIDDEN, "未探索出怪口不再是迷雾贴图")
+	_expect(t_gate == MapRootView.TILE_SPAWN, "未探索出怪口显示出怪口贴图")
+	_expect(t_gate == view._get_cell_texture(gate_seen), "出怪口贴图与探索后一致")
+	_expect(view._get_cell_texture(plain) == MapRootView.TILE_HIDDEN, "未探索普通格仍是迷雾")
+	_expect(not gate.discovered, "出怪口 discovered 仍为 false（探索经济不变）")
+	view.free()
