@@ -1,14 +1,15 @@
 [gd_resource type="StyleBoxTexture" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_build_list_card_base.png" id="1_list_card"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_build_list_card_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-texture = ExtResource("1_list_card")
-texture_margin_left = 56.33
-texture_margin_top = 0.00
-texture_margin_right = 67.41
-texture_margin_bottom = 0.00
+content_margin_left = 12.0000
+content_margin_top = 8.0000
+content_margin_right = 12.0000
+content_margin_bottom = 8.0000
+texture = ExtResource("1_texture")
+texture_margin_left = 56.3300
+texture_margin_top = 0.0000
+texture_margin_right = 67.4100
+texture_margin_bottom = 0.0000
+draw_center = true

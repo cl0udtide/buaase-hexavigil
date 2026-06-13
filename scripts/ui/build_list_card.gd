@@ -25,7 +25,6 @@ var _drag_started := false
 @onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_texture: TextureRect = %IconTexture
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _icon_label: Label = %IconLabel
 @onready var _title_label: Label = %TitleLabel
 @onready var _subtitle_label: Label = %SubtitleLabel
 @onready var _detail_label: Label = %DetailLabel
@@ -52,13 +51,11 @@ func _ready() -> void:
 	_subtitle_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_detail_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_state_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_icon_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_cost_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_add_label_shadow(_title_label)
 	_add_label_shadow(_subtitle_label)
 	_add_label_shadow(_detail_label)
 	_add_label_shadow(_state_label)
-	_add_label_shadow(_icon_label)
 	_add_label_shadow(_cost_label)
 	if not _pending_config.is_empty():
 		_apply_config(_pending_config)
@@ -87,7 +84,6 @@ func _apply_config(config: Dictionary) -> void:
 	_subtitle_label.text = String(config.get("subtitle", ""))
 	_detail_label.text = String(config.get("detail", ""))
 	_state_label.text = String(config.get("state", ""))
-	_icon_label.text = String(config.get("icon_text", "*"))
 	_cost_label.text = String(config.get("cost_badge_text", ""))
 	_apply_icon_texture(config)
 	_subtitle_label.visible = not _subtitle_label.text.is_empty()
@@ -96,7 +92,6 @@ func _apply_config(config: Dictionary) -> void:
 	_cost_badge.visible = not _cost_label.text.strip_edges().is_empty()
 	_state_label.add_theme_color_override("font_color", config.get("state_color", GameUiStyle.AMBER) as Color)
 	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT if _disabled else config.get("title_color", GameUiStyle.TEXT) as Color)
-	_icon_label.add_theme_color_override("font_color", config.get("icon_color", GameUiStyle.ACCENT) as Color)
 	_apply_style()
 
 
@@ -106,7 +101,6 @@ func _apply_icon_texture(config: Dictionary) -> void:
 	var texture := UiArtRegistry.get_icon_texture(cfg, fallback_key)
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
-	_icon_label.visible = texture == null
 
 
 func _apply_style() -> void:

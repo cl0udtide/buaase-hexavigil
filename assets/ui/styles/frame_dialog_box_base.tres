@@ -1,15 +1,15 @@
-[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+[gd_resource type="StyleBoxTexture" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_dialog_box_base.png" id="1_dialog_box"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_dialog_box_base.png" id="1_texture"]
 
 [resource]
-texture = ExtResource("1_dialog_box")
-texture_margin_left = 143.16
-texture_margin_top = 62.63
-texture_margin_right = 89.47
-texture_margin_bottom = 62.63
-content_margin_left = 26.0
-content_margin_top = 24.0
-content_margin_right = 26.0
-content_margin_bottom = 16.0
+content_margin_left = 52.0000
+content_margin_top = 48.0000
+content_margin_right = 52.0000
+content_margin_bottom = 32.0000
+texture = ExtResource("1_texture")
+texture_margin_left = 286.3200
+texture_margin_top = 125.2600
+texture_margin_right = 178.9400
+texture_margin_bottom = 125.2600
 draw_center = true

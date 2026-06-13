@@ -28,7 +28,7 @@
 [ext_resource type="Texture2D" uid="uid://bw5ue8jdgn1fl" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_30x28"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_30x28"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_64x36"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
@@ -1601,10 +1601,10 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("frame_button_base_30x28")
-theme_override_styles/pressed = ExtResource("frame_button_base_30x28")
-theme_override_styles/hover = ExtResource("frame_button_base_30x28")
-theme_override_styles/disabled = ExtResource("frame_button_base_30x28")
+theme_override_styles/normal = ExtResource("frame_button_base_compact")
+theme_override_styles/pressed = ExtResource("frame_button_base_compact")
+theme_override_styles/hover = ExtResource("frame_button_base_compact")
+theme_override_styles/disabled = ExtResource("frame_button_base_compact")
 icon_alignment = 1
 
 [node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton"]
@@ -1976,10 +1976,10 @@ theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
 theme_override_colors/font_pressed_color = Color(0.93, 0.97, 0.99, 1)
 theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
 theme_override_colors/font_disabled_color = Color(0.47, 0.52, 0.55, 1)
-theme_override_styles/normal = ExtResource("frame_button_base_30x28")
-theme_override_styles/pressed = ExtResource("frame_button_base_30x28")
-theme_override_styles/hover = ExtResource("frame_button_base_30x28")
-theme_override_styles/disabled = ExtResource("frame_button_base_30x28")
+theme_override_styles/normal = ExtResource("frame_button_base_compact")
+theme_override_styles/pressed = ExtResource("frame_button_base_compact")
+theme_override_styles/hover = ExtResource("frame_button_base_compact")
+theme_override_styles/disabled = ExtResource("frame_button_base_compact")
 toggle_mode = true
 text = "关闭"
 

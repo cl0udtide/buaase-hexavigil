@@ -31,7 +31,6 @@ signal sell_requested(operator_key: StringName)
 @onready var _aspd_stat_label: Label = %AspdStatLabel
 @onready var _covenant_stat_label: Label = %CovenantStatLabel
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
-@onready var _skill_icon_label: Label = %SkillIconLabel
 @onready var _skill_title_label: Label = %SkillTitleLabel
 @onready var _skill_status_label: Label = %SkillStatusLabel
 @onready var _skill_clip_area: Control = %SkillClipArea
@@ -81,7 +80,6 @@ func _ready() -> void:
 	_skill_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_skill_label.add_theme_constant_override("line_spacing", 3)
 	_portrait_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
-	_skill_icon_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 	_hp_bar.resized.connect(_refresh_progress_fills)
 	_sp_bar.resized.connect(_refresh_progress_fills)
 	_hp_clip.resized.connect(_refresh_progress_fills)
@@ -121,7 +119,7 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	var sp_max := float(unit.cfg.get("sp_max", 0.0))
 	_title_label.text = display_name
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(unit.cfg), _icon_text(unit.cfg, "◆"))
-	_apply_texture_or_text(_skill_icon_texture, _skill_icon_label, _skill_icon_texture_from_cfg(unit.cfg), _icon_text(unit.cfg, "◇"))
+	_apply_optional_texture(_skill_icon_texture, _skill_icon_texture_from_cfg(unit.cfg))
 	var star := OperatorProgression.normalize_star(unit.cfg.get("operator_star", OperatorProgression.DEFAULT_STAR))
 	_level_label.text = "%s #%d" % [OperatorProgression.format_star_label(star), int(unit.get_runtime_id())]
 	_set_progress(_hp_bar, _hp_fill, float(unit.current_hp), max(float(unit.max_hp), 1.0))
@@ -212,8 +210,6 @@ func clear_unit() -> void:
 	_portrait_label.visible = true
 	_portrait_label.text = "◆"
 	_skill_icon_texture.visible = false
-	_skill_icon_label.visible = true
-	_skill_icon_label.text = "◇"
 	_set_progress(_hp_bar, _hp_fill, 0.0, 1.0)
 	_set_progress(_sp_bar, _sp_fill, 0.0, 1.0)
 	_hp_value_label.text = "生命 --/--"
@@ -242,7 +238,7 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_title_label.text = display_name
 	_level_label.text = level_text
 	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(cfg), _icon_text(cfg, "*"))
-	_apply_texture_or_text(_skill_icon_texture, _skill_icon_label, _skill_icon_texture_from_cfg(cfg), _icon_text(cfg, "*"))
+	_apply_optional_texture(_skill_icon_texture, _skill_icon_texture_from_cfg(cfg))
 	var max_hp := int(cfg.get("max_hp", 0))
 	var sp_max := float(cfg.get("sp_max", 0.0))
 	_set_progress(_hp_bar, _hp_fill, float(max_hp), maxf(float(max_hp), 1.0))
@@ -543,6 +539,11 @@ func _apply_texture_or_text(texture_rect: TextureRect, label: Label, texture: Te
 	label.visible = texture == null
 	if texture == null:
 		label.text = fallback_text
+
+
+func _apply_optional_texture(texture_rect: TextureRect, texture: Texture2D) -> void:
+	texture_rect.texture = texture
+	texture_rect.visible = texture != null
 
 
 func _icon_text(cfg: Dictionary, fallback_text: String) -> String:

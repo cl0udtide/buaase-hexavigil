@@ -37,18 +37,6 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="IconLabel" type="Label" parent="." unique_id=1475819723]
-unique_name_in_owner = true
-z_index = 5
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "遗"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="IconFrame" type="Panel" parent="." unique_id=1444302616]
 unique_name_in_owner = true
 z_index = 3

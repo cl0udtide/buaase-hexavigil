@@ -766,7 +766,7 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `build_list_card.gd`
   左侧建筑/商店列表项逻辑，显示标题、说明、状态、价格和选中态。
 - `game_ui_style.gd`
-  共用 UI 样式辅助函数，集中生成现代深色战术 HUD 面板、按钮和进度条等样式。当前实现优先通过 `UiFrameSpec` / `UiArtRegistry` 解析九宫格贴图、图标和进度条资源；资源缺失时再回退为扁平 `StyleBoxFlat`。
+  共用 UI 样式辅助函数，集中生成现代深色战术 HUD 面板、按钮和进度条等样式。当前实现通过 `UiFrameSpec` / `UiArtRegistry` 解析九宫格贴图、图标和进度条资源；正式 UI 美术资源缺失应由离线派生管线和导入检查暴露。
 - `ui_art_registry.gd`
   UI 图片资源入口。它按数据表显式资源路径、`data/ui_icons.json` 目录、`assets/ui/generated/` 约定命名和旧版 `icon_key` 兼容路径解析图标、肖像、技能图标和边框贴图；找不到资源时返回 `null`，由调用组件决定文本或扁平样式兜底。
 - `ui_display_text.gd`

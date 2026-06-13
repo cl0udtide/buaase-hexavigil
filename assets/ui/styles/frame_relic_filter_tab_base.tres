@@ -1,15 +1,15 @@
-[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+[gd_resource type="StyleBoxTexture" format=3]
 
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_filter_tab_base.png" id="1_texture"]
 
 [resource]
+content_margin_left = 12.0000
+content_margin_top = 5.0000
+content_margin_right = 12.0000
+content_margin_bottom = 5.0000
 texture = ExtResource("1_texture")
-texture_margin_left = 12.0
-texture_margin_top = 10.0
-texture_margin_right = 12.0
-texture_margin_bottom = 10.0
-content_margin_left = 12.0
-content_margin_top = 5.0
-content_margin_right = 12.0
-content_margin_bottom = 5.0
+texture_margin_left = 12.0000
+texture_margin_top = 10.0000
+texture_margin_right = 12.0000
+texture_margin_bottom = 10.0000
 draw_center = true

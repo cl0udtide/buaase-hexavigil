@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c7jldlop83igt"]
 
 [ext_resource type="Script" uid="uid://dvngnxtdahi02" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
-[ext_resource type="StyleBox" uid="uid://bh2epfexus27p" path="res://assets/ui/styles/frame_operator_card_selected_overlay.tres" id="8_selected"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_selected_overlay.tres" id="8_selected"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_base.tres" id="frame_operator_card_base_164x184"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_overlay.tres" id="frame_operator_card_cooldown_overlay_164x184"]
 [ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres" id="frame_operator_card_cooldown_selected_overlay_164x184"]

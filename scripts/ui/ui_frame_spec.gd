@@ -109,7 +109,7 @@ const ZERO_INSETS := Vector4.ZERO
 const DEFAULT_INSETS := Vector4(12.0, 9.0, 12.0, 9.0)
 
 # Frame textures are resolved only here; component scripts request semantic
-# frames and can still run through flat fallbacks when an asset is absent.
+# frames and rely on offline-generated stable style resources.
 const SPECS := {
 	TOP_HUD: {"content": Vector4(24.0, 8.0, 24.0, 8.0)},
 	HUD_CELL: {"content": Vector4(18.0, 7.0, 18.0, 7.0)},
@@ -182,7 +182,8 @@ static func style_box(component: StringName, fallback_fill: Color, fallback_bord
 		return _prepared_texture_style(style as StyleBoxTexture, fallback_fill, content)
 	var texture := UiArtRegistry.get_frame_texture(component)
 	if texture == null:
-		return _fallback_box(fallback_fill, fallback_border, content)
+		push_error("Missing UI frame asset for %s. Run scripts/tools/generate_ui_derived_assets.gd." % String(component))
+		return StyleBoxEmpty.new()
 	return _texture_box(texture, component, fallback_fill, content)
 
 
@@ -219,25 +220,6 @@ static func apply_custom_margin(container: MarginContainer, insets: Vector4) -> 
 
 static func _spec(component: StringName) -> Dictionary:
 	return SPECS.get(component, SPECS[BUTTON]) as Dictionary
-
-
-static func _fallback_box(fill: Color, border: Color, content: Vector4) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = border
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	style.content_margin_left = content.x
-	style.content_margin_top = content.y
-	style.content_margin_right = content.z
-	style.content_margin_bottom = content.w
-	return style
 
 
 static func _style_resource(component: StringName) -> StyleBox:
