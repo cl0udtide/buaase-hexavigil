@@ -510,8 +510,7 @@
   {
     "id": "coucou_penguin",
     "name": "凑凑企鹅·绒甲形态",
-    "visual_key": "milk_dragon_chief_thick_scale",
-    "visual_modulate": [0.45, 0.72, 1.0, 1.0],
+    "visual_key": "coucou_penguin",
     "max_hp": 2300,
     "atk": 60,
     "def": 45,
