@@ -1,15 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://dqc7qedo212ud"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_wave_enemy_row_base.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://cojrn4dv0fpxn" path="res://assets/ui/generated/frame_wave_enemy_row_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 4.8397
-content_margin_top = 3.8629
-content_margin_right = 4.8397
-content_margin_bottom = 3.8629
+content_margin_left = 5.609
+content_margin_top = 4.486
+content_margin_right = 5.609
+content_margin_bottom = 4.486
 texture = ExtResource("1_texture")
-texture_margin_left = 11.6154
-texture_margin_top = 11.5888
-texture_margin_right = 11.6154
-texture_margin_bottom = 11.5888
-draw_center = true
+texture_margin_left = 30.8494
+texture_margin_top = 30.8411
+texture_margin_right = 30.8494
+texture_margin_bottom = 30.8411

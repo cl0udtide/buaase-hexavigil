@@ -1,11 +1,11 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://dw8upn3nb13nq"]
 
 [resource]
 content_margin_left = 24.0
 content_margin_top = 18.0
 content_margin_right = 24.0
 content_margin_bottom = 18.0
-texture_margin_left = 64.0
-texture_margin_top = 64.0
-texture_margin_right = 64.0
-texture_margin_bottom = 64.0
+texture_margin_left = 120.0
+texture_margin_top = 120.0
+texture_margin_right = 120.0
+texture_margin_bottom = 120.0

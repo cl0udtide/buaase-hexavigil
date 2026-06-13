@@ -3,7 +3,6 @@ extends Control
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 
 const RELIC_ICON_SCENE := preload("res://scenes/ui/relic/RelicIcon.tscn")
 const MAX_VISIBLE_RELICS := 14
@@ -24,6 +23,7 @@ var _last_visible_capacity := -1
 
 @onready var _strip_base: Panel = %StripBase
 @onready var _entry_button: Button = %EntryButton
+@onready var _entry_label: Label = %EntryLabel
 @onready var _icon_row: HBoxContainer = %IconRow
 @onready var _overflow_label: Label = %OverflowLabel
 
@@ -56,9 +56,7 @@ func set_relics(relic_ids: Array[StringName]) -> void:
 
 
 func _refresh() -> void:
-	_entry_button.text = "遗物 %d" % _relic_ids.size()
-	GameUiStyle.set_button_texture_icon(_entry_button, UiArtRegistry.get_catalog_icon(&"relic_bag"), &"left", 7.0)
-	_entry_button.tooltip_text = "点击或按 R 查看全部遗物"
+	_entry_label.text = "遗物 %d" % _relic_ids.size()
 	for child in _icon_row.get_children():
 		child.queue_free()
 	var data_repo = AppRefs.data_repo()
@@ -141,10 +139,24 @@ func _available_strip_width() -> float:
 
 
 func _style_entry_button() -> void:
-	_entry_button.set_custom_minimum_size(Vector2(86.0, 30.0))
+	_entry_button.set_custom_minimum_size(Vector2(90.0, 32.0))
 	_entry_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	GameUiStyle.center_button_text(_entry_button)
-	_entry_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-	_entry_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
-	_entry_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_entry_button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	_entry_button.text = ""
+	var normal_style: StyleBox = _entry_button.get_theme_stylebox("normal")
+	_entry_button.add_theme_stylebox_override("hover", _entry_button_brightness_style(normal_style, 1.14))
+	_entry_button.add_theme_stylebox_override("pressed", _entry_button_brightness_style(normal_style, 1.24))
+	_entry_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+
+
+func _entry_button_brightness_style(source_style: StyleBox, brightness: float) -> StyleBox:
+	if source_style == null:
+		return StyleBoxEmpty.new()
+	var copied_style: StyleBox = source_style.duplicate(true) as StyleBox
+	if copied_style is StyleBoxTexture:
+		var texture_style: StyleBoxTexture = copied_style as StyleBoxTexture
+		texture_style.modulate_color = Color(brightness, brightness, brightness, 1.0)
+	elif copied_style is StyleBoxFlat:
+		var flat_style: StyleBoxFlat = copied_style as StyleBoxFlat
+		flat_style.bg_color = flat_style.bg_color.lightened(brightness - 1.0)
+		flat_style.border_color = flat_style.border_color.lightened(brightness - 1.0)
+	return copied_style

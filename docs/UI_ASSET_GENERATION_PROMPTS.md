@@ -53,8 +53,6 @@
 2. `frame_button_primary_overlay`
 3. `frame_button_danger_overlay`
 4. `frame_button_disabled_overlay`
-5. `frame_icon_backplate`
-6. `frame_icon_frame`
 7. `frame_tooltip_base`
 8. `frame_scroll_track`
 9. `frame_scroll_thumb`
@@ -68,8 +66,6 @@
 2. frame_button_primary_overlay：主按钮状态叠层，用于表现可点击或强调状态。
 3. frame_button_danger_overlay：危险按钮状态叠层，用于撤退、取消、危险操作。
 4. frame_button_disabled_overlay：禁用按钮遮罩，用于不可点击状态。
-5. frame_icon_backplate：通用图标背板，放在图标下方。
-6. frame_icon_frame：通用图标覆盖框，放在图标上方，中心保持 #FF00FF。
 7. frame_tooltip_base：tooltip 背景，用于说明文字承托。
 8. frame_scroll_track：滚动条轨道。
 9. frame_scroll_thumb：滚动条拖块。
@@ -109,11 +105,8 @@
 
 裁剪顺序：
 
-1. `frame_top_status_bar_base`
 2. `frame_top_status_chip_base`
-3. `frame_top_status_chip_active_overlay`
 4. `frame_speed_toggle_base`
-5. `frame_speed_toggle_active_overlay`
 6. `frame_settings_button_base`
 7. `frame_relic_strip_base`
 8. `frame_relic_entry_button_base`
@@ -123,11 +116,8 @@
 
 这批用于游戏顶部信息区：阶段、时间、核心生命、部署上限、暂停/倍速、资源和遗物摘要。请把它设计成清爽的战场信息 UI，而不是完整的顶部截图。
 
-1. frame_top_status_bar_base：顶部状态栏整体承托背景。
 2. frame_top_status_chip_base：单个状态信息块底板。
-3. frame_top_status_chip_active_overlay：状态信息块高亮叠层。
 4. frame_speed_toggle_base：暂停/倍速容器底板。
-5. frame_speed_toggle_active_overlay：当前倍速选中叠层。
 6. frame_settings_button_base：设置按钮底板，不画齿轮。
 7. frame_relic_strip_base：遗物摘要条背景。
 8. frame_relic_entry_button_base：遗物入口按钮底板。
@@ -146,7 +136,6 @@
 5. `frame_build_icon_backplate`
 6. `frame_build_icon_frame`
 7. `frame_cost_badge_base`
-8. `frame_undo_button_base`
 
 ```text
 请生成一张 UI 资产源图，纯色背景 #FF00FF，包含 8 个独立资产，按裁剪顺序排列。不要文字、数字、建筑图标。
@@ -160,7 +149,6 @@
 5. frame_build_icon_backplate：建筑图标背板。
 6. frame_build_icon_frame：建筑图标覆盖框，中心保持 #FF00FF。
 7. frame_cost_badge_base：成本徽标底板。
-8. frame_undo_button_base：撤销按钮底板，不画撤销图标。
 ```
 
 ## 7. 第 5 轮：底部部署区与干员卡
@@ -239,14 +227,9 @@
 
 1. `frame_relic_panel_base`
 2. `frame_relic_filter_tab_base`
-3. `frame_relic_filter_selected_overlay`
 4. `frame_relic_card_base`
-5. `frame_relic_card_hover_overlay`
 6. `frame_relic_icon_backplate`
 7. `frame_relic_icon_frame`
-8. `frame_relic_rarity_common_overlay`
-9. `frame_relic_rarity_uncommon_overlay`
-10. `frame_relic_rarity_rare_overlay`
 
 ```text
 请生成一张 UI 资产源图，纯色背景 #FF00FF，包含 10 个独立资产，按裁剪顺序排列。不要文字、数字、遗物图标。
@@ -255,14 +238,9 @@
 
 1. frame_relic_panel_base：完整遗物面板底板。
 2. frame_relic_filter_tab_base：遗物筛选页签底板。
-3. frame_relic_filter_selected_overlay：筛选选中叠层。
 4. frame_relic_card_base：遗物卡底板。
-5. frame_relic_card_hover_overlay：遗物卡 hover/选中叠层。
 6. frame_relic_icon_backplate：遗物图标背板。
 7. frame_relic_icon_frame：遗物图标覆盖框，中心保持 #FF00FF。
-8. frame_relic_rarity_common_overlay：常见稀有度轻叠层。
-9. frame_relic_rarity_uncommon_overlay：精良稀有度轻叠层。
-10. frame_relic_rarity_rare_overlay：稀有稀有度轻叠层。
 ```
 
 ## 10. 第 8 轮：设置面板
@@ -316,7 +294,6 @@
 1. `frame_dialog_box_base`
 2. `frame_dialog_speaker_plate_base`
 3. `frame_result_panel_base`
-4. `frame_result_stat_row_base`
 5. `frame_wave_preview_base`
 6. `frame_legend_panel_base`
 7. `frame_legend_row_base`
@@ -329,7 +306,6 @@
 1. frame_dialog_box_base：对话文本框底板。
 2. frame_dialog_speaker_plate_base：说话人名牌底板。
 3. frame_result_panel_base：结算面板底板。
-4. frame_result_stat_row_base：结算统计行底板。
 5. frame_wave_preview_base：波次/路径预览窗口底板。
 6. frame_legend_panel_base：右下战场图例面板底板。
 7. frame_legend_row_base：单条图例行底板。
@@ -667,28 +643,12 @@
 
 裁剪顺序：
 
-1. `icon_relic_battle_standard`
-2. `icon_relic_sharpened_orders`
-3. `icon_relic_vanguard_frame`
-4. `icon_relic_mobile_command`
-5. `icon_relic_core_patch`
-6. `icon_relic_core_capacitor`
-7. `icon_relic_guard_manual`
-8. `icon_relic_bayonet_drill`
 
 ```text
 请生成一张遗物图标资产源图，纯色背景 #FF00FF，包含 8 个图标，按裁剪顺序排列。不要文字、数字、外框或底板。
 
 这些是放进遗物卡中的小物件图标。请保持低饱和、轻奇幻、清晰可读。
 
-1. icon_relic_battle_standard：边境战旗。
-2. icon_relic_sharpened_orders：磨损军令。
-3. icon_relic_vanguard_frame：预备队框架。
-4. icon_relic_mobile_command：机动指挥台。
-5. icon_relic_core_patch：核心补丁包。
-6. icon_relic_core_capacitor：备用核心电容。
-7. icon_relic_guard_manual：近卫手册。
-8. icon_relic_bayonet_drill：刺刀操典。
 ```
 
 ## 24. 第 22 轮：遗物图标第二批
@@ -697,28 +657,12 @@
 
 裁剪顺序：
 
-1. `icon_relic_duelist_contract`
-2. `icon_relic_sniper_scope`
-3. `icon_relic_recurve_string`
-4. `icon_relic_glass_barrel`
-5. `icon_relic_caster_focus`
-6. `icon_relic_mana_resonator`
-7. `icon_relic_overclocked_core`
-8. `icon_relic_defender_plate`
 
 ```text
 请生成一张遗物图标资产源图，纯色背景 #FF00FF，包含 8 个图标，按裁剪顺序排列。不要文字、数字、外框或底板。
 
 这些是放进遗物卡中的小物件图标。请保持低饱和、轻奇幻、清晰可读。
 
-1. icon_relic_duelist_contract：决斗者契约。
-2. icon_relic_sniper_scope：校准瞄具。
-3. icon_relic_recurve_string：复合弓弦。
-4. icon_relic_glass_barrel：玻璃枪管。
-5. icon_relic_caster_focus：术式焦镜。
-6. icon_relic_mana_resonator：魔力谐振器。
-7. icon_relic_overclocked_core：过载法芯。
-8. icon_relic_defender_plate：加厚盾板。
 ```
 
 ## 25. 第 23 轮：遗物图标第三批
@@ -727,28 +671,12 @@
 
 裁剪顺序：
 
-1. `icon_relic_bastion_anchor`
-2. `icon_relic_compressed_bulwark`
-3. `icon_relic_travel_pack`
-4. `icon_relic_black_market_token`
-5. `icon_relic_bounty_ledger`
-6. `icon_relic_greedy_seal`
-7. `icon_relic_lumber_contract`
-8. `icon_relic_quarry_glyph`
 
 ```text
 请生成一张遗物图标资产源图，纯色背景 #FF00FF，包含 8 个图标，按裁剪顺序排列。不要文字、数字、外框或底板。
 
 这些是放进遗物卡中的小物件图标。请保持低饱和、轻奇幻、清晰可读。
 
-1. icon_relic_bastion_anchor：堡垒锚钉。
-2. icon_relic_compressed_bulwark：压缩壁垒装具。
-3. icon_relic_travel_pack：远征背包。
-4. icon_relic_black_market_token：黑市代币。
-5. icon_relic_bounty_ledger：赏金账本。
-6. icon_relic_greedy_seal：贪婪印章。
-7. icon_relic_lumber_contract：木材契约。
-8. icon_relic_quarry_glyph：采石符文。
 ```
 
 ## 26. 第 24 轮：遗物图标第四批
@@ -757,26 +685,12 @@
 
 裁剪顺序：
 
-1. `icon_relic_mana_siphon`
-2. `icon_relic_industrial_blueprint`
-3. `icon_relic_aura_lens`
-4. `icon_relic_range_pylon`
-5. `icon_relic_wallwright_kit`
-6. `icon_relic_iron_patience`
-7. `icon_relic_rapid_recall`
 
 ```text
 请生成一张遗物图标资产源图，纯色背景 #FF00FF，包含 7 个图标，按裁剪顺序排列。不要文字、数字、外框或底板。
 
 这些是放进遗物卡中的小物件图标。请保持低饱和、轻奇幻、清晰可读。
 
-1. icon_relic_mana_siphon：魔力虹吸管。
-2. icon_relic_industrial_blueprint：工业蓝图。
-3. icon_relic_aura_lens：光环透镜。
-4. icon_relic_range_pylon：扩散塔芯。
-5. icon_relic_wallwright_kit：筑墙匠工具包。
-6. icon_relic_iron_patience：铁质耐心。
-7. icon_relic_rapid_recall：快速召回绳。
 ```
 
 ## 27. 角色头像类资产生成原则
@@ -821,8 +735,6 @@
 3. `frame_wave_enemy_row_base`
 4. `frame_wave_route_toggle_base`
 5. `frame_wave_warning_row_base`
-6. `frame_action_panel_base`
-7. `frame_action_button_base`
 
 ```text
 请生成一张 UI 资产源图，纯色背景 #FF00FF，包含 7 个独立资产，按裁剪顺序排列。不要文字、数字、图标。
@@ -834,8 +746,6 @@
 3. frame_wave_enemy_row_base：今晚敌情单条敌人/波次条目底板。
 4. frame_wave_route_toggle_base：路线预览开关底板。
 5. frame_wave_warning_row_base：路线异常/堵路警告行底板。
-6. frame_action_panel_base：白天上下文操作面板底板。
-7. frame_action_button_base：ActionPanel 按钮底板。
 ```
 
 ## 31. 页面叙事背景：开始与结算

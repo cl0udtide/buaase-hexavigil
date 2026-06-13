@@ -383,7 +383,7 @@ func _actual_use_preview(asset: Dictionary, actual_size: Vector2, preview_style:
 			var rect := TextureRect.new()
 			rect.texture = texture
 			rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			rect.stretch_mode = TextureRect.STRETCH_SCALE
+			rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			rect.size = actual_size
 			rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE

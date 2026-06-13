@@ -20,8 +20,9 @@ func _ready() -> void:
 
 
 func _on_pressed() -> void:
+	var has_external_handler: bool = settings_button_pressed.get_connections().size() > 0
 	settings_button_pressed.emit()
-	if not auto_toggle_panel:
+	if not auto_toggle_panel and has_external_handler:
 		return
 	if _panel == null:
 		return
@@ -34,7 +35,6 @@ func _on_pressed() -> void:
 
 
 func _apply_visual_style() -> void:
-	tooltip_text = "设置"
 	var gear_texture := UiArtRegistry.get_catalog_icon(&"button_settings")
 	GameUiStyle.set_button_texture_icon(self, gear_texture, &"center")
 	GameUiStyle.center_button_text(self)

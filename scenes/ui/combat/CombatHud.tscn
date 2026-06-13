@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://xt16qmc0xb5f" path="res://scripts/ui/combat/combat_hud.gd" id="1_ril48"]
 [ext_resource type="Script" uid="uid://m801mbh3evme" path="res://scripts/ui/audio_settings_button.gd" id="2_fvafi"]
-[ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicStrip.tscn" id="3_40812"]
+[ext_resource type="PackedScene" uid="uid://cdu5lxu0jvus7" path="res://scenes/ui/relic/RelicStrip.tscn" id="3_40812"]
 [ext_resource type="PackedScene" uid="uid://dt2d2gea25boo" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="5_w2pd7"]
 [ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
 [ext_resource type="Script" uid="uid://wfh31hvbgi12" path="res://scripts/ui/audio_settings_panel.gd" id="9_7wb5u"]
@@ -22,34 +22,59 @@
 [ext_resource type="Texture2D" uid="uid://ju400741ecya" path="res://assets/ui/generated/icon_volume_master.png" id="39_iconmaster"]
 [ext_resource type="Texture2D" uid="uid://bfqyue7s2r0jy" path="res://assets/ui/generated/icon_volume_music.png" id="40_iconmusic"]
 [ext_resource type="Texture2D" uid="uid://fd186uu137hp" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
+[ext_resource type="StyleBox" uid="uid://uvivb585047e" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
 [ext_resource type="Texture2D" uid="uid://dl31hx46la2rr" path="res://assets/ui/generated/icon_map_range.png" id="43_iconmaprange"]
 [ext_resource type="Texture2D" uid="uid://ck3mdlo5c2ihi" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
+[ext_resource type="StyleBox" uid="uid://labjvwcm7myu" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
+[ext_resource type="StyleBox" uid="uid://c4x7cosstwm8p" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
 [ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_72x72"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="frame_resource_delta_badge_48x22"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_resource_item_base.tres" id="frame_resource_item_base_130x74"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_settings_button_base.tres" id="frame_settings_button_base_72x72"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_settings_panel_base.tres" id="frame_settings_panel_base_420x226"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_settings_row_base.tres" id="frame_settings_row_base_392x48"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_slider_fill.tres" id="frame_slider_fill_170x36"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_slider_track.tres" id="frame_slider_track_170x36"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_speed"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_speed_toggle_base.tres" id="frame_speed_toggle_base_200x82"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_300x82"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_spawn_card_base.tres" id="frame_wave_spawn_card_base_328x132"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
+[ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
+[ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
+[ext_resource type="StyleBox" uid="uid://dnybvihnfg6a6" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_speed"]
+[ext_resource type="StyleBox" uid="uid://dwccrh7x1418u" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
+[ext_resource type="StyleBox" uid="uid://dahqsahj0lb61" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
+[ext_resource type="StyleBox" uid="uid://dwt3mq5xkani2" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="frame_resource_delta_badge_48x22"]
+[ext_resource type="StyleBox" uid="uid://dwjmtxkgejdty" path="res://assets/ui/styles/frame_resource_item_base.tres" id="frame_resource_item_base_130x74"]
+[ext_resource type="StyleBox" uid="uid://cwsmbjtf6sjq" path="res://assets/ui/styles/frame_settings_button_base.tres" id="frame_settings_button_base_72x72"]
+[ext_resource type="StyleBox" uid="uid://cyqc53fsxmibg" path="res://assets/ui/styles/frame_settings_panel_base.tres" id="frame_settings_panel_base_420x226"]
+[ext_resource type="StyleBox" uid="uid://cel04tso7e41p" path="res://assets/ui/styles/frame_settings_row_base.tres" id="frame_settings_row_base_392x48"]
+[ext_resource type="StyleBox" uid="uid://njjkepx7qyqj" path="res://assets/ui/styles/frame_slider_fill.tres" id="frame_slider_fill_170x36"]
+[ext_resource type="StyleBox" uid="uid://bxv3pvqhxtl6" path="res://assets/ui/styles/frame_slider_track.tres" id="frame_slider_track_170x36"]
+[ext_resource type="StyleBox" uid="uid://cgmyjlx2ehek1" path="res://assets/ui/styles/frame_speed_toggle_base.tres" id="frame_speed_toggle_base_200x82"]
+[ext_resource type="StyleBox" uid="uid://ci5o1hcbbiha8" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_300x82"]
+[ext_resource type="StyleBox" uid="uid://dqc7qedo212ud" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
+[ext_resource type="StyleBox" uid="uid://da2623j4po865" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
+[ext_resource type="StyleBox" uid="uid://dox4kei6i0h1i" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
+[ext_resource type="StyleBox" uid="uid://cw5n7g1flw5xa" path="res://assets/ui/styles/frame_wave_spawn_card_base.tres" id="frame_wave_spawn_card_base_328x132"]
+[ext_resource type="StyleBox" uid="uid://eskrf41m02ig" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_button_highlight"]
+bg_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_button_disabled"]
+bg_color = Color(0.02, 0.025, 0.028, 0.46)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.26, 0.28, 0.52)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_speed_button"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wave_route_toggle_highlight"]
+bg_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
 
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
@@ -184,10 +209,14 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_button_highlight")
 
 [node name="DisabledOverlay" type="Panel" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=351866394]
 visible = false
@@ -198,7 +227,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_button_disabled")
 
 [node name="ButtonStateOverlay" type="Node" parent="HudChromeLayer/SettingsButtonSlot/SettingsButton" unique_id=1354878038]
 script = ExtResource("button_state_overlay")
@@ -283,9 +312,9 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 42.0
+offset_left = 43.0
 offset_top = -15.0
-offset_right = 66.0
+offset_right = 67.0
 offset_bottom = 13.0
 grow_vertical = 2
 mouse_filter = 2
@@ -370,9 +399,9 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 29.0
+offset_left = 35.0
 offset_top = -15.0
-offset_right = 53.0
+offset_right = 59.0
 offset_bottom = 13.0
 grow_vertical = 2
 mouse_filter = 2
@@ -465,9 +494,9 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 41.0
+offset_left = 53.0
 offset_top = -14.0
-offset_right = 65.0
+offset_right = 77.0
 offset_bottom = 14.0
 grow_vertical = 2
 mouse_filter = 2
@@ -524,7 +553,7 @@ theme_override_constants/margin_bottom = 0
 
 [node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
-theme_override_constants/separation = -4
+theme_override_constants/separation = -16
 alignment = 1
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
@@ -615,7 +644,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
+theme_override_constants/margin_left = 30
 theme_override_constants/margin_top = 17
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 19
@@ -664,7 +693,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 25
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 19
@@ -749,7 +778,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 25
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 19
@@ -834,7 +863,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 26
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 19
@@ -919,7 +948,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
+theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
@@ -960,8 +989,10 @@ unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_right = 126.0
-offset_bottom = 40.0
+offset_left = 1.0
+offset_top = -27.0
+offset_right = 127.0
+offset_bottom = 13.0
 grow_vertical = 2
 
 [node name="RightColumnSlot" type="Control" parent="HudChromeLayer" unique_id=1176662936]
@@ -1012,14 +1043,14 @@ offset_bottom = -14.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 31
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 31
 theme_override_constants/margin_right = 25
 theme_override_constants/margin_bottom = 16
 
 [node name="WavePreviewContent" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin" unique_id=1430930927]
 clip_contents = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 2
 
 [node name="WavePreviewHeader" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1459039869]
 clip_contents = true
@@ -1037,7 +1068,7 @@ vertical_alignment = 1
 
 [node name="WaveRouteToggle" type="Button" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader" unique_id=1668780302]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 36)
+custom_minimum_size = Vector2(80, 36)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
@@ -1058,10 +1089,14 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
+theme_override_styles/panel = SubResource("StyleBoxFlat_wave_route_toggle_highlight")
 
 [node name="DisabledOverlay" type="Panel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewHeader/WaveRouteToggle" unique_id=531848557]
 visible = false
@@ -1140,13 +1175,14 @@ size_flags_horizontal = 3
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_wave_spawn_card_base_328x132")
 
-[node name="SpawnCardRow" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveSpawnCardTemplate" unique_id=791270326]
+[node name="SpawnCardRow" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveSpawnCardTemplate" unique_id=791270326]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 3
 
 [node name="SpawnKeyLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveSpawnCardTemplate/SpawnCardRow" unique_id=941773554]
-custom_minimum_size = Vector2(38, 30)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
 text = "S1"
 horizontal_alignment = 1
@@ -1155,31 +1191,33 @@ vertical_alignment = 1
 [node name="WaveEnemyCardsFlow" type="HFlowContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveSpawnCardTemplate/SpawnCardRow" unique_id=1079605081]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 4
 
 [node name="WaveEnemyCardTemplate" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent" unique_id=1782606940]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 126)
+custom_minimum_size = Vector2(280, 140)
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_wave_enemy_row_base_150x126")
 
 [node name="EnemyCardMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate" unique_id=1472379943]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 19
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 21
 
 [node name="EnemyCardBody" type="HBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin" unique_id=1587822907]
 layout_mode = 2
 theme_override_constants/separation = 7
 
 [node name="EnemyInfoBox" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody" unique_id=788591335]
+custom_minimum_size = Vector2(130, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 
@@ -1231,7 +1269,7 @@ text = "物理"
 text_overrun_behavior = 3
 
 [node name="WaveEnemyPreview" type="Control" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll/WavePreviewScrollContent/WaveEnemyCardTemplate/EnemyCardMargin/EnemyCardBody" unique_id=1577585574]
-custom_minimum_size = Vector2(66, 96)
+custom_minimum_size = Vector2(100, 96)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 3
@@ -1488,6 +1526,7 @@ theme_override_constants/separation = 10
 
 [node name="InteractionLayer" type="Control" parent="." unique_id=185512381]
 unique_name_in_owner = true
+visible = false
 z_index = 30
 anchors_preset = 0
 anchor_right = 1.0
@@ -1527,6 +1566,7 @@ vertical_alignment = 1
 
 [node name="PopupLayer" type="Control" parent="." unique_id=802516164]
 unique_name_in_owner = true
+visible = false
 z_index = 70
 anchors_preset = 0
 anchor_right = 1.0
@@ -1615,7 +1655,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_speed")
 
 [node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=682802959]
 visible = false
@@ -1991,7 +2031,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_72x72")
+theme_override_styles/panel = ExtResource("frame_button_primary_overlay_speed")
 
 [node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=332392885]
 visible = false
@@ -2009,6 +2049,7 @@ script = ExtResource("button_state_overlay")
 
 [node name="RelicPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619765]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2017,6 +2058,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="RelicPanelCenter" type="CenterContainer" parent="PopupLayer/RelicPanelSlot" unique_id=209348131]
+visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2032,6 +2074,7 @@ size_flags_vertical = 4
 
 [node name="TooltipLayer" type="Control" parent="." unique_id=541998327]
 unique_name_in_owner = true
+visible = false
 z_index = 100
 layout_mode = 1
 anchors_preset = 15

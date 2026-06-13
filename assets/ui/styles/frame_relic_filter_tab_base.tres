@@ -3,13 +3,13 @@
 [ext_resource type="Texture2D" path="res://assets/ui/generated/frame_relic_filter_tab_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 5.9751
-content_margin_top = 2.4815
-content_margin_right = 5.9751
-content_margin_bottom = 2.4815
+content_margin_left = 3.5353
+content_margin_top = 1.4815
+content_margin_right = 3.5353
+content_margin_bottom = 1.4815
 texture = ExtResource("1_texture")
-texture_margin_left = 5.9751
-texture_margin_top = 4.9630
-texture_margin_right = 5.9751
-texture_margin_bottom = 4.9630
+texture_margin_left = 16.2033
+texture_margin_top = 15.4074
+texture_margin_right = 16.2033
+texture_margin_bottom = 13.6296
 draw_center = true

@@ -3,7 +3,6 @@ extends RefCounted
 
 const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
-const FRAME_TOP_HUD := UiFrameSpec.TOP_HUD
 const FRAME_TOP_CARD := UiFrameSpec.TOP_CARD
 const FRAME_HUD_CELL := UiFrameSpec.HUD_CELL
 const FRAME_SIDE_PANEL := UiFrameSpec.SIDE_PANEL
@@ -22,9 +21,6 @@ const FRAME_OPERATOR_COST_BADGE := UiFrameSpec.OPERATOR_COST_BADGE
 const FRAME_OPERATOR_STAT_ROW := UiFrameSpec.OPERATOR_STAT_ROW
 const FRAME_BUTTON := UiFrameSpec.BUTTON
 const FRAME_TAB := UiFrameSpec.TAB
-const FRAME_ICON_TILE := UiFrameSpec.ICON_TILE
-const FRAME_ICON_BACKPLATE := UiFrameSpec.ICON_BACKPLATE
-const FRAME_ICON_FRAME := UiFrameSpec.ICON_FRAME
 const FRAME_BUILD_ICON_BACKPLATE := UiFrameSpec.BUILD_ICON_BACKPLATE
 const FRAME_BUILD_ICON_FRAME := UiFrameSpec.BUILD_ICON_FRAME
 const FRAME_COST_BADGE := UiFrameSpec.COST_BADGE
@@ -35,7 +31,6 @@ const FRAME_RELIC_CARD := UiFrameSpec.RELIC_CARD
 const FRAME_SETTINGS_PANEL := UiFrameSpec.SETTINGS_PANEL
 const FRAME_BLESSING_PANEL := UiFrameSpec.BLESSING_PANEL
 const FRAME_LEGEND_PANEL := UiFrameSpec.LEGEND_PANEL
-const FRAME_ACTION_PANEL := UiFrameSpec.ACTION_PANEL
 const FRAME_ACTION_BUTTON := UiFrameSpec.ACTION_BUTTON
 const FRAME_MAP_POPUP := UiFrameSpec.MAP_POPUP
 const FRAME_EVENT_PANEL := UiFrameSpec.EVENT_PANEL
@@ -43,7 +38,6 @@ const FRAME_EVENT_CHOICE_BUTTON := UiFrameSpec.EVENT_CHOICE_BUTTON
 const FRAME_DIALOG_BOX := UiFrameSpec.DIALOG_BOX
 const FRAME_DIALOG_SPEAKER := UiFrameSpec.DIALOG_SPEAKER
 const FRAME_RESULT_PANEL := UiFrameSpec.RESULT_PANEL
-const FRAME_RESULT_STAT_ROW := UiFrameSpec.RESULT_STAT_ROW
 const FRAME_WAVE_PREVIEW := UiFrameSpec.WAVE_PREVIEW
 const FRAME_WAVE_ROUTE_TOGGLE := UiFrameSpec.WAVE_ROUTE_TOGGLE
 const FRAME_SKILL_ICON_BACKPLATE := UiFrameSpec.SKILL_ICON_BACKPLATE
@@ -274,10 +268,6 @@ static func hud_cell(selected: bool = false) -> StyleBox:
 	return frame_box(UiFrameSpec.HUD_CELL, BG_CARD, STROKE_SOFT)
 
 
-static func top_hud_panel() -> StyleBox:
-	return frame_box(UiFrameSpec.TOP_HUD, BG_GLASS, STROKE_SOFT)
-
-
 static func side_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.SIDE_PANEL, BG_GLASS, STROKE_SOFT, false)
 
@@ -292,10 +282,6 @@ static func right_detail_sidebar() -> StyleBox:
 
 static func deck_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.DECK_PANEL, BG_GLASS, STROKE_SOFT, false)
-
-
-static func action_bar_panel() -> StyleBox:
-	return frame_box(UiFrameSpec.ACTION_PANEL, BG_GLASS, STROKE_SOFT, false)
 
 
 static func compact_panel(border: Color = STROKE_SOFT, fill: Color = BG_GLASS, include_content := false) -> StyleBox:
@@ -346,14 +332,6 @@ static func operator_stat_row() -> StyleBox:
 
 static func list_card(selected: bool = false) -> StyleBox:
 	return frame_box(UiFrameSpec.LIST_CARD, BG_CARD, AMBER if selected else STROKE_SOFT, false)
-
-
-static func icon_tile() -> StyleBox:
-	return frame_box(UiFrameSpec.ICON_BACKPLATE, ACCENT_SOFT, STROKE_SOFT)
-
-
-static func icon_frame(accent: Color = STROKE_SOFT) -> StyleBox:
-	return frame_box(UiFrameSpec.ICON_FRAME, Color.TRANSPARENT, accent, false)
 
 
 static func build_icon_backplate() -> StyleBox:
@@ -483,10 +461,6 @@ static func dialog_speaker_plate() -> StyleBox:
 
 static func result_panel() -> StyleBox:
 	return frame_box(UiFrameSpec.RESULT_PANEL, BG_DARK, STROKE_STRONG, false)
-
-
-static func result_stat_row() -> StyleBox:
-	return frame_box(UiFrameSpec.RESULT_STAT_ROW, BG_CARD, STROKE_SOFT)
 
 
 static func wave_preview_panel() -> StyleBox:

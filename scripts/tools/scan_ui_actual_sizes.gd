@@ -96,7 +96,7 @@ func _collect_control(scene_path: String, control: Control) -> void:
 			if texture_value is Texture2D:
 				var texture_path := (texture_value as Texture2D).resource_path
 				if texture_path.begins_with(GENERATED_DIR):
-					var texture_size := _control_use_size(control)
+					var texture_size := _texture_use_size(control, property_name, texture_value as Texture2D)
 					if texture_size.x > 0.0 and texture_size.y > 0.0:
 						_record_use("textures", texture_path, scene_path, node_path, property_name, texture_size)
 
@@ -154,6 +154,46 @@ func _control_use_size(control: Control) -> Vector2:
 	if width <= 0.0 or height <= 0.0:
 		return Vector2.ZERO
 	return Vector2(width, height)
+
+
+func _texture_use_size(control: Control, property_name: String, texture: Texture2D) -> Vector2:
+	if property_name == "icon" and control is Button:
+		return _button_icon_use_size(control as Button, texture)
+	if property_name == "texture" and control is TextureRect:
+		return _texture_rect_use_size(control as TextureRect)
+	return _control_use_size(control)
+
+
+func _texture_rect_use_size(texture_rect: TextureRect) -> Vector2:
+	var slot_size := _control_use_size(texture_rect)
+	if slot_size.x <= 0.0 or slot_size.y <= 0.0:
+		return Vector2.ZERO
+	match texture_rect.stretch_mode:
+		TextureRect.STRETCH_KEEP_CENTERED:
+			var texture := texture_rect.texture
+			if texture == null:
+				return slot_size
+			return Vector2(minf(float(texture.get_width()), slot_size.x), minf(float(texture.get_height()), slot_size.y))
+		TextureRect.STRETCH_KEEP_ASPECT, TextureRect.STRETCH_KEEP_ASPECT_CENTERED:
+			var side := minf(slot_size.x, slot_size.y)
+			return Vector2(side, side)
+	return slot_size
+
+
+func _button_icon_use_size(button: Button, texture: Texture2D) -> Vector2:
+	var button_size := _control_use_size(button)
+	if button_size.x <= 0.0 or button_size.y <= 0.0:
+		return Vector2.ZERO
+	var icon_max_width := float(button.get_theme_constant("icon_max_width"))
+	var side := 0.0
+	if icon_max_width > 0.0:
+		side = icon_max_width
+	elif bool(button.get("expand_icon")):
+		side = minf(button_size.x, button_size.y)
+	else:
+		side = minf(minf(float(texture.get_width()), float(texture.get_height())), minf(button_size.x, button_size.y))
+	side = maxf(1.0, side)
+	return Vector2(side, side)
 
 
 func _disable_runtime_callbacks(node: Node) -> void:

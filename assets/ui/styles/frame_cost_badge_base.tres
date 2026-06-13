@@ -1,14 +1,12 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://bbqitfg0y2hx4"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://suixyelt1qy3"]
 
 [ext_resource type="Texture2D" uid="uid://cs3gn8j3crkcc" path="res://assets/ui/generated/frame_cost_badge_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 1.44
-content_margin_top = 0.9552
-content_margin_right = 1.44
-content_margin_bottom = 0.9552
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
 texture = ExtResource("1_texture")
-texture_margin_left = 0.7176
-texture_margin_top = 0.714
-texture_margin_right = 0.7176
-texture_margin_bottom = 0.714
+texture_margin_left = 10.32
+texture_margin_right = 10.32
