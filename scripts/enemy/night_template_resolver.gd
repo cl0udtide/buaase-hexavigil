@@ -157,8 +157,9 @@ static func resolve_lane_gate(lane: StringName, group_index: int, main_gate: Str
 
 ## ---- 激活序与当日活跃集 ----
 
-## 活跃口数量日程表（占位值）：阶梯取 <= day 的最大键。
-const ACTIVE_COUNT_BY_DAY := {1: 2, 4: 3, 7: 5}
+## 活跃口数量日程表（占位值）：逐步开口 2→3→4→5，阶梯取 <= day 的最大键。
+## 前期 2 口（治"前期太难"），d8/d9 才全开 5 口；受地图总口数(5)封顶。
+const ACTIVE_COUNT_BY_DAY := {1: 2, 4: 3, 6: 4, 8: 5}
 
 
 static func active_gate_count_for_day(day: int) -> int:

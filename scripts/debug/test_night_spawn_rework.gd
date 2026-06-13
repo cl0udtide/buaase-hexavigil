@@ -39,31 +39,38 @@ func _expect_approx(a: float, b: float, msg: String) -> void:
 
 
 func _test_count_scale() -> void:
-	# 九天数量系数：前期 <1 压人数，后期 >1。
-	# 三幕分档：1-3=0.7 / 4-6=1.0 / 7-9=1.2。
-	var expected := {1: 0.7, 3: 0.7, 4: 1.0, 6: 1.0, 7: 1.2, 9: 1.2}
+	# 九天数量系数：前期 <1 压人数，逐天线性涨到末日 1.45。
+	var expected := {1: 0.65, 2: 0.75, 4: 0.95, 6: 1.15, 9: 1.45}
 	for day in expected:
 		_expect_approx(DifficultyScale.count_scale_for_day(day), float(expected[day]), "count_scale day %d" % day)
-	_expect_approx(DifficultyScale.count_scale_for_day(12), 1.2, "count_scale fallback -> act3")
+	# 逐天单调不降。
+	for day in range(2, 10):
+		_expect(DifficultyScale.count_scale_for_day(day) >= DifficultyScale.count_scale_for_day(day - 1), "count_scale monotonic day %d" % day)
+	_expect_approx(DifficultyScale.count_scale_for_day(12), 1.45, "count_scale fallback -> day9")
 
 
 func _test_stat_scale() -> void:
-	# 九天数值系数：单调上升，后期追上玩家复利。
-	# 三幕分档：1-3=1.0 / 4-6=1.25 / 7-9=1.6。
-	var expected := {1: 1.0, 3: 1.0, 4: 1.25, 6: 1.25, 7: 1.6, 9: 1.6}
+	# 九天数值系数：逐天上升、后段更陡，末日 2.30×。
+	var expected := {1: 1.0, 2: 1.08, 4: 1.30, 6: 1.62, 9: 2.30}
 	for day in expected:
 		_expect_approx(DifficultyScale.stat_scale_for_day(day), float(expected[day]), "stat_scale day %d" % day)
-	_expect_approx(DifficultyScale.stat_scale_for_day(20), 1.6, "stat_scale fallback -> act3")
+	# 逐天严格上升，且后段步长 > 前段（验证"后期更陡"）。
+	for day in range(2, 10):
+		_expect(DifficultyScale.stat_scale_for_day(day) > DifficultyScale.stat_scale_for_day(day - 1), "stat_scale rising day %d" % day)
+	var gap_early := DifficultyScale.stat_scale_for_day(3) - DifficultyScale.stat_scale_for_day(2)
+	var gap_late := DifficultyScale.stat_scale_for_day(9) - DifficultyScale.stat_scale_for_day(8)
+	_expect(gap_late > gap_early, "stat_scale late step steeper than early")
+	_expect_approx(DifficultyScale.stat_scale_for_day(20), 2.30, "stat_scale fallback -> day9")
 
 
 func _test_boss_stat_scale() -> void:
-	# Boss 独立曲线，d3=1.0 下限，越晚越强。
+	# Boss 独立曲线，d3=1.0 下限，末战拉到 2.5×。
 	_expect_approx(DifficultyScale.boss_stat_scale_for_day(3), 1.0, "boss scale d3")
-	_expect_approx(DifficultyScale.boss_stat_scale_for_day(6), 1.5, "boss scale d6")
-	_expect_approx(DifficultyScale.boss_stat_scale_for_day(9), 2.2, "boss scale d9")
+	_expect_approx(DifficultyScale.boss_stat_scale_for_day(6), 1.6, "boss scale d6")
+	_expect_approx(DifficultyScale.boss_stat_scale_for_day(9), 2.5, "boss scale d9")
 	# 阶梯回退：非幕末天取 <= day 最大键；早于第一只 boss 时回退默认 1.0。
 	_expect_approx(DifficultyScale.boss_stat_scale_for_day(4), 1.0, "boss scale d4 -> key3")
-	_expect_approx(DifficultyScale.boss_stat_scale_for_day(7), 1.5, "boss scale d7 -> key6")
+	_expect_approx(DifficultyScale.boss_stat_scale_for_day(7), 1.6, "boss scale d7 -> key6")
 	_expect_approx(DifficultyScale.boss_stat_scale_for_day(1), 1.0, "boss scale d1 -> default")
 
 
@@ -100,8 +107,8 @@ func _test_stat_scale_for_enemy() -> void:
 	_expect(DifficultyScale.is_boss_cfg(boss_cfg), "is_boss_cfg true")
 	_expect(not DifficultyScale.is_boss_cfg(normal_cfg), "is_boss_cfg false")
 	# 同一天：Boss 走 boss 曲线，杂兵走 stat 曲线。
-	_expect_approx(DifficultyScale.stat_scale_for_enemy(boss_cfg, 6), 1.5, "boss enemy d6 -> boss scale")
-	_expect_approx(DifficultyScale.stat_scale_for_enemy(normal_cfg, 6), 1.25, "normal enemy d6 -> stat scale")
+	_expect_approx(DifficultyScale.stat_scale_for_enemy(boss_cfg, 6), 1.6, "boss enemy d6 -> boss scale")
+	_expect_approx(DifficultyScale.stat_scale_for_enemy(normal_cfg, 6), 1.62, "normal enemy d6 -> stat scale")
 
 
 func _test_nine_day_schedule() -> void:

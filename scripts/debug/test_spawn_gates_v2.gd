@@ -83,10 +83,11 @@ func _test_activation() -> void:
 			break
 	_expect(varied, "activation order varies across seeds")
 	_expect(ResolverScript.active_gate_count_for_day(1) == 2, "day1 count 2")
-	_expect(ResolverScript.active_gate_count_for_day(2) == 2, "day2 count 2")
-	_expect(ResolverScript.active_gate_count_for_day(3) == 2, "day3 count 2 (act1)")
-	_expect(ResolverScript.active_gate_count_for_day(5) == 3, "day5 count 3 (act2)")
-	_expect(ResolverScript.active_gate_count_for_day(9) == 5, "day9 count 5 (act3)")
+	_expect(ResolverScript.active_gate_count_for_day(3) == 2, "day3 count 2")
+	_expect(ResolverScript.active_gate_count_for_day(4) == 3, "day4 count 3")
+	_expect(ResolverScript.active_gate_count_for_day(6) == 4, "day6 count 4")
+	_expect(ResolverScript.active_gate_count_for_day(8) == 5, "day8 count 5")
+	_expect(ResolverScript.active_gate_count_for_day(9) == 5, "day9 count 5 (cap)")
 	var prev: Array = []
 	for day in range(1, 10):
 		var active: Array = ResolverScript.resolve_active_gates(gates, 777, day)

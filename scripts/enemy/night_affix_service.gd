@@ -6,13 +6,13 @@ class_name NightAffixService
 #   1. 条目级 transform_entries()：波次 entries 展开前调用（追加编队、出怪口倍率）；
 #   2. 个体级 apply_to_enemy_cfg()：敌人生成时作为 cfg_override（数值修饰、死亡效果、声望）。
 
-## day -> 当晚词缀数量。Boss 晚（第 6 天）刻意减负。
+## day -> 当晚词缀数量，逐幕加压：1（d1-3）→2（d4-6）→3（d7-9）。整数杠杆，按 <= 当天最大键阶梯取值。
 const AFFIX_COUNT_BY_DAY := {
 	1: 1,
 	4: 2,
-	7: 2,
+	7: 3,
 }
-const DEFAULT_AFFIX_COUNT := 2
+const DEFAULT_AFFIX_COUNT := 3
 
 ## 这些敌人字段按整数结算（其余如 move_speed 保持浮点）。
 const INT_STATS: Array[String] = ["max_hp", "atk", "def", "res", "prestige_reward", "core_damage"]

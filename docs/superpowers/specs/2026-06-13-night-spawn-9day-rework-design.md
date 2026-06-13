@@ -20,12 +20,14 @@
 
 新文件 `scripts/enemy/difficulty_scale.gd`（`extends RefCounted`，`class_name DifficultyScale`），风格对齐 `NightTemplateResolver`/`NightAffixService`（纯静态、可脱离 DataRepo 测试）。
 
-两张按天表（阶梯回退取 `<=day` 最大键，缺省回退末值）：
+两张**逐天**表（每天一个值，阶梯回退取 `<=day` 最大键，超出回退末日 d9）：
 
 | 天 | 1 | 2 | 3⚔ | 4 | 5 | 6⚔ | 7 | 8 | 9⚔ |
 |---|---|---|---|---|---|---|---|---|---|
-| `COUNT_SCALE_BY_DAY` | 0.6 | 0.8 | 0.9 | 1.0 | 1.1 | 1.0 | 1.2 | 1.3 | 1.1 |
-| `STAT_SCALE_BY_DAY` | 1.0 | 1.0 | 1.05 | 1.1 | 1.2 | 1.3 | 1.45 | 1.6 | 1.8 |
+| `COUNT_SCALE_BY_DAY` | 0.65 | 0.75 | 0.85 | 0.95 | 1.05 | 1.15 | 1.25 | 1.35 | 1.45 |
+| `STAT_SCALE_BY_DAY` | 1.0 | 1.08 | 1.18 | 1.30 | 1.45 | 1.62 | 1.82 | 2.05 | 2.30 |
+
+数量逐天线性 +0.1（前期 <1 压人数，数量是次要杠杆）；数值步长逐天递增（.08→.25）、**后段更陡**，末日 2.30× 追玩家复利。两条都**逐天**变化，不压成分幕平台。
 
 静态接口：`count_scale_for_day(day) -> float`、`stat_scale_for_day(day) -> float`。
 
@@ -40,8 +42,8 @@
 
 ## 2. Boss 动态数值 + boss 池（按"不写死哪天"要求）
 
-- `DifficultyScale.BOSS_STAT_SCALE_BY_DAY = {3:1.0, 6:1.5, 9:2.2}`（占位，阶梯回退）。Boss 走这条独立曲线，**不吃杂兵 `STAT_SCALE`**（免双重缩放）；复用 §1 的实例字段机制（spawn 时按 boss/非 boss 决定写入哪条系数）。
-- **Boss 数值不下放**（现有 Boss 在终局已偏简单，只能更难、不能更弱）：保留奶龙/爱国者现数值（P1 hp 2400 / 2250）作为基准，第三 Boss 取相近量级（~2300），三只基准相当、差异体现在机制。`BOSS_STAT_SCALE` 以最早出场夜 d3=1.0 为下限（即不低于现状）、越晚越强：d3≈现状 / d6≈×1.5 / d9≈×2.2，没有任何 Boss 弱于现状，终局 Boss 明显更硬。缩放覆盖各 phase 的 hp/atk/def/res。
+- `DifficultyScale.BOSS_STAT_SCALE_BY_DAY = {3:1.0, 6:1.6, 9:2.5}`（占位，阶梯回退）。Boss 只在幕末 d3/d6/d9 出场，故只需三点（非平台问题）。Boss 走这条独立曲线，**不吃杂兵 `STAT_SCALE`**（免双重缩放）；复用 §1 的实例字段机制（spawn 时按 boss/非 boss 决定写入哪条系数）。
+- **Boss 数值不下放**（现有 Boss 在终局已偏简单，只能更难、不能更弱）：保留奶龙/爱国者现数值（P1 hp 2400 / 2250）作为基准，第三 Boss 取相近量级（~2300），三只基准相当、差异体现在机制。`BOSS_STAT_SCALE` 以最早出场夜 d3=1.0 为下限（即不低于现状）、越晚越强：d3≈现状 / d6≈×1.6 / d9≈×2.5，没有任何 Boss 弱于现状，终局 Boss 明显更硬。缩放覆盖各 phase 的 hp/atk/def/res。
 - **boss 不写死哪天**：boss tier 模板池含三个 boss 模板，`resolve_night_plan` 对 boss tier 已做抽取 + 局内去重 → d3/d6/d9 抽到三只不同 Boss，顺序随种子。
 - 软闸：boss 模板支持可选 `min_day`；新 Boss「焦壳奶龙」`min_day=4`（≥幕二才登场，避免第一幕就上机制最重的 Boss）。其余两只无闸。pool 组装时（`wave_manager.resolve_night_plan` / 调用方）按 `min_day` 过滤当日 boss 池。
 
@@ -68,7 +70,8 @@ const WAVE_TIERS_BY_DAY := {
 波数 1,2,2,2,3,2,2,3,3（boss 晚刻意少配 adds，Boss 是主菜，count_scale 也已配合）。
 
 - **胜利判定数据驱动**：`game_controller.gd:162` `run_state.day >= 6` → `run_state.day >= NightTemplateResolver.TOTAL_DAYS`。同步排查并改 `audio_manager.gd:284` 的 `day >= 6`（音乐升档阈值）等其它 6 天硬编码。
-- **词缀数量** `NightAffixService.AFFIX_COUNT_BY_DAY` 扩到 9 天（boss 晚减负）：`{1:0,2:1,3:1,4:2,5:2,6:1,7:2,8:2,9:1}`。
+- **词缀数量** `NightAffixService.AFFIX_COUNT_BY_DAY`：逐幕加压 1→2→3（`{1:1,4:2,7:3}` 阶梯 = 1,1,1,2,2,2,3,3,3），末幕到 3 条。整数杠杆，三档展开九天（day1 名义 1 条，但词缀均 `min_day>=2`，首夜实际无缀）。
+- **活跃出怪口** `NightTemplateResolver.ACTIVE_COUNT_BY_DAY`：逐步开口 2→3→4→5（`{1:2,4:3,6:4,8:5}` 阶梯），前期 2 口、d8 起全开 5（受地图总口数 5 封顶）。
 - **部署上限** `floor((day-1)/2)` 天数无关，9 天 → 4→8 位，确认即可（不改公式）。
 - **飞行闸**：含飞行敌人（`move_type:flying`，现为 `bat`/`arts_drone`）的 group 仅 `day>=2` 生效——实现为 `wave_manager` 展开 entry 时，若 `day<2` 且该 entry 的 enemy（含 enemy_choices 命中项）是飞行单位则跳过该 entry（查 DataRepo 敌人 cfg 的 `move_type`）。模板照常可写飞行 group，闸在运行时统一生效。修"第一晚就飞行"。
 

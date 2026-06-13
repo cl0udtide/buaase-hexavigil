@@ -5,28 +5,30 @@ class_name DifficultyScale
 ## 设计见 docs/superpowers/specs/2026-06-13-night-spawn-9day-rework-design.md §1-§2。
 ## 纯静态、确定性，可脱离 DataRepo 测试。数值为占位（平衡定稿见 P3-4）。
 
-## 杂兵数量系数：乘到每个 group 的 count 上（Boss 条目不缩放）。前期压人数。
+## 杂兵数量系数：乘到每个 group 的 count 上（Boss 条目不缩放）。逐天爬升。
+## 前期 <1 压人数（治"前期怪太多"），线性涨到末日 1.45；数量是次要杠杆，主难度交给数值。
 const COUNT_SCALE_BY_DAY := {
-	1: 0.7,
-	4: 1.0,
-	7: 1.2,
+	1: 0.65, 2: 0.75, 3: 0.85,
+	4: 0.95, 5: 1.05, 6: 1.15,
+	7: 1.25, 8: 1.35, 9: 1.45,
 }
 const DEFAULT_COUNT_SCALE := 1.0
 
-## 杂兵数值系数：乘到 max_hp/atk/def/res 上。后期追上玩家复利。
+## 杂兵数值系数：乘到 max_hp/atk/def/res 上。逐天上升且后段更陡（治"后期太简单"）。
+## 每日步长递增（.08→.25），末日 2.30× 追上玩家复利。
 const STAT_SCALE_BY_DAY := {
-	1: 1.0,
-	4: 1.25,
-	7: 1.6,
+	1: 1.0, 2: 1.08, 3: 1.18,
+	4: 1.30, 5: 1.45, 6: 1.62,
+	7: 1.82, 8: 2.05, 9: 2.30,
 }
 const DEFAULT_STAT_SCALE := 1.0
 
 ## Boss 数值系数：Boss 走这条独立曲线（不吃 STAT_SCALE，免双重缩放）。
-## d3=1.0 为下限（不低于现状），越晚越强。Boss 只在幕末（d3/d6/d9）出场。
+## Boss 只在幕末（d3/d6/d9）出场，故只需三点；d3=1.0 为下限（不低于现状），末战拉到 2.5×。
 const BOSS_STAT_SCALE_BY_DAY := {
 	3: 1.0,
-	6: 1.5,
-	9: 2.2,
+	6: 1.6,
+	9: 2.5,
 }
 const DEFAULT_BOSS_STAT_SCALE := 1.0
 
