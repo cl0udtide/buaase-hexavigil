@@ -16,6 +16,7 @@ const MesaGen = preload("res://scripts/map/generation/mesa.gd")
 const NightResolverRef = preload("res://scripts/enemy/night_template_resolver.gd")
 const TerrainField = preload("res://scripts/map/generation/terrain_field.gd")
 const CorePicker = preload("res://scripts/map/generation/core_picker.gd")
+const MapLayout = preload("res://scripts/map/generation/map_layout.gd")
 
 var _failures: int = 0
 
@@ -34,6 +35,7 @@ func _run() -> void:
 	_test_terrain_field_dump()
 	_test_terrain_field_presets()
 	_test_core_picker()
+	_test_map_layout()
 	_test_stage_stream_isolation()
 	_test_detour_repair()
 	_test_cards_archetypes_wind()
@@ -263,6 +265,39 @@ func _test_terrain_field_presets() -> void:
 	_expect(highland > open + 0.05, "highland preset rockier than open (h=%.3f o=%.3f)" % [highland, open])
 	for preset_name in ["highland_run", "riverine_run", "open_run"]:
 		print("\n=== preset %s seed=11 ===\n" % preset_name, TerrainField.ascii_dump(TerrainField.classify(30, 30, 11, 0, pre[preset_name]), 30, 30))
+
+
+func _test_map_layout() -> void:
+	var c: Dictionary = TerrainField.DEFAULT_CLIMATE
+	for s in [12345, 2024]:
+		var terr: Dictionary = TerrainField.classify(30, 30, s, 0, c)
+		var core: Vector2i = CorePicker.pick_core(terr, 30, 30, s, 0)
+		var gates: Array = MapLayout.place_gates(30, 30, 5)
+		_expect(gates.size() == 5, "5 gates")
+		var uniq: Dictionary = {}
+		for gg in gates:
+			uniq[gg] = true
+		_expect(uniq.size() == 5, "gates distinct")
+		for bi in range(gates.size()):
+			var gb: Vector2i = gates[bi]
+			_expect(gb.x == 0 or gb.x == 29 or gb.y == 0 or gb.y == 29, "gate on border %s" % str(gb))
+		MapLayout.ensure_connectivity(terr, 30, 30, core, gates)
+		for ri in range(gates.size()):
+			var gr: Vector2i = gates[ri]
+			_expect(MapLayout._reachable(terr, gr, core), "gate %s reaches core (seed %d)" % [str(gr), s])
+		var terr2: Dictionary = TerrainField.classify(30, 30, s, 0, c)
+		var core2: Vector2i = CorePicker.pick_core(terr2, 30, 30, s, 0)
+		var gates2: Array = MapLayout.place_gates(30, 30, 5)
+		MapLayout.ensure_connectivity(terr2, 30, 30, core2, gates2)
+		var same := true
+		for k in terr.keys():
+			if terr[k] != terr2.get(k, CellDataRef.TERRAIN_PLAIN):
+				same = false
+		_expect(same, "layout deterministic (seed %d)" % s)
+		var marks: Dictionary = {core: "C"}
+		for mi in range(gates.size()):
+			marks[gates[mi]] = str(mi + 1)
+		print("\n=== layout seed=%d core=%s ===\n" % [s, str(core)], CorePicker.ascii_overlay(terr, 30, 30, marks))
 
 
 func _test_core_picker() -> void:
