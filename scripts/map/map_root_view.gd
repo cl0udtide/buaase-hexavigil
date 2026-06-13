@@ -61,8 +61,6 @@ const ROUTE_PREVIEW_COLORS: Array[Color] = [
 	Color(1.0, 0.84, 0.24, 0.95)
 ]
 const ROUTE_WARNING_COLOR := Color(1.0, 0.22, 0.20, 0.96)
-const ROUTE_DEMOLISHER_COLOR := Color(1.0, 0.88, 0.34, 0.96)
-const ROUTE_FLYING_COLOR := Color(0.36, 0.90, 1.0, 0.92)
 const ROUTE_LABEL_DISTANCE_FROM_CORE_TILES := 2
 const ROUTE_LABEL_BADGE_BG := Color(0.015, 0.032, 0.048, 0.90)
 const ROUTE_LABEL_BADGE_RADIUS := 13.0
@@ -835,57 +833,6 @@ func _draw_coverage_cell(rect: Rect2, color: Color) -> void:
 	var inner := rect.grow(-2.0)
 	draw_rect(inner, Color(color.r, color.g, color.b, 0.16))
 	draw_rect(inner, Color(color.r, color.g, color.b, 0.5), false, 1.5)
-
-
-func _draw_route_path(map_manager: Node, path: Array, color: Color, offset: Vector2, path_mode: StringName) -> void:
-	if path.size() <= 1:
-		return
-	# 画完整连续线（含未探明段）；Pass 3 的迷雾瓦片会盖住雾里的部分，
-	# 形成"线条从迷雾中钻出"的效果。只在出图时断开（正常路径不会发生）。
-	var segments: Array[PackedVector2Array] = []
-	var points := PackedVector2Array()
-	for cell_variant: Variant in path:
-		var cell: Vector2i = cell_variant
-		if not map_manager.is_inside(cell):
-			if points.size() > 1:
-				segments.append(points)
-			points = PackedVector2Array()
-			continue
-		points.append(map_manager.cell_to_world(cell) + offset)
-	if points.size() > 1:
-		segments.append(points)
-	if segments.is_empty():
-		return
-	var width := 7.0 if path_mode == &"flying" else 5.0
-	for segment: PackedVector2Array in segments:
-		draw_polyline(segment, Color(color.r, color.g, color.b, 0.22), width + 5.0, true)
-		draw_polyline(segment, color, width, true)
-		if path_mode == &"demolisher":
-			_draw_route_markers(segment, color, 11.0, true)
-		elif path_mode == &"flying":
-			_draw_route_markers(segment, color, 14.0, false)
-		if segment.size() >= 2:
-			_draw_arrow_head(segment[segment.size() - 1], segment[segment.size() - 1] - segment[segment.size() - 2], color, 13.0)
-
-
-func _draw_route_markers(points: PackedVector2Array, color: Color, spacing: float, draw_square: bool) -> void:
-	if points.size() < 2:
-		return
-	for i in range(1, points.size()):
-		var from_point := points[i - 1]
-		var to_point := points[i]
-		var segment := to_point - from_point
-		var length := segment.length()
-		if length <= 0.01:
-			continue
-		var direction := segment / length
-		var marker_count := int(floor(length / (CELL_SIZE * 0.85)))
-		for marker_index in range(marker_count + 1):
-			var point: Vector2 = from_point + direction * min(float(marker_index + 1) * CELL_SIZE * 0.55, length)
-			if draw_square:
-				draw_rect(Rect2(point - Vector2.ONE * spacing * 0.5, Vector2.ONE * spacing), Color(color.r, color.g, color.b, 0.45), false, 2.0)
-			else:
-				draw_circle(point, spacing * 0.32, Color(color.r, color.g, color.b, 0.45))
 
 
 func _make_route_label_info(map_manager: Node, path: Array, offset: Vector2, color: Color, route: Dictionary) -> Dictionary:
