@@ -10,7 +10,7 @@ const CellDataRef = preload("res://scripts/map/cell_data.gd")
 # 本模块自有 STAGE 编号（集成阶段 map_generator 须引用同值，接在 STAGE_MESA=18 之后）。
 const STAGE_HEIGHT := 19
 const STAGE_MOIST := 20
-const MIN_BLOB := 2
+const MIN_BLOB := 3
 const RIVER_MIN_SRC_DIST := 9    # 河源彼此最小曼哈顿距（让河分散）
 const RIVER_STEP_LIMIT := 80     # 单条河最大步数（防御性上限）
 const RIVER_CARDINALS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
@@ -77,7 +77,7 @@ static func _height01(x: int, y: int, seeds: Dictionary, climate: Dictionary) ->
 	var wy: int = y + int(round(float(warp_amp) * (IntNoise.value_noise(x, y, int(seeds["wy"]), warp_scale) * 2.0 - 1.0)))
 	var n1: float = _ridged(IntNoise.value_noise(wx, wy, int(seeds["h1"]), ridge_scale))
 	var n2: float = _ridged(IntNoise.value_noise(wx, wy, int(seeds["h2"]), maxi(ridge_scale / 2, 1))) * n1
-	return clampf(base_bias + ridge_amp * (0.6 * n1 + 0.4 * n2), 0.0, 0.999999)
+	return clampf(base_bias + ridge_amp * (0.7 * n1 + 0.3 * n2), 0.0, 0.999999)
 
 
 ## 决定性湿度场：Vector2i -> int[0,255]。独立 stage seed，低频、不 ridged（成片湿区）。
