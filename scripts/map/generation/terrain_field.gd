@@ -11,6 +11,9 @@ const CellDataRef = preload("res://scripts/map/cell_data.gd")
 const STAGE_HEIGHT := 19
 const STAGE_MOIST := 20
 const MIN_BLOB := 2
+const RIVER_MIN_SRC_DIST := 9    # 河源彼此最小曼哈顿距（让河分散）
+const RIVER_STEP_LIMIT := 80     # 单条河最大步数（防御性上限）
+const RIVER_CARDINALS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 
 ## 气候预设（集成阶段由 archetype 提供；此处给默认值）。
 ## warp_amp 硬上限 5（>5 在 30×30 上拧成噪声、地形乱跳）；octave 固定 2。
@@ -19,7 +22,7 @@ const MIN_BLOB := 2
 const DEFAULT_CLIMATE := {
 	"base_bias": 0.0, "ridge_amp": 1.0,
 	"mtn_frac": 0.14, "high_frac": 0.12, "low_frac": 0.16, "t_wet": 0.55,
-	"moisture_bias": 0.0,
+	"moisture_bias": 0.0, "river_count": 2,
 	"warp_amp": 3, "warp_scale": 12, "ridge_scale": 9,
 }
 
@@ -29,17 +32,17 @@ const CLIMATE_PRESETS := {
 	"highland_run": {
 		"base_bias": 0.0, "ridge_amp": 1.0,
 		"mtn_frac": 0.18, "high_frac": 0.16, "low_frac": 0.12, "t_wet": 0.55,
-		"moisture_bias": -0.1, "warp_amp": 3, "warp_scale": 12, "ridge_scale": 8,
+		"moisture_bias": -0.1, "river_count": 1, "warp_amp": 3, "warp_scale": 12, "ridge_scale": 8,
 	},
 	"riverine_run": {
 		"base_bias": 0.0, "ridge_amp": 1.0,
 		"mtn_frac": 0.10, "high_frac": 0.12, "low_frac": 0.24, "t_wet": 0.45,
-		"moisture_bias": 0.2, "warp_amp": 3, "warp_scale": 12, "ridge_scale": 9,
+		"moisture_bias": 0.2, "river_count": 3, "warp_amp": 3, "warp_scale": 12, "ridge_scale": 9,
 	},
 	"open_run": {
 		"base_bias": 0.0, "ridge_amp": 1.0,
 		"mtn_frac": 0.07, "high_frac": 0.08, "low_frac": 0.16, "t_wet": 0.55,
-		"moisture_bias": -0.1, "warp_amp": 3, "warp_scale": 13, "ridge_scale": 10,
+		"moisture_bias": -0.1, "river_count": 1, "warp_amp": 3, "warp_scale": 13, "ridge_scale": 10,
 	},
 }
 
@@ -90,9 +93,13 @@ static func build_moisture(width: int, height: int, run_seed: int, attempt: int,
 	return field
 
 
-## 高度×湿度 → 地形类型（设计稿 S1）。先山/高台（按高度），再水（低+湿盆地）。
-## 注意：本阶段不含河流（河留到后续阶段复用 trace_river）；这里的水仅低洼湿地。
+## 高度×湿度 → 地形（百分位阈值）+ 河流。classify 只取地形；build 还返回高度/湿度场。
 static func classify(width: int, height: int, run_seed: int, attempt: int, climate: Dictionary) -> Dictionary:
+	return build(width, height, run_seed, attempt, climate)["terrain"]
+
+
+## 完整地貌：返回 {"terrain","height","moisture"}。地形含河流（trace_rivers 顺高度场下流）。
+static func build(width: int, height: int, run_seed: int, attempt: int, climate: Dictionary) -> Dictionary:
 	var h: Dictionary = build_height(width, height, run_seed, attempt, climate)
 	var m: Dictionary = build_moisture(width, height, run_seed, attempt, climate)
 	# 百分位阈值：top mtn_frac → 山；其下 high_frac → 高台；bottom low_frac 且够湿 → 水。
@@ -119,7 +126,79 @@ static func classify(width: int, height: int, run_seed: int, attempt: int, clima
 				terrain[k] = CellDataRef.TERRAIN_WATER
 			else:
 				terrain[k] = CellDataRef.TERRAIN_PLAIN
-	return _despeckle(terrain, width, height)
+	terrain = _despeckle(terrain, width, height)
+	trace_rivers(terrain, h, width, height, int(climate.get("river_count", 2)))
+	return {"terrain": terrain, "height": h, "moisture": m}
+
+
+## 河流：从高处的平原"泉眼"顺高度场往低处一路流，路径标水。决定性（源点按高度排序，无 RNG）。
+static func trace_rivers(terrain: Dictionary, height_field: Dictionary, width: int, height: int, river_count: int) -> void:
+	if river_count <= 0:
+		return
+	for src in _pick_river_sources(terrain, height_field, width, height, river_count):
+		_flow_river(terrain, height_field, width, height, src)
+
+
+## 选河源：内部、平原、最高、彼此 ≥RIVER_MIN_SRC_DIST（曼哈顿）的格。
+static func _pick_river_sources(terrain: Dictionary, height_field: Dictionary, width: int, height: int, river_count: int) -> Array:
+	var cands: Array = []
+	for y in range(2, height - 2):
+		for x in range(2, width - 2):
+			var c := Vector2i(x, y)
+			if terrain.get(c, CellDataRef.TERRAIN_MOUNTAIN) == CellDataRef.TERRAIN_PLAIN:
+				cands.append([int(height_field[c]), c])
+	cands.sort_custom(func(a, b):
+		if int(a[0]) != int(b[0]):
+			return int(a[0]) > int(b[0])
+		if (a[1] as Vector2i).y != (b[1] as Vector2i).y:
+			return (a[1] as Vector2i).y < (b[1] as Vector2i).y
+		return (a[1] as Vector2i).x < (b[1] as Vector2i).x)
+	var picked: Array = []
+	for entry in cands:
+		var c: Vector2i = entry[1]
+		var ok := true
+		for raw_p in picked:
+			var p: Vector2i = raw_p
+			if absi(c.x - p.x) + absi(c.y - p.y) < RIVER_MIN_SRC_DIST:
+				ok = false
+				break
+		if ok:
+			picked.append(c)
+		if picked.size() >= river_count:
+			break
+	return picked
+
+
+## 单条河：每步走到"最低的、未访问、非山非高台"4 邻；遇图边/水/无路则停。路径全标水。
+static func _flow_river(terrain: Dictionary, height_field: Dictionary, width: int, height: int, start: Vector2i) -> void:
+	var cur := start
+	var visited: Dictionary = {start: true}
+	var path: Array[Vector2i] = [start]
+	for _step in range(RIVER_STEP_LIMIT):
+		if cur.x == 0 or cur.y == 0 or cur.x == width - 1 or cur.y == height - 1:
+			break
+		var best := Vector2i(-1, -1)
+		var best_h: int = 1 << 30
+		for d in RIVER_CARDINALS:
+			var nb := cur + d
+			if visited.has(nb) or nb.x < 0 or nb.x >= width or nb.y < 0 or nb.y >= height:
+				continue
+			var t: StringName = terrain.get(nb, CellDataRef.TERRAIN_MOUNTAIN)
+			if t == CellDataRef.TERRAIN_MOUNTAIN or t == CellDataRef.TERRAIN_HIGHLAND:
+				continue
+			var hnb: int = int(height_field[nb])
+			if hnb < best_h:
+				best_h = hnb
+				best = nb
+		if best.x < 0:
+			break
+		cur = best
+		visited[cur] = true
+		path.append(cur)
+		if terrain.get(cur) == CellDataRef.TERRAIN_WATER:
+			break
+	for c in path:
+		terrain[c] = CellDataRef.TERRAIN_WATER
 
 
 ## 去碎点：把 < MIN_BLOB 的山/高台 4 连通域降回平原（站不下、看着碎）。
