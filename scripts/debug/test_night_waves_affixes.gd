@@ -5,6 +5,7 @@ extends SceneTree
 
 const Resolver = preload("res://scripts/enemy/night_template_resolver.gd")
 const AffixService = preload("res://scripts/enemy/night_affix_service.gd")
+const PrestigeReward = preload("res://scripts/enemy/enemy_prestige_reward.gd")
 
 var _failures: int = 0
 
@@ -17,6 +18,7 @@ func _run() -> void:
 	_test_resolver_plan()
 	_test_gate_assignment()
 	_test_affix_resolution()
+	_test_prestige_reward_day_scaling()
 	_test_affix_enemy_cfg()
 	_test_affix_entries()
 	await _test_game_boot()
@@ -97,6 +99,17 @@ func _test_affix_resolution() -> void:
 	_expect(not day2.has(&"c_late"), "min_day gates affixes")
 	var day4: Array[StringName] = AffixService.resolve_affixes_for_day(7, 4, cfgs)
 	_expect(day4.size() == 2 and day4[0] != day4[1], "day4 resolves 2 distinct affixes")
+
+
+func _test_prestige_reward_day_scaling() -> void:
+	_expect(PrestigeReward.base_for_day(3, 3) == 3, "day3 keeps prestige reward")
+	_expect(PrestigeReward.base_for_day(3, 4) == 1, "day4 lowers prestige reward by 2")
+	_expect(PrestigeReward.base_for_day(1, 4) == 1, "day4 prestige reward floors at 1")
+	_expect(PrestigeReward.base_for_day(20, 4) == 18, "day4 lowers boss prestige reward by 2")
+	var bloodlust: Dictionary = {"effects": [{"type": "enemy_stat_percent", "stat": "prestige_reward", "value": 0.30}]}
+	var adjusted: Dictionary = PrestigeReward.apply_base_for_day({"prestige_reward": 10}, 4)
+	var affixed: Dictionary = AffixService.apply_to_enemy_cfg(adjusted, [bloodlust])
+	_expect(int(affixed.get("prestige_reward", 0)) == 10, "day scaling applies before bloodlust prestige bonus")
 
 
 func _test_affix_enemy_cfg() -> void:

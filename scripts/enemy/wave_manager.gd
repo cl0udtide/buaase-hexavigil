@@ -3,6 +3,7 @@ extends Node
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
+const EnemyPrestigeReward = preload("res://scripts/enemy/enemy_prestige_reward.gd")
 
 
 # 波间喘息时长：上一波清场后到下一波开始的间隔。
@@ -283,6 +284,8 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null:
 		return {}
+	var run_state: Node = AppRefs.run_state()
+	var day_value: int = int(run_state.day) if run_state != null else int(cfg.get("day", seed_day))
 	var entries_by_key: Dictionary = {}
 	var spawn_order: Array[StringName] = []
 	var total_count := 0
@@ -295,6 +298,7 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 		if count <= 0:
 			continue
 		var enemy_cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id)
+		enemy_cfg = EnemyPrestigeReward.apply_base_for_day(enemy_cfg, day_value)
 		if not affix_cfgs.is_empty():
 			enemy_cfg = NightAffixService.apply_to_enemy_cfg(enemy_cfg, affix_cfgs)
 		var aggregate_key := "%s|%s" % [String(spawn_key), String(enemy_id)]
@@ -331,8 +335,6 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 			return float(a.get("first_time", 0.0)) < float(b.get("first_time", 0.0))
 		return spawn_a < spawn_b
 	)
-	var run_state = AppRefs.run_state()
-	var day_value: int = int(run_state.day) if run_state != null else int(cfg.get("day", seed_day))
 	var preview := {
 		"day": day_value,
 		"seed_day": seed_day,
@@ -386,7 +388,7 @@ func _build_resolved_entries(cfg: Dictionary, template_id: StringName, wave_inde
 	var main_gate := _main_gate_for_wave(wave_index, active_gates)
 	var run_state = AppRefs.run_state()
 	var run_seed := int(run_state.random_seed) if run_state != null else 0
-	var day := int(run_state.day) if run_state != null else 0
+	var day: int = int(run_state.day) if run_state != null else 0
 	for entry_index in range(raw_entries.size()):
 		var entry_variant: Variant = raw_entries[entry_index]
 		if typeof(entry_variant) != TYPE_DICTIONARY:
@@ -461,13 +463,17 @@ func _load_affix_cfgs(affix_ids: Array) -> Array[Dictionary]:
 
 
 func _affixed_enemy_cfg_override(enemy_id: StringName) -> Dictionary:
-	if _affix_cfgs.is_empty() or enemy_id == StringName():
+	if enemy_id == StringName():
 		return {}
 	if _enemy_cfg_override_cache.has(enemy_id):
 		return _enemy_cfg_override_cache[enemy_id]
 	var data_repo = AppRefs.data_repo()
 	var base_cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id) if data_repo != null else {}
-	var override: Dictionary = NightAffixService.apply_to_enemy_cfg(base_cfg, _affix_cfgs)
+	var run_state: Node = AppRefs.run_state()
+	var day: int = int(run_state.day) if run_state != null else 0
+	var override: Dictionary = EnemyPrestigeReward.apply_base_for_day(base_cfg, day)
+	if not _affix_cfgs.is_empty():
+		override = NightAffixService.apply_to_enemy_cfg(override, _affix_cfgs)
 	_enemy_cfg_override_cache[enemy_id] = override
 	return override
 

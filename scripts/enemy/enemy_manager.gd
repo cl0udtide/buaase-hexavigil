@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const EnemyPrestigeReward = preload("res://scripts/enemy/enemy_prestige_reward.gd")
 
 
 var _next_runtime_id := 1
@@ -21,6 +22,9 @@ func spawn_enemy(enemy_id: StringName, spawn_cell: Vector2i, cfg_override: Dicti
 	if data_repo == null:
 		return -1
 	var cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id)
+	var run_state: Node = AppRefs.run_state()
+	if run_state != null:
+		cfg = EnemyPrestigeReward.apply_base_for_day(cfg, int(run_state.day))
 	for key in cfg_override.keys():
 		cfg[key] = cfg_override[key]
 	var scene: PackedScene = data_repo.get_scene_by_key(StringName(cfg.get("scene_key", "")))
