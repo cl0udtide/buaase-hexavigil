@@ -176,16 +176,18 @@ func _apply_attack_splash(primary_target: Node) -> void:
 	var unit_manager: Node = _get_unit_manager()
 	if unit_manager == null or not unit_manager.has_method("get_unit_by_cell"):
 		return
-	var center: Vector2i = _owner_actor.get_current_cell()
+	# AOE 以被攻击的干员（落点）为中心结算与表现，而非企鹅自身。
+	var center_node: Node = primary_target if (primary_target != null and is_instance_valid(primary_target) and primary_target.has_method("get_current_cell")) else _owner_actor
+	var center: Vector2i = center_node.get_current_cell()
 	for y in range(center.y - radius, center.y + radius + 1):
 		for x in range(center.x - radius, center.x + radius + 1):
 			var unit: Node = unit_manager.get_unit_by_cell(Vector2i(x, y))
 			if unit != null and unit != primary_target and is_instance_valid(unit) and unit.has_method("receive_damage"):
 				unit.receive_damage(splash_damage, splash_type, _owner_actor)
 	var fx := String(_owner_actor.cfg.get("attack_splash_effect", ""))
-	if not fx.is_empty() and _owner_actor.has_method("spawn_world_effect"):
+	if not fx.is_empty() and _owner_actor.has_method("spawn_world_effect") and center_node is Node2D:
 		var diameter := float(radius * 2 + 1) * 64.0
-		_owner_actor.spawn_world_effect(fx, _owner_actor.global_position, 0.5, 6, 6, 18.0, Vector2(diameter, diameter), 0.0, false, 23)
+		_owner_actor.spawn_world_effect(fx, (center_node as Node2D).global_position, 0.5, 6, 6, 18.0, Vector2(diameter, diameter), 0.0, false, 23)
 
 
 func _uses_projectile_range_attack() -> bool:
