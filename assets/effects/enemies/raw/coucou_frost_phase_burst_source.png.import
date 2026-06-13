@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://w4rm2lk7eucx"
-path="res://.godot/imported/coucou_fire_rain_source.png-24b338a619fa2654e3ee310405f6d1a7.ctex"
+uid="uid://lkoefv8jgh8d"
+path="res://.godot/imported/coucou_frost_phase_burst_source.png-e2a5922b257078e002623a9cb5238b8f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/effects/enemies/raw/coucou_fire_rain_source.png"
-dest_files=["res://.godot/imported/coucou_fire_rain_source.png-24b338a619fa2654e3ee310405f6d1a7.ctex"]
+source_file="res://assets/effects/enemies/raw/coucou_frost_phase_burst_source.png"
+dest_files=["res://.godot/imported/coucou_frost_phase_burst_source.png-e2a5922b257078e002623a9cb5238b8f.ctex"]
 
 [params]
 
