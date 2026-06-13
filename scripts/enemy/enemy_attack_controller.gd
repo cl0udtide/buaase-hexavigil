@@ -7,6 +7,8 @@ const DEFAULT_PROJECTILE_SPEED := 460.0
 const DEFAULT_PROJECTILE_HIT_RADIUS := 8.0
 const DEFAULT_PROJECTILE_LIFETIME := 3.0
 const DEMOLISHER_HIT_EFFECT_SIZE := Vector2(128.0, 104.0)
+const SFX_PROJECTILE_PHYSICAL := &"projectile_physical"
+const SFX_PROJECTILE_ARTS := &"projectile_arts"
 
 var _owner_actor: Node2D = null
 var _attack_timer := 0.0
@@ -197,6 +199,7 @@ func _launch_projectile(target: Node, damage_value: int, damage_type: int) -> No
 		projectile.setup(projectile_payload)
 	elif projectile is Node2D:
 		(projectile as Node2D).global_position = projectile_payload["origin"]
+	_request_audio_cue(_projectile_sfx_for_damage_type(damage_type))
 	return projectile
 
 
@@ -360,6 +363,16 @@ func _damage_type_text(type_value: int) -> String:
 			return "真实"
 		_:
 			return "物理"
+
+
+func _projectile_sfx_for_damage_type(damage_type_value: int) -> StringName:
+	return SFX_PROJECTILE_ARTS if damage_type_value == GameEnums.DAMAGE_MAGIC else SFX_PROJECTILE_PHYSICAL
+
+
+func _request_audio_cue(cue_key: StringName) -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.audio_cue_requested.emit(cue_key)
 
 
 func _target_debug_name(target: Node) -> String:
