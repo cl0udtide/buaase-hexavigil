@@ -34,6 +34,7 @@ func _run() -> void:
 	_test_economy_slot(run_state, buff_manager, data_repo)
 	_test_covenant_slot(run_state, buff_manager, data_repo)
 	_test_covenant_filter(run_state, data_repo)
+	_test_milestone_blessing(run_state, buff_manager, data_repo)
 
 	game.queue_free()
 	await process_frame
@@ -107,6 +108,19 @@ func _test_covenant_filter(run_state: Node, data_repo: Node) -> void:
 	_expect(is_equal_approx(float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", steadfast_cfg)), 0.40), "covenant relic buffs covenant unit")
 	_expect(is_zero_approx(float(run_state.get_buff_effect_total_for_unit(&"unit_def_percent", other_cfg))), "covenant relic skips other units")
 	_expect(is_zero_approx(float(run_state.get_buff_effect_total(&"unit_def_percent"))), "unfiltered total skips covenant-filtered effects")
+
+
+## 保底：打完 3/6 幕末 Boss 后那次三选一，至少一件高稀有度（无视当天门控）。
+func _test_milestone_blessing(run_state: Node, buff_manager: Node, data_repo: Node) -> void:
+	run_state.day = 1
+	run_state.pending_milestone_blessing = true
+	var has_high := false
+	for buff_id in buff_manager.get_random_blessing_choices():
+		if int((data_repo.get_buff_cfg(buff_id) as Dictionary).get("rarity", 1)) >= 2:
+			has_high = true
+	_expect(has_high, "milestone blessing guarantees a high-rarity relic even in act 1")
+	_expect(not bool(run_state.pending_milestone_blessing), "milestone flag cleared after draw")
+	run_state.day = 1
 
 
 func _expect(cond: bool, msg: String) -> void:

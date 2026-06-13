@@ -87,8 +87,22 @@ func get_random_blessing_choices_with_sources(count: int = 0) -> Array[Dictionar
 	# entries 保持 (buff_id, slot) 配对；后续打乱以条目为单位，绝不丢来源对应关系。
 	var entries: Array[Dictionary] = []
 	var picked_ids: Array[StringName] = []
+	# 保底（打完 3/6 幕末 Boss）：随机槽改抽一件高稀有度件，无视当天稀有度门控。
+	var random_pool: Array[Dictionary] = rarity_pool
+	if run_state != null and bool(run_state.get("pending_milestone_blessing")):
+		run_state.pending_milestone_blessing = false
+		var top: Array[Dictionary] = []
+		for cfg in unowned:
+			if int(cfg.get("rarity", 1)) == 3 and StringName(cfg.get("category", "")) != &"covenant":
+				top.append(cfg)
+		if top.is_empty():
+			for cfg in unowned:
+				if int(cfg.get("rarity", 1)) == 2 and StringName(cfg.get("category", "")) != &"covenant":
+					top.append(cfg)
+		if not top.is_empty():
+			random_pool = top
 	_append_sourced_choice(covenant_pool, picked_ids, entries, &"covenant")
-	_append_sourced_choice(rarity_pool, picked_ids, entries, &"random")
+	_append_sourced_choice(random_pool, picked_ids, entries, &"random")
 	if choice_count >= 3:
 		_append_sourced_choice(economy_pool, picked_ids, entries, &"economy")
 	while entries.size() < choice_count:

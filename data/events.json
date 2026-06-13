@@ -67,7 +67,7 @@
         "effect_desc": "不冒这个险。"
       }
     ],
-    "max_day": 5
+    "max_day": 8
   },
   {
     "id": "event_war_wager_accept",
@@ -371,7 +371,7 @@
     "name": "开口赌约",
     "desc": "斥候压低声音：“东面有条暗道，敌人还没发现。要是我们故意把它捅开，今晚会更难——但乱中取利，报酬丰厚。”",
     "effect_type": "contract",
-    "max_day": 6,
+    "max_day": 8,
     "choices": [
       {
         "id": "accept",

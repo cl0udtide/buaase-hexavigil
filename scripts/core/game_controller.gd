@@ -169,6 +169,9 @@ func _on_night_cleared(_day: int) -> void:
 	if run_state.night_wager_active and not run_state.night_core_damaged:
 		run_state.pending_extra_blessings += 1
 	run_state.night_wager_active = false
+	# 幕末 Boss（d3/d6，非终局）清场 → 下次三选一保底一件高稀有度遗物。
+	if NightTemplateResolver.is_boss_night(run_state.day) and run_state.day < NightTemplateResolver.TOTAL_DAYS:
+		run_state.pending_milestone_blessing = true
 	if run_state.day >= NightTemplateResolver.TOTAL_DAYS:
 		end_run(true)
 	else:
