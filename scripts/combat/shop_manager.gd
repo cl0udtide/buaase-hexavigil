@@ -8,10 +8,16 @@ const SHOP_SLOT_COUNT := 5
 const DRIFT_START_DAY := 3
 const DRIFT_TOP_COVENANT_COUNT := 2
 const DRIFT_WEIGHT_MULTIPLIER := 1.2
+## 商店档位权重按三幕分档（369）：后期高费干员更易出，配合定向升星让构筑成型。
+const TIER_WEIGHTS_BY_DAY := {
+	1: [{"cost": 2, "weight": 65.0}, {"cost": 4, "weight": 28.0}, {"cost": 7, "weight": 7.0}],
+	4: [{"cost": 2, "weight": 50.0}, {"cost": 4, "weight": 35.0}, {"cost": 7, "weight": 15.0}],
+	7: [{"cost": 2, "weight": 35.0}, {"cost": 4, "weight": 38.0}, {"cost": 7, "weight": 27.0}],
+}
 const TIER_WEIGHTS := [
-	{"cost": 2, "weight": 60.0},
-	{"cost": 4, "weight": 30.0},
-	{"cost": 7, "weight": 10.0}
+	{"cost": 2, "weight": 65.0},
+	{"cost": 4, "weight": 28.0},
+	{"cost": 7, "weight": 7.0}
 ]
 
 var _stock_slots: Array[Dictionary] = []
@@ -284,20 +290,33 @@ func _unit_roll_weight(unit_id: StringName, drifted_covenants: Array[StringName]
 	return 1.0
 
 
+## 当天档位权重（三幕分档，取 <= 当天最大键）。
+func _current_tier_weights() -> Array:
+	var run_state = AppRefs.run_state()
+	var day := int(run_state.day) if run_state != null else 1
+	var best := -1
+	for raw_key: Variant in TIER_WEIGHTS_BY_DAY.keys():
+		var k := int(raw_key)
+		if k <= day and k > best:
+			best = k
+	return TIER_WEIGHTS_BY_DAY[best] if best >= 0 else TIER_WEIGHTS
+
+
 func _roll_tier_cost() -> int:
+	var weights := _current_tier_weights()
 	var total_weight := 0.0
-	for entry in TIER_WEIGHTS:
+	for entry in weights:
 		total_weight += float((entry as Dictionary).get("weight", 0.0))
 	if total_weight <= 0.0:
 		return 1
 	var roll := randf() * total_weight
 	var cursor := 0.0
-	for entry in TIER_WEIGHTS:
+	for entry in weights:
 		var entry_dict := entry as Dictionary
 		cursor += float(entry_dict.get("weight", 0.0))
 		if roll <= cursor:
 			return int(entry_dict.get("cost", 1))
-	return int((TIER_WEIGHTS.back() as Dictionary).get("cost", 1))
+	return int((weights.back() as Dictionary).get("cost", 1))
 
 
 func _get_unit_ids_by_cost(cost: int) -> Array[StringName]:
