@@ -52,6 +52,7 @@ var _fade_tween: Tween
 # 程序化构建（不改 .tscn）：全屏插图层 + 气泡皮
 var _bg_image: TextureRect
 var _bubble: PanelContainer
+var _bubble_avatar: TextureRect
 var _bubble_speaker: Label
 var _bubble_label: RichTextLabel
 var _bubble_prompt: Label
@@ -254,6 +255,9 @@ func _setup_bubble_line(line: Dictionary) -> void:
 	_clear_side(SIDE_RIGHT)
 	_bubble.visible = true
 	_place_bubble(line)
+	var avatar := _make_head_avatar(StringName(line.get("portrait", "")))
+	_bubble_avatar.texture = avatar
+	_bubble_avatar.visible = avatar != null
 	var speaker := String(line.get("speaker", "")).strip_edges()
 	_bubble_speaker.visible = not speaker.is_empty()
 	_bubble_speaker.text = speaker
@@ -365,6 +369,24 @@ func _get_portrait_texture(portrait_key: StringName) -> Texture2D:
 	return load(path) as Texture2D
 
 
+## 气泡头像：从说话角色 sprite 裁出头部区域（顶部居中），做成小头像。
+## 裁切比例是启发式（idle 帧头部大致在上方居中），具体观感后续按角色微调。
+func _make_head_avatar(portrait_key: StringName) -> Texture2D:
+	var tex := _get_portrait_texture(portrait_key)
+	if tex == null:
+		return null
+	var w := float(tex.get_width())
+	var h := float(tex.get_height())
+	if w <= 0.0 or h <= 0.0:
+		return null
+	var crop_w := w * 0.52
+	var crop_h := h * 0.46
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2((w - crop_w) * 0.5, h * 0.04, crop_w, crop_h)
+	return atlas
+
+
 func _get_portrait_rect(side: StringName) -> TextureRect:
 	if side == SIDE_LEFT:
 		return _left_portrait
@@ -447,21 +469,35 @@ func _build_bg_image() -> void:
 func _build_bubble() -> void:
 	_bubble = PanelContainer.new()
 	_bubble.name = "Bubble"
-	_bubble.custom_minimum_size = Vector2(560.0, 0.0)
+	_bubble.custom_minimum_size = Vector2(580.0, 0.0)
 	_bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bubble.visible = false
 	add_child(_bubble)
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 22)
+	margin.add_theme_constant_override("margin_left", 18)
 	margin.add_theme_constant_override("margin_right", 22)
-	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_top", 14)
 	margin.add_theme_constant_override("margin_bottom", 14)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bubble.add_child(margin)
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 14)
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(hbox)
+	_bubble_avatar = TextureRect.new()
+	_bubble_avatar.custom_minimum_size = Vector2(76.0, 90.0)
+	_bubble_avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_bubble_avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_bubble_avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_bubble_avatar.clip_contents = true
+	_bubble_avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bubble_avatar.visible = false
+	hbox.add_child(_bubble_avatar)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_child(vbox)
+	hbox.add_child(vbox)
 	_bubble_speaker = Label.new()
 	_bubble_speaker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bubble_speaker.visible = false
@@ -471,7 +507,8 @@ func _build_bubble() -> void:
 	_bubble_label.fit_content = true
 	_bubble_label.scroll_active = false
 	_bubble_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_bubble_label.custom_minimum_size = Vector2(516.0, 0.0)
+	_bubble_label.custom_minimum_size = Vector2(420.0, 0.0)
+	_bubble_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_bubble_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(_bubble_label)
 	_bubble_prompt = Label.new()
