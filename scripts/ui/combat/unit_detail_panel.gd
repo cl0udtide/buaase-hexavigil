@@ -32,10 +32,13 @@ signal sell_requested(operator_key: StringName)
 @onready var _covenant_stat_label: Label = %CovenantStatLabel
 @onready var _skill_icon_texture: TextureRect = %SkillIconTexture
 @onready var _skill_title_label: Label = %SkillTitleLabel
-@onready var _skill_status_label: Label = %SkillStatusLabel
+@onready var _skill_status_label: Label = get_node_or_null("%SkillStatusLabel") as Label
+@onready var _skill_desc_frame: Control = %SkillDescFrame
+@onready var _skill_text_margin: Control = %SkillTextMargin
 @onready var _skill_clip_area: Control = %SkillClipArea
 @onready var _skill_scroll: ScrollContainer = %SkillScroll
 @onready var _skill_label: Label = %SkillLabel
+@onready var _actions_container: BoxContainer = %Actions
 @onready var _purchase_button: Button = %PurchaseButton
 @onready var _purchase_button_icon: TextureRect = %PurchaseButtonIcon
 @onready var _star_up_button: Button = %StarUpButton
@@ -59,6 +62,7 @@ var _preview_sell_refund := 1
 func _ready() -> void:
 	AppTheme.apply(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_actions_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	GameUiStyle.apply_scroll_style(_skill_scroll)
 	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -76,9 +80,13 @@ func _ready() -> void:
 		label.add_theme_constant_override("shadow_offset_x", 0)
 		label.add_theme_constant_override("shadow_offset_y", 0)
 	_skill_title_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_skill_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	if _skill_status_label != null:
+		_skill_status_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_skill_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	_skill_label.add_theme_constant_override("line_spacing", 3)
+	_skill_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_skill_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_prepare_skill_scroll_input()
 	_portrait_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_hp_bar.resized.connect(_refresh_progress_fills)
 	_sp_bar.resized.connect(_refresh_progress_fills)
@@ -108,6 +116,10 @@ func _ready() -> void:
 	call_deferred("_refresh_skill_text_scroll_size")
 
 
+func _gui_input(event: InputEvent) -> void:
+	_on_skill_scroll_area_gui_input(event)
+
+
 func show_unit(unit: Node, display_name: String, _damage_label_text: String, _direction_label_text: String) -> void:
 	if unit == null:
 		clear_unit()
@@ -118,7 +130,7 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	_set_action_mode(&"deployed", false, "")
 	var sp_max := float(unit.cfg.get("sp_max", 0.0))
 	_title_label.text = display_name
-	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(unit.cfg), _icon_text(unit.cfg, "◆"))
+	_apply_texture_or_text(_portrait_texture, _portrait_label, _unit_portrait_texture(unit), _icon_text(unit.cfg, "◆"))
 	_apply_optional_texture(_skill_icon_texture, _skill_icon_texture_from_cfg(unit.cfg))
 	var star := OperatorProgression.normalize_star(unit.cfg.get("operator_star", OperatorProgression.DEFAULT_STAR))
 	_level_label.text = "%s #%d" % [OperatorProgression.format_star_label(star), int(unit.get_runtime_id())]
@@ -149,9 +161,9 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	if not ammo_text.is_empty():
 		status_lines.append(ammo_text)
 	_skill_title_label.text = unit.get_skill_name()
-	_skill_status_label.text = "就绪" if status_lines.is_empty() and unit.can_cast_skill() else "未就绪"
+	_set_skill_status_text("就绪" if status_lines.is_empty() and unit.can_cast_skill() else "未就绪")
 	if not status_lines.is_empty():
-		_skill_status_label.text = " / ".join(status_lines)
+		_set_skill_status_text(" / ".join(status_lines))
 	_skill_label.text = unit.get_skill_description()
 	_refresh_skill_text_scroll_size()
 	call_deferred("_refresh_skill_text_scroll_size")
@@ -185,6 +197,7 @@ func show_operator_preview(operator_info: Dictionary, unit_cfg: Dictionary, stat
 	var can_sell := state == &"ready"
 	var sell_reason := "" if can_sell else "该干员当前不能出售"
 	_set_action_mode(&"preview", false, "", 0, can_sell, sell_reason, sell_refund)
+	call_deferred("_refresh_skill_text_scroll_size")
 	_refresh_star_up_button()
 
 
@@ -197,6 +210,7 @@ func show_shop_unit_preview(slot_index: int, unit_id: StringName, unit_cfg: Dict
 	if can_purchase:
 		reason = ""
 	_set_action_mode(&"shop", can_purchase, reason, price)
+	call_deferred("_refresh_skill_text_scroll_size")
 
 
 func clear_unit() -> void:
@@ -221,7 +235,7 @@ func clear_unit() -> void:
 	_aspd_stat_label.text = "攻速 --"
 	_covenant_stat_label.text = "盟约 --"
 	_skill_title_label.text = "技能"
-	_skill_status_label.text = "未选中"
+	_set_skill_status_text("未选中")
 	_skill_label.text = "选择场上单位后显示技能描述。"
 	_cast_button.text = "激活技能"
 	_cast_button.disabled = true
@@ -234,10 +248,9 @@ func clear_unit() -> void:
 
 func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String, skill_status_text: String = "Preview", unit_id: StringName = StringName(), operator_key: StringName = StringName()) -> void:
 	visible = true
-	_last_skill_scroll_key = ""
 	_title_label.text = display_name
 	_level_label.text = level_text
-	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(cfg), _icon_text(cfg, "*"))
+	_apply_texture_or_text(_portrait_texture, _portrait_label, UiArtRegistry.get_portrait_texture(cfg, unit_id), _icon_text(cfg, "*"))
 	_apply_optional_texture(_skill_icon_texture, _skill_icon_texture_from_cfg(cfg))
 	var max_hp := int(cfg.get("max_hp", 0))
 	var sp_max := float(cfg.get("sp_max", 0.0))
@@ -254,11 +267,14 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_aspd_stat_label.text = "攻速 %d" % int(round(float(cfg.get("attack_speed", 100.0))))
 	_covenant_stat_label.text = "盟约 %s" % _format_runtime_covenants(cfg, unit_id, operator_key)
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
-	_skill_status_label.text = skill_status_text
+	_set_skill_status_text(skill_status_text)
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
 	_refresh_skill_text_scroll_size()
 	call_deferred("_refresh_skill_text_scroll_size")
-	_skill_scroll.scroll_vertical = 0
+	var skill_scroll_key := "preview:%s:%s:%s" % [String(unit_id), _skill_title_label.text, _skill_label.text]
+	if skill_scroll_key != _last_skill_scroll_key:
+		_skill_scroll.scroll_vertical = 0
+		_last_skill_scroll_key = skill_scroll_key
 	_refresh_action_icons()
 
 
@@ -316,6 +332,7 @@ func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, pric
 		_star_up_button.tooltip_text = ""
 	_cast_button.visible = is_deployed or mode == &"empty"
 	_retreat_button.visible = is_deployed or mode == &"empty"
+	_refresh_actions_alignment()
 	_refresh_action_icons()
 
 
@@ -424,6 +441,67 @@ func _refresh_skill_text_scroll_size() -> void:
 	_skill_label.custom_minimum_size = Vector2(text_width, 0.0)
 	var label_height := maxf(1.0, _skill_label.get_combined_minimum_size().y)
 	_skill_label.custom_minimum_size = Vector2(text_width, label_height)
+	_skill_label.size = Vector2(text_width, label_height)
+
+
+func _prepare_skill_scroll_input() -> void:
+	var scroll_event_controls: Array[Control] = [
+		_skill_desc_frame,
+		_skill_text_margin,
+		_skill_clip_area,
+		_skill_scroll,
+	]
+	for control in scroll_event_controls:
+		if control == null:
+			continue
+		control.mouse_filter = Control.MOUSE_FILTER_PASS
+		if not control.gui_input.is_connected(_on_skill_scroll_area_gui_input):
+			control.gui_input.connect(_on_skill_scroll_area_gui_input)
+	_skill_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	_skill_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+func _on_skill_scroll_area_gui_input(event: InputEvent) -> void:
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event == null or not mouse_event.pressed:
+		return
+	if mouse_event.button_index != MOUSE_BUTTON_WHEEL_UP and mouse_event.button_index != MOUSE_BUTTON_WHEEL_DOWN:
+		return
+	if not _is_point_in_skill_scroll_region(mouse_event.global_position):
+		return
+	if _scroll_skill_text(mouse_event.button_index, mouse_event.factor):
+		accept_event()
+
+
+func _is_point_in_skill_scroll_region(global_position: Vector2) -> bool:
+	if _skill_clip_area == null or not _skill_clip_area.visible:
+		return false
+	return _skill_clip_area.get_global_rect().has_point(global_position)
+
+
+func _scroll_skill_text(button_index: MouseButton, factor: float) -> bool:
+	if _skill_scroll == null:
+		return false
+	var vertical_bar := _skill_scroll.get_v_scroll_bar()
+	if vertical_bar == null:
+		return false
+	var max_scroll := maxf(0.0, vertical_bar.max_value - vertical_bar.page)
+	if max_scroll <= 0.0:
+		return false
+	var direction := -1.0 if button_index == MOUSE_BUTTON_WHEEL_UP else 1.0
+	var wheel_factor := maxf(1.0, absf(factor))
+	var previous_value := float(_skill_scroll.scroll_vertical)
+	var next_value := clampf(previous_value + direction * 48.0 * wheel_factor, 0.0, max_scroll)
+	if is_equal_approx(previous_value, next_value):
+		return false
+	_skill_scroll.scroll_vertical = int(round(next_value))
+	return true
+
+
+func _set_skill_status_text(text: String) -> void:
+	if _skill_status_label == null:
+		return
+	_skill_status_label.text = text
 
 
 func _set_progress(bar: Control, fill: Control, value: float, max_value: float) -> void:
@@ -465,8 +543,52 @@ func _style_action_button(button: Button, _accent: Color) -> void:
 	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
 
 
+func _refresh_actions_alignment() -> void:
+	if _actions_container == null:
+		return
+	var visible_button_count := 0
+	var action_buttons: Array[Button] = [
+		_purchase_button,
+		_star_up_button,
+		_sell_button,
+		_cast_button,
+		_retreat_button,
+	]
+	for button in action_buttons:
+		if button != null and button.visible:
+			visible_button_count += 1
+	_actions_container.alignment = BoxContainer.ALIGNMENT_CENTER if visible_button_count == 1 else BoxContainer.ALIGNMENT_BEGIN
+
+
 func _skill_icon_texture_from_cfg(cfg: Dictionary) -> Texture2D:
 	return UiArtRegistry.get_skill_icon_texture(cfg)
+
+
+func _unit_portrait_texture(unit: Node) -> Texture2D:
+	if unit == null:
+		return null
+	var runtime_texture := _unit_runtime_sprite_texture(unit)
+	if runtime_texture != null:
+		return runtime_texture
+	var unit_id := StringName()
+	var raw_unit_id: Variant = unit.get("unit_id")
+	if raw_unit_id != null:
+		unit_id = StringName(raw_unit_id)
+	return UiArtRegistry.get_portrait_texture(unit.cfg, unit_id)
+
+
+func _unit_runtime_sprite_texture(unit: Node) -> Texture2D:
+	if unit == null:
+		return null
+	var sprite_paths: Array[String] = [
+		"VisualRoot/IdleMotionRoot/IdleSprite",
+		"VisualRoot/IdleSprite",
+	]
+	for sprite_path in sprite_paths:
+		var sprite := unit.get_node_or_null(sprite_path) as Sprite2D
+		if sprite != null and sprite.texture != null:
+			return sprite.texture
+	return null
 
 
 func _refresh_action_icons() -> void:

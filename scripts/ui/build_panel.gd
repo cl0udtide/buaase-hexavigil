@@ -5,6 +5,7 @@ const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 const ShopManagerScript = preload("res://scripts/combat/shop_manager.gd")
+const ShopUnitCardScene = preload("res://scenes/ui/ShopUnitCard.tscn")
 
 const MODE_BUILD: StringName = &"build"
 const MODE_SHOP: StringName = &"shop"
@@ -28,6 +29,9 @@ var _current_phase := GameEnums.PHASE_MENU
 @onready var _build_mode_button: Button = %BuildModeButton
 @onready var _shop_mode_button: Button = %ShopModeButton
 @onready var _selection_label: Label = %BuildSelectionLabel
+@onready var _build_info_panel: CanvasItem = %BuildInfoPanel
+@onready var _build_info_title: Label = %BuildInfoTitle
+@onready var _build_info_detail: Label = %BuildInfoDetail
 @onready var _card_list: VBoxContainer = %BuildCardList
 @onready var _category_tabs: HBoxContainer = %CategoryTabs
 @onready var _resource_button: Button = %ResourceCategoryButton
@@ -105,6 +109,7 @@ func refresh_from_state() -> void:
 	_refresh_category_buttons()
 	_refresh_bottom_controls()
 	_refresh_selection_label()
+	_refresh_build_info_panel()
 	_rebuild_cards()
 
 
@@ -133,7 +138,7 @@ func _set_tab_selected(button: Button, selected: bool) -> void:
 	if button == null:
 		return
 	button.disabled = selected
-	var overlay := button.get_node_or_null("SelectedOverlay") as Panel
+	var overlay := button.get_node_or_null("SelectedOverlay") as CanvasItem
 	if overlay != null:
 		overlay.visible = selected
 
@@ -172,12 +177,12 @@ func _rebuild_building_cards() -> void:
 	for building_id in _get_category_buildings():
 		_card_list.add_child(_make_building_card(building_id))
 	if _card_list.get_child_count() == 0:
-		_card_list.add_child(_make_empty_state("暂无可建造建筑"))
+		_card_list.add_child(_make_building_empty_state("暂无可建造建筑"))
 
 
 func _rebuild_shop_cards() -> void:
 	if _stock_slots.is_empty():
-		_card_list.add_child(_make_empty_state("今日商店暂未刷新"))
+		_card_list.add_child(_make_shop_empty_state("今日商店暂未刷新"))
 		return
 	for slot in _stock_slots:
 		_card_list.add_child(_make_shop_card(slot as Dictionary))
@@ -220,10 +225,10 @@ func _make_building_card_model(building_id: StringName) -> Dictionary:
 		"icon_text": UiDisplayText.icon_text(cfg),
 		"fallback_icon_key": &"",
 		"source_cfg": cfg,
-		"state": "已选择" if selected else "",
 		"cost_badge_text": str(BuildValidator.get_building_ap_cost(cfg)),
 		"selected": selected,
 		"disabled": disabled,
+		"pressable_when_disabled": true,
 		"draggable": not disabled,
 		"disabled_reason": lack_reason,
 		"audio_cue": &"ui_card_select",
@@ -268,25 +273,17 @@ func _make_shop_card(slot: Dictionary) -> Control:
 	var title := ""
 	var subtitle := ""
 	var detail := ""
-	var state := ""
 	if unit_id == StringName():
 		title = "空槽位"
 	else:
 		title = UiDisplayText.config_name(cfg, unit_id)
 		subtitle = UiDisplayText.class_label(str(cfg.get("class", "")))
 		detail = UiDisplayText.tier_label(base_cost)
-		if sold:
-			state = "已购买"
-		elif locked:
-			state = "已锁定"
-		elif _current_prestige < cost:
-			state = "声望不足"
-	var card := BuildListCardScene.instantiate() as Control
+	var card := ShopUnitCardScene.instantiate() as Control
 	card.call("configure", {
 		"title": title,
 		"subtitle": subtitle,
 		"detail": detail,
-		"state": state,
 		"icon_text": _unit_icon_text(unit_id),
 		"fallback_icon_key": StringName("class_%s" % String(cfg.get("class", ""))),
 		"source_cfg": cfg,
@@ -300,8 +297,19 @@ func _make_shop_card(slot: Dictionary) -> Control:
 	return card
 
 
-func _make_empty_state(text_value: String) -> Control:
+func _make_building_empty_state(text_value: String) -> Control:
 	var card := BuildListCardScene.instantiate() as Control
+	card.call("configure", {
+		"title": text_value,
+		"icon_text": "-",
+		"disabled": true,
+		"audio_cue": &"ui_click",
+	})
+	return card
+
+
+func _make_shop_empty_state(text_value: String) -> Control:
+	var card := ShopUnitCardScene.instantiate() as Control
 	card.call("configure", {
 		"title": text_value,
 		"icon_text": "-",
@@ -474,6 +482,16 @@ func _refresh_selection_label() -> void:
 		return
 	var cfg := _get_building_cfg(_selected_building_id)
 	_selection_label.text = "当前选择：%s" % UiDisplayText.config_name(cfg, _selected_building_id)
+
+
+func _refresh_build_info_panel() -> void:
+	if _current_mode != MODE_BUILD or _selected_building_id == StringName():
+		_build_info_panel.visible = false
+		return
+	var cfg := _get_building_cfg(_selected_building_id)
+	_build_info_title.text = UiDisplayText.config_name(cfg, _selected_building_id)
+	_build_info_detail.text = _format_building_detail(cfg)
+	_build_info_panel.visible = not _build_info_detail.text.strip_edges().is_empty()
 
 
 func _on_shop_stock_changed(stock_slots: Array[Dictionary]) -> void:

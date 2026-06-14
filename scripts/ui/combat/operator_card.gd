@@ -11,6 +11,10 @@ signal operator_card_pressed(operator_key: StringName)
 signal operator_card_drag_started(operator_key: StringName)
 
 const DRAG_START_THRESHOLD := 10.0
+const TITLE_ICON_WIDTH := 18.0
+const TITLE_ICON_NAME_GAP := 4.0
+const TITLE_NAME_HORIZONTAL_PADDING := 2.0
+const TITLE_NAME_MAX_WIDTH_FALLBACK := 86.0
 
 var operator_key := StringName()
 var _state := &"ready"
@@ -26,6 +30,9 @@ var _class_icon_label: Label
 var _cooldown_icon_texture: TextureRect
 var _covenant_badge: Label
 
+@onready var _card_base: Panel = %CardBase
+@onready var _card_content: MarginContainer = %CardContent
+@onready var _title_row: HBoxContainer = get_node("CardContent/VBox/TitleStrip/TitleMargin/TitleRow") as HBoxContainer
 @onready var _class_icon_texture: TextureRect = %ClassIcon
 @onready var _name_label: Label = %NameLabel
 @onready var _selected_overlay: Panel = %SelectedOverlay
@@ -56,14 +63,15 @@ func _ready() -> void:
 		_hovered = false
 		_apply_card_style()
 	)
-	_apply_name_tier_color()
-	_class_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	resized.connect(_sync_card_rects)
+	_apply_label_colors()
 	_state_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_cooldown_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
 	for label in [_hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	for label in [_name_label, _class_label, _state_label, _hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_name_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_add_label_shadow(_name_label)
 	_add_label_shadow(_class_label)
 	_add_label_shadow(_state_label)
@@ -107,21 +115,13 @@ func set_state_text(text_value: String, state: StringName) -> void:
 
 
 func _parse_display_text(text_value: String) -> void:
-	var lines := text_value.split("\n", false)
-	_name_label.text = lines[0] if lines.size() > 0 else str(operator_key)
-	var meta := lines[1] if lines.size() > 1 else ""
-	_class_label.text = meta
-	var marker := "COST "
-	var cost_index := meta.find(marker)
-	if cost_index >= 0:
-		_class_label.text = meta.substr(0, cost_index).strip_edges()
-	else:
-		marker = "费用 "
-		cost_index = meta.find(marker)
-		if cost_index >= 0:
-			_class_label.text = meta.substr(0, cost_index).strip_edges()
-		else:
-			_normalize_meta_without_cost(meta)
+	var lines: PackedStringArray = text_value.split("\n", false)
+	var raw_name: String = lines[0] if lines.size() > 0 else str(operator_key)
+	var rarity_label: String = _extract_rarity_label(raw_name)
+	_name_label.text = _strip_rarity_from_name(raw_name, rarity_label)
+	_sync_name_label_width()
+	var meta: String = lines[1] if lines.size() > 1 else ""
+	_class_label.text = _format_class_label(meta, rarity_label)
 	_apply_unit_art()
 	_state_label.text = _state_label_text()
 	_hp_stat_label.text = lines[2] if lines.size() > 2 else "HP --"
@@ -152,12 +152,55 @@ func _format_cooldown_overlay_text(status: String) -> String:
 	return "%ds" % int(ceil(float(digits)))
 
 
-func _normalize_meta_without_cost(meta: String) -> void:
+func _format_class_label(meta: String, rarity_label: String) -> String:
+	var class_text: String = _class_text_from_meta(meta)
+	if rarity_label.is_empty():
+		return class_text
+	if class_text.is_empty():
+		return rarity_label
+	return "%s %s" % [class_text, rarity_label]
+
+
+func _class_text_from_meta(meta: String) -> String:
+	var class_text: String = meta.strip_edges()
+	var marker: String = "COST "
+	var cost_index: int = class_text.find(marker)
+	if cost_index >= 0:
+		return class_text.substr(0, cost_index).strip_edges()
+	marker = "费用 "
+	cost_index = class_text.find(marker)
+	if cost_index >= 0:
+		return class_text.substr(0, cost_index).strip_edges()
 	for token in ["READY", "DEPLOYED", "CD"]:
-		var token_index := meta.find(token)
+		var token_index: int = class_text.find(token)
 		if token_index > 0:
-			_class_label.text = meta.substr(0, token_index).strip_edges()
-			return
+			return class_text.substr(0, token_index).strip_edges()
+	return class_text
+
+
+func _extract_rarity_label(raw_name: String) -> String:
+	var name: String = raw_name.strip_edges()
+	var star_index: int = name.rfind("★")
+	if star_index < 0:
+		return ""
+	var rarity_label: String = name.substr(star_index).strip_edges()
+	if rarity_label.length() <= 1:
+		return ""
+	for index in range(1, rarity_label.length()):
+		var ch: String = rarity_label.substr(index, 1)
+		if not ch.is_valid_int():
+			return ""
+	return rarity_label
+
+
+func _strip_rarity_from_name(raw_name: String, rarity_label: String) -> String:
+	if rarity_label.is_empty():
+		return raw_name
+	var name: String = raw_name.strip_edges()
+	if not name.ends_with(rarity_label):
+		return raw_name
+	var stripped_name: String = name.substr(0, name.length() - rarity_label.length()).strip_edges()
+	return stripped_name if not stripped_name.is_empty() else raw_name
 
 
 func _on_gui_input(event: InputEvent) -> void:
@@ -188,14 +231,14 @@ func _apply_card_style() -> void:
 
 func _sync_state_overlays() -> void:
 	if _selected_overlay != null:
-		_selected_overlay.visible = _hovered and _state != &"cooldown"
+		_selected_overlay.visible = _hovered
 	if _deployed_overlay != null:
 		_deployed_overlay.visible = _state == &"deployed"
-	var is_cooldown := _state == &"cooldown"
+	var is_cooldown: bool = _state == &"cooldown"
 	if _cooldown_overlay != null:
-		_cooldown_overlay.visible = is_cooldown and not _hovered
+		_cooldown_overlay.visible = is_cooldown
 	if _cooldown_selected_overlay != null:
-		_cooldown_selected_overlay.visible = is_cooldown and _hovered
+		_cooldown_selected_overlay.visible = false
 	if _cooldown_top_content != null:
 		_cooldown_top_content.visible = is_cooldown
 	if _cooldown_icon_texture != null:
@@ -203,7 +246,8 @@ func _sync_state_overlays() -> void:
 
 
 func _apply_density() -> void:
-	set_custom_minimum_size(UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE)
+	var card_size: Vector2 = UiTokens.OPERATOR_CARD_COMPACT_SIZE if _compact else UiTokens.OPERATOR_CARD_SIZE
+	set_custom_minimum_size(card_size)
 	set_size(custom_minimum_size)
 	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -213,6 +257,37 @@ func _apply_density() -> void:
 	for label in [_hp_stat_label, _sp_stat_label, _cd_stat_label]:
 		label.add_theme_font_size_override("font_size", 10 if _compact else 11)
 	_cooldown_label.add_theme_font_size_override("font_size", 22 if _compact else 24)
+	_sync_card_rects()
+	_sync_name_label_width()
+
+
+func _sync_card_rects() -> void:
+	var card_size: Vector2 = custom_minimum_size
+	var origin: Vector2 = Vector2.ZERO
+	if size.x > card_size.x:
+		origin.x = floor((size.x - card_size.x) * 0.5)
+	if size.y > card_size.y:
+		origin.y = floor((size.y - card_size.y) * 0.5)
+	var card_rect_controls: Array[Control] = [
+		_card_base,
+		_card_content,
+		_selected_overlay,
+		_deployed_overlay,
+		_cooldown_overlay,
+		_cooldown_selected_overlay,
+		_cooldown_top_content,
+	]
+	for control: Control in card_rect_controls:
+		_place_card_rect(control, origin, card_size)
+
+
+func _place_card_rect(control: Control, origin: Vector2, card_size: Vector2) -> void:
+	if control == null:
+		return
+	control.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	control.position = origin
+	control.size = card_size
+	control.custom_minimum_size = card_size
 
 
 func _state_label_text() -> String:
@@ -236,7 +311,7 @@ func _resolve_unit_cfg() -> Dictionary:
 
 
 func _apply_unit_art() -> void:
-	_apply_name_tier_color()
+	_apply_label_colors()
 	if _unit_cfg.is_empty():
 		return
 	var class_texture := UiArtRegistry.get_class_icon_texture(_unit_cfg)
@@ -247,6 +322,7 @@ func _apply_unit_art() -> void:
 		_class_icon_label.visible = class_texture == null
 		_class_icon_label.text = UiDisplayText.class_label(String(_unit_cfg.get("class", ""))).substr(0, 1)
 	_refresh_covenant_badge()
+	_sync_name_label_width()
 
 
 ## 部署卡盟约角标：右上角显示盟约（含祭坛灌注），灌注项加 ✦；tooltip 给全名。
@@ -320,13 +396,16 @@ func _ensure_covenant_badge() -> void:
 	add_child(_covenant_badge)
 
 
-func _apply_name_tier_color() -> void:
+func _apply_label_colors() -> void:
 	if _name_label == null:
 		return
-	if _unit_cfg.is_empty():
-		_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	_name_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
+	if _class_label == null:
 		return
-	_name_label.add_theme_color_override("font_color", UiDisplayText.tier_color(int(_unit_cfg.get("cost_prestige", 0))))
+	if _unit_cfg.is_empty():
+		_class_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+		return
+	_class_label.add_theme_color_override("font_color", UiDisplayText.tier_color(int(_unit_cfg.get("cost_prestige", 0))))
 
 
 func _prepare_class_icon_texture() -> void:
@@ -353,6 +432,22 @@ func _prepare_class_icon_texture() -> void:
 	_class_icon_label.visible = false
 	parent.add_child(_class_icon_label)
 	parent.move_child(_class_icon_label, _class_icon_texture.get_index() + 1)
+	_sync_name_label_width()
+
+
+func _sync_name_label_width() -> void:
+	if _name_label == null:
+		return
+	var font: Font = _name_label.get_theme_font("font")
+	if font == null:
+		return
+	var font_size: int = _name_label.get_theme_font_size("font_size")
+	var text_width: float = font.get_string_size(_name_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
+	var desired_width: float = ceil(text_width + TITLE_NAME_HORIZONTAL_PADDING)
+	var max_width: float = TITLE_NAME_MAX_WIDTH_FALLBACK
+	if _title_row != null and _title_row.size.x > 0.0:
+		max_width = max(0.0, _title_row.size.x - TITLE_ICON_WIDTH - TITLE_ICON_NAME_GAP)
+	_name_label.custom_minimum_size.x = min(desired_width, max_width)
 
 
 func _prepare_cooldown_icon_texture() -> void:

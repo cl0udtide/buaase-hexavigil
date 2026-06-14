@@ -1,13 +1,18 @@
 [gd_scene format=3 uid="uid://b2yodajglfar0"]
 
 [ext_resource type="Script" uid="uid://dxhe1gpotx6ns" path="res://scripts/ui/build_panel.gd" id="1_pcwhb"]
-[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_sidebar_tab_base.tres" id="3_tab_base"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_sidebar_tab_selected_overlay.tres" id="4_tab_selected"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_panel"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_272x36"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_272x36"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_left_sidebar_base.tres" id="frame_left_sidebar_base_320x826"]
+[ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="3_panel_button_base"]
+[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_272x36"]
+[ext_resource type="StyleBox" uid="uid://ten6m123quv2" path="res://assets/ui/styles/frame_left_sidebar_base.tres" id="frame_left_sidebar_base_320x826"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_tooltip_base.tres" id="frame_tooltip_base"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_build_panel_button_active"]
+bg_color = Color(1, 1, 1, 0.09)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [node name="BuildPanel" type="Control" unique_id=1820509909]
 layout_mode = 3
@@ -27,15 +32,16 @@ mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_left_sidebar_base_320x826")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=1854098694]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_left = 31
+theme_override_constants/margin_top = 43
+theme_override_constants/margin_right = 31
+theme_override_constants/margin_bottom = 44
 
 [node name="MainVBox" type="VBoxContainer" parent="ContentMargin" unique_id=1504758918]
 layout_mode = 2
@@ -46,17 +52,17 @@ theme_override_constants/separation = 8
 [node name="ModeTabs" type="HBoxContainer" parent="ContentMargin/MainVBox" unique_id=653545547]
 layout_mode = 2
 theme_override_constants/separation = 4
+alignment = 1
 
 [node name="BuildModeButton" type="Button" parent="ContentMargin/MainVBox/ModeTabs" unique_id=1484996138]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("3_tab_base")
-theme_override_styles/hover = ExtResource("3_tab_base")
-theme_override_styles/disabled = ExtResource("3_tab_base")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "建筑"
 
 [node name="SelectedOverlay" type="Panel" parent="ContentMargin/MainVBox/ModeTabs/BuildModeButton" unique_id=150212426]
@@ -65,21 +71,24 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 5.0
+offset_right = -8.0
+offset_bottom = -5.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("4_tab_selected")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
 [node name="ShopModeButton" type="Button" parent="ContentMargin/MainVBox/ModeTabs" unique_id=667782961]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("3_tab_base")
-theme_override_styles/hover = ExtResource("3_tab_base")
-theme_override_styles/disabled = ExtResource("3_tab_base")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "商店"
 
 [node name="SelectedOverlay" type="Panel" parent="ContentMargin/MainVBox/ModeTabs/ShopModeButton" unique_id=1934351936]
@@ -88,10 +97,14 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 5.0
+offset_right = -8.0
+offset_bottom = -5.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("4_tab_selected")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
 [node name="BuildSelectionLabel" type="Label" parent="ContentMargin/MainVBox" unique_id=1493204678]
 unique_name_in_owner = true
@@ -105,17 +118,51 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
 
 [node name="BuildCardList" type="VBoxContainer" parent="ContentMargin/MainVBox/BuildCardScroll" unique_id=773443914]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="BuildInfoPanel" type="PanelContainer" parent="ContentMargin/MainVBox" unique_id=1132541908]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_tooltip_base")
+
+[node name="BuildInfoMargin" type="MarginContainer" parent="ContentMargin/MainVBox/BuildInfoPanel" unique_id=1086996152]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 22
+
+[node name="BuildInfoVBox" type="VBoxContainer" parent="ContentMargin/MainVBox/BuildInfoPanel/BuildInfoMargin" unique_id=943365451]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuildInfoTitle" type="Label" parent="ContentMargin/MainVBox/BuildInfoPanel/BuildInfoMargin/BuildInfoVBox" unique_id=167493063]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text_overrun_behavior = 3
+
+[node name="BuildInfoDetail" type="Label" parent="ContentMargin/MainVBox/BuildInfoPanel/BuildInfoMargin/BuildInfoVBox" unique_id=114259867]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+text_overrun_behavior = 3
+max_lines_visible = 4
 
 [node name="BottomControls" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=598744539]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = -3
 
 [node name="CategoryTabs" type="HBoxContainer" parent="ContentMargin/MainVBox/BottomControls" unique_id=472981155]
 unique_name_in_owner = true
@@ -128,10 +175,10 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("3_tab_base")
-theme_override_styles/hover = ExtResource("3_tab_base")
-theme_override_styles/disabled = ExtResource("3_tab_base")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "资源"
 
 [node name="SelectedOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs/ResourceCategoryButton" unique_id=1102232654]
@@ -140,10 +187,14 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 5.0
+offset_right = -8.0
+offset_bottom = -5.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("4_tab_selected")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
 [node name="AuraCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1437673208]
 unique_name_in_owner = true
@@ -151,10 +202,10 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("3_tab_base")
-theme_override_styles/hover = ExtResource("3_tab_base")
-theme_override_styles/disabled = ExtResource("3_tab_base")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "增益"
 
 [node name="SelectedOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs/AuraCategoryButton" unique_id=1824207436]
@@ -163,10 +214,14 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = -8.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("4_tab_selected")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
 [node name="BlockCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=400981013]
 unique_name_in_owner = true
@@ -174,10 +229,10 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
-theme_override_styles/normal = ExtResource("3_tab_base")
-theme_override_styles/pressed = ExtResource("3_tab_base")
-theme_override_styles/hover = ExtResource("3_tab_base")
-theme_override_styles/disabled = ExtResource("3_tab_base")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "防御"
 
 [node name="SelectedOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs/BlockCategoryButton" unique_id=895851925]
@@ -186,35 +241,43 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = -8.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("4_tab_selected")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
 [node name="LockShopButton" type="Button" parent="ContentMargin/MainVBox/BottomControls" unique_id=1083921660]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(200, 40)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 4
 focus_mode = 0
-theme_override_styles/normal = ExtResource("frame_button_base_panel")
-theme_override_styles/pressed = ExtResource("frame_button_base_panel")
-theme_override_styles/hover = ExtResource("frame_button_base_panel")
-theme_override_styles/disabled = ExtResource("frame_button_base_panel")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "锁定槽位"
 
-[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/LockShopButton"]
+[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/LockShopButton" unique_id=470027597]
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = -8.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_272x36")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
-[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/LockShopButton"]
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/LockShopButton" unique_id=648231477]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -225,33 +288,37 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_272x36")
 
-[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/BottomControls/LockShopButton"]
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/BottomControls/LockShopButton" unique_id=829243458]
 script = ExtResource("button_state_overlay")
 
 [node name="RefreshShopButton" type="Button" parent="ContentMargin/MainVBox/BottomControls" unique_id=751463005]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(200, 40)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 4
 focus_mode = 0
-theme_override_styles/normal = ExtResource("frame_button_base_panel")
-theme_override_styles/pressed = ExtResource("frame_button_base_panel")
-theme_override_styles/hover = ExtResource("frame_button_base_panel")
-theme_override_styles/disabled = ExtResource("frame_button_base_panel")
+theme_override_styles/normal = ExtResource("3_panel_button_base")
+theme_override_styles/pressed = ExtResource("3_panel_button_base")
+theme_override_styles/hover = ExtResource("3_panel_button_base")
+theme_override_styles/disabled = ExtResource("3_panel_button_base")
 text = "刷新 2 声望"
 
-[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/RefreshShopButton"]
+[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/RefreshShopButton" unique_id=438699080]
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = -8.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_272x36")
+theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_active")
 
-[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/RefreshShopButton"]
+[node name="DisabledOverlay" type="Panel" parent="ContentMargin/MainVBox/BottomControls/RefreshShopButton" unique_id=1175250573]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -262,11 +329,12 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_272x36")
 
-[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/BottomControls/RefreshShopButton"]
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/BottomControls/RefreshShopButton" unique_id=2123793337]
 script = ExtResource("button_state_overlay")
 
 [node name="PanelMessageLabel" type="Label" parent="ContentMargin/MainVBox/BottomControls" unique_id=1966705849]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
 text_overrun_behavior = 3

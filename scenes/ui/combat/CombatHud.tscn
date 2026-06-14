@@ -76,6 +76,15 @@ corner_radius_top_right = 9
 corner_radius_bottom_right = 9
 corner_radius_bottom_left = 9
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_audio_close_button"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_audio_close_button_hover"]
+bg_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="CombatHud" type="Control" unique_id=805708176]
 layout_mode = 3
 anchors_preset = 15
@@ -312,9 +321,9 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 43.0
+offset_left = 41.0
 offset_top = -15.0
-offset_right = 67.0
+offset_right = 65.0
 offset_bottom = 13.0
 grow_vertical = 2
 mouse_filter = 2
@@ -399,10 +408,10 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 35.0
-offset_top = -15.0
-offset_right = 59.0
-offset_bottom = 13.0
+offset_left = 29.0
+offset_top = -16.0
+offset_right = 53.0
+offset_bottom = 12.0
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("29_iconcore")
@@ -494,9 +503,9 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 53.0
+offset_left = 41.0
 offset_top = -14.0
-offset_right = 77.0
+offset_right = 65.0
 offset_bottom = 14.0
 grow_vertical = 2
 mouse_filter = 2
@@ -646,7 +655,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 30
 theme_override_constants/margin_top = 17
-theme_override_constants/margin_right = 20
+theme_override_constants/margin_right = 26
 theme_override_constants/margin_bottom = 19
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ActionPointResourceItem/ItemMargin" unique_id=1862485233]
@@ -687,7 +696,8 @@ mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_resource_item_base_130x74")
 
 [node name="ItemMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem" unique_id=1236382566]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -695,7 +705,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
+theme_override_constants/margin_right = 26
 theme_override_constants/margin_bottom = 19
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/WoodResourceItem/ItemMargin" unique_id=660242077]
@@ -780,7 +790,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
+theme_override_constants/margin_right = 26
 theme_override_constants/margin_bottom = 19
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/StoneResourceItem/ItemMargin" unique_id=1070141140]
@@ -865,7 +875,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
+theme_override_constants/margin_right = 26
 theme_override_constants/margin_bottom = 19
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/ManaResourceItem/ItemMargin" unique_id=588509389]
@@ -950,7 +960,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 29
 theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
+theme_override_constants/margin_right = 26
 theme_override_constants/margin_bottom = 20
 
 [node name="ItemRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/RightResourceGroup/ResourceChip/ResourceItemsRow/PrestigeResourceItem/ItemMargin" unique_id=1789613663]
@@ -978,21 +988,23 @@ text_overrun_behavior = 3
 [node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 66.0
-offset_top = 96.0
-offset_right = 1166.0
-offset_bottom = 140.0
+offset_left = 334.0
+offset_top = 84.0
+offset_right = 1165.0
+offset_bottom = 128.0
 mouse_filter = 2
 
 [node name="RelicStrip" parent="HudChromeLayer/RelicStripSlot" unique_id=625474051 instance=ExtResource("3_40812")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 9
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 1.0
-offset_top = -27.0
-offset_right = 127.0
-offset_bottom = 13.0
+offset_left = -34.0
+offset_top = -4.0
+offset_right = -34.0
+offset_bottom = 4.0
+grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RightColumnSlot" type="Control" parent="HudChromeLayer" unique_id=1176662936]
@@ -1506,15 +1518,16 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 14
+theme_override_constants/margin_top = 31
 theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_bottom = 31
 
 [node name="ScrollContainer" type="ScrollContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck/DeckMargin" unique_id=725690026]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/scrollbar_v_separation = -10
+horizontal_scroll_mode = 3
 vertical_scroll_mode = 0
 
 [node name="DeployDeckContainer" type="HBoxContainer" parent="HudChromeLayer/DeployDeckSlot/DeployDeck/DeckMargin/ScrollContainer" unique_id=1175022116]
@@ -1577,6 +1590,7 @@ mouse_filter = 2
 
 [node name="SettingsPanelSlot" type="Control" parent="PopupLayer" unique_id=1597879175]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 0
 offset_left = 14.0
 offset_top = 58.0
@@ -1611,14 +1625,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 31
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
 
 [node name="MainVBox" type="VBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin" unique_id=1912505798]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 0
 
 [node name="Header" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=434046545]
 layout_mode = 2
@@ -1640,40 +1654,17 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("frame_button_base_compact")
-theme_override_styles/pressed = ExtResource("frame_button_base_compact")
-theme_override_styles/hover = ExtResource("frame_button_base_compact")
-theme_override_styles/disabled = ExtResource("frame_button_base_compact")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_audio_close_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_audio_close_button_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_audio_close_button_hover")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_audio_close_button")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_audio_close_button")
 icon_alignment = 1
-
-[node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=951547175]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_speed")
-
-[node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=682802959]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
-
-[node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=701524597]
-script = ExtResource("button_state_overlay")
 
 [node name="FittedIcon" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/Header/CloseButton" unique_id=849751617]
 z_index = 2
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -1947,6 +1938,7 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
 [node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow" unique_id=1813137268]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -2003,12 +1995,13 @@ text = "自动释放技能"
 vertical_alignment = 1
 
 [node name="AutoSkillSpacer" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent" unique_id=822459207]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="AutoSkillButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent" unique_id=893681698]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(76, 30)
+custom_minimum_size = Vector2(90, 40)
 layout_mode = 2
 focus_mode = 0
 theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
@@ -2031,7 +2024,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_speed")
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_button_highlight")
 
 [node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=332392885]
 visible = false
