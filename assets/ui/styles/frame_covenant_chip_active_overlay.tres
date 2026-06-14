@@ -1,14 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://27seio8kfr8o"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://df2iyi3baqc1b"]
 
 [ext_resource type="Texture2D" uid="uid://cna813s76yqqs" path="res://assets/ui/generated/frame_covenant_chip_active_overlay.png" id="1_texture"]
 
 [resource]
-content_margin_left = 15.7041
-content_margin_top = 7.3161
-content_margin_right = 15.7041
-content_margin_bottom = 7.3161
+content_margin_left = 12.7653
+content_margin_top = 5.9613
+content_margin_right = 12.7653
+content_margin_bottom = 5.9613
 texture = ExtResource("1_texture")
-texture_margin_left = 25.301
-texture_margin_top = 12.1935
-texture_margin_right = 25.301
-texture_margin_bottom = 12.1935
+texture_margin_left = 20.5663
+texture_margin_top = 9.9355
+texture_margin_right = 20.5663
+texture_margin_bottom = 9.9355

@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://bfeub78hb1en8"]
+
+[ext_resource type="Texture2D" uid="uid://dyweumx2upbjv" path="res://assets/ui/generated/frame_relic_rarity_common_backplate.png" id="1_texture"]
+
+[resource]
+content_margin_left = 6.0837
+content_margin_top = 5.948
+content_margin_right = 6.0837
+content_margin_bottom = 5.948
+texture = ExtResource("1_texture")
+texture_margin_left = 20.076
+texture_margin_top = 19.6283
+texture_margin_right = 20.076
+texture_margin_bottom = 19.6283

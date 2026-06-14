@@ -1,14 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://nahpy4jmikst"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://73k1dy2pawjq"]
 
 [ext_resource type="Texture2D" uid="uid://bn75wn0mknfsn" path="res://assets/ui/generated/frame_relic_filter_tab_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 12.3734
-content_margin_top = 12.7407
-content_margin_right = 12.3734
-content_margin_bottom = 10.3704
+content_margin_left = 13.4191
+content_margin_top = 13.6963
+content_margin_right = 13.4191
+content_margin_bottom = 11.1481
 texture = ExtResource("1_texture")
-texture_margin_left = 16.2033
-texture_margin_top = 15.4074
-texture_margin_right = 16.2033
-texture_margin_bottom = 13.6296
+texture_margin_left = 17.5726
+texture_margin_top = 16.563
+texture_margin_right = 17.5726
+texture_margin_bottom = 14.6519

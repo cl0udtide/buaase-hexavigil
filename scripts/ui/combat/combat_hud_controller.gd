@@ -303,6 +303,7 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 		_clear_detail_selection()
 	if _new_phase != GameEnums.PHASE_NIGHT and _new_phase != GameEnums.PHASE_DAY and _combat_hud != null and _combat_hud.has_method("hide_night_affixes"):
 		_combat_hud.hide_night_affixes()
+	_sync_wave_preview_compact_mode()
 	_refresh_top_hud()
 	_refresh_time_controls()
 	_update_operator_cards()
@@ -310,6 +311,7 @@ func _on_phase_changed(_old_phase: int, _new_phase: int) -> void:
 
 
 func _on_day_started(day: int) -> void:
+	_sync_wave_preview_compact_mode()
 	_refresh_top_hud()
 	_force_wave_preview_refresh()
 	_play_level_intro(day)
@@ -320,7 +322,9 @@ func _on_day_started(day: int) -> void:
 
 
 func _on_night_started(_day: int) -> void:
+	_sync_wave_preview_compact_mode()
 	_refresh_top_hud()
+	_force_wave_preview_refresh()
 	_show_night_affix_banner()
 	_refresh_active_gates_line()
 
@@ -1067,9 +1071,21 @@ func _refresh_time_controls() -> void:
 		_combat_hud.set_time_controls(get_tree().paused if enabled else false, Engine.time_scale, enabled)
 
 
+func _sync_wave_preview_compact_mode() -> void:
+	if _combat_hud == null or not _combat_hud.has_method("set_wave_preview_compact_mode"):
+		return
+	var run_state = AppRefs.run_state()
+	var compact := run_state != null and int(run_state.phase) == GameEnums.PHASE_NIGHT
+	_combat_hud.set_wave_preview_compact_mode(compact)
+
+
 func _refresh_wave_preview() -> void:
 	var run_state = AppRefs.run_state()
-	if run_state == null or int(run_state.phase) != GameEnums.PHASE_DAY:
+	if run_state == null:
+		_clear_wave_preview()
+		return
+	var phase := int(run_state.phase)
+	if phase != GameEnums.PHASE_DAY and phase != GameEnums.PHASE_NIGHT:
 		_clear_wave_preview()
 		return
 	if _wave_manager == null or _map_manager == null or _path_service == null:
@@ -1084,8 +1100,8 @@ func _refresh_wave_preview() -> void:
 		_set_wave_preview_text("今晚敌情\n暂无关卡模板", true)
 		_clear_wave_routes()
 		return
-	var hover_cell: Vector2i = _get_blocking_build_preview_cell()
-	var signature: String = "%d|%s|%d|%d|%d|%d" % [int(run_state.day), str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision, int(preview.get("wave_count", 1)), (preview.get("affixes", []) as Array).size()]
+	var hover_cell: Vector2i = _get_blocking_build_preview_cell() if phase == GameEnums.PHASE_DAY else INVALID_CELL
+	var signature: String = "%d|%d|%s|%d|%d|%d|%d" % [int(run_state.day), phase, str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision, int(preview.get("wave_count", 1)), (preview.get("affixes", []) as Array).size()]
 	if signature != _last_wave_preview_signature:
 		_last_wave_preview_signature = signature
 		var extra_blocked_cells: Dictionary = {}

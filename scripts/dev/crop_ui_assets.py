@@ -94,7 +94,7 @@ class Detection:
 def parse_crop_orders(doc_path: Path) -> dict[str, list[str]]:
     """Return source sheet file names mapped to documented asset keys."""
     source_re = re.compile(r"`(" + SHEET_PREFIX + r"_\d+_[^`]+\.png)`")
-    key_re = re.compile(r"\s*\d+\.\s*`([A-Za-z0-9_]+)`\s*$")
+    key_re = re.compile(r"\s*\d+\.\s*`([A-Za-z0-9_]+)`(?:\s*[:：].*)?\s*$")
 
     orders: dict[str, list[str]] = {}
     current_sheet: str | None = None

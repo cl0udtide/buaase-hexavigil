@@ -6,7 +6,8 @@
     "rarity": 1,
     "category": "generic",
     "effect_type": "unit_def_percent",
-    "effect_value": 0.25
+    "effect_value": 0.25,
+    "icon_path": "res://assets/ui/generated/icon_relic_legion_mirror.png"
   },
   {
     "id": "relic_first_aid_kit",
@@ -15,7 +16,8 @@
     "rarity": 1,
     "category": "generic",
     "effect_type": "unit_hp_percent",
-    "effect_value": 0.30
+    "effect_value": 0.3,
+    "icon_path": "res://assets/ui/generated/icon_relic_first_aid_kit.png"
   },
   {
     "id": "relic_noble_rapier",
@@ -25,7 +27,11 @@
     "category": "generic",
     "effect_type": "unit_atk_percent",
     "effect_value": 0.25,
-    "class_filter": ["guard", "defender"]
+    "class_filter": [
+      "guard",
+      "defender"
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_noble_rapier.png"
   },
   {
     "id": "relic_silver_fork",
@@ -35,7 +41,11 @@
     "category": "generic",
     "effect_type": "unit_atk_percent",
     "effect_value": 0.25,
-    "class_filter": ["sniper", "caster"]
+    "class_filter": [
+      "sniper",
+      "caster"
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_silver_fork.png"
   },
   {
     "id": "relic_gaul_bank_check",
@@ -44,7 +54,8 @@
     "rarity": 1,
     "category": "generic",
     "effect_type": "unit_initial_sp_add",
-    "effect_value": 12
+    "effect_value": 12,
+    "icon_path": "res://assets/ui/generated/icon_relic_gaul_bank_check.png"
   },
   {
     "id": "relic_water_of_life",
@@ -54,7 +65,8 @@
     "category": "generic",
     "effect_type": "unit_sp_periodic_add",
     "effect_value": 1,
-    "interval": 2.5
+    "interval": 2.5,
+    "icon_path": "res://assets/ui/generated/icon_relic_water_of_life.png"
   },
   {
     "id": "relic_gargoyle_statuette",
@@ -63,7 +75,8 @@
     "rarity": 1,
     "category": "generic",
     "effect_type": "core_max_hp_add",
-    "effect_value": 3
+    "effect_value": 3,
+    "icon_path": "res://assets/ui/generated/icon_relic_gargoyle_statuette.png"
   },
   {
     "id": "relic_torn_photo",
@@ -72,7 +85,8 @@
     "rarity": 1,
     "category": "generic",
     "effect_type": "enemy_def_percent",
-    "effect_value": -0.20
+    "effect_value": -0.2,
+    "icon_path": "res://assets/ui/generated/icon_relic_torn_photo.png"
   },
   {
     "id": "relic_emperors_collection",
@@ -81,8 +95,9 @@
     "rarity": 2,
     "category": "generic",
     "effect_type": "enemy_damage_taken_percent",
-    "effect_value": 0.30,
-    "damage_type_filter": "magic"
+    "effect_value": 0.3,
+    "damage_type_filter": "magic",
+    "icon_path": "res://assets/ui/generated/icon_relic_emperors_collection.png"
   },
   {
     "id": "relic_certificate_of_longevity",
@@ -91,7 +106,8 @@
     "rarity": 2,
     "category": "generic",
     "effect_type": "core_max_hp_add",
-    "effect_value": 6
+    "effect_value": 6,
+    "icon_path": "res://assets/ui/generated/icon_relic_certificate_of_longevity.png"
   },
   {
     "id": "relic_support_supply_station",
@@ -101,7 +117,8 @@
     "category": "economy",
     "effect_type": "building_income_percent",
     "effect_value": 0.25,
-    "building_type_filter": "resource"
+    "building_type_filter": "resource",
+    "icon_path": "res://assets/ui/generated/icon_relic_support_supply_station.png"
   },
   {
     "id": "relic_rusty_hammer",
@@ -110,7 +127,8 @@
     "rarity": 2,
     "category": "economy",
     "effect_type": "shop_unit_cost_add",
-    "effect_value": -1
+    "effect_value": -1,
+    "icon_path": "res://assets/ui/generated/icon_relic_rusty_hammer.png"
   },
   {
     "id": "relic_solo_music_box",
@@ -119,10 +137,20 @@
     "rarity": 2,
     "category": "economy",
     "effects": [
-      { "effect_type": "prestige_add", "effect_value": 8 },
-      { "effect_type": "deploy_limit_add", "effect_value": 1 },
-      { "effect_type": "shop_refresh_cost_add", "effect_value": -1 }
-    ]
+      {
+        "effect_type": "prestige_add",
+        "effect_value": 8
+      },
+      {
+        "effect_type": "deploy_limit_add",
+        "effect_value": 1
+      },
+      {
+        "effect_type": "shop_refresh_cost_add",
+        "effect_value": -1
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_solo_music_box.png"
   },
   {
     "id": "relic_money_eye",
@@ -131,9 +159,16 @@
     "rarity": 2,
     "category": "economy",
     "effects": [
-      { "effect_type": "prestige_add", "effect_value": 10 },
-      { "effect_type": "kill_prestige_percent", "effect_value": 0.20 }
-    ]
+      {
+        "effect_type": "prestige_add",
+        "effect_value": 10
+      },
+      {
+        "effect_type": "kill_prestige_percent",
+        "effect_value": 0.2
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_money_eye.png"
   },
   {
     "id": "relic_support_crane",
@@ -142,9 +177,16 @@
     "rarity": 2,
     "category": "economy",
     "effects": [
-      { "effect_type": "building_material_cost_add", "effect_value": -1 },
-      { "effect_type": "building_ap_cost_add", "effect_value": -1 }
-    ]
+      {
+        "effect_type": "building_material_cost_add",
+        "effect_value": -1
+      },
+      {
+        "effect_type": "building_ap_cost_add",
+        "effect_value": -1
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_support_crane.png"
   },
   {
     "id": "relic_golden_expedition",
@@ -153,9 +195,16 @@
     "rarity": 3,
     "category": "economy",
     "effects": [
-      { "effect_type": "prestige_add", "effect_value": 12 },
-      { "effect_type": "deploy_limit_add", "effect_value": 1 }
-    ]
+      {
+        "effect_type": "prestige_add",
+        "effect_value": 12
+      },
+      {
+        "effect_type": "deploy_limit_add",
+        "effect_value": 1
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_golden_expedition.png"
   },
   {
     "id": "relic_gin_goblet",
@@ -167,7 +216,8 @@
     "target_effect_type": "unit_attack_speed_add",
     "effect_value": 7,
     "chunk_size": 10,
-    "max_layers": 6
+    "max_layers": 6,
+    "icon_path": "res://assets/ui/generated/icon_relic_gin_goblet.png"
   },
   {
     "id": "relic_assault_protocol_blade",
@@ -180,7 +230,8 @@
     "effect_value": 0.08,
     "source_class": "guard",
     "class_filter": "guard",
-    "max_layers": 8
+    "max_layers": 8,
+    "icon_path": "res://assets/ui/generated/icon_relic_assault_protocol_blade.png"
   },
   {
     "id": "relic_fortress_protocol_hold",
@@ -190,10 +241,11 @@
     "category": "class",
     "effect_type": "formation_class_count_effect",
     "target_effect_type": "unit_def_percent",
-    "effect_value": 0.10,
+    "effect_value": 0.1,
     "source_class": "defender",
     "class_filter": "defender",
-    "max_layers": 8
+    "max_layers": 8,
+    "icon_path": "res://assets/ui/generated/icon_relic_fortress_protocol_hold.png"
   },
   {
     "id": "relic_ranged_protocol_counter",
@@ -206,7 +258,8 @@
     "effect_value": 6,
     "source_class": "sniper",
     "class_filter": "sniper",
-    "max_layers": 8
+    "max_layers": 8,
+    "icon_path": "res://assets/ui/generated/icon_relic_ranged_protocol_counter.png"
   },
   {
     "id": "relic_demolition_protocol_erase",
@@ -219,7 +272,8 @@
     "effect_value": 0.08,
     "source_class": "caster",
     "class_filter": "caster",
-    "max_layers": 8
+    "max_layers": 8,
+    "icon_path": "res://assets/ui/generated/icon_relic_demolition_protocol_erase.png"
   },
   {
     "id": "relic_old_palm_fan",
@@ -229,8 +283,9 @@
     "category": "class",
     "effect_type": "formation_distinct_class_effect",
     "target_effect_type": "unit_atk_percent",
-    "effect_value": 0.10,
-    "max_layers": 4
+    "effect_value": 0.1,
+    "max_layers": 4,
+    "icon_path": "res://assets/ui/generated/icon_relic_old_palm_fan.png"
   },
   {
     "id": "relic_cov_unyielding",
@@ -240,9 +295,19 @@
     "category": "covenant",
     "covenant": "不屈",
     "effects": [
-      { "effect_type": "unit_hp_percent", "effect_value": 0.30, "covenant_filter": "不屈" },
-      { "effect_type": "unit_death_stun_radius", "effect_value": 4.0, "radius": 3, "covenant_filter": "不屈" }
-    ]
+      {
+        "effect_type": "unit_hp_percent",
+        "effect_value": 0.3,
+        "covenant_filter": "不屈"
+      },
+      {
+        "effect_type": "unit_death_stun_radius",
+        "effect_value": 4.0,
+        "radius": 3,
+        "covenant_filter": "不屈"
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_unyielding.png"
   },
   {
     "id": "relic_cov_precision",
@@ -252,9 +317,18 @@
     "category": "covenant",
     "covenant": "精准",
     "effects": [
-      { "effect_type": "unit_atk_percent", "effect_value": 0.30, "covenant_filter": "精准" },
-      { "effect_type": "unit_attack_speed_add", "effect_value": 15, "covenant_filter": "精准" }
-    ]
+      {
+        "effect_type": "unit_atk_percent",
+        "effect_value": 0.3,
+        "covenant_filter": "精准"
+      },
+      {
+        "effect_type": "unit_attack_speed_add",
+        "effect_value": 15,
+        "covenant_filter": "精准"
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_precision.png"
   },
   {
     "id": "relic_cov_steadfast",
@@ -264,9 +338,18 @@
     "category": "covenant",
     "covenant": "坚守",
     "effects": [
-      { "effect_type": "unit_def_percent", "effect_value": 0.40, "covenant_filter": "坚守" },
-      { "effect_type": "unit_res_add", "effect_value": 15, "covenant_filter": "坚守" }
-    ]
+      {
+        "effect_type": "unit_def_percent",
+        "effect_value": 0.4,
+        "covenant_filter": "坚守"
+      },
+      {
+        "effect_type": "unit_res_add",
+        "effect_value": 15,
+        "covenant_filter": "坚守"
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_steadfast.png"
   },
   {
     "id": "relic_cov_swift",
@@ -276,9 +359,18 @@
     "category": "covenant",
     "covenant": "迅捷",
     "effects": [
-      { "effect_type": "unit_sp_recover_flat_add", "effect_value": 0.40, "covenant_filter": "迅捷" },
-      { "effect_type": "unit_initial_sp_add", "effect_value": 10, "covenant_filter": "迅捷" }
-    ]
+      {
+        "effect_type": "unit_sp_recover_flat_add",
+        "effect_value": 0.4,
+        "covenant_filter": "迅捷"
+      },
+      {
+        "effect_type": "unit_initial_sp_add",
+        "effect_value": 10,
+        "covenant_filter": "迅捷"
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_swift.png"
   },
   {
     "id": "relic_cov_raid",
@@ -288,9 +380,19 @@
     "category": "covenant",
     "covenant": "突袭",
     "effects": [
-      { "effect_type": "unit_redeploy_percent", "effect_value": -0.30, "covenant_filter": "突袭" },
-      { "effect_type": "unit_on_deploy_aspd_add_duration", "effect_value": 60, "duration": 10.0, "covenant_filter": "突袭" }
-    ]
+      {
+        "effect_type": "unit_redeploy_percent",
+        "effect_value": -0.3,
+        "covenant_filter": "突袭"
+      },
+      {
+        "effect_type": "unit_on_deploy_aspd_add_duration",
+        "effect_value": 60,
+        "duration": 10.0,
+        "covenant_filter": "突袭"
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_raid.png"
   },
   {
     "id": "relic_cov_sargon",
@@ -300,9 +402,18 @@
     "category": "covenant",
     "covenant": "萨尔贡",
     "effects": [
-      { "effect_type": "unit_atk_percent", "effect_value": 0.20, "covenant_filter": "萨尔贡" },
-      { "effect_type": "unit_hp_percent", "effect_value": 0.20, "covenant_filter": "萨尔贡" }
-    ]
+      {
+        "effect_type": "unit_atk_percent",
+        "effect_value": 0.2,
+        "covenant_filter": "萨尔贡"
+      },
+      {
+        "effect_type": "unit_hp_percent",
+        "effect_value": 0.2,
+        "covenant_filter": "萨尔贡"
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_sargon.png"
   },
   {
     "id": "relic_cov_foresight",
@@ -312,10 +423,20 @@
     "category": "covenant",
     "covenant": "远见",
     "effects": [
-      { "effect_type": "prestige_add", "effect_value": 8 },
-      { "effect_type": "kill_prestige_percent", "effect_value": 0.15 },
-      { "effect_type": "shop_refresh_cost_add", "effect_value": -1 }
-    ]
+      {
+        "effect_type": "prestige_add",
+        "effect_value": 8
+      },
+      {
+        "effect_type": "kill_prestige_percent",
+        "effect_value": 0.15
+      },
+      {
+        "effect_type": "shop_refresh_cost_add",
+        "effect_value": -1
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_cov_foresight.png"
   },
   {
     "id": "relic_war_horn",
@@ -324,7 +445,8 @@
     "rarity": 2,
     "category": "mechanic",
     "effect_type": "unit_sp_on_skill_cast_team",
-    "effect_value": 4
+    "effect_value": 4,
+    "icon_path": "res://assets/ui/generated/icon_relic_war_horn.png"
   },
   {
     "id": "relic_emergency_activator",
@@ -334,7 +456,8 @@
     "category": "mechanic",
     "effect_type": "unit_low_hp_aspd_add",
     "effect_value": 60,
-    "threshold": 0.30
+    "threshold": 0.3,
+    "icon_path": "res://assets/ui/generated/icon_relic_emergency_activator.png"
   },
   {
     "id": "relic_rainbow_urn",
@@ -343,7 +466,8 @@
     "rarity": 2,
     "category": "mechanic",
     "effect_type": "core_breach_redeploy_ready_random",
-    "effect_value": 1
+    "effect_value": 1,
+    "icon_path": "res://assets/ui/generated/icon_relic_rainbow_urn.png"
   },
   {
     "id": "relic_stereoscopic_art_installation",
@@ -352,9 +476,16 @@
     "rarity": 2,
     "category": "mechanic",
     "effects": [
-      { "effect_type": "core_heal", "effect_value": 7 },
-      { "effect_type": "core_heal_night_end", "effect_value": 1 }
-    ]
+      {
+        "effect_type": "core_heal",
+        "effect_value": 7
+      },
+      {
+        "effect_type": "core_heal_night_end",
+        "effect_value": 1
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_stereoscopic_art_installation.png"
   },
   {
     "id": "relic_mandate_form",
@@ -363,10 +494,28 @@
     "rarity": 3,
     "category": "mechanic",
     "effects": [
-      { "effect_type": "core_max_hp_set_to_one", "effect_value": 1 },
-      { "effect_type": "unit_atk_percent", "effect_value": 1.00, "condition": { "type": "core_hp_equals", "value": 1 } },
-      { "effect_type": "unit_attack_speed_add", "effect_value": 50, "condition": { "type": "core_hp_equals", "value": 1 } }
-    ]
+      {
+        "effect_type": "core_max_hp_set_to_one",
+        "effect_value": 1
+      },
+      {
+        "effect_type": "unit_atk_percent",
+        "effect_value": 1.0,
+        "condition": {
+          "type": "core_hp_equals",
+          "value": 1
+        }
+      },
+      {
+        "effect_type": "unit_attack_speed_add",
+        "effect_value": 50,
+        "condition": {
+          "type": "core_hp_equals",
+          "value": 1
+        }
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_mandate_form.png"
   },
   {
     "id": "relic_demon_kings_ritual_vessel",
@@ -375,11 +524,33 @@
     "rarity": 3,
     "category": "mechanic",
     "effects": [
-      { "effect_type": "core_heal_full", "effect_value": 1 },
-      { "effect_type": "unit_hp_percent", "effect_value": 0.80, "condition": { "type": "core_hp_full" } },
-      { "effect_type": "unit_def_percent", "effect_value": 0.25, "condition": { "type": "core_hp_full" } },
-      { "effect_type": "unit_res_add", "effect_value": 10, "condition": { "type": "core_hp_full" } }
-    ]
+      {
+        "effect_type": "core_heal_full",
+        "effect_value": 1
+      },
+      {
+        "effect_type": "unit_hp_percent",
+        "effect_value": 0.8,
+        "condition": {
+          "type": "core_hp_full"
+        }
+      },
+      {
+        "effect_type": "unit_def_percent",
+        "effect_value": 0.25,
+        "condition": {
+          "type": "core_hp_full"
+        }
+      },
+      {
+        "effect_type": "unit_res_add",
+        "effect_value": 10,
+        "condition": {
+          "type": "core_hp_full"
+        }
+      }
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_demon_kings_ritual_vessel.png"
   },
   {
     "id": "relic_glory_combo",
@@ -389,7 +560,8 @@
     "category": "mechanic",
     "effect_type": "unit_death_stun_radius",
     "effect_value": 6.0,
-    "radius": 4
+    "radius": 4,
+    "icon_path": "res://assets/ui/generated/icon_relic_glory_combo.png"
   },
   {
     "id": "relic_little_gran_faro",
@@ -398,6 +570,7 @@
     "rarity": 3,
     "category": "mechanic",
     "effect_type": "core_breach_stun_all_enemies",
-    "effect_value": 3.0
+    "effect_value": 3.0,
+    "icon_path": "res://assets/ui/generated/icon_relic_little_gran_faro.png"
   }
 ]

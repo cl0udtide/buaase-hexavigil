@@ -16,11 +16,14 @@ var _show_effect := true
 var _hovered := false
 var _slot_source := StringName()
 
-@onready var _card_base: Panel = %CardBase
+@onready var _common_card_base: Panel = %CommonCardBase
+@onready var _uncommon_card_base: Panel = %UncommonCardBase
+@onready var _rare_card_base: Panel = %RareCardBase
 @onready var _icon_texture: TextureRect = %IconTexture
-@onready var _icon_backplate: Panel = %IconBackplate
+@onready var _common_backplate: Panel = %CommonBackplate
+@onready var _uncommon_backplate: Panel = %UncommonBackplate
+@onready var _rare_backplate: Panel = %RareBackplate
 @onready var _icon_frame: Panel = %IconFrame
-@onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _hover_overlay: Panel = %HoverOverlay
 @onready var _name_label: Label = %NameLabel
 @onready var _rarity_label: Label = %RarityLabel
@@ -72,7 +75,7 @@ func set_selected(selected: bool) -> void:
 
 func _apply_config() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
+	var texture := UiArtRegistry.get_icon_texture(_cfg)
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
 	_name_label.text = UiDisplayText.config_name(_cfg, buff_id)
@@ -99,30 +102,27 @@ func _refresh_slot_source_badge() -> void:
 
 func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
-	var overlay_alpha := 0.16 if _selected else 0.11
-	_rarity_overlay.modulate = Color(rarity_color.r, rarity_color.g, rarity_color.b, overlay_alpha)
-	var base_boost := 0.08 if _selected else 0.03
-	_card_base.modulate = Color(
-		0.94 + rarity_color.r * base_boost,
-		0.94 + rarity_color.g * base_boost,
-		0.94 + rarity_color.b * base_boost,
-		1.0
-	)
-	_icon_backplate.modulate = Color(
-		0.72 + rarity_color.r * 0.18,
-		0.72 + rarity_color.g * 0.18,
-		0.72 + rarity_color.b * 0.18,
-		1.0
-	)
-	_icon_frame.modulate = Color(
-		0.88 + rarity_color.r * 0.12,
-		0.88 + rarity_color.g * 0.12,
-		0.88 + rarity_color.b * 0.12,
-		1.0
-	)
+	_apply_rarity_visibility(rarity)
 	_hover_overlay.visible = _selected or _hovered
 	modulate.a = 1.0 if _selectable else 0.72
+
+
+func _apply_rarity_visibility(rarity: int) -> void:
+	var rarity_index := _rarity_index(rarity)
+	_common_card_base.visible = rarity_index == 1
+	_uncommon_card_base.visible = rarity_index == 2
+	_rare_card_base.visible = rarity_index == 3
+	_common_backplate.visible = rarity_index == 1
+	_uncommon_backplate.visible = rarity_index == 2
+	_rare_backplate.visible = rarity_index == 3
+
+
+func _rarity_index(rarity: int) -> int:
+	if rarity >= 3:
+		return 3
+	if rarity == 2:
+		return 2
+	return 1
 
 
 func _on_gui_input(event: InputEvent) -> void:
