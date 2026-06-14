@@ -31,6 +31,11 @@ func _ready() -> void:
 		event_bus.random_event_triggered.connect(_on_random_event_triggered)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		_sync_modal_layer_visibility()
+
+
 func show_event_for_cell(cell: Vector2i) -> void:
 	var random_event_manager := _get_random_event_manager()
 	if random_event_manager == null or not random_event_manager.has_method("get_event_id_at_cell"):
@@ -73,6 +78,7 @@ func hide_event() -> void:
 
 
 func _show_event_config(event_cfg: Dictionary) -> void:
+	_set_modal_layer_visible(true)
 	visible = true
 	_resolved = false
 	_result_label.text = ""
@@ -281,6 +287,7 @@ func _on_random_event_triggered(event_id: StringName, cell: Vector2i) -> void:
 
 
 func _show_resolved_event_config(event_cfg: Dictionary) -> void:
+	_set_modal_layer_visible(true)
 	visible = true
 	_resolved = true
 	if _close_button != null:
@@ -354,6 +361,35 @@ func _choice_tooltip_text(choice: Dictionary) -> String:
 func _enable_dismiss_after_resolution() -> void:
 	if _close_button != null:
 		_close_button.visible = true
+
+
+func _set_modal_layer_visible(value: bool) -> void:
+	var layer := _get_modal_layer()
+	if layer != null:
+		layer.visible = value
+
+
+func _sync_modal_layer_visibility() -> void:
+	var layer := _get_modal_layer()
+	if layer == null:
+		return
+	layer.visible = _modal_layer_has_visible_panel(layer)
+
+
+func _get_modal_layer() -> CanvasItem:
+	var slot := get_parent()
+	if slot == null:
+		return null
+	return slot.get_parent() as CanvasItem
+
+
+func _modal_layer_has_visible_panel(layer: Node) -> bool:
+	for slot in layer.get_children():
+		for child in slot.get_children():
+			var canvas_item := child as CanvasItem
+			if canvas_item != null and canvas_item.visible:
+				return true
+	return false
 
 
 func _get_day_manager() -> Node:

@@ -26,7 +26,6 @@ const LEVEL_INTRO_HEIGHT := 178.0
 const LEVEL_INTRO_TOP_RATIO := 0.15
 const LEVEL_INTRO_MIN_TOP := 124.0
 
-const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
 const MESSAGE_CHIP_BASE_Z := 0
 const MESSAGE_CHIP_CONTENT_Z := 2
@@ -135,6 +134,10 @@ var _level_intro_line: ColorRect
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
+@onready var _popup_layer: Control = get_node_or_null("PopupLayer") as Control
+@onready var _settings_panel_slot: Control = get_node_or_null("PopupLayer/SettingsPanelSlot") as Control
+@onready var _relic_panel_slot: Control = get_node_or_null("PopupLayer/RelicPanelSlot") as Control
+@onready var _relic_panel_center: Control = get_node_or_null("PopupLayer/RelicPanelSlot/RelicPanelCenter") as Control
 @onready var _top_bar: Control = %TopBar
 @onready var _top_content: MarginContainer = _top_bar.get_node_or_null("TopContent") as MarginContainer
 @onready var _top_content_row: HBoxContainer = _top_bar.get_node_or_null("TopContent/TopContentRow") as HBoxContainer
@@ -146,6 +149,7 @@ var _covenant_row: HBoxContainer = null
 @onready var _time_controls: Control = %TimeControls
 @onready var _speed_toggle_base: Panel = %SpeedToggleBase
 @onready var _speed_active_overlay: Panel = %SpeedActiveOverlay
+@onready var _speed_disabled_overlay: Panel = %SpeedDisabledOverlay
 @onready var _bullet_time_overlay: Control = %BulletTimeOverlay
 @onready var _resource_chip: Control = %ResourceChip
 @onready var _resource_items_row: HBoxContainer = %ResourceItemsRow
@@ -157,6 +161,7 @@ var _covenant_row: HBoxContainer = null
 @onready var _queue_label: Label = %QueueLabel
 @onready var _message_label: Label = %MessageLabel
 @onready var _message_icon_texture: TextureRect = _message_chip.get_node_or_null("ChipIconTexture") as TextureRect
+@onready var _time_row: Control = _time_controls.get_node_or_null("TimeMargin/TimeRow") as Control
 @onready var _pause_button: Button = %PauseButton
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
@@ -210,7 +215,7 @@ func _ready() -> void:
 	_setup_deploy_deck_scroll()
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
+	_speed_disabled_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bullet_time_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bullet_time_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_bullet_time_overlay.visible = false
@@ -226,6 +231,7 @@ func _ready() -> void:
 	_speed_2_button.pressed.connect(func() -> void: speed_2_pressed.emit())
 	_wave_route_toggle.toggled.connect(func(enabled: bool) -> void: wave_route_preview_toggled.emit(enabled))
 	_bind_overlay_panels()
+	_sync_overlay_panel_layers()
 	if _detail_panel.has_signal("cast_skill_requested"):
 		_detail_panel.cast_skill_requested.connect(func() -> void: cast_skill_requested.emit())
 	if _detail_panel.has_signal("retreat_requested"):
@@ -569,6 +575,7 @@ func set_time_controls(paused: bool, speed: float, enabled: bool = true) -> void
 	_pause_button.disabled = not enabled
 	_speed_1_button.disabled = not enabled
 	_speed_2_button.disabled = not enabled
+	call_deferred("_place_speed_disabled_overlay", not enabled)
 	var effective_paused := paused and enabled
 	var pause_selected := effective_paused
 	var speed_1_selected := false
@@ -1348,6 +1355,32 @@ func _place_speed_active_overlay(_button: Button) -> void:
 	_speed_active_overlay.visible = true
 
 
+func _place_speed_disabled_overlay(enabled: bool) -> void:
+	if _speed_disabled_overlay == null:
+		return
+	if not enabled:
+		_speed_disabled_overlay.visible = false
+		return
+	if _time_row == null or not _time_row.visible:
+		_speed_disabled_overlay.visible = false
+		return
+	var overlay_parent := _speed_disabled_overlay.get_parent() as Control
+	if overlay_parent == null:
+		_speed_disabled_overlay.visible = false
+		return
+	var row_rect := _time_row.get_global_rect()
+	var parent_to_local := overlay_parent.get_global_transform_with_canvas().affine_inverse()
+	var local_position := parent_to_local * row_rect.position
+	var top_left := local_position
+	var bottom_right := local_position + row_rect.size
+	_speed_disabled_overlay.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	_speed_disabled_overlay.offset_left = top_left.x
+	_speed_disabled_overlay.offset_top = top_left.y
+	_speed_disabled_overlay.offset_right = bottom_right.x
+	_speed_disabled_overlay.offset_bottom = bottom_right.y
+	_speed_disabled_overlay.visible = true
+
+
 func _setup_deploy_deck_scroll() -> void:
 	_deck_scroll = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
 	if _deck_scroll == null:
@@ -1702,6 +1735,7 @@ func _show_overlay_panel(panel_name: StringName) -> void:
 		panel.visible = true
 	_move_control_to_front(panel)
 	_mark_panel_top(panel_name)
+	_sync_overlay_panel_layers()
 
 
 func _hide_overlay_panel(panel_name: StringName) -> void:
@@ -1713,6 +1747,7 @@ func _hide_overlay_panel(panel_name: StringName) -> void:
 	else:
 		panel.visible = false
 	_remove_panel_from_stack(panel_name)
+	_sync_overlay_panel_layers()
 
 
 func _panel_for_name(panel_name: StringName) -> Control:
@@ -1749,3 +1784,16 @@ func _show_control_ancestors(control: Control) -> void:
 			var canvas_item: CanvasItem = current as CanvasItem
 			canvas_item.visible = true
 		current = current.get_parent()
+
+
+func _sync_overlay_panel_layers() -> void:
+	var settings_visible := _settings_panel != null and _settings_panel.visible
+	var relic_visible := _relic_panel != null and _relic_panel.visible
+	if _settings_panel_slot != null:
+		_settings_panel_slot.visible = settings_visible
+	if _relic_panel_center != null:
+		_relic_panel_center.visible = relic_visible
+	if _relic_panel_slot != null:
+		_relic_panel_slot.visible = relic_visible
+	if _popup_layer != null:
+		_popup_layer.visible = settings_visible or relic_visible

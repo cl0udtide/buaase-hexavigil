@@ -194,7 +194,21 @@ func _style_close_button() -> void:
 	_close_button.set_custom_minimum_size(Vector2(34.0, 30.0))
 	GameUiStyle.set_button_texture_icon(_close_button, UiArtRegistry.get_catalog_icon(&"button_close"), &"center")
 	GameUiStyle.center_button_text(_close_button)
-	_close_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
-	_close_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-	_close_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
+	_close_button.add_theme_stylebox_override("normal", _close_button_highlight_style(0.0))
+	_close_button.add_theme_stylebox_override("hover", _close_button_highlight_style(0.12))
+	_close_button.add_theme_stylebox_override("pressed", _close_button_highlight_style(0.18))
 	_close_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+
+
+func _close_button_highlight_style(alpha: float) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 1.0, 1.0, alpha)
+	style.border_width_left = 0
+	style.border_width_top = 0
+	style.border_width_right = 0
+	style.border_width_bottom = 0
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	return style

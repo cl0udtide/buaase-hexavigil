@@ -2,6 +2,7 @@ extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const BuildListCardScene = preload("res://scenes/ui/BuildListCard.tscn")
 const ShopManagerScript = preload("res://scripts/combat/shop_manager.gd")
@@ -284,6 +285,7 @@ func _make_shop_card(slot: Dictionary) -> Control:
 		"title": title,
 		"subtitle": subtitle,
 		"detail": detail,
+		"title_color": UiDisplayText.tier_color(base_cost) if unit_id != StringName() else GameUiStyle.TEXT,
 		"icon_text": _unit_icon_text(unit_id),
 		"fallback_icon_key": StringName("class_%s" % String(cfg.get("class", ""))),
 		"source_cfg": cfg,

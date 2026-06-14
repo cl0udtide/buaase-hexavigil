@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://m801mbh3evme" path="res://scripts/ui/audio_settings_button.gd" id="2_fvafi"]
 [ext_resource type="PackedScene" uid="uid://cdu5lxu0jvus7" path="res://scenes/ui/relic/RelicStrip.tscn" id="3_40812"]
 [ext_resource type="PackedScene" uid="uid://dt2d2gea25boo" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="5_w2pd7"]
-[ext_resource type="PackedScene" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
+[ext_resource type="PackedScene" uid="uid://s77oiy0amfv8" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
 [ext_resource type="Script" uid="uid://wfh31hvbgi12" path="res://scripts/ui/audio_settings_panel.gd" id="9_7wb5u"]
 [ext_resource type="Texture2D" uid="uid://c021jrk5jeuwx" path="res://assets/ui/generated/frame_slider_handle.png" id="26_sliderhandle"]
 [ext_resource type="Texture2D" uid="uid://nkhvnstaq2rn" path="res://assets/ui/generated/icon_settings_gear.png" id="27_iconsettings"]
@@ -27,10 +27,9 @@
 [ext_resource type="Texture2D" uid="uid://ck3mdlo5c2ihi" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
 [ext_resource type="StyleBox" uid="uid://labjvwcm7myu" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
 [ext_resource type="StyleBox" uid="uid://c4x7cosstwm8p" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
-[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
 [ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
-[ext_resource type="StyleBox" uid="uid://dnybvihnfg6a6" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_speed"]
 [ext_resource type="StyleBox" uid="uid://dwccrh7x1418u" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
 [ext_resource type="StyleBox" uid="uid://dahqsahj0lb61" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
 [ext_resource type="StyleBox" uid="uid://dwt3mq5xkani2" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="frame_resource_delta_badge_48x22"]
@@ -66,6 +65,20 @@ corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_active_overlay"]
+bg_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speed_disabled_overlay"]
+bg_color = Color(0.02, 0.025, 0.028, 0.42)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_speed_button"]
 
@@ -321,10 +334,10 @@ layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_left = 41.0
-offset_top = -15.0
-offset_right = 65.0
-offset_bottom = 13.0
+offset_left = 40.0
+offset_top = -19.0
+offset_right = 64.0
+offset_bottom = 9.0
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("28_iconphase")
@@ -516,7 +529,6 @@ stretch_mode = 5
 [node name="CenterTimeGroup" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow" unique_id=1433110601]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
 alignment = 1
 
 [node name="TimeControls" type="Control" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup" unique_id=1610632498]
@@ -539,14 +551,24 @@ theme_override_styles/panel = ExtResource("frame_speed_toggle_base_200x82")
 [node name="SpeedActiveOverlay" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=85741853]
 unique_name_in_owner = true
 visible = false
-modulate = Color(1, 1, 1, 0.72)
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_button_primary_overlay_speed")
+theme_override_styles/panel = SubResource("StyleBoxFlat_speed_active_overlay")
+
+[node name="SpeedDisabledOverlay" type="Panel" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1874113411]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_speed_disabled_overlay")
 
 [node name="TimeMargin" type="MarginContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls" unique_id=1207861169]
 layout_mode = 0
@@ -555,19 +577,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 17
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 0
+theme_override_constants/margin_left = 37
+theme_override_constants/margin_top = 17
+theme_override_constants/margin_right = 35
+theme_override_constants/margin_bottom = 17
 
 [node name="TimeRow" type="HBoxContainer" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin" unique_id=319891359]
 layout_mode = 2
-theme_override_constants/separation = -16
-alignment = 1
+theme_override_constants/separation = 6
 
 [node name="PauseButton" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1817518917]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 72)
+custom_minimum_size = Vector2(46, 0)
 layout_mode = 2
 focus_mode = 0
 theme_override_constants/icon_max_width = 16
@@ -582,8 +603,9 @@ expand_icon = true
 
 [node name="Speed1Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1790660013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 72)
+custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
+size_flags_horizontal = 4
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_speed_button")
@@ -594,7 +616,7 @@ flat = true
 
 [node name="Speed2Button" type="Button" parent="HudChromeLayer/TopHudSlot/TopBar/TopContent/TopContentRow/CenterTimeGroup/TimeControls/TimeMargin/TimeRow" unique_id=1890562901]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 72)
+custom_minimum_size = Vector2(49, 0)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")

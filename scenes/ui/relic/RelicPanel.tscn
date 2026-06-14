@@ -1,11 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://s77oiy0amfv8"]
 
-[ext_resource type="Script" path="res://scripts/ui/relic/relic_panel.gd" id="1_fyr10"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_panel_base.tres" id="2_panel"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail"]
+[ext_resource type="Script" uid="uid://b3uux0l2pnoak" path="res://scripts/ui/relic/relic_panel.gd" id="1_fyr10"]
+[ext_resource type="StyleBox" uid="uid://y2i56vjr8irm" path="res://assets/ui/styles/frame_relic_panel_base.tres" id="2_panel"]
+[ext_resource type="StyleBox" uid="uid://bx00ntf4uefp3" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail"]
 
 [node name="RelicPanel" type="Control" unique_id=1252642806]
-visible = false
 custom_minimum_size = Vector2(668, 430)
 layout_mode = 3
 anchors_preset = 0
@@ -28,10 +27,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 42
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 28
 
 [node name="Content" type="VBoxContainer" parent="ContentMargin" unique_id=290667162]
 unique_name_in_owner = true
@@ -71,7 +70,7 @@ layout_mode = 2
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 8
 
-[node name="AllFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+[node name="AllFilterButton" type="Button" parent="ContentMargin/Content/FilterBar" unique_id=359455066]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
@@ -80,7 +79,7 @@ text = "全部"
 metadata/category = &"all"
 metadata/audio_cue = &"ui_tab_switch"
 
-[node name="UnitFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+[node name="UnitFilterButton" type="Button" parent="ContentMargin/Content/FilterBar" unique_id=2122395870]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
@@ -89,7 +88,7 @@ text = "单位"
 metadata/category = &"unit"
 metadata/audio_cue = &"ui_tab_switch"
 
-[node name="BuildingFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+[node name="BuildingFilterButton" type="Button" parent="ContentMargin/Content/FilterBar" unique_id=1196419917]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
@@ -98,7 +97,7 @@ text = "建筑"
 metadata/category = &"building"
 metadata/audio_cue = &"ui_tab_switch"
 
-[node name="EconomyFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+[node name="EconomyFilterButton" type="Button" parent="ContentMargin/Content/FilterBar" unique_id=1475287066]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
@@ -107,7 +106,7 @@ text = "经济"
 metadata/category = &"economy"
 metadata/audio_cue = &"ui_tab_switch"
 
-[node name="CoreFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+[node name="CoreFilterButton" type="Button" parent="ContentMargin/Content/FilterBar" unique_id=156107652]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
@@ -116,7 +115,7 @@ text = "核心"
 metadata/category = &"core"
 metadata/audio_cue = &"ui_tab_switch"
 
-[node name="RiskFilterButton" type="Button" parent="ContentMargin/Content/FilterBar"]
+[node name="RiskFilterButton" type="Button" parent="ContentMargin/Content/FilterBar" unique_id=886989801]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2

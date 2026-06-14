@@ -1,11 +1,10 @@
 [gd_scene format=3 uid="uid://c0oceoqeshmf3"]
 
 [ext_resource type="Script" uid="uid://byr08164d6piu" path="res://scripts/ui/event_panel.gd" id="1_0pxnh"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_event_panel_base.tres" id="frame_event_panel_base_540x260"]
+[ext_resource type="StyleBox" uid="uid://bx00ntf4uefp3" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
+[ext_resource type="StyleBox" uid="uid://dtq35b0rbnrkw" path="res://assets/ui/styles/frame_event_panel_base.tres" id="frame_event_panel_base_540x260"]
 
 [node name="EventPanel" type="PanelContainer" unique_id=239470582]
-visible = false
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -22,25 +21,25 @@ script = ExtResource("1_0pxnh")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000105]
 layout_mode = 2
-theme_override_constants/margin_left = 26
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 26
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 39
+theme_override_constants/margin_top = 33
+theme_override_constants/margin_right = 37
+theme_override_constants/margin_bottom = 34
 
 [node name="MainVBox" type="VBoxContainer" parent="ContentMargin" unique_id=1798499498]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="HeaderRow" type="HBoxContainer" parent="ContentMargin/MainVBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="ContentMargin/MainVBox" unique_id=25663365]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="TitleBox" type="VBoxContainer" parent="ContentMargin/MainVBox/HeaderRow"]
+[node name="TitleBox" type="VBoxContainer" parent="ContentMargin/MainVBox/HeaderRow" unique_id=938344935]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="EyebrowLabel" type="Label" parent="ContentMargin/MainVBox/HeaderRow/TitleBox"]
+[node name="EyebrowLabel" type="Label" parent="ContentMargin/MainVBox/HeaderRow/TitleBox" unique_id=1269484762]
 unique_name_in_owner = true
 layout_mode = 2
 text = "地图事件"
@@ -53,7 +52,7 @@ theme_override_font_sizes/font_size = 26
 text = "事件"
 text_overrun_behavior = 3
 
-[node name="CloseButton" type="Button" parent="ContentMargin/MainVBox/HeaderRow"]
+[node name="CloseButton" type="Button" parent="ContentMargin/MainVBox/HeaderRow" unique_id=383765572]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(92, 36)
@@ -61,12 +60,12 @@ layout_mode = 2
 focus_mode = 0
 text = "关闭"
 
-[node name="BodyRow" type="HBoxContainer" parent="ContentMargin/MainVBox"]
+[node name="BodyRow" type="HBoxContainer" parent="ContentMargin/MainVBox" unique_id=1063922383]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="IllustrationCard" type="PanelContainer" parent="ContentMargin/MainVBox/BodyRow"]
+[node name="IllustrationCard" type="PanelContainer" parent="ContentMargin/MainVBox/BodyRow" unique_id=298999564]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
@@ -74,14 +73,14 @@ size_flags_vertical = 3
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("3_detail_section")
 
-[node name="Illustration" type="Control" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard"]
+[node name="Illustration" type="Control" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard" unique_id=311226189]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="IllustrationFill" type="ColorRect" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration"]
+[node name="IllustrationFill" type="ColorRect" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=771494224]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -91,7 +90,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.04, 0.09, 0.12, 1)
 
-[node name="IllustrationCenter" type="CenterContainer" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration"]
+[node name="IllustrationCenter" type="CenterContainer" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=1123440679]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -100,7 +99,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="EventGlyph" type="Label" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration/IllustrationCenter"]
+[node name="EventGlyph" type="Label" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration/IllustrationCenter" unique_id=194620125]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
@@ -109,13 +108,13 @@ text = "!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TextAndChoices" type="VBoxContainer" parent="ContentMargin/MainVBox/BodyRow"]
+[node name="TextAndChoices" type="VBoxContainer" parent="ContentMargin/MainVBox/BodyRow" unique_id=526619316]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="BodyCard" type="PanelContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices"]
+[node name="BodyCard" type="PanelContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices" unique_id=173337956]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -123,14 +122,14 @@ size_flags_vertical = 3
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("3_detail_section")
 
-[node name="BodyMargin" type="MarginContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices/BodyCard"]
+[node name="BodyMargin" type="MarginContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices/BodyCard" unique_id=930178317]
 layout_mode = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 16
 
-[node name="BodyContent" type="VBoxContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices/BodyCard/BodyMargin"]
+[node name="BodyContent" type="VBoxContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices/BodyCard/BodyMargin" unique_id=689429132]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -144,17 +143,16 @@ size_flags_vertical = 3
 text = "事件内容"
 autowrap_mode = 3
 
-[node name="ChoiceList" type="VBoxContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices"]
+[node name="ChoiceList" type="VBoxContainer" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices" unique_id=1748331666]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="ResultLabel" type="Label" parent="ContentMargin/MainVBox"]
+[node name="ResultLabel" type="Label" parent="ContentMargin/MainVBox" unique_id=464566040]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = ""
 horizontal_alignment = 1
 autowrap_mode = 3
 text_overrun_behavior = 3

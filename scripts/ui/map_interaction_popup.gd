@@ -39,6 +39,7 @@ var _gate_seal_button: Button = null
 func _ready() -> void:
 	AppTheme.apply(self)
 	visible = false
+	_set_parent_layer_visible(false)
 	_bind_buttons()
 	_bind_events()
 	var run_state = AppRefs.run_state()
@@ -47,8 +48,10 @@ func _ready() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
-		_clear_building_range_preview()
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		_set_parent_layer_visible(visible)
+		if not visible:
+			_clear_building_range_preview()
 
 
 func _process(_delta: float) -> void:
@@ -272,6 +275,7 @@ func _make_title(data: CellData, building: Node) -> String:
 
 
 func _show_for_current_cell() -> void:
+	_set_parent_layer_visible(true)
 	visible = true
 	_fit_to_content()
 	await get_tree().process_frame
@@ -298,6 +302,12 @@ func _get_current_cell_screen_position() -> Vector2:
 		return get_viewport().get_mouse_position()
 	var cell_world_position: Vector2 = map_manager.cell_to_world(_current_cell)
 	return map_root.get_global_transform_with_canvas() * map_root.to_local(cell_world_position)
+
+
+func _set_parent_layer_visible(value: bool) -> void:
+	var layer := get_parent() as CanvasItem
+	if layer != null:
+		layer.visible = value
 
 
 func _fit_to_content() -> void:

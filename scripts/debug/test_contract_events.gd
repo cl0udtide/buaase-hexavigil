@@ -34,14 +34,13 @@ func _run() -> void:
 		var cells: Array = event_manager.get_event_cells()
 		_expect(cells.size() >= 1, "map has event points")
 
-	# 回归（c2b5450 误存 visible=false 家族）：模态层链路必须默认可见，
-	# 否则事件/三选一/结算面板打开后永不渲染，点击事件泡泡表现为"无反应"。
+	# 回归：默认隐藏外层以免空层挡住点击，但打开面板时脚本必须同步打开父层。
 	var modal_layer := game.get_node_or_null("UI/ModalLayer") as Control
 	var event_panel_slot := game.get_node_or_null("UI/ModalLayer/EventPanelSlot") as Control
 	var floating_layer := game.get_node_or_null("UI/FloatingLayer") as Control
-	_expect(modal_layer != null and modal_layer.visible, "ModalLayer visible by default")
+	_expect(modal_layer != null and not modal_layer.visible, "ModalLayer hidden by default")
 	_expect(event_panel_slot != null and event_panel_slot.visible, "EventPanelSlot visible by default")
-	_expect(floating_layer != null and floating_layer.visible, "FloatingLayer visible by default")
+	_expect(floating_layer != null and not floating_layer.visible, "FloatingLayer hidden by default")
 	var event_panel := game.get_node_or_null("UI/ModalLayer/EventPanelSlot/EventPanel") as Control
 	_expect(event_panel != null, "EventPanel exists")
 	if event_panel != null and event_manager.has_method("get_event_cells"):
@@ -51,28 +50,42 @@ func _run() -> void:
 		if event_bus != null and not open_cells.is_empty():
 			event_bus.request_open_event_panel.emit(open_cells[0])
 			await process_frame
+			_expect(modal_layer.visible, "ModalLayer opens with event panel")
 			_expect(event_panel.is_visible_in_tree(), "event panel renders after bubble click signal")
 			if event_panel.has_method("hide_event"):
 				event_panel.hide_event()
+				await process_frame
+				_expect(not modal_layer.visible, "ModalLayer hides after event panel closes")
 
-	# CombatHud 侧同族泄漏：弹出/交互/悬停层必须默认可见，设置与遗物面板打开后必须真实渲染。
+	# CombatHud 侧同族泄漏：空弹出层默认隐藏，设置与遗物面板打开时再恢复父层。
 	var combat_hud := game.get_node_or_null("UI/ScreenLayout/CombatHudSlot/CombatHud") as Control
 	_expect(combat_hud != null, "CombatHud exists")
 	if combat_hud != null:
-		for layer_path: String in ["PopupLayer", "InteractionLayer", "TooltipLayer", "PopupLayer/RelicPanelSlot", "PopupLayer/RelicPanelSlot/RelicPanelCenter"]:
+		for layer_path: String in ["PopupLayer", "PopupLayer/RelicPanelSlot", "PopupLayer/RelicPanelSlot/RelicPanelCenter"]:
 			var layer := combat_hud.get_node_or_null(layer_path) as Control
-			_expect(layer != null and layer.visible, "%s visible by default" % layer_path)
+			_expect(layer != null and not layer.visible, "%s hidden by default" % layer_path)
+		var popup_layer := combat_hud.get_node_or_null("PopupLayer") as Control
+		var settings_panel_slot := combat_hud.get_node_or_null("PopupLayer/SettingsPanelSlot") as Control
+		var relic_panel_slot := combat_hud.get_node_or_null("PopupLayer/RelicPanelSlot") as Control
+		var relic_panel_center := combat_hud.get_node_or_null("PopupLayer/RelicPanelSlot/RelicPanelCenter") as Control
 		var settings_panel := combat_hud.get_node_or_null("PopupLayer/SettingsPanelSlot/AudioSettingsPanel") as Control
 		var relic_panel := combat_hud.get_node_or_null("PopupLayer/RelicPanelSlot/RelicPanelCenter/RelicPanel") as Control
 		_expect(settings_panel != null and relic_panel != null, "overlay panels exist")
 		if settings_panel != null and combat_hud.has_method("toggle_settings_panel"):
 			combat_hud.toggle_settings_panel()
+			_expect(popup_layer != null and popup_layer.visible, "PopupLayer opens with settings panel")
+			_expect(settings_panel_slot != null and settings_panel_slot.visible, "SettingsPanelSlot opens with settings panel")
 			_expect(settings_panel.is_visible_in_tree(), "settings panel renders when opened")
 			combat_hud.toggle_settings_panel()
+			_expect(popup_layer != null and not popup_layer.visible, "PopupLayer hides after settings panel closes")
 		if relic_panel != null and combat_hud.has_method("toggle_relic_panel"):
 			combat_hud.toggle_relic_panel()
+			_expect(popup_layer != null and popup_layer.visible, "PopupLayer opens with relic panel")
+			_expect(relic_panel_slot != null and relic_panel_slot.visible, "RelicPanelSlot opens with relic panel")
+			_expect(relic_panel_center != null and relic_panel_center.visible, "RelicPanelCenter opens with relic panel")
 			_expect(relic_panel.is_visible_in_tree(), "relic panel renders when opened")
 			combat_hud.toggle_relic_panel()
+			_expect(popup_layer != null and not popup_layer.visible, "PopupLayer hides after relic panel closes")
 
 	# 黑市：先结算核心上限 -2，再获得一件稀有遗物；遗物可能再次影响核心上限。
 	var relics_before: int = (run_state.buffs as Array).size()

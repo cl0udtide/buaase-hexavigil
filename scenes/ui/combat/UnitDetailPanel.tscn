@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://cgwyuojbbko8v" path="res://assets/ui/generated/icon_retreat.png" id="22_iconretreat"]
 [ext_resource type="StyleBox" uid="uid://b3hiab03tpqan" path="res://assets/ui/styles/bar_progress_fill_hp.tres" id="bar_progress_fill_hp"]
 [ext_resource type="StyleBox" uid="uid://cc3dj3c2jp71d" path="res://assets/ui/styles/bar_progress_fill_sp.tres" id="bar_progress_fill_sp"]
-[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base"]
 [ext_resource type="StyleBox" uid="uid://dq3npkfyuft5f" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="frame_button_danger_overlay_344x44"]
 [ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_344x60"]
