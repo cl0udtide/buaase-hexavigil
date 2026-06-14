@@ -1,8 +1,23 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dyf6k72i7l4bd"]
 
-[ext_resource type="Script" path="res://scripts/ui/relic/relic_icon.gd" id="1_625ck"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="2_backplate"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="3_frame"]
+[ext_resource type="Script" uid="uid://c63ovghak1p4o" path="res://scripts/ui/relic/relic_icon.gd" id="1_625ck"]
+[ext_resource type="StyleBox" uid="uid://bt8auka0etguy" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="2_backplate"]
+[ext_resource type="StyleBox" uid="uid://dbtflcvlcyear" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="3_frame"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rarity_overlay"]
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_new_highlight"]
+bg_color = Color(0.95, 0.65, 0.22, 0.18)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.65, 0.22, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="RelicIcon" type="Control" unique_id=1519433248]
 custom_minimum_size = Vector2(34, 34)
@@ -50,6 +65,7 @@ theme_override_styles/panel = ExtResource("3_frame")
 
 [node name="RarityOverlay" type="Panel" parent="." unique_id=1866139985]
 unique_name_in_owner = true
+visible = false
 z_index = 1
 layout_mode = 0
 anchor_right = 1.0
@@ -57,6 +73,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rarity_overlay")
 
 [node name="NewHighlightOverlay" type="Panel" parent="." unique_id=1849321386]
 unique_name_in_owner = true
@@ -68,3 +85,4 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_new_highlight")

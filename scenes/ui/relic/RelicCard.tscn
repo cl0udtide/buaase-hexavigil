@@ -1,33 +1,52 @@
 [gd_scene format=3 uid="uid://ctt71dket5rq8"]
 
 [ext_resource type="Script" uid="uid://ddvsavyr0e72r" path="res://scripts/ui/relic/relic_card.gd" id="1_wj53c"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_card_base.tres" id="2_card"]
 [ext_resource type="StyleBox" uid="uid://bt8auka0etguy" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="3_backplate"]
 [ext_resource type="StyleBox" uid="uid://dbtflcvlcyear" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="4_frame"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rarity_overlay"]
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover_overlay"]
+bg_color = Color(1, 1, 1, 0.11)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
+
 [node name="RelicCard" type="Control" unique_id=1478045943]
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(165, 128)
 layout_mode = 3
 anchors_preset = 0
+offset_right = 318.0
+offset_bottom = 145.0
 script = ExtResource("1_wj53c")
 
 [node name="CardBase" type="Panel" parent="." unique_id=219335592]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(165, 0)
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_card")
 
 [node name="RarityOverlay" type="Panel" parent="." unique_id=1530203976]
 unique_name_in_owner = true
+visible = false
 z_index = 1
+custom_minimum_size = Vector2(165, 0)
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rarity_overlay")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=1388233875]
 z_index = 5
@@ -37,10 +56,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
 
 [node name="Row" type="HBoxContainer" parent="ContentMargin" unique_id=381544291]
 layout_mode = 2
@@ -105,25 +124,47 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_font_sizes/font_size = 15
 text = "遗物名称"
 text_overrun_behavior = 3
+
+[node name="SlotSourceLabel" type="Label" parent="ContentMargin/Row/TextColumn/Header" unique_id=1623130496]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_font_sizes/font_size = 12
+text = "随机"
+vertical_alignment = 1
 
 [node name="RarityLabel" type="Label" parent="ContentMargin/Row/TextColumn/Header" unique_id=290176599]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.65, 0.22, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_font_sizes/font_size = 12
 text = "常见"
 horizontal_alignment = 2
+text_overrun_behavior = 3
 
 [node name="DescLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=1478680159]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_font_sizes/font_size = 12
 text = "效果说明"
 autowrap_mode = 3
 
 [node name="TagLabel" type="Label" parent="ContentMargin/Row/TextColumn" unique_id=504243963]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.8, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_font_sizes/font_size = 12
 text = "单位 / 经济"
 text_overrun_behavior = 3
 
@@ -131,9 +172,15 @@ text_overrun_behavior = 3
 unique_name_in_owner = true
 visible = false
 z_index = 2
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 19.0
+offset_right = -22.0
+offset_bottom = -17.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hover_overlay")

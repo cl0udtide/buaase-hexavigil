@@ -2,7 +2,31 @@
 
 [ext_resource type="Script" uid="uid://b3uux0l2pnoak" path="res://scripts/ui/relic/relic_panel.gd" id="1_fyr10"]
 [ext_resource type="StyleBox" uid="uid://y2i56vjr8irm" path="res://assets/ui/styles/frame_relic_panel_base.tres" id="2_panel"]
-[ext_resource type="StyleBox" uid="uid://bx00ntf4uefp3" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_filter_tab_base.tres" id="4_filter_tab"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_filter_all.png" id="5_filter_all"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_filter_unit.png" id="6_filter_unit"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_filter_building.png" id="7_filter_building"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_filter_economy.png" id="8_filter_economy"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_filter_core.png" id="9_filter_core"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_filter_risk.png" id="10_filter_risk"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/icon_close.png" id="11_close"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_empty"]
+bg_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_hover"]
+bg_color = Color(1, 1, 1, 0.12)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_pressed"]
+bg_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="RelicPanel" type="Control" unique_id=1252642806]
 custom_minimum_size = Vector2(668, 430)
@@ -46,6 +70,11 @@ theme_override_constants/separation = 12
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_font_sizes/font_size = 22
 text = "遗物"
 vertical_alignment = 1
 
@@ -53,6 +82,10 @@ vertical_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
 text = "0 件"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -62,7 +95,14 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 30)
 layout_mode = 2
 focus_mode = 0
-text = "×"
+theme_override_constants/icon_max_width = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_close_empty")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_close_empty")
+icon = ExtResource("11_close")
+icon_alignment = 1
+expand_icon = true
 
 [node name="FilterBar" type="HFlowContainer" parent="ContentMargin/Content" unique_id=1340319699]
 unique_name_in_owner = true
@@ -75,7 +115,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 7
+theme_override_constants/icon_max_width = 16
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("4_filter_tab")
+theme_override_styles/hover = ExtResource("4_filter_tab")
+theme_override_styles/pressed = ExtResource("4_filter_tab")
+theme_override_styles/disabled = ExtResource("4_filter_tab")
+toggle_mode = true
 text = "全部"
+icon = ExtResource("5_filter_all")
 metadata/category = &"all"
 metadata/audio_cue = &"ui_tab_switch"
 
@@ -84,7 +135,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 7
+theme_override_constants/icon_max_width = 16
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("4_filter_tab")
+theme_override_styles/hover = ExtResource("4_filter_tab")
+theme_override_styles/pressed = ExtResource("4_filter_tab")
+theme_override_styles/disabled = ExtResource("4_filter_tab")
+toggle_mode = true
 text = "单位"
+icon = ExtResource("6_filter_unit")
 metadata/category = &"unit"
 metadata/audio_cue = &"ui_tab_switch"
 
@@ -93,7 +155,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 7
+theme_override_constants/icon_max_width = 16
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("4_filter_tab")
+theme_override_styles/hover = ExtResource("4_filter_tab")
+theme_override_styles/pressed = ExtResource("4_filter_tab")
+theme_override_styles/disabled = ExtResource("4_filter_tab")
+toggle_mode = true
 text = "建筑"
+icon = ExtResource("7_filter_building")
 metadata/category = &"building"
 metadata/audio_cue = &"ui_tab_switch"
 
@@ -102,7 +175,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 7
+theme_override_constants/icon_max_width = 16
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("4_filter_tab")
+theme_override_styles/hover = ExtResource("4_filter_tab")
+theme_override_styles/pressed = ExtResource("4_filter_tab")
+theme_override_styles/disabled = ExtResource("4_filter_tab")
+toggle_mode = true
 text = "经济"
+icon = ExtResource("8_filter_economy")
 metadata/category = &"economy"
 metadata/audio_cue = &"ui_tab_switch"
 
@@ -111,7 +195,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 7
+theme_override_constants/icon_max_width = 16
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("4_filter_tab")
+theme_override_styles/hover = ExtResource("4_filter_tab")
+theme_override_styles/pressed = ExtResource("4_filter_tab")
+theme_override_styles/disabled = ExtResource("4_filter_tab")
+toggle_mode = true
 text = "核心"
+icon = ExtResource("9_filter_core")
 metadata/category = &"core"
 metadata/audio_cue = &"ui_tab_switch"
 
@@ -120,7 +215,18 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(86, 32)
 layout_mode = 2
 focus_mode = 0
+theme_override_constants/h_separation = 7
+theme_override_constants/icon_max_width = 16
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("4_filter_tab")
+theme_override_styles/hover = ExtResource("4_filter_tab")
+theme_override_styles/pressed = ExtResource("4_filter_tab")
+theme_override_styles/disabled = ExtResource("4_filter_tab")
+toggle_mode = true
 text = "风险"
+icon = ExtResource("10_filter_risk")
 metadata/category = &"risk"
 metadata/audio_cue = &"ui_tab_switch"
 
@@ -141,47 +247,9 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+theme_override_colors/font_color = Color(0.47, 0.52, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
 text = "没有符合筛选的遗物"
 horizontal_alignment = 1
-
-[node name="DetailPanel" type="Panel" parent="ContentMargin/Content" unique_id=1240667341]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 132)
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("3_detail")
-
-[node name="DetailMargin" type="MarginContainer" parent="ContentMargin/Content/DetailPanel" unique_id=986877736]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 36
-theme_override_constants/margin_top = 19
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 14
-
-[node name="DetailColumn" type="VBoxContainer" parent="ContentMargin/Content/DetailPanel/DetailMargin" unique_id=1588518841]
-layout_mode = 2
-theme_override_constants/separation = 3
-
-[node name="DetailTitleLabel" type="Label" parent="ContentMargin/Content/DetailPanel/DetailMargin/DetailColumn" unique_id=638669085]
-unique_name_in_owner = true
-layout_mode = 2
-text = "暂无遗物"
-text_overrun_behavior = 3
-
-[node name="DetailMetaLabel" type="Label" parent="ContentMargin/Content/DetailPanel/DetailMargin/DetailColumn" unique_id=2002233858]
-unique_name_in_owner = true
-layout_mode = 2
-text = "当前还没有获得遗物"
-text_overrun_behavior = 3
-
-[node name="DetailEffectLabel" type="Label" parent="ContentMargin/Content/DetailPanel/DetailMargin/DetailColumn" unique_id=1619967857]
-unique_name_in_owner = true
-layout_mode = 2
-text = "通过祝福选择获得遗物后，这里会显示完整效果。"
-autowrap_mode = 3

@@ -1,7 +1,6 @@
 extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
 const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 
@@ -12,6 +11,7 @@ var _cfg: Dictionary = {}
 var _highlighted := false
 
 @onready var _icon_texture: TextureRect = %IconTexture
+@onready var _icon_backplate: Panel = %IconBackplate
 @onready var _icon_frame: Panel = %IconFrame
 @onready var _rarity_overlay: Panel = %RarityOverlay
 @onready var _new_highlight_overlay: Panel = %NewHighlightOverlay
@@ -21,10 +21,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	gui_input.connect(_on_gui_input)
-	_icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	GameUiStyle.fit_centered_icon(_icon_texture, Vector2(24.0, 24.0))
-	_new_highlight_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_icon_highlight_overlay())
 	_apply_config()
 
 
@@ -44,7 +40,6 @@ func set_highlighted(highlighted: bool) -> void:
 
 func _apply_config() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	set_custom_minimum_size(Vector2(34.0, 34.0))
 	var texture := UiArtRegistry.get_icon_texture(_cfg, &"relic_bag")
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
@@ -54,8 +49,25 @@ func _apply_config() -> void:
 
 func _apply_style() -> void:
 	var rarity := int(_cfg.get("rarity", 1))
-	_icon_frame.add_theme_stylebox_override("panel", GameUiStyle.relic_icon(rarity, _highlighted))
-	_rarity_overlay.add_theme_stylebox_override("panel", GameUiStyle.relic_rarity_overlay(rarity, _highlighted, true))
+	var rarity_color := UiDisplayText.relic_rarity_color(rarity)
+	var backplate_strength := 0.12
+	if rarity == 2:
+		backplate_strength = 0.18
+	elif rarity >= 3:
+		backplate_strength = 0.24
+	_icon_backplate.modulate = Color(
+		0.72 + rarity_color.r * backplate_strength,
+		0.72 + rarity_color.g * backplate_strength,
+		0.72 + rarity_color.b * backplate_strength,
+		1.0
+	)
+	_icon_frame.modulate = Color(
+		0.88 + rarity_color.r * 0.12,
+		0.88 + rarity_color.g * 0.12,
+		0.88 + rarity_color.b * 0.12,
+		1.0
+	)
+	_rarity_overlay.modulate = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.12)
 	_new_highlight_overlay.visible = _highlighted
 
 

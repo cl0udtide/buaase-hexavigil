@@ -2,7 +2,6 @@ extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 const RELIC_ICON_SCENE := preload("res://scenes/ui/relic/RelicIcon.tscn")
 const MAX_VISIBLE_RELICS := 14
@@ -21,7 +20,6 @@ var _last_relic_ids: Array[StringName] = []
 var _has_received_relics := false
 var _last_visible_capacity := -1
 
-@onready var _strip_base: Panel = %StripBase
 @onready var _entry_button: Button = %EntryButton
 @onready var _entry_label: Label = %EntryLabel
 @onready var _icon_row: HBoxContainer = %IconRow
@@ -32,16 +30,10 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	_entry_button.pressed.connect(func() -> void: panel_requested.emit())
-	_style_entry_button()
 	var parent_control := get_parent() as Control
 	if parent_control != null:
 		parent_control.resized.connect(_on_available_width_changed)
-	_icon_row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_overflow_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	resized.connect(_on_resized)
-	_overflow_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_overflow_label.add_theme_font_size_override("font_size", 14)
-	_overflow_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	set_relics(_relic_ids)
 
 
@@ -77,7 +69,6 @@ func _refresh() -> void:
 	_overflow_label.visible = overflow > 0
 	_overflow_label.text = "+%d" % overflow
 	_icon_row.visible = visible_count > 0
-	_apply_content_width(visible_count, overflow > 0)
 
 
 func _on_resized() -> void:
@@ -109,26 +100,6 @@ func _icon_capacity_for_width(width: float) -> int:
 	return maxi(1, int(floor((width + RELIC_ICON_GAP) / (RELIC_ICON_WIDTH + RELIC_ICON_GAP))))
 
 
-func _apply_content_width(visible_count: int, has_overflow: bool) -> void:
-	var width := _target_strip_width(visible_count, has_overflow)
-	var height := maxf(size.y, 40.0)
-	set_custom_minimum_size(Vector2(width, 40.0))
-	set_size(Vector2(width, height))
-
-
-func _target_strip_width(visible_count: int, has_overflow: bool) -> float:
-	var entry_width := _entry_button.custom_minimum_size.x if _entry_button != null else 86.0
-	var overflow_width := _overflow_label.custom_minimum_size.x if _overflow_label != null else 42.0
-	var width := RELIC_FRAME_HORIZONTAL_PADDING + entry_width
-	if visible_count > 0:
-		width += RELIC_ROW_GAP
-		width += float(visible_count) * RELIC_ICON_WIDTH
-		width += float(maxi(0, visible_count - 1)) * RELIC_ICON_GAP
-	if has_overflow:
-		width += RELIC_ROW_GAP + overflow_width
-	return clampf(ceilf(width), MIN_STRIP_WIDTH, _available_strip_width())
-
-
 func _available_strip_width() -> float:
 	var parent_control := get_parent() as Control
 	if parent_control != null and parent_control.size.x > 0.0:
@@ -136,27 +107,3 @@ func _available_strip_width() -> float:
 	if size.x > MIN_STRIP_WIDTH:
 		return size.x
 	return FALLBACK_MAX_STRIP_WIDTH
-
-
-func _style_entry_button() -> void:
-	_entry_button.set_custom_minimum_size(Vector2(90.0, 32.0))
-	_entry_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_entry_button.text = ""
-	var normal_style: StyleBox = _entry_button.get_theme_stylebox("normal")
-	_entry_button.add_theme_stylebox_override("hover", _entry_button_brightness_style(normal_style, 1.14))
-	_entry_button.add_theme_stylebox_override("pressed", _entry_button_brightness_style(normal_style, 1.24))
-	_entry_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-
-
-func _entry_button_brightness_style(source_style: StyleBox, brightness: float) -> StyleBox:
-	if source_style == null:
-		return StyleBoxEmpty.new()
-	var copied_style: StyleBox = source_style.duplicate(true) as StyleBox
-	if copied_style is StyleBoxTexture:
-		var texture_style: StyleBoxTexture = copied_style as StyleBoxTexture
-		texture_style.modulate_color = Color(brightness, brightness, brightness, 1.0)
-	elif copied_style is StyleBoxFlat:
-		var flat_style: StyleBoxFlat = copied_style as StyleBoxFlat
-		flat_style.bg_color = flat_style.bg_color.lightened(brightness - 1.0)
-		flat_style.border_color = flat_style.border_color.lightened(brightness - 1.0)
-	return copied_style

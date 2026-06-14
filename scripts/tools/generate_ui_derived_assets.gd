@@ -162,9 +162,13 @@ func _generate_png(asset_name: String, source_png: String, output_png: String, p
 	var output_height := source_height
 	if target_size.x > 0 and target_size.y > 0:
 		if String(asset_config.get("kind", "")) == "stylebox_texture":
-			var scale := _ninepatch_preserve_scale(Vector2i(source_width, source_height), target_size)
-			output_width = maxi(1, int(round(float(source_width) * scale)))
-			output_height = maxi(1, int(round(float(source_height) * scale)))
+			if String(asset_config.get("png_scale_mode", "")) == "exact_target":
+				output_width = target_size.x
+				output_height = target_size.y
+			else:
+				var scale := _ninepatch_preserve_scale(Vector2i(source_width, source_height), target_size)
+				output_width = maxi(1, int(round(float(source_width) * scale)))
+				output_height = maxi(1, int(round(float(source_height) * scale)))
 		else:
 			output_width = target_size.x
 			output_height = target_size.y

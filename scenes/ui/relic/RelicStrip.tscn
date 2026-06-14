@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cdu5lxu0jvus7"]
 
 [ext_resource type="Script" uid="uid://c16ijra2igfos" path="res://scripts/ui/relic/relic_strip.gd" id="1_c303q"]
-[ext_resource type="StyleBox" uid="uid://egde0ico5esd" path="res://assets/ui/styles/frame_relic_strip_base.tres" id="2_strip"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_strip_base.tres" id="2_strip"]
 [ext_resource type="StyleBox" uid="uid://ccs0owrq281ng" path="res://assets/ui/styles/frame_relic_entry_button_base.tres" id="3_entry"]
 [ext_resource type="Texture2D" uid="uid://d08ds42h0ed85" path="res://assets/ui/generated/icon_relic_bag.png" id="4_relicbag"]
 
@@ -43,9 +43,13 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
+size_flags_horizontal = 0
 size_flags_vertical = 4
 focus_mode = 0
 theme_override_styles/normal = ExtResource("3_entry")
+theme_override_styles/pressed = ExtResource("3_entry")
+theme_override_styles/hover = ExtResource("3_entry")
+theme_override_styles/disabled = ExtResource("3_entry")
 
 [node name="EntryButtonContent" type="MarginContainer" parent="StripMargin/Row/EntryButton" unique_id=524307305]
 layout_mode = 1
@@ -78,6 +82,8 @@ stretch_mode = 5
 [node name="EntryLabel" type="Label" parent="StripMargin/Row/EntryButton/EntryButtonContent/EntryButtonRow" unique_id=1486393541]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
 text = "遗物 0"
 vertical_alignment = 1
 
@@ -91,5 +97,8 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 custom_minimum_size = Vector2(42, 0)
 layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.95, 0.65, 0.22, 1)
+theme_override_font_sizes/font_size = 14
 text = "+0"
 vertical_alignment = 1
