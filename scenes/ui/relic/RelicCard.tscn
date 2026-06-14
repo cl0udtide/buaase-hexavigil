@@ -1,8 +1,8 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://ctt71dket5rq8"]
 
-[ext_resource type="Script" path="res://scripts/ui/relic/relic_card.gd" id="1_wj53c"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="3_backplate"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="4_frame"]
+[ext_resource type="Script" uid="uid://ddvsavyr0e72r" path="res://scripts/ui/relic/relic_card.gd" id="1_wj53c"]
+[ext_resource type="StyleBox" uid="uid://bt8auka0etguy" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="3_backplate"]
+[ext_resource type="StyleBox" uid="uid://dbtflcvlcyear" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="4_frame"]
 
 [node name="RelicCard" type="Control" unique_id=1478045943]
 custom_minimum_size = Vector2(0, 96)

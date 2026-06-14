@@ -23,9 +23,15 @@ func _ready() -> void:
 	hide_panel()
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		_sync_modal_layer_visibility()
+
+
 ## 渲染三选一（带槽位来源）。entries: Array[{buff_id, slot}]。
 func show_choices_with_sources(entries: Array) -> void:
 	_last_sources_frame = Engine.get_process_frames()
+	_set_modal_layer_visible(true)
 	visible = true
 	_clear_choices()
 	var data_repo = AppRefs.data_repo()
@@ -52,6 +58,7 @@ func show_choices(choice_ids: Array[StringName]) -> void:
 	# 同帧已由带来源信号渲染过则跳过，避免重复。
 	if Engine.get_process_frames() == _last_sources_frame:
 		return
+	_set_modal_layer_visible(true)
 	visible = true
 	_clear_choices()
 	var data_repo = AppRefs.data_repo()
@@ -93,3 +100,32 @@ func _on_choice_pressed(buff_id: StringName) -> void:
 func _clear_choices() -> void:
 	for child in _choice_list.get_children():
 		child.queue_free()
+
+
+func _set_modal_layer_visible(value: bool) -> void:
+	var layer := _get_modal_layer()
+	if layer != null:
+		layer.visible = value
+
+
+func _sync_modal_layer_visibility() -> void:
+	var layer := _get_modal_layer()
+	if layer == null:
+		return
+	layer.visible = _modal_layer_has_visible_panel(layer)
+
+
+func _get_modal_layer() -> CanvasItem:
+	var slot := get_parent()
+	if slot == null:
+		return null
+	return slot.get_parent() as CanvasItem
+
+
+func _modal_layer_has_visible_panel(layer: Node) -> bool:
+	for slot in layer.get_children():
+		for child in slot.get_children():
+			var canvas_item := child as CanvasItem
+			if canvas_item != null and canvas_item.visible:
+				return true
+	return false

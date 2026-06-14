@@ -85,7 +85,7 @@ func _apply_config(config: Dictionary) -> void:
 	if _detail_label != null:
 		_detail_label.visible = not _detail_label.text.is_empty()
 	_cost_badge.visible = not _cost_label.text.strip_edges().is_empty()
-	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT if _disabled else config.get("title_color", GameUiStyle.TEXT) as Color)
+	_title_label.add_theme_color_override("font_color", config.get("title_color", GameUiStyle.TEXT) as Color)
 	_apply_style()
 
 

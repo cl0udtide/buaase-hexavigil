@@ -37,7 +37,7 @@
 [ext_resource type="Texture2D" uid="uid://b27wulgsekryb" path="res://assets/ui/generated/icon_cancel.png" id="47_popup_cancel_icon"]
 [ext_resource type="Texture2D" uid="uid://2qf0tikai2s2" path="res://assets/ui/generated/icon_refresh.png" id="48_popup_refresh_icon"]
 [ext_resource type="PackedScene" uid="uid://dks4jlf2r1x6h" path="res://scenes/ui/TutorialOverlay.tscn" id="49_tutorial_overlay"]
-[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://c1p8knypnusdm" path="res://assets/ui/styles/frame_event_choice_button_base.tres" id="frame_event_choice_button_base_108x32"]
 
 [node name="Game" type="Node" unique_id=327017779]
@@ -200,13 +200,13 @@ script = ExtResource("37_map_popup")
 [node name="ContentMargin" type="MarginContainer" parent="UI/FloatingLayer/MapInteractionPopup" unique_id=1059353633]
 layout_mode = 2
 theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 5
+theme_override_constants/margin_top = 11
 theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_bottom = 9
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin" unique_id=977823971]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 2
 
 [node name="TitleLabel" type="Label" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer" unique_id=1730941729]
 unique_name_in_owner = true
@@ -290,7 +290,7 @@ autowrap_mode = 2
 
 [node name="CollectButton" type="Button" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/ResourceSection" unique_id=19355997]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 32)
+custom_minimum_size = Vector2(84, 45)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = ExtResource("41_button_base")
@@ -328,9 +328,9 @@ script = ExtResource("button_state_overlay")
 z_index = 2
 layout_mode = 0
 offset_left = 41.0
-offset_top = 9.0
+offset_top = 15.0
 offset_right = 57.0
-offset_bottom = 25.0
+offset_bottom = 31.0
 mouse_filter = 2
 texture = ExtResource("46_popup_confirm_icon")
 expand_mode = 1
@@ -355,7 +355,7 @@ theme_override_constants/v_separation = 4
 
 [node name="RepairButton" type="Button" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection/BuildingActionFlow" unique_id=604997015]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 32)
+custom_minimum_size = Vector2(84, 44)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = ExtResource("41_button_base")
@@ -393,9 +393,9 @@ script = ExtResource("button_state_overlay")
 z_index = 2
 layout_mode = 0
 offset_left = 16.0
-offset_top = 10.0
+offset_top = 14.0
 offset_right = 32.0
-offset_bottom = 26.0
+offset_bottom = 30.0
 mouse_filter = 2
 texture = ExtResource("46_popup_confirm_icon")
 expand_mode = 1
@@ -403,7 +403,7 @@ stretch_mode = 5
 
 [node name="DemolishButton" type="Button" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection/BuildingActionFlow" unique_id=1820826585]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 32)
+custom_minimum_size = Vector2(84, 44)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = ExtResource("41_button_base")
@@ -442,9 +442,9 @@ active_overlay_name = &"DangerOverlay"
 z_index = 2
 layout_mode = 0
 offset_left = 14.0
-offset_top = 9.0
+offset_top = 13.0
 offset_right = 30.0
-offset_bottom = 25.0
+offset_bottom = 29.0
 mouse_filter = 2
 texture = ExtResource("47_popup_cancel_icon")
 expand_mode = 1
@@ -452,7 +452,7 @@ stretch_mode = 5
 
 [node name="ToggleButton" type="Button" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/BuildingSection/BuildingActionFlow" unique_id=311335925]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(84, 32)
+custom_minimum_size = Vector2(84, 44)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = ExtResource("41_button_base")
@@ -490,9 +490,9 @@ script = ExtResource("button_state_overlay")
 z_index = 2
 layout_mode = 0
 offset_left = 14.0
-offset_top = 9.0
+offset_top = 13.0
 offset_right = 30.0
-offset_bottom = 25.0
+offset_bottom = 29.0
 mouse_filter = 2
 texture = ExtResource("48_popup_refresh_icon")
 expand_mode = 1

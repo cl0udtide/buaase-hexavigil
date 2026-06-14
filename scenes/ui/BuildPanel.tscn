@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dxhe1gpotx6ns" path="res://scripts/ui/build_panel.gd" id="1_pcwhb"]
 [ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="3_panel_button_base"]
-[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_272x36"]
 [ext_resource type="StyleBox" uid="uid://ten6m123quv2" path="res://assets/ui/styles/frame_left_sidebar_base.tres" id="frame_left_sidebar_base_320x826"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_tooltip_base.tres" id="frame_tooltip_base"]
@@ -167,13 +167,12 @@ theme_override_constants/separation = -3
 [node name="CategoryTabs" type="HBoxContainer" parent="ContentMargin/MainVBox/BottomControls" unique_id=472981155]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 4
+alignment = 1
 
 [node name="ResourceCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1568433604]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(77, 44)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 theme_override_styles/normal = ExtResource("3_panel_button_base")
 theme_override_styles/pressed = ExtResource("3_panel_button_base")
@@ -198,9 +197,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_activ
 
 [node name="AuraCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1437673208]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(77, 44)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 theme_override_styles/normal = ExtResource("3_panel_button_base")
 theme_override_styles/pressed = ExtResource("3_panel_button_base")
@@ -225,9 +223,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_activ
 
 [node name="BlockCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=400981013]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(77, 44)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 theme_override_styles/normal = ExtResource("3_panel_button_base")
 theme_override_styles/pressed = ExtResource("3_panel_button_base")
