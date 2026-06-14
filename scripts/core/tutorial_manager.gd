@@ -16,6 +16,7 @@ const STEP_SKILL := &"skill"
 const STEP_BLESSING := &"blessing"
 const STEP_DONE := &"done"
 const STORY_FINISH_START_DELAY := 0.22
+const RUN_START_TRIGGER := "run_start"
 
 var _steps: Array[Dictionary] = [
 	{"id": STEP_INTRO, "title": "第一天演习", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "说是打响名声……可第一天就被黑潮冲散的话，信标也就没有意义了吧？", "hint": "", "wait": false},
@@ -128,6 +129,9 @@ func _finish() -> void:
 		_overlay.hide_tutorial()
 	if should_start_standard:
 		_mark_tutorial_completed()
+		var story_director = AppRefs.story_director()
+		if story_director != null and story_director.has_method("skip_next_trigger"):
+			story_director.skip_next_trigger(RUN_START_TRIGGER)
 		var scene_router = AppRefs.scene_router()
 		if scene_router != null and scene_router.has_method("goto_game"):
 			scene_router.call_deferred("goto_game")
