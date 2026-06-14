@@ -1160,6 +1160,7 @@ layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
 focus_mode = 0
+tooltip_text = "快捷键：M"
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 14
 theme_override_styles/normal = ExtResource("frame_wave_route_toggle_base_64x36")
