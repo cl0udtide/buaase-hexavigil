@@ -144,8 +144,8 @@
 
 1. frame_left_sidebar_base：左侧栏整体背景。
 2. frame_sidebar_tab_base：页签普通底板。
-3. frame_sidebar_tab_selected_overlay：页签选中叠层。
-4. frame_build_list_card_base：建筑/商店列表项底板。
+3. frame_sidebar_tab_selected_overlay：建筑列表项底板；这是正式 `BuildListCard/CardBase` 的稳定文件名，不要按页签 overlay 生成。
+4. frame_build_list_card_base：商店 Unit 商品卡底板；这是正式 `ShopUnitCard/CardBase` 的稳定文件名，与建筑卡做差异化。
 5. frame_build_icon_backplate：建筑图标背板。
 6. frame_build_icon_frame：建筑图标覆盖框，中心保持 #FF00FF。
 7. frame_cost_badge_base：成本徽标底板。

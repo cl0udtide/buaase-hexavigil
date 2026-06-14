@@ -16,7 +16,8 @@ const DECK_PANEL := &"frame_bottom_deploy_rail_base"
 const HUD_BOTTOM_RAIL := &"frame_bottom_deploy_rail_base"
 const DETAIL_SECTION := &"frame_detail_section_base"
 const CARD := &"frame_detail_section_base"
-const LIST_CARD := &"frame_build_list_card_base"
+const LIST_CARD := &"frame_sidebar_tab_selected_overlay"
+const SHOP_UNIT_CARD := &"frame_build_list_card_base"
 const BUILD_ICON_BACKPLATE := &"frame_build_icon_backplate"
 const BUILD_ICON_FRAME := &"frame_build_icon_frame"
 const COST_BADGE := &"frame_cost_badge_base"
@@ -38,7 +39,7 @@ const BUTTON_DISABLED_OVERLAY := &"frame_button_disabled_overlay"
 const BUTTON_COMPACT := &"frame_button_base"
 const SETTINGS_BUTTON := &"frame_settings_button_base"
 const TAB := &"frame_sidebar_tab_base"
-const TAB_SELECTED := &"frame_sidebar_tab_selected_overlay"
+const TAB_SELECTED := &"frame_sidebar_tab_base"
 const RELIC_STRIP := &"frame_relic_strip_base"
 const RELIC_ENTRY_BUTTON := &"frame_relic_entry_button_base"
 const RELIC_ICON := &"frame_relic_icon_frame"
@@ -110,6 +111,7 @@ const SPECS := {
 	DECK_PANEL: {"content": Vector4(24.0, 10.0, 24.0, 10.0)},
 	DETAIL_SECTION: {"content": Vector4(14.0, 10.0, 14.0, 10.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	LIST_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
+	SHOP_UNIT_CARD: {"content": Vector4(12.0, 8.0, 12.0, 8.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	BUILD_ICON_BACKPLATE: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	BUILD_ICON_FRAME: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
 	COST_BADGE: {"content": Vector4(6.0, 4.0, 6.0, 4.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},
@@ -126,7 +128,6 @@ const SPECS := {
 	BUTTON_DISABLED_OVERLAY: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
 	SETTINGS_BUTTON: {"content": Vector4(4.0, 4.0, 4.0, 4.0)},
 	TAB: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
-	TAB_SELECTED: {"content": Vector4(12.0, 6.0, 12.0, 6.0), "texture": Vector4(18.0, 18.0, 18.0, 18.0)},
 	RELIC_STRIP: {"content": Vector4(10.0, 6.0, 10.0, 6.0)},
 	RELIC_ENTRY_BUTTON: {"content": Vector4(10.0, 5.0, 10.0, 5.0), "texture": Vector4(12.0, 10.0, 12.0, 10.0)},
 	RELIC_ICON: {"content": Vector4(6.0, 6.0, 6.0, 6.0), "texture": Vector4(10.0, 10.0, 10.0, 10.0)},

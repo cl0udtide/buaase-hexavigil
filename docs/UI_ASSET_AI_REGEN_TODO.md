@@ -86,7 +86,7 @@
 | `frame_resource_item_base` / `frame_legend_row_base` | 实际多为小型信息行或缩小使用，不符合本轮“过度拉伸且破坏大”的条件 |
 | `frame_icon_*` / `frame_*_portrait_*` / `frame_relic_icon_*` / `frame_skill_icon_*` | 多为固定尺寸图标/头像承托，不按本轮 NinePatch 拉伸问题处理 |
 
-`frame_build_list_card_selected_overlay` 已作为单独案例修复：源图和派生图 alpha 为 `{0,255}`，无不透明品红残留，并按 `frame_build_list_card_base` 的轮廓/尺寸更新。后续只需在实际 `BuildListCard` hover/selected 态中人工视觉验收，不列入本轮重生。
+`frame_build_list_card_selected_overlay` 已不再作为正式 UI 资源生成或引用。建筑卡与商店 Unit 卡的 hover/selected 态改为简单白色提亮；源素材可保留作历史对照，但不应重新接回正式场景。
 
 ## 子 Agent 生图提示词骨架
 

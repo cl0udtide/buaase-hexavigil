@@ -1,13 +1,30 @@
 [gd_scene format=3 uid="uid://c7jldlop83igt"]
 
 [ext_resource type="Script" uid="uid://dvngnxtdahi02" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_operator_card_selected_overlay.tres" id="8_selected"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_base.tres" id="frame_operator_card_base_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_overlay.tres" id="frame_operator_card_cooldown_overlay_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_cooldown_selected_overlay.tres" id="frame_operator_card_cooldown_selected_overlay_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_card_deployed_overlay.tres" id="frame_operator_card_deployed_overlay_164x184"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="frame_operator_stat_row_132x30"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="frame_operator_title_strip_132x42"]
+[ext_resource type="StyleBox" uid="uid://do2ok15hwtd8c" path="res://assets/ui/styles/frame_operator_card_base.tres" id="frame_operator_card_base_164x184"]
+[ext_resource type="StyleBox" uid="uid://b6q7mcn4iywde" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="frame_operator_stat_row_132x30"]
+[ext_resource type="StyleBox" uid="uid://csdhjbtdi6o1v" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="frame_operator_title_strip_132x42"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover_overlay"]
+bg_color = Color(1, 0.93, 0.7, 0.08)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_deployed_overlay"]
+bg_color = Color(0.18, 0.68, 0.43, 0.14)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cooldown_overlay"]
+bg_color = Color(0.78, 0.08, 0.08, 0.38)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="OperatorCard" type="Control" unique_id=1219481180]
 custom_minimum_size = Vector2(164, 184)
@@ -19,22 +36,20 @@ script = ExtResource("1_hry6b")
 
 [node name="CardBase" type="Panel" parent="." unique_id=968438893]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(164, 184)
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_operator_card_base_164x184")
 
 [node name="CardContent" type="MarginContainer" parent="." unique_id=1076543747]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(164, 184)
 z_index = 5
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 10
@@ -61,14 +76,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 18
+theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 14
+theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 4
 
 [node name="TitleRow" type="HBoxContainer" parent="CardContent/VBox/TitleStrip/TitleMargin" unique_id=1970096828]
 layout_mode = 2
 theme_override_constants/separation = 4
+alignment = 1
 
 [node name="ClassIcon" type="TextureRect" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=2067825838]
 unique_name_in_owner = true
@@ -82,7 +98,8 @@ stretch_mode = 5
 [node name="NameLabel" type="Label" parent="CardContent/VBox/TitleStrip/TitleMargin/TitleRow" unique_id=1710430402]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 14
 text = "干员"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -128,6 +145,8 @@ offset_left = 8.0
 offset_top = 2.0
 offset_right = -8.0
 offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "HP --"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -184,58 +203,48 @@ unique_name_in_owner = true
 visible = false
 z_index = 8
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("8_selected")
+theme_override_styles/panel = SubResource("StyleBoxFlat_hover_overlay")
 
 [node name="DeployedOverlay" type="Panel" parent="." unique_id=614556158]
 unique_name_in_owner = true
 visible = false
 z_index = 2
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_operator_card_deployed_overlay_164x184")
+theme_override_styles/panel = SubResource("StyleBoxFlat_deployed_overlay")
 
 [node name="CooldownOverlay" type="Panel" parent="." unique_id=1011898872]
 unique_name_in_owner = true
 visible = false
 z_index = 10
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_operator_card_cooldown_overlay_164x184")
+theme_override_styles/panel = SubResource("StyleBoxFlat_cooldown_overlay")
 
 [node name="CooldownSelectedOverlay" type="Panel" parent="." unique_id=1800497857]
 unique_name_in_owner = true
 visible = false
 z_index = 11
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_operator_card_cooldown_selected_overlay_164x184")
+theme_override_styles/panel = SubResource("StyleBoxFlat_cooldown_overlay")
 
 [node name="CooldownTopContent" type="Control" parent="." unique_id=1948928943]
 unique_name_in_owner = true
 visible = false
 z_index = 20
 anchors_preset = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 164.0
+offset_bottom = 184.0
 mouse_filter = 2
 
 [node name="CooldownLabel" type="Label" parent="CooldownTopContent" unique_id=460056569]

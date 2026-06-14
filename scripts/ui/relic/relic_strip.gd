@@ -6,11 +6,6 @@ const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 const RELIC_ICON_SCENE := preload("res://scenes/ui/relic/RelicIcon.tscn")
 const MAX_VISIBLE_RELICS := 14
-const RELIC_ICON_WIDTH := 34.0
-const RELIC_ICON_GAP := 6.0
-const RELIC_ROW_GAP := 8.0
-const RELIC_FRAME_HORIZONTAL_PADDING := 26.0
-const MIN_STRIP_WIDTH := 126.0
 const FALLBACK_MAX_STRIP_WIDTH := 1100.0
 
 signal panel_requested
@@ -20,8 +15,12 @@ var _relic_ids: Array[StringName] = []
 var _last_relic_ids: Array[StringName] = []
 var _has_received_relics := false
 var _last_visible_capacity := -1
+var _scene_custom_minimum_size := Vector2.ZERO
+var _relic_icon_width := 0.0
 
 @onready var _strip_base: Panel = %StripBase
+@onready var _strip_margin: MarginContainer = $StripMargin
+@onready var _row: HBoxContainer = $StripMargin/Row
 @onready var _entry_button: Button = %EntryButton
 @onready var _entry_label: Label = %EntryLabel
 @onready var _icon_row: HBoxContainer = %IconRow
@@ -29,10 +28,11 @@ var _last_visible_capacity := -1
 
 
 func _ready() -> void:
+	_scene_custom_minimum_size = custom_minimum_size
+	_relic_icon_width = _read_relic_icon_width()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	AppTheme.apply(self)
 	_entry_button.pressed.connect(func() -> void: panel_requested.emit())
-	_style_entry_button()
 	var parent_control := get_parent() as Control
 	if parent_control != null:
 		parent_control.resized.connect(_on_available_width_changed)
@@ -95,68 +95,83 @@ func _on_available_width_changed() -> void:
 
 func _visible_relic_capacity(relic_count: int) -> int:
 	var strip_width := _available_strip_width()
-	var entry_width := _entry_button.custom_minimum_size.x if _entry_button != null else 86.0
-	var overflow_width := _overflow_label.custom_minimum_size.x if _overflow_label != null else 42.0
-	var available_width := maxf(0.0, strip_width - entry_width - RELIC_ROW_GAP - RELIC_FRAME_HORIZONTAL_PADDING)
+	var entry_width := _entry_button_minimum_width()
+	var overflow_width := _overflow_label_minimum_width()
+	var row_gap := _row_separation()
+	var available_width := maxf(0.0, strip_width - entry_width - row_gap - _horizontal_margins())
 	var capacity_without_overflow := _icon_capacity_for_width(available_width)
 	if relic_count <= capacity_without_overflow:
 		return mini(MAX_VISIBLE_RELICS, capacity_without_overflow)
-	var capacity_with_overflow := _icon_capacity_for_width(maxf(0.0, available_width - overflow_width - RELIC_ROW_GAP))
+	var capacity_with_overflow := _icon_capacity_for_width(maxf(0.0, available_width - overflow_width - row_gap))
 	return mini(MAX_VISIBLE_RELICS, capacity_with_overflow)
 
 
 func _icon_capacity_for_width(width: float) -> int:
-	return maxi(1, int(floor((width + RELIC_ICON_GAP) / (RELIC_ICON_WIDTH + RELIC_ICON_GAP))))
+	var icon_gap := _icon_separation()
+	return maxi(1, int(floor((width + icon_gap) / (_relic_icon_width + icon_gap))))
 
 
 func _apply_content_width(visible_count: int, has_overflow: bool) -> void:
 	var width := _target_strip_width(visible_count, has_overflow)
-	var height := maxf(size.y, 40.0)
-	set_custom_minimum_size(Vector2(width, 40.0))
-	set_size(Vector2(width, height))
+	custom_minimum_size = Vector2(width, _scene_custom_minimum_size.y)
 
 
 func _target_strip_width(visible_count: int, has_overflow: bool) -> float:
-	var entry_width := _entry_button.custom_minimum_size.x if _entry_button != null else 86.0
-	var overflow_width := _overflow_label.custom_minimum_size.x if _overflow_label != null else 42.0
-	var width := RELIC_FRAME_HORIZONTAL_PADDING + entry_width
+	var row_gap := _row_separation()
+	var icon_gap := _icon_separation()
+	var width := _horizontal_margins() + _entry_button_minimum_width()
 	if visible_count > 0:
-		width += RELIC_ROW_GAP
-		width += float(visible_count) * RELIC_ICON_WIDTH
-		width += float(maxi(0, visible_count - 1)) * RELIC_ICON_GAP
+		width += row_gap
+		width += float(visible_count) * _relic_icon_width
+		width += float(maxi(0, visible_count - 1)) * icon_gap
 	if has_overflow:
-		width += RELIC_ROW_GAP + overflow_width
-	return clampf(ceilf(width), MIN_STRIP_WIDTH, _available_strip_width())
+		width += row_gap + _overflow_label_minimum_width()
+	return clampf(ceilf(width), _scene_custom_minimum_size.x, _available_strip_width())
+
+
+func _read_relic_icon_width() -> float:
+	var icon := RELIC_ICON_SCENE.instantiate() as Control
+	if icon == null:
+		return 0.0
+	var icon_width := icon.custom_minimum_size.x
+	icon.free()
+	return icon_width
+
+
+func _entry_button_minimum_width() -> float:
+	if _entry_button == null:
+		return 0.0
+	return maxf(_entry_button.custom_minimum_size.x, _entry_button.get_combined_minimum_size().x)
+
+
+func _overflow_label_minimum_width() -> float:
+	if _overflow_label == null:
+		return 0.0
+	return maxf(_overflow_label.custom_minimum_size.x, _overflow_label.get_combined_minimum_size().x)
+
+
+func _horizontal_margins() -> float:
+	if _strip_margin == null:
+		return 0.0
+	return float(_strip_margin.get_theme_constant("margin_left")) + float(_strip_margin.get_theme_constant("margin_right"))
+
+
+func _row_separation() -> float:
+	if _row == null:
+		return 0.0
+	return float(_row.get_theme_constant("separation"))
+
+
+func _icon_separation() -> float:
+	if _icon_row == null:
+		return 0.0
+	return float(_icon_row.get_theme_constant("separation"))
 
 
 func _available_strip_width() -> float:
 	var parent_control := get_parent() as Control
 	if parent_control != null and parent_control.size.x > 0.0:
 		return parent_control.size.x
-	if size.x > MIN_STRIP_WIDTH:
+	if size.x > _scene_custom_minimum_size.x:
 		return size.x
 	return FALLBACK_MAX_STRIP_WIDTH
-
-
-func _style_entry_button() -> void:
-	_entry_button.set_custom_minimum_size(Vector2(90.0, 32.0))
-	_entry_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_entry_button.text = ""
-	var normal_style: StyleBox = _entry_button.get_theme_stylebox("normal")
-	_entry_button.add_theme_stylebox_override("hover", _entry_button_brightness_style(normal_style, 1.14))
-	_entry_button.add_theme_stylebox_override("pressed", _entry_button_brightness_style(normal_style, 1.24))
-	_entry_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-
-
-func _entry_button_brightness_style(source_style: StyleBox, brightness: float) -> StyleBox:
-	if source_style == null:
-		return StyleBoxEmpty.new()
-	var copied_style: StyleBox = source_style.duplicate(true) as StyleBox
-	if copied_style is StyleBoxTexture:
-		var texture_style: StyleBoxTexture = copied_style as StyleBoxTexture
-		texture_style.modulate_color = Color(brightness, brightness, brightness, 1.0)
-	elif copied_style is StyleBoxFlat:
-		var flat_style: StyleBoxFlat = copied_style as StyleBoxFlat
-		flat_style.bg_color = flat_style.bg_color.lightened(brightness - 1.0)
-		flat_style.border_color = flat_style.border_color.lightened(brightness - 1.0)
-	return copied_style

@@ -3,6 +3,8 @@ extends RefCounted
 
 const GENERATED_UI_DIR := "res://assets/ui/generated/"
 const UI_ICON_CATALOG_PATH := "res://data/ui_icons.json"
+const UNIT_SPRITE_ROOT := "res://assets/sprites/units"
+const UNIT_IDLE_ANIM := "idle"
 
 static var _texture_cache: Dictionary = {}
 static var _catalog_loaded := false
@@ -46,11 +48,24 @@ static func get_skill_icon_texture(unit_cfg: Dictionary) -> Texture2D:
 	return _load_texture("%sicon_skill_%s.png" % [GENERATED_UI_DIR, skill_id])
 
 
-static func get_portrait_texture(cfg: Dictionary) -> Texture2D:
+static func get_portrait_texture(cfg: Dictionary, unit_id: StringName = StringName()) -> Texture2D:
 	var texture := _texture_from_cfg_path(cfg, "portrait_path")
 	if texture != null:
 		return texture
-	return _texture_from_cfg_path(cfg, "ui_portrait_path")
+	texture = _texture_from_cfg_path(cfg, "ui_portrait_path")
+	if texture != null:
+		return texture
+	return get_unit_visual_texture(cfg, unit_id)
+
+
+static func get_unit_visual_texture(cfg: Dictionary, unit_id: StringName = StringName()) -> Texture2D:
+	var visual_key := String(cfg.get("visual_key", "")).strip_edges()
+	if visual_key.is_empty():
+		visual_key = String(unit_id).strip_edges()
+	if visual_key.is_empty():
+		return null
+	var path := "%s/%s/%s/%s_%s_000.png" % [UNIT_SPRITE_ROOT, visual_key, UNIT_IDLE_ANIM, visual_key, UNIT_IDLE_ANIM]
+	return _load_texture(path)
 
 
 static func get_catalog_icon(id: StringName) -> Texture2D:
