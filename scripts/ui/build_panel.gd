@@ -352,7 +352,14 @@ func _format_effect_text(cfg: Dictionary) -> String:
 		&"collect_mana":
 			return "每天产出 %d 魔力" % int(effect_value)
 		&"heal":
-			return "%s内友军持续回复 %d 生命/秒" % [range_text, int(effect_value)]
+			var parts: Array[String] = ["%s内友军持续回复 %d 生命/秒" % [range_text, int(effect_value)]]
+			var unit_def_add := int(round(float(cfg.get("unit_def_add", 0.0))))
+			var unit_res_add := int(round(float(cfg.get("unit_res_add", 0.0))))
+			if unit_def_add != 0:
+				parts.append("防御 +%d" % unit_def_add)
+			if unit_res_add != 0:
+				parts.append("法抗 +%d" % unit_res_add)
+			return "，".join(parts)
 		&"slow":
 			return "%s内敌人移速降低 %.0f%%" % [range_text, effect_value * 100.0]
 		&"attack_speed_add":

@@ -465,6 +465,8 @@ func _apply_aura_effects(delta: float) -> void:
 	var enemies: Array = _get_alive_enemies()
 	var unit_attack_speed_adds: Dictionary = {}
 	var unit_attack_bonuses: Dictionary = {}
+	var unit_defense_bonuses: Dictionary = {}
+	var unit_resistance_bonuses: Dictionary = {}
 	var unit_heal_amounts: Dictionary = {}
 	var enemy_speed_multipliers: Dictionary = {}
 	var active_aura_outline_ids: Dictionary = {}
@@ -475,6 +477,8 @@ func _apply_aura_effects(delta: float) -> void:
 		var unit_runtime_id: int = int(unit.get_runtime_id())
 		unit_attack_speed_adds[unit_runtime_id] = 0.0
 		unit_attack_bonuses[unit_runtime_id] = 0
+		unit_defense_bonuses[unit_runtime_id] = 0.0
+		unit_resistance_bonuses[unit_runtime_id] = 0.0
 		unit_heal_amounts[unit_runtime_id] = 0.0
 
 	for enemy in enemies:
@@ -490,10 +494,14 @@ func _apply_aura_effects(delta: float) -> void:
 		var effect_type := StringName(actor_cfg.get("effect_type", ""))
 		var effect_radius: int = int(actor_cfg.get("effect_radius", 0))
 		var effect_value: float = float(actor_cfg.get("effect_value", 0.0))
+		var effect_multiplier := 1.0
 		var run_state = AppRefs.run_state()
 		if run_state != null and run_state.has_method("get_buff_effect_total_for_building"):
 			effect_radius += int(round(float(run_state.get_buff_effect_total_for_building(&"building_aura_radius_add", actor_cfg))))
-			effect_value *= 1.0 + float(run_state.get_buff_effect_total_for_building(&"building_aura_effect_percent", actor_cfg))
+			effect_multiplier += float(run_state.get_buff_effect_total_for_building(&"building_aura_effect_percent", actor_cfg))
+			effect_value *= effect_multiplier
+		var unit_def_add: float = float(actor_cfg.get("unit_def_add", 0.0)) * effect_multiplier
+		var unit_res_add: float = float(actor_cfg.get("unit_res_add", 0.0)) * effect_multiplier
 		var building_cell: Vector2i = actor.get_current_cell()
 		_sync_building_aura_outline(actor, effect_radius, effect_type, actor_cfg, active_aura_outline_ids)
 		match effect_type:
@@ -505,6 +513,8 @@ func _apply_aura_effects(delta: float) -> void:
 						continue
 					var unit_runtime_id: int = int(unit.get_runtime_id())
 					unit_heal_amounts[unit_runtime_id] = float(unit_heal_amounts.get(unit_runtime_id, 0.0)) + effect_value * delta
+					unit_defense_bonuses[unit_runtime_id] = float(unit_defense_bonuses.get(unit_runtime_id, 0.0)) + unit_def_add
+					unit_resistance_bonuses[unit_runtime_id] = float(unit_resistance_bonuses.get(unit_runtime_id, 0.0)) + unit_res_add
 			&"slow":
 				var slow_multiplier: float = max(1.0 - effect_value, 0.1)
 				for enemy in enemies:
@@ -532,11 +542,11 @@ func _apply_aura_effects(delta: float) -> void:
 					unit_attack_bonuses[unit_runtime_id] = int(unit_attack_bonuses.get(unit_runtime_id, 0)) + int(effect_value)
 
 	_clear_inactive_building_aura_outlines(active_aura_outline_ids)
-	_apply_unit_aura_effects(units, unit_attack_speed_adds, unit_attack_bonuses, unit_heal_amounts)
+	_apply_unit_aura_effects(units, unit_attack_speed_adds, unit_attack_bonuses, unit_defense_bonuses, unit_resistance_bonuses, unit_heal_amounts)
 	_apply_enemy_aura_effects(enemies, enemy_speed_multipliers)
 
 
-func _apply_unit_aura_effects(units: Array, attack_speed_adds: Dictionary, attack_bonuses: Dictionary, heal_amounts: Dictionary) -> void:
+func _apply_unit_aura_effects(units: Array, attack_speed_adds: Dictionary, attack_bonuses: Dictionary, defense_bonuses: Dictionary, resistance_bonuses: Dictionary, heal_amounts: Dictionary) -> void:
 	var active_runtime_ids: Dictionary = {}
 	for unit in units:
 		if unit == null or not is_instance_valid(unit) or int(unit.current_hp) <= 0:
@@ -547,6 +557,8 @@ func _apply_unit_aura_effects(units: Array, attack_speed_adds: Dictionary, attac
 			unit.set_modifier_channel(&"aura", {
 				"aspd_add": float(attack_speed_adds.get(unit_runtime_id, 0.0)),
 				"atk_flat": float(attack_bonuses.get(unit_runtime_id, 0)),
+				"def_flat": float(defense_bonuses.get(unit_runtime_id, 0.0)),
+				"res_flat": float(resistance_bonuses.get(unit_runtime_id, 0.0)),
 			})
 		var total_heal: float = float(_unit_heal_remainders.get(unit_runtime_id, 0.0)) + float(heal_amounts.get(unit_runtime_id, 0.0))
 		var heal_value: int = int(floor(total_heal))
