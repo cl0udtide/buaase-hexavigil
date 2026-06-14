@@ -1516,7 +1516,10 @@ func _refresh_deploy_deck_scroll_content() -> void:
 	if visible_card_count > 1:
 		card_width += separation * float(visible_card_count - 1)
 	if _deck_panel != null:
-		_deck_panel.visible = visible_card_count > 0
+		var deck_visible := visible_card_count > 0
+		_deck_panel.visible = deck_visible
+		if _deck_filter_bar != null:
+			_deck_filter_bar.visible = deck_visible
 	_deck_container.custom_minimum_size = Vector2(card_width, card_height)
 	_deck_container.size.x = card_width
 	_deck_container.size.y = card_height
