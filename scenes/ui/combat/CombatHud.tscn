@@ -1230,6 +1230,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
 
 [node name="WavePreviewScrollContent" type="VBoxContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WavePreviewScroll" unique_id=1781389230]
 unique_name_in_owner = true
@@ -1384,28 +1385,6 @@ theme_override_font_sizes/font_size = 34
 text = "敌"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="WaveWarningRow" type="PanelContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent" unique_id=1879578285]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_wave_warning_row_base_328x38")
-
-[node name="WarningMargin" type="MarginContainer" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WaveWarningRow" unique_id=1254677363]
-layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 4
-
-[node name="WaveWarningLabel" type="Label" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox/WavePreviewPanel/WavePreviewMargin/WavePreviewContent/WaveWarningRow/WarningMargin" unique_id=72648846]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "路线异常"
-autowrap_mode = 3
 
 [node name="UnitDetailPanel" parent="HudChromeLayer/RightColumnSlot/RightColumnVBox" unique_id=740705112 instance=ExtResource("5_w2pd7")]
 unique_name_in_owner = true
@@ -2325,6 +2304,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
 
 [node name="CheatBody" type="VBoxContainer" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin/MainVBox/CheatScroll" unique_id=2016619711]
 layout_mode = 2
