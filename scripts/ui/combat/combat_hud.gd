@@ -286,6 +286,12 @@ func _handle_overlay_shortcut(event: InputEvent) -> void:
 		if _settings_panel != null and _settings_panel.has_method("toggle_building_range_from_shortcut"):
 			_settings_panel.call("toggle_building_range_from_shortcut")
 			get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_M:
+		if _wave_route_toggle != null and not _wave_route_toggle.disabled:
+			var enabled := not _wave_route_toggle.button_pressed
+			_wave_route_toggle.set_pressed_no_signal(enabled)
+			wave_route_preview_toggled.emit(enabled)
+			get_viewport().set_input_as_handled()
 	elif key_event.keycode == KEY_ESCAPE and close_top_panel():
 		get_viewport().set_input_as_handled()
 
