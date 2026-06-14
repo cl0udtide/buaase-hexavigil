@@ -13,7 +13,7 @@ const DRAG_BUILDING := &"drag_building"
 const INVALID_CELL := Vector2i(-9999, -9999)
 const BULLET_TIME_SCALE := 0.2
 const PREVIEW_WARNING_STATUSES: Array[StringName] = [&"no_path", &"path_too_short", &"core_enclosed"]
-const ROUTE_LABEL_ALPHABET := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+# ROUTE_LABEL_ALPHABET 已删除——标识统一为出怪口编号 spawn_key。
 const RESOURCE_DISPLAY_NAMES := {
 	&"ap": "行动力",
 	&"prestige": "声望",
@@ -186,6 +186,8 @@ func _bind_combat_hud() -> void:
 		_combat_hud.connect(&"cast_skill_requested", Callable(self, "_on_cast_skill_pressed"))
 	if _combat_hud.has_signal("retreat_requested"):
 		_combat_hud.connect(&"retreat_requested", Callable(self, "_on_retreat_pressed"))
+	if _combat_hud.has_signal("wave_spawn_segment_hovered"):
+		_combat_hud.connect(&"wave_spawn_segment_hovered", Callable(self, "_on_wave_spawn_segment_hovered"))
 	if _combat_hud.has_signal("operator_sell_requested"):
 		_combat_hud.connect(&"operator_sell_requested", Callable(self, "_on_operator_sell_requested"))
 	if _combat_hud.has_signal("wave_route_preview_toggled"):
@@ -844,6 +846,12 @@ func _on_build_action_result(_building_id: StringName, _cell: Vector2i, result: 
 		_show_message(message, StringName(), true)
 
 
+## 悬停右栏某出怪口段 → 地图高亮该口覆盖片、压暗其余（联动）。空串=取消。
+func _on_wave_spawn_segment_hovered(spawn_key: String) -> void:
+	if _map_root != null and _map_root.has_method("set_wave_route_highlight"):
+		_map_root.set_wave_route_highlight(spawn_key)
+
+
 func _on_wave_route_preview_toggled(enabled: bool) -> void:
 	_show_wave_routes = enabled
 	_apply_wave_route_visibility()
@@ -1258,7 +1266,6 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 		route["status"] = StringName(coverage_result.get("status", &"no_path"))
 		route["message"] = String(coverage_result.get("message", ""))
 		route["effective_path_mode"] = StringName(coverage_result.get("effective_path_mode", path_mode))
-		route["route_label"] = _route_label_for_index(index)
 		route["route_summary"] = _format_route_enemy_summary(route)
 		routes[index] = route
 	return routes
@@ -1295,10 +1302,7 @@ func _add_enemy_to_route(route: Dictionary, entry: Dictionary) -> void:
 	route["enemies"] = enemies
 
 
-func _route_label_for_index(index: int) -> String:
-	if index >= 0 and index < ROUTE_LABEL_ALPHABET.length():
-		return ROUTE_LABEL_ALPHABET.substr(index, 1)
-	return str(index + 1)
+# _route_label_for_index 已删除：地图徽标改用出怪口编号(spawn_key)，与右栏统一，不再发 A/B/C。
 
 
 func _format_route_enemy_summary(route: Dictionary) -> String:
@@ -1348,12 +1352,11 @@ func _format_wave_preview_text(preview: Dictionary, routes: Array[Dictionary], h
 func _collect_route_legend_lines(routes: Array[Dictionary]) -> PackedStringArray:
 	var lines := PackedStringArray()
 	for route in routes:
-		var route_label := String(route.get("route_label", "?"))
 		var spawn_key := String(route.get("spawn_key", ""))
 		var route_summary := String(route.get("route_summary", ""))
 		if route_summary.is_empty():
 			route_summary = "无敌人"
-		lines.append("%s线 %s: %s" % [route_label, spawn_key, route_summary])
+		lines.append("%s: %s" % [spawn_key, route_summary])
 	return lines
 
 
