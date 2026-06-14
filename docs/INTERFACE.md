@@ -91,7 +91,7 @@
 - 切换白天、夜晚、祝福、结算
 
 ```gdscript
-func start_new_run(seed: int = -1) -> void
+func start_new_run(seed: int = -1, run_mode: StringName = &"standard") -> void
 func enter_day(day: int) -> void
 func enter_night() -> void
 func enter_blessing() -> void
@@ -101,9 +101,9 @@ func get_current_phase() -> int
 
 方法规格：
 
-- `start_new_run(seed)`
-  输入：`seed: int`，`-1` 表示内部生成随机种子。
-  行为：确认 `DataRepo` 已加载静态配置后，重置本局运行时状态，生成地图，并启动新一局流程。配置加载属于 `DataRepo` 的 Autoload 生命周期，不属于每局开局流程。
+- `start_new_run(seed, run_mode = &"standard")`
+  输入：`seed: int`，`-1` 表示内部生成随机种子；可选运行模式 `run_mode`。
+  行为：确认 `DataRepo` 已加载静态配置后，按运行模式重置本局运行时状态，生成地图，并启动新一局流程。配置加载属于 `DataRepo` 的 Autoload 生命周期，不属于每局开局流程。
   返回：无。
 - `enter_day(day)`
   输入：`day: int`。
@@ -138,6 +138,7 @@ func try_explore(cell: Vector2i) -> Dictionary
 func try_collect_resource(cell: Vector2i) -> Dictionary
 func is_resource_collected_today(cell: Vector2i) -> bool
 func try_trigger_event(cell: Vector2i, choice_id: StringName = StringName()) -> Dictionary
+func try_seal_spawn_gate(cell: Vector2i) -> Dictionary
 func request_start_night() -> Dictionary
 ```
 
@@ -166,6 +167,11 @@ func request_start_night() -> Dictionary
   行为：校验指定格子位于已探索区域且存在事件，消耗 2 点行动力后委托 `RandomEventManager.apply_event_for_cell(cell, choice_id)` 完成事件结算。
   成功结果：返回 `ActionResult(ok = true)`，并完成事件结算；事件覆盖层移除该事件点，地图格属性不修改。
   失败结果：返回 `ActionResult(ok = false)`，不修改状态；若事件结算失败会退还已扣除行动力。
+- `try_seal_spawn_gate(cell)`
+  输入：`cell: Vector2i`。
+  行为：白天封堵指定格子上的活跃出怪口，使其当晚沉默、怪物改道；每天最多封堵一次，需消耗石材和行动力，且至少保留一个活跃出怪口。成功时通过 `RunState.add_night_gate_closed()` 改写当晚出怪口集合，由 `night_gate_overrides_changed` 广播。
+  成功结果：返回 `ActionResult(ok = true)`，payload 含 `gate_key`、`ap_cost`、`stone_cost`，石材与行动力已扣除。
+  失败结果：返回 `ActionResult(ok = false)`（非白天、非出怪口、今晚本就沉默、仅剩最后一个活跃口、已达每日封堵上限或材料/行动力不足），不修改状态。
 - `request_start_night()`
   输入：无。
   行为：校验当前是否允许结束白天并进入夜晚。
@@ -206,7 +212,8 @@ func is_night_running() -> bool
 - 祝福抽取与 Buff 应用
 
 ```gdscript
-func get_random_blessing_choices(count: int = 3) -> Array[StringName]
+func get_random_blessing_choices(count: int = 0) -> Array[StringName]
+func get_random_blessing_choices_with_sources(count: int = 0) -> Array[Dictionary]
 func apply_blessing(buff_id: StringName) -> Dictionary
 func has_buff(buff_id: StringName) -> bool
 func get_all_buffs() -> Array[StringName]
@@ -215,9 +222,13 @@ func get_all_buffs() -> Array[StringName]
 方法规格：
 
 - `get_random_blessing_choices(count)`
-  输入：`count: int = 3`。
+  输入：`count: int = 0`，`0` 表示使用默认候选数量。
   行为：生成指定数量的祝福候选。
   返回：`Array[StringName]`。
+- `get_random_blessing_choices_with_sources(count)`
+  输入：`count: int = 0`，`0` 表示使用默认候选数量。
+  行为：生成带来源信息的祝福候选，供 UI 标注每个候选的出处。
+  返回：`Array[Dictionary]`。
 - `apply_blessing(buff_id)`
   输入：`buff_id: StringName`。
   行为：校验并应用指定 Buff。
@@ -298,7 +309,7 @@ func get_event_cfg(event_id: StringName) -> Dictionary
 - 当前局公共状态读写入口
 
 ```gdscript
-func reset_for_new_run(seed: int) -> void
+func reset_for_new_run(seed: int, mode: StringName = RUN_MODE_STANDARD) -> void
 func set_phase(phase: int) -> void
 func set_day(day: int) -> void
 func reset_action_points(value: int) -> void
@@ -315,6 +326,8 @@ func get_owned_operator(operator_key: StringName) -> Dictionary
 func get_owned_operators() -> Array[Dictionary]
 func has_owned_operator(operator_key: StringName) -> bool
 func sell_owned_operator(operator_key: StringName, refund_override: int = -1) -> Dictionary
+func get_operator_star_up_cost(star: int) -> Dictionary
+func upgrade_owned_operator_star(operator_key: StringName) -> Dictionary
 func auto_merge_operators_for_unit(unit_id: StringName, before_merge: Callable = Callable()) -> Dictionary
 func get_unit_covenants(unit_id: StringName) -> Array
 func get_operator_covenants(operator_key: StringName) -> Array
@@ -324,13 +337,16 @@ func add_owned_unit(unit_id: StringName) -> void
 func has_owned_unit(unit_id: StringName) -> bool
 func set_deploy_limit(value: int) -> void
 func change_deployed_count(delta: int) -> void
+func clear_night_gate_overrides() -> void
+func add_night_gate_closed(gate_key: String) -> void
+func add_night_gate_extra_open(gate_key: String) -> void
 ```
 
 方法规格：
 
-- `reset_for_new_run(seed)`
-  输入：`seed: int`。
-  行为：按给定种子重置整局公共状态。
+- `reset_for_new_run(seed, mode = RUN_MODE_STANDARD)`
+  输入：`seed: int`、可选运行模式 `mode`（`RUN_MODE_STANDARD` / `RUN_MODE_TUTORIAL`）。
+  行为：按给定种子和运行模式重置整局公共状态。
   返回：无。
 - `set_phase(phase)`
   输入：`phase: int`。
@@ -400,6 +416,15 @@ func change_deployed_count(delta: int) -> void
   行为：仅白天可调用；移除该干员槽位并返还声望。`refund_override < 0` 时使用默认 1 声望；调用方可按盟约等规则传入覆盖返还值。
   成功结果：返回 `ActionResult(ok = true)`，payload 中包含 `operator_key` 和 `refund_prestige`。
   失败结果：返回 `ActionResult(ok = false)`，槽位和声望不变。
+- `get_operator_star_up_cost(star)`
+  输入：当前星级。
+  行为：读取从该星级升一星所需的材料/声望成本。
+  返回：成本字典；无对应档位时返回空字典。
+- `upgrade_owned_operator_star(operator_key)`
+  输入：干员槽位 key。
+  行为：仅白天可调用；对指定干员定向升星 +1，扣除魔力矿和声望成本。部署/冷却门控由 `UnitManager` 负责。
+  成功结果：返回 `ActionResult(ok = true)`，槽位星级已提升、成本已扣除。
+  失败结果：返回 `ActionResult(ok = false)`（非白天、未拥有该干员、已达最高星或材料/声望不足），不修改状态。
 - `auto_merge_operators_for_unit(unit_id, before_merge = Callable())`
   输入：单位 ID 与可选合成前回调。
   行为：按同名同星三合一规则自动合成，保留最早槽位并提升星级；回调用于让 `UnitManager` 在合成前撤回参与槽位。
@@ -437,6 +462,18 @@ func change_deployed_count(delta: int) -> void
 - `change_deployed_count(delta)`
   输入：`delta: int`。
   行为：增减当前已部署数量。
+  返回：无。
+- `clear_night_gate_overrides()`
+  输入：无。
+  行为：清空本局出怪口的动态封堵和额外开启覆盖，恢复默认出怪口集合。
+  返回：无。
+- `add_night_gate_closed(gate_key)`
+  输入：出怪口 key。
+  行为：将指定出怪口加入当晚封堵集合，使其沉默；由白天封口和事件等动态出怪口逻辑驱动，并广播 `night_gate_overrides_changed`。
+  返回：无。
+- `add_night_gate_extra_open(gate_key)`
+  输入：出怪口 key。
+  行为：将指定出怪口加入额外开启集合，使本不活跃的出怪口当晚激活；并广播 `night_gate_overrides_changed`。
   返回：无。
 
 #### `DataRepo`
@@ -603,7 +640,7 @@ func restart_run() -> void
 
 ```gdscript
 func generate_new_map(seed: int) -> void
-func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary) -> void
+func generate_debug_map(new_width: int, new_height: int, core_cell: Vector2i, spawn_defs: Dictionary, blocked_cells: Array = [], highland_cells: Array = []) -> void
 func reset_map() -> void
 func is_inside(cell: Vector2i) -> bool
 func get_cell_data(cell: Vector2i) -> CellData
@@ -636,9 +673,9 @@ func refresh_all_layers(reset_camera: bool = false) -> void
   输入：`seed: int`。
   行为：根据种子生成新地图并初始化格子数据。
   返回：无。
-- `generate_debug_map(new_width, new_height, core_cell, spawn_defs)`
-  输入：调试地图尺寸、核心格、刷怪口字典。
-  行为：生成全探索调试地图并刷新显示层；该操作允许重置地图镜头。
+- `generate_debug_map(new_width, new_height, core_cell, spawn_defs, blocked_cells, highland_cells)`
+  输入：调试地图尺寸、核心格、刷怪口字典、可选阻挡格列表、可选高台格列表。
+  行为：生成全探索调试地图并刷新显示层；可按传入列表预置阻挡和高台地形；该操作允许重置地图镜头。
   返回：无。
 - `reset_map()`
   输入：无。
@@ -747,9 +784,12 @@ func refresh_all_layers(reset_camera: bool = false) -> void
 func refresh_from_map(map_manager: Node, reset_camera: bool = false) -> void
 func set_debug_attack_range(cells: Array[Vector2i]) -> void
 func clear_debug_attack_range() -> void
-func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = []) -> void
-func set_deploy_direction_preview(cell: Vector2i, facing: Vector2i, range_cells: Array[Vector2i] = []) -> void
+func set_deploy_preview(cell: Vector2i, is_valid: bool, range_cells: Array[Vector2i] = [], visual_key: String = "") -> void
+func set_deploy_direction_preview(cell: Vector2i, facing: Vector2i, range_cells: Array[Vector2i] = [], visual_key: String = "") -> void
 func clear_deploy_preview() -> void
+func set_wave_route_previews(routes: Array[Dictionary]) -> void
+func clear_wave_route_previews() -> void
+func set_wave_route_highlight(spawn_key: String) -> void
 func get_debug_info() -> String
 ```
 
@@ -767,17 +807,29 @@ func get_debug_info() -> String
   输入：无。
   行为：清除攻击范围预览；取消选中、撤退、清场时必须调用或间接触发。
   返回：无。
-- `set_deploy_preview(cell, is_valid, range_cells)`
-  输入：拖拽落点、是否合法、按默认朝向计算的攻击范围。
+- `set_deploy_preview(cell, is_valid, range_cells, visual_key)`
+  输入：拖拽落点、是否合法、按默认朝向计算的攻击范围、可选范围视觉 key。
   行为：绘制第一段拖拽时的合法/非法落点与范围预览。
   返回：无。
-- `set_deploy_direction_preview(cell, facing, range_cells)`
-  输入：锁定落点、朝向、按该朝向计算的攻击范围。
+- `set_deploy_direction_preview(cell, facing, range_cells, visual_key)`
+  输入：锁定落点、朝向、按该朝向计算的攻击范围、可选范围视觉 key。
   行为：绘制第二段拖拽时的锁定落点、朝向箭头和范围预览。
   返回：无。
 - `clear_deploy_preview()`
   输入：无。
   行为：清除部署落点、朝向和范围预览。
+  返回：无。
+- `set_wave_route_previews(routes)`
+  输入：整夜各出怪口的覆盖面路线数据数组。
+  行为：绘制当晚每个出怪口的覆盖面路线预览。
+  返回：无。
+- `clear_wave_route_previews()`
+  输入：无。
+  行为：清除全部覆盖面路线预览。
+  返回：无。
+- `set_wave_route_highlight(spawn_key)`
+  输入：出怪口 key。
+  行为：高亮指定出怪口对应的覆盖面路线，用于敌情面板悬停联动；传空清除高亮。
   返回：无。
 
 #### `PathService`
@@ -788,9 +840,16 @@ func get_debug_info() -> String
 
 ```gdscript
 func rebuild_from_map() -> void
-func find_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]
-func get_cell_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]
-func has_path(start_cell: Vector2i, end_cell: Vector2i) -> bool
+func get_dist_map(path_mode: StringName) -> Dictionary
+func get_front_map(path_mode: StringName) -> Dictionary
+func has_route(cell: Vector2i, path_mode: StringName) -> bool
+func get_core_distance(cell: Vector2i, path_mode: StringName) -> int
+func compute_coverage(spawn_cell: Vector2i, requested_mode: StringName, half_width: int) -> Dictionary
+func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]
+func find_path_preview(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Dictionary
+func get_cell_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]
+func has_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> bool
+func is_core_enclosed_by_path_blockers(core_cell: Vector2i, extra_blocked_cells: Dictionary = {}) -> bool
 func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
 ```
 
@@ -798,24 +857,79 @@ func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
 
 - `rebuild_from_map()`
   输入：无。
-  行为：根据当前地图阻挡信息重建路径网格。
+  行为：根据当前地图阻挡信息重建路径网格，并按出怪口/飞行等模式预计算到核心的距离场与正面场。
   返回：无。
-- `find_path(start_cell, end_cell)`
-  输入：起点格与终点格。
-  行为：使用 A* 计算四向网格路径；保留给既有敌人逻辑调用。
+- `get_dist_map(path_mode)`
+  输入：路径模式。
+  行为：读取指定模式下全图到核心的距离场，是新移动系统铺面推进的依据。
+  返回：`Dictionary`，键为格子坐标，值为到核心的步数。
+- `get_front_map(path_mode)`
+  输入：路径模式。
+  行为：读取指定模式下的正面结构场，供敌人沿场铺面推进时判断同距等值面。
+  返回：`Dictionary`。
+- `has_route(cell, path_mode)`
+  输入：格子与路径模式。
+  行为：判断该格在指定模式下是否存在通往核心的路线（距离场可达）。
+  返回：`bool`。
+- `get_core_distance(cell, path_mode)`
+  输入：格子与路径模式。
+  行为：读取该格在指定模式下到核心的距离场步数。
+  返回：`int`；不可达时返回约定的不可达值。
+- `compute_coverage(spawn_cell, requested_mode, half_width)`
+  输入：出怪口格、请求的路径模式、覆盖半宽。
+  行为：沿距离场梯度从出怪口铺出一条中心线，再按半宽展开成覆盖带，用于覆盖面路线预览。
+  返回：`Dictionary`，含中心线与覆盖格集合。
+- `find_path(start_cell, end_cell, path_mode, extra_blocked_cells)`
+  输入：起点格、终点格、路径模式、可选额外阻挡集合。
+  行为：使用 A* 计算指定模式下的四向网格路径；保留为兼容入口，敌人常态移动已改走距离场铺面，不再每怪 A*。
   返回：`Array[Vector2i]`。
-- `get_cell_path(start_cell, end_cell)`
-  输入：起点格与终点格。
-  行为：使用 A* 计算四向网格路径。
+- `find_path_preview(start_cell, end_cell, path_mode, extra_blocked_cells)`
+  输入：起点格、终点格、路径模式、可选额外阻挡集合。
+  行为：在不改变寻路网格的前提下试算一条路径预览，用于部署/封口前的可达性与绕行预览。
+  返回：`Dictionary`。
+- `get_cell_path(start_cell, end_cell, path_mode, extra_blocked_cells)`
+  输入：起点格、终点格、路径模式、可选额外阻挡集合。
+  行为：使用 A* 计算指定模式下的四向网格路径。
   返回：`Array[Vector2i]`。
-- `has_path(start_cell, end_cell)`
-  输入：起点格与终点格。
-  行为：判断两点间是否存在路径。
+- `has_path(start_cell, end_cell, path_mode, extra_blocked_cells)`
+  输入：起点格、终点格、路径模式、可选额外阻挡集合。
+  行为：判断两点间在指定模式下是否存在路径。
+  返回：`bool`。
+- `is_core_enclosed_by_path_blockers(core_cell, extra_blocked_cells)`
+  输入：核心格、可选额外阻挡集合。
+  行为：判断核心是否被阻挡物完全围死，用于封口/建造前的合法性校验，避免出怪口被堵成无解局。
   返回：`bool`。
 - `set_cell_blocked(cell, blocked)`
   输入：格子与阻挡状态。
   行为：手动设置某格是否阻挡寻路。
   返回：无。
+
+#### `FlowField`
+
+作用：
+
+- 距离场与正面场计算核心，是新移动系统的底层算法。对外提供静态方法，由 `PathService` 调用预计算，敌人沿场逐步下降推进。
+
+```gdscript
+static func compute_distance(cells: Dictionary, core: Vector2i, blocked: Dictionary) -> Dictionary
+static func compute_front(cells: Dictionary, dist: Dictionary, blocked: Dictionary) -> Dictionary
+static func descend_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase: float, extra_blocked: Dictionary) -> Vector2i
+```
+
+方法规格：
+
+- `compute_distance(cells, core, blocked)`
+  输入：全部可行格集合、核心格、阻挡格集合。
+  行为：从核心做 BFS，铺出全图到核心的距离场。
+  返回：`Dictionary`，键为格子坐标，值为到核心的步数。
+- `compute_front(cells, dist, blocked)`
+  输入：可行格集合、已算好的距离场、阻挡格集合。
+  行为：基于距离场计算正面结构场，标出同距等值面的推进正面。
+  返回：`Dictionary`。
+- `descend_step(dist, front, cell, phase, extra_blocked)`
+  输入：距离场、正面场、当前格、相位扰动、运行时额外阻挡（如拦路干员）。
+  行为：计算单只敌人沿场下降一格的下一步落点；遇到额外阻挡时沿正面横移绕行。
+  返回：`Vector2i`，下一步格子。
 
 ### 3.3 建筑模块
 
@@ -826,14 +940,14 @@ func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
 - 建造合法性校验
 
 ```gdscript
-func can_place_building(cell: Vector2i, building_id: StringName) -> Dictionary
+func can_place_building(cell: Vector2i, building_id: StringName, material_costs: Dictionary = {}) -> Dictionary
 func can_repair_building(building_runtime_id: int) -> Dictionary
 ```
 
 方法规格：
 
-- `can_place_building(cell, building_id)`
-  输入：格子与建筑 ID。
+- `can_place_building(cell, building_id, material_costs)`
+  输入：格子、建筑 ID、可选材料成本覆盖（传入时按其校验材料是否充足）。
   行为：校验是否允许放置指定建筑。
   成功结果：返回 `ActionResult(ok = true)`。
   失败结果：返回 `ActionResult(ok = false)`，包含失败原因。
@@ -954,7 +1068,7 @@ func get_effect_radius() -> int
 - 商店库存与购买主控
 
 ```gdscript
-func start_new_day_shop(day: int) -> void
+func start_new_day_shop(_day: int) -> void
 func refresh_shop() -> Dictionary
 func get_current_stock() -> Array[Dictionary]
 func get_refresh_cost() -> int
@@ -968,9 +1082,9 @@ func get_unit_roll_weight(unit_id: StringName) -> float
 
 方法规格：
 
-- `start_new_day_shop(day)`
-  输入：`day: int`。
-  行为：初始化指定天数的商店库存；若存在锁定且未购买的槽位，其 `unit_id` 原位保留并维持锁定，其余槽位重抽。
+- `start_new_day_shop(_day)`
+  输入：`_day: int`，当前实现未使用该形参（库存只按本局状态重抽）。
+  行为：初始化新一天的商店库存；若存在锁定且未购买的槽位，其 `unit_id` 原位保留并维持锁定，其余槽位重抽。
   返回：无。
 - `refresh_shop()`
   输入：无。
@@ -1026,6 +1140,7 @@ func try_deploy_unit(unit_id: StringName, cell: Vector2i, facing: Vector2i) -> D
 func try_retreat_unit(unit_runtime_id: int) -> Dictionary
 func try_cast_skill(unit_runtime_id: int) -> Dictionary
 func try_sell_operator(operator_key: StringName) -> Dictionary
+func try_upgrade_operator_star(operator_key: StringName) -> Dictionary
 func get_unit_by_runtime_id(unit_runtime_id: int) -> Node
 func get_unit_by_operator_key(operator_key: StringName) -> Node
 func get_operator_key_by_runtime_id(unit_runtime_id: int) -> StringName
@@ -1075,6 +1190,11 @@ func clear_all_units() -> void
   行为：检查白天阶段、拥有状态、未部署且未处于再部署冷却后，委托 `RunState.sell_owned_operator()` 移除槽位。
   成功结果：返回 `ActionResult(ok = true)`，默认获得 1 声望；远见 3 人且层数达标时由 `UnitManager` 按基础购买价折半覆盖返还值。
   失败结果：返回 `ActionResult(ok = false)`，槽位和声望不变。
+- `try_upgrade_operator_star(operator_key)`
+  输入：干员槽位 key。
+  行为：校验该槽位未部署且未处于再部署冷却后，委托 `RunState.upgrade_owned_operator_star()` 对该干员定向升星。
+  成功结果：返回 `ActionResult(ok = true)`，干员星级已提升、成本已扣除。
+  失败结果：返回 `ActionResult(ok = false)`（已部署、再部署冷却中或 `RunState` 升星校验未通过），不修改状态。
 - `get_unit_by_runtime_id(unit_runtime_id)`
   输入：单位运行时 ID。
   行为：按运行时 ID 查找单位实例。
@@ -1170,8 +1290,8 @@ static func calc_heal(power: int) -> int
 - 单个单位实例行为
 
 ```gdscript
-func setup_from_cfg(unit_id: StringName, cfg: Dictionary, spawn_cell: Vector2i, facing: Vector2i) -> void
-func receive_damage(value: int, damage_type: int) -> void
+func setup_from_cfg(unit_id: StringName, cfg: Dictionary, spawn_cell: Vector2i, facing: Vector2i, new_operator_key: StringName = StringName(), new_operator_name: String = "") -> void
+func receive_damage(value: int, damage_type_value: int, source: Node = null, pooled: bool = false) -> void
 func receive_heal(value: int) -> void
 func gain_sp(value: int) -> void
 func can_cast_skill() -> bool
@@ -1187,12 +1307,12 @@ func launch_projectile(target: Node, payload: Dictionary = {}) -> Node
 
 方法规格：
 
-- `setup_from_cfg(unit_id, cfg, spawn_cell, facing)`
-  输入：单位 ID、配置、出生格、朝向。
-  行为：用配置初始化单位实例。
+- `setup_from_cfg(unit_id, cfg, spawn_cell, facing, new_operator_key, new_operator_name)`
+  输入：单位 ID、配置、出生格、朝向、可选干员槽位 key、可选干员显示名。
+  行为：用配置初始化单位实例，并绑定其代表的干员槽位 key 与显示名。
   返回：无。
-- `receive_damage(value, damage_type)`
-  输入：伤害值与伤害类型。
+- `receive_damage(value, damage_type_value, source, pooled)`
+  输入：伤害值、伤害类型、可选伤害来源节点、是否为池化伤害。
   行为：让单位受到伤害。
   返回：无。
 - `receive_heal(value)`
@@ -1471,11 +1591,11 @@ func clear_all_enemies() -> void
 
 ```gdscript
 func setup_from_cfg(enemy_id: StringName, cfg: Dictionary, spawn_cell: Vector2i) -> void
-func receive_damage(value: int, damage_type: int) -> void
+func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0, source: Node = null) -> void
 func get_runtime_id() -> int
 func get_current_cell() -> Vector2i
 func recalc_path() -> void
-func set_blocked(blocker_runtime_id: int) -> void
+func set_blocked(blocker_runtime_id: int, block_slot: int = 0, block_slot_count: int = 1) -> void
 func clear_blocked() -> void
 ```
 
@@ -1485,8 +1605,8 @@ func clear_blocked() -> void
   输入：敌人 ID、配置、出生格。
   行为：用配置初始化敌人实例。
   返回：无。
-- `receive_damage(value, damage_type)`
-  输入：伤害值与伤害类型。
+- `receive_damage(value, damage_type, defense_ignore, source)`
+  输入：伤害值、伤害类型、可选无视防御比例、可选伤害来源节点。
   行为：让敌人受到伤害。
   返回：无。
 - `get_runtime_id()`
@@ -1501,9 +1621,9 @@ func clear_blocked() -> void
   输入：无。
   行为：重新计算当前寻路路径。
   返回：无。
-- `set_blocked(blocker_runtime_id)`
-  输入：阻挡者运行时 ID。
-  行为：设置敌人被阻挡状态。
+- `set_blocked(blocker_runtime_id, block_slot, block_slot_count)`
+  输入：阻挡者运行时 ID、阻挡槽位序号、阻挡槽位总数。
+  行为：设置敌人被阻挡状态，并按槽位信息错开同一阻挡者上多个敌人的站位。
   返回：无。
 - `clear_blocked()`
   输入：无。
@@ -1721,11 +1841,16 @@ UI 分层与重构构想见 `docs/UI_SYSTEM.md`。该工具只做显示转换，
 
 ```gdscript
 signal operator_card_pressed(operator_key: StringName)
+signal operator_card_drag_started(operator_key: StringName)
 signal pause_pressed
 signal speed_1_pressed
 signal speed_2_pressed
 signal cast_skill_requested
 signal retreat_requested
+signal operator_sell_requested(operator_key: StringName)
+signal shop_unit_purchase_requested(slot_index: int)
+signal wave_route_preview_toggled(enabled: bool)
+signal wave_spawn_segment_hovered(spawn_key: String)
 ```
 
 方法：
@@ -1921,6 +2046,8 @@ func hide_panel() -> void
 | `request_buy_shop_slot` | `slot_index: int` | UI | `ShopManager` | 请求购买指定商店槽位 |
 | `request_refresh_shop` | 无 | UI | `ShopManager` | 请求刷新商店 |
 | `request_toggle_shop_lock` | `slot_index: int` | UI | `ShopManager` | 请求锁定/解锁指定商店槽位 |
+| `request_upgrade_operator_star` | `operator_key: StringName` | UI | `UnitManager` | 请求对指定干员定向升星 |
+| `operator_star_upgrade_result` | `operator_key: StringName, result: Dictionary` | `UnitManager` | UI | 定向升星结果回执 |
 | `blessing_chosen` | `buff_id: StringName` | UI | `GameController`、`BuffManager` | 选择某个祝福 |
 
 ### 4.4 世界事件信号
@@ -1946,6 +2073,8 @@ func hide_panel() -> void
 | `random_event_triggered` | `event_id: StringName, cell: Vector2i` | `RandomEventManager` | `EventPanel` | 兼容旧事件展示入口；当前地图事件默认通过地图对象弹窗点击触发 |
 | `random_event_choice_selected` | `event_id: StringName, cell: Vector2i, choice_id: StringName, result: Dictionary` | `EventPanel` | UI、调试工具 | 事件选项已选择并返回结算结果 |
 | `blessing_choices_ready` | `choice_ids: Array[StringName]` | `BuffManager` | `BlessingPanel` | 祝福选项已生成 |
+| `blessing_choices_with_sources_ready` | `entries: Array` | `BuffManager` | `BlessingPanel` | 带来源的遗物三选一已生成，每项含 `buff_id` 与 `slot`（盟约导向/经济/随机） |
+| `night_gate_overrides_changed` | 无 | `RunState` | UI、`WaveManager` | 出怪口动态封堵/额外开启集合变化 |
 | `audio_cue_requested` | `cue_key: StringName` | UI / 系统 | 音频绑定器 | 请求播放指定音效 |
 | `core_destroyed` | 无 | `RunState` | `GameController`、`ResultPanel` | 核心归零 |
 
@@ -2026,6 +2155,8 @@ func hide_panel() -> void
 
 - `request_buy_shop_slot`
 - `request_refresh_shop`
+- `request_toggle_shop_lock`
+- `request_upgrade_operator_star`
 - `phase_changed`
 - `day_started`
 - `night_started`
@@ -2068,6 +2199,8 @@ func hide_panel() -> void
 - `random_event_triggered`
 - `deploy_limit_changed`
 - `owned_operators_changed`
+- `covenants_changed`
+- `night_gate_overrides_changed`
 - `map_cell_clicked`
 
 对外广播：
