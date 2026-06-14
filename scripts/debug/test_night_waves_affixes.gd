@@ -107,10 +107,15 @@ func _test_prestige_reward_day_scaling() -> void:
 	_expect(PrestigeReward.base_for_day(3, 4) == 1, "day4 lowers prestige reward by 2")
 	_expect(PrestigeReward.base_for_day(1, 4) == 1, "day4 prestige reward floors at 1")
 	_expect(PrestigeReward.base_for_day(20, 4) == 18, "day4 lowers boss prestige reward by 2")
+	_expect(PrestigeReward.base_for_day(20, 6) == 16, "day6 lowers boss prestige reward by 4")
+	_expect(PrestigeReward.base_for_day(3, 6) == 1, "day6 prestige reward floors at 1")
 	var bloodlust: Dictionary = {"effects": [{"type": "enemy_stat_percent", "stat": "prestige_reward", "value": 0.30}]}
 	var adjusted: Dictionary = PrestigeReward.apply_base_for_day({"prestige_reward": 10}, 4)
 	var affixed: Dictionary = AffixService.apply_to_enemy_cfg(adjusted, [bloodlust])
 	_expect(int(affixed.get("prestige_reward", 0)) == 10, "day scaling applies before bloodlust prestige bonus")
+	var endgame_adjusted: Dictionary = PrestigeReward.apply_base_for_day({"prestige_reward": 10}, 6)
+	var endgame_affixed: Dictionary = AffixService.apply_to_enemy_cfg(endgame_adjusted, [bloodlust])
+	_expect(int(endgame_affixed.get("prestige_reward", 0)) == 8, "day6 scaling applies before bloodlust prestige bonus")
 
 
 func _test_affix_enemy_cfg() -> void:
