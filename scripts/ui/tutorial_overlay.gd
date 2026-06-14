@@ -1,116 +1,130 @@
 extends Control
 
-const AppTheme = preload("res://scripts/ui/app_theme.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-
 signal next_requested
 signal skip_requested
+signal step_started(step_index: int)
 
-const POSITION_TOP_RIGHT := &"top_right"
-const POSITION_TOP_CENTER := &"top_center"
+const EVENT_TUTORIAL_ACTION := &"tutorial_action"
+const DEFAULT_TYPE_SPEED := 36.0
 
-var _dragging := false
-var _drag_offset := Vector2.ZERO
-var _user_moved := false
+var _waiting_for_action := false
+var _dialog_skip_requested := false
+var _active := false
+var _wait_by_step: Array[bool] = []
 
-@onready var _panel: PanelContainer = %Panel
-@onready var _step_label: Label = %StepLabel
-@onready var _title_label: Label = %TitleLabel
-@onready var _body_label: Label = %BodyLabel
-@onready var _hint_label: Label = %HintLabel
-@onready var _next_button: Button = %NextButton
-@onready var _skip_button: Button = %SkipButton
+@onready var _dialog_panel: DialogPanel = get_node_or_null("DialogPanel") as DialogPanel
 
 
 func _ready() -> void:
-	AppTheme.apply(self)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	resized.connect(_clamp_panel_to_view)
-	_panel.add_theme_stylebox_override("panel", GameUiStyle.event_panel())
-	_panel.gui_input.connect(_on_panel_gui_input)
-	_next_button.add_theme_stylebox_override("normal", GameUiStyle.button(GameUiStyle.ACCENT))
-	_next_button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.AMBER))
-	_next_button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.AMBER))
-	_skip_button.add_theme_stylebox_override("normal", GameUiStyle.secondary_button())
-	_skip_button.add_theme_stylebox_override("hover", GameUiStyle.button(GameUiStyle.STROKE_STRONG))
-	_skip_button.add_theme_stylebox_override("pressed", GameUiStyle.button(GameUiStyle.STROKE_STRONG))
-	_step_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_body_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
-	_hint_label.add_theme_color_override("font_color", GameUiStyle.ACCENT)
-	_next_button.pressed.connect(func() -> void: next_requested.emit())
-	_skip_button.pressed.connect(func() -> void: skip_requested.emit())
+	if _dialog_panel != null:
+		_dialog_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_dialog_panel.line_started.connect(_on_dialog_line_started)
+		_dialog_panel.dialog_finished.connect(_on_dialog_finished)
+		_dialog_panel.dialog_skipped.connect(_on_dialog_skipped)
+	visible = false
 	hide_tutorial()
 
 
-func show_step(step_index: int, total_steps: int, title: String, body: String, hint: String, wait_for_action: bool) -> void:
+func show_step(_step_index: int, _total_steps: int, _title: String, body: String, _hint: String, wait_for_action: bool, speaker: String = "", portrait: String = "") -> void:
+	show_steps([{
+		"speaker": speaker,
+		"portrait": portrait,
+		"body": body,
+		"wait": wait_for_action
+	}])
+
+
+func show_steps(steps: Array) -> void:
 	visible = true
-	_step_label.text = "教程 %d/%d" % [step_index, total_steps]
-	_title_label.text = title
-	_body_label.text = body
-	_hint_label.text = hint
-	_next_button.visible = true
-	_next_button.disabled = false
-	_next_button.text = "完成" if step_index >= total_steps else "下一步"
+	_active = true
+	_waiting_for_action = false
+	_dialog_skip_requested = false
+	_wait_by_step.clear()
+	var lines: Array[Dictionary] = []
+	for step_index in range(steps.size()):
+		var step: Dictionary = {}
+		var raw_step: Variant = steps[step_index]
+		if typeof(raw_step) == TYPE_DICTIONARY:
+			step = raw_step
+		var wait_for_action := bool(step.get("wait", false))
+		_wait_by_step.append(wait_for_action)
+		var advance_mode := "click"
+		var prompt_text := "点击继续"
+		var finished_prompt := "点击进入正式行动" if step_index == steps.size() - 1 else "再次点击进入下一句"
+		if wait_for_action:
+			advance_mode = "event:%s" % String(EVENT_TUTORIAL_ACTION)
+			prompt_text = "完成当前操作后继续"
+			finished_prompt = "完成当前操作后继续"
+		lines.append({
+			"skin": "bubble",
+			"background": "map",
+			"speaker": String(step.get("speaker", "")),
+			"portrait": String(step.get("portrait", "")),
+			"text": String(step.get("body", "")),
+			"advance": advance_mode,
+			"prompt": prompt_text,
+			"finished_prompt": finished_prompt
+		})
+	var story := {
+		"id": "tutorial_sequence",
+		"trigger": "manual:tutorial",
+		"settings": {"type_speed": DEFAULT_TYPE_SPEED},
+		"lines": lines
+	}
+	if _dialog_panel != null and _dialog_panel.has_method("play_story"):
+		_dialog_panel.play_story(story)
 
 
-func set_panel_position(position_id: StringName, force := false) -> void:
-	if _user_moved and not force:
-		return
-	var panel_size := _panel.size
-	if panel_size.x <= 0.0 or panel_size.y <= 0.0:
-		panel_size = Vector2(430.0, 254.0)
-	var margin := Vector2(22.0, 118.0)
-	var target := Vector2(size.x - panel_size.x - margin.x, margin.y)
-	match position_id:
-		POSITION_TOP_CENTER:
-			target = Vector2(maxf((size.x - panel_size.x) * 0.5, 22.0), margin.y)
-		_:
-			target = Vector2(size.x - panel_size.x - margin.x, margin.y)
-	_set_panel_top_left(target)
+func set_panel_position(_position_id: StringName, _force := false) -> void:
+	pass
 
 
 func hide_tutorial() -> void:
+	_active = false
+	_waiting_for_action = false
+	_dialog_skip_requested = false
+	_wait_by_step.clear()
 	visible = false
+	if _dialog_panel != null:
+		_dialog_panel.visible = false
 
 
-func _on_panel_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
-		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
-			return
-		if mouse_event.pressed:
-			_dragging = true
-			_drag_offset = get_global_mouse_position() - _panel.position
-			_panel.accept_event()
-		else:
-			_dragging = false
-			_panel.accept_event()
-	elif event is InputEventMouseMotion and _dragging:
-		_user_moved = true
-		_set_panel_top_left(get_global_mouse_position() - _drag_offset)
-		_panel.accept_event()
+func complete_waiting_step() -> void:
+	if _waiting_for_action and _dialog_panel != null and _dialog_panel.has_method("notify_story_event"):
+		_waiting_for_action = false
+		_dialog_panel.notify_story_event(EVENT_TUTORIAL_ACTION)
 
 
-func _set_panel_top_left(top_left: Vector2) -> void:
-	var panel_size := _panel.size
-	if panel_size.x <= 0.0 or panel_size.y <= 0.0:
-		panel_size = Vector2(430.0, 254.0)
-	var clamped := Vector2(
-		clampf(top_left.x, 8.0, maxf(8.0, size.x - panel_size.x - 8.0)),
-		clampf(top_left.y, 8.0, maxf(8.0, size.y - panel_size.y - 8.0))
-	)
-	_panel.anchor_left = 0.0
-	_panel.anchor_top = 0.0
-	_panel.anchor_right = 0.0
-	_panel.anchor_bottom = 0.0
-	_panel.offset_left = clamped.x
-	_panel.offset_top = clamped.y
-	_panel.offset_right = clamped.x + panel_size.x
-	_panel.offset_bottom = clamped.y + panel_size.y
-
-
-func _clamp_panel_to_view() -> void:
-	if _panel == null:
+func _on_dialog_line_started(line_index: int) -> void:
+	if not _active:
 		return
-	_set_panel_top_left(_panel.position)
+	_waiting_for_action = line_index >= 0 and line_index < _wait_by_step.size() and _wait_by_step[line_index]
+	step_started.emit(line_index)
+
+
+func _on_dialog_finished() -> void:
+	if not _active:
+		return
+	if _dialog_skip_requested:
+		_dialog_skip_requested = false
+		_waiting_for_action = false
+		call_deferred("_emit_skip_requested")
+		return
+	if _waiting_for_action:
+		_waiting_for_action = false
+		call_deferred("_emit_skip_requested")
+		return
+	call_deferred("_emit_next_requested")
+
+
+func _on_dialog_skipped() -> void:
+	_dialog_skip_requested = true
+
+
+func _emit_next_requested() -> void:
+	next_requested.emit()
+
+
+func _emit_skip_requested() -> void:
+	skip_requested.emit()

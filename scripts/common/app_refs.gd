@@ -27,3 +27,8 @@ static func data_repo():
 static func scene_router():
 	var root := _root()
 	return root.get_node_or_null("/root/SceneRouter") if root != null else null
+
+
+static func story_director():
+	var root := _root()
+	return root.get_node_or_null("/root/StoryDirector") if root != null else null

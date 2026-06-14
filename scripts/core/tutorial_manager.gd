@@ -15,23 +15,25 @@ const STEP_DEPLOY := &"deploy"
 const STEP_SKILL := &"skill"
 const STEP_BLESSING := &"blessing"
 const STEP_DONE := &"done"
+const STORY_FINISH_START_DELAY := 0.22
 
 var _steps: Array[Dictionary] = [
-	{"id": STEP_INTRO, "title": "第一天演习", "body": "白天探索、采集、建造和招募；夜晚部署干员抵御敌人。教程关卡会陪你完成第一天的关键操作。", "hint": "点击下一步开始；点击跳过会直接开始正式第一天。", "wait": false},
-	{"id": STEP_CORE, "title": "核心", "body": "地图中央是核心。敌人会从地图边缘出现，并沿路线尝试抵达核心。核心生命归零时本局失败。", "hint": "观察核心位置，然后继续。", "wait": false},
-	{"id": STEP_EXPLORE, "title": "探索迷雾", "body": "白天点击相邻已探索区域的迷雾格，可以消耗行动力揭开新区域。", "hint": "点击核心周围的未探索格完成一次探索。", "wait": true},
-	{"id": STEP_COLLECT, "title": "采集资源", "body": "探索后可能发现资源点。已探索的资源点每天可以手动采集一次，材料会用于建造。", "hint": "点击一个已探索资源点，在弹窗里选择采集；如果还没看到资源，可以先继续探索。", "wait": true},
-	{"id": STEP_BUILD, "title": "布置建筑", "body": "左侧建筑卡可以拖到地图上建造。资源建筑提供白天收益，木墙会影响敌人的路线。", "hint": "从左侧拖拽任意可建造建筑到合法格子并释放。", "wait": true},
-	{"id": STEP_SHOP, "title": "招募干员", "body": "商店会消耗声望购买干员槽位。每个槽位都能独立部署、撤退和再部署。", "hint": "在商店中购买任意一个干员。", "wait": true},
-	{"id": STEP_DEPLOY, "title": "部署与朝向", "body": "白天也可以先布置干员。把底部干员卡拖到地图格，松手锁定落点，再从落点向外拖拽选择攻击朝向。", "hint": "在进入夜晚前，成功部署任意一名干员。", "wait": true},
-	{"id": STEP_WAVE, "title": "查看今晚敌情", "body": "白天的作战 HUD 会显示今晚敌群和路线。建造阻挡建筑时，路线预览能帮你判断防线是否合理。", "hint": "确认敌情后继续。", "wait": false},
-	{"id": STEP_NIGHT, "title": "进入夜晚", "body": "准备完成后进入夜晚。夜晚中敌人会按波次出现，时间控制也会开启。", "hint": "点击左下角进入黑夜按钮。", "wait": true},
-	{"id": STEP_SKILL, "title": "释放技能", "body": "选中已部署干员后可以查看详情。技力准备好时，释放技能能显著改变战局。", "hint": "选中一名干员并释放一次技能。", "wait": true},
-	{"id": STEP_BLESSING, "title": "选择遗物", "body": "守住夜晚后会获得遗物选择。正式局中，遗物会强化资源、建筑或干员，推动后续构筑。", "hint": "选择任意一件遗物。", "wait": true},
-	{"id": STEP_DONE, "title": "教程完成", "body": "你已经走完第一天的完整循环。接下来会从新的正式局开始，把防线撑到第六夜。", "hint": "点击完成开始正式游玩。", "wait": false}
+	{"id": STEP_INTRO, "title": "第一天演习", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "说是打响名声……可第一天就被黑潮冲散的话，信标也就没有意义了吧？", "hint": "", "wait": false},
+	{"id": STEP_CORE, "title": "核心", "speaker": "干员 A", "portrait": "unit:blaze", "body": "所以现在不能急。master，先确认核心的位置。它正在抽取地脉能量，也是黑潮造物最想摧毁的目标。", "hint": "", "wait": false},
+	{"id": STEP_EXPLORE, "title": "探索迷雾", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "白天还能借用核心的力量驱散附近黑潮。先不要走远，点击一个与已探索区域相邻的迷雾格，看看那片区域里藏着什么。", "hint": "", "wait": true},
+	{"id": STEP_COLLECT, "title": "采集资源", "speaker": "干员 A", "portrait": "unit:blaze", "body": "运气不错的话，迷雾后面会有木材、石材或魔力矿。点击资源点，在弹窗里选择采集；如果暂时没发现资源，就再探索一格。", "hint": "", "wait": true},
+	{"id": STEP_BUILD, "title": "布置建筑", "speaker": "干员 A", "portrait": "unit:blaze", "body": "有了材料，就能修筑防线。资源建筑能让白天收益更稳定，木墙则能引导敌人的路线。现在从左侧拖拽任意建筑到合法格子。", "hint": "", "wait": true},
+	{"id": STEP_SHOP, "title": "招募干员", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "核心信标已经发出回应了。有人正在靠近这里，愿意为这道防线出力。master，先在商店中购买任意一名干员。", "hint": "", "wait": true},
+	{"id": STEP_DEPLOY, "title": "部署与朝向", "speaker": "干员 A", "portrait": "unit:blaze", "body": "把底部干员卡拖到地图格上，松手确定落点，再向外拖拽选择朝向。注意，狙击和术师只能部署在天然高台或人工高台上。", "hint": "", "wait": true},
+	{"id": STEP_WAVE, "title": "查看今晚敌情", "speaker": "干员 A", "portrait": "unit:blaze", "body": "入夜前，看一眼今晚的敌情。敌群、路线和出现方向都会影响布防；木墙改变道路时，路线预览也会立刻变化。", "hint": "", "wait": false},
+	{"id": STEP_NIGHT, "title": "进入夜晚", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "太阳快下去了。master，点击左下角的进入黑夜按钮，第一批黑潮造物很快就会来了。", "hint": "", "wait": true},
+	{"id": STEP_SKILL, "title": "释放技能", "speaker": "干员 A", "portrait": "unit:blaze", "body": "战斗中，干员会积累技力。选中已部署干员，可以查看他的状态和技能；技力准备好时，尝试释放一次技能。", "hint": "", "wait": true},
+	{"id": STEP_BLESSING, "title": "选择遗物", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "守住了……核心的波动也稳定下来了。它好像凝出了几份地脉回响，这些遗物会影响接下来的每一天。master，选择任意一件。", "hint": "", "wait": true},
+	{"id": STEP_DONE, "title": "教程完成", "speaker": "干员 A", "portrait": "unit:blaze", "body": "第一天的循环已经走完：白天扩张、采集、建造和招募，夜晚部署、迎敌并守住核心。master，正式行动开始吧。", "hint": "", "wait": false}
 ]
 
 var _active := false
+var _pending_start := false
 var _step_index := 0
 var _explored_once := false
 var _collected_once := false
@@ -61,6 +63,10 @@ func _ready() -> void:
 	if _overlay != null:
 		_overlay.next_requested.connect(_on_next_requested)
 		_overlay.skip_requested.connect(_on_skip_requested)
+		_overlay.step_started.connect(_on_step_started)
+	var story_director = AppRefs.story_director()
+	if story_director != null and story_director.has_signal("story_finished"):
+		story_director.story_finished.connect(_on_story_finished)
 	call_deferred("_start_if_first_run")
 
 
@@ -74,20 +80,32 @@ func _start_if_first_run() -> void:
 		return
 	if _active or _step_index > 0:
 		return
+	var story_director = AppRefs.story_director()
+	if story_director != null and story_director.has_method("is_playing") and story_director.is_playing():
+		_pending_start = true
+		return
 	_active = true
 	_step_index = 0
-	_show_current_step()
+	_pending_start = false
+	_show_tutorial_sequence()
+
+
+func _show_tutorial_sequence() -> void:
+	if not _active or _overlay == null:
+		return
+	if _overlay.has_method("show_steps"):
+		_overlay.show_steps(_steps)
+	else:
+		_show_current_step()
 
 
 func _show_current_step() -> void:
-	if not _active or _overlay == null:
+	if not _active:
 		return
 	var step := _steps[_step_index]
-	_overlay.show_step(_step_index + 1, _steps.size(), String(step.get("title", "")), String(step.get("body", "")), String(step.get("hint", "")), bool(step.get("wait", false)))
-	if _overlay.has_method("set_panel_position"):
-		_overlay.set_panel_position(_get_overlay_position(StringName(step.get("id", ""))))
-	_update_map_focus(StringName(step.get("id", "")))
-	_try_complete_current_step()
+	if _overlay != null:
+		_overlay.show_step(_step_index + 1, _steps.size(), String(step.get("title", "")), String(step.get("body", "")), String(step.get("hint", "")), bool(step.get("wait", false)), String(step.get("speaker", "")), String(step.get("portrait", "")))
+	_on_step_started(_step_index)
 
 
 func _advance() -> void:
@@ -104,6 +122,7 @@ func _advance() -> void:
 func _finish() -> void:
 	var should_start_standard := _is_current_run_tutorial()
 	_active = false
+	_pending_start = false
 	_clear_map_focus()
 	if _overlay != null:
 		_overlay.hide_tutorial()
@@ -117,15 +136,38 @@ func _finish() -> void:
 func _on_next_requested() -> void:
 	if not _active:
 		return
-	var step := _steps[_step_index]
-	if StringName(step.get("id", "")) == STEP_DONE:
-		_finish()
-	else:
-		_advance()
+	_finish()
 
 
 func _on_skip_requested() -> void:
 	_finish()
+
+
+func _on_step_started(step_index: int) -> void:
+	if not _active:
+		return
+	if step_index < 0 or step_index >= _steps.size():
+		return
+	_clear_map_focus()
+	_step_index = step_index
+	if _overlay != null and _overlay.has_method("set_panel_position"):
+		_overlay.set_panel_position(_get_overlay_position(StringName(_steps[_step_index].get("id", ""))), true)
+	_update_map_focus(StringName(_steps[_step_index].get("id", "")))
+	_try_complete_current_step()
+
+
+func _on_story_finished(_story_id: StringName) -> void:
+	if _pending_start:
+		_pending_start = false
+		_start_after_story_cleanup()
+
+
+func _start_after_story_cleanup() -> void:
+	if STORY_FINISH_START_DELAY > 0.0 and get_tree() != null:
+		await get_tree().create_timer(STORY_FINISH_START_DELAY).timeout
+	if not is_inside_tree():
+		return
+	_start_if_first_run()
 
 
 func _try_complete_current_step() -> void:
@@ -135,29 +177,36 @@ func _try_complete_current_step() -> void:
 	match id:
 		STEP_EXPLORE:
 			if _explored_once:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_COLLECT:
 			if _collected_once:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_BUILD:
 			if _built_once:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_SHOP:
 			if _bought_once:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_NIGHT:
 			var run_state = AppRefs.run_state()
 			if run_state != null and int(run_state.phase) == GameEnums.PHASE_NIGHT:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_DEPLOY:
 			if _deployed_once:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_SKILL:
 			if _skill_cast_once:
-				_advance()
+				_complete_current_waiting_step()
 		STEP_BLESSING:
 			if _blessing_chosen_once:
-				_advance()
+				_complete_current_waiting_step()
+
+
+func _complete_current_waiting_step() -> void:
+	if _overlay != null and _overlay.has_method("complete_waiting_step"):
+		_overlay.complete_waiting_step()
+	else:
+		_advance()
 
 
 func _update_map_focus(step_id: StringName) -> void:
@@ -207,7 +256,9 @@ func _should_skip_map_focus(step_id: StringName) -> bool:
 
 
 func _get_overlay_position(step_id: StringName) -> StringName:
-	return &"top_center" if step_id == STEP_WAVE else &"top_right"
+	if step_id == STEP_DEPLOY or step_id == STEP_NIGHT or step_id == STEP_SKILL or step_id == STEP_BLESSING:
+		return &"top_center"
+	return &"bottom_center"
 
 
 func _get_explorable_cells() -> Array[Vector2i]:
@@ -283,7 +334,7 @@ func _on_shop_action_result(action: StringName, result: Dictionary) -> void:
 
 func _on_day_started(day: int) -> void:
 	if day == 1:
-		_start_if_first_run()
+		call_deferred("_start_if_first_run")
 
 
 func _on_night_started(_day: int) -> void:
