@@ -52,15 +52,15 @@ func _apply_button_style() -> void:
 	var retry_button := get_node_or_null("%RetryButton") as Button
 	if retry_button != null:
 		retry_button.add_theme_font_size_override("font_size", 18)
-		retry_button.add_theme_stylebox_override("normal", GameUiStyle.accent_button(GameUiStyle.ACCENT))
-		retry_button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.ACCENT))
-		retry_button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
-		retry_button.add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
+		retry_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+		retry_button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT)
+		retry_button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT)
+		retry_button.add_theme_color_override("font_focus_color", GameUiStyle.TEXT)
 
 	var menu_button := get_node_or_null("%MenuButton") as Button
 	if menu_button != null:
 		menu_button.add_theme_font_size_override("font_size", 18)
-		menu_button.add_theme_stylebox_override("normal", GameUiStyle.secondary_button())
-		menu_button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.ACCENT))
-		menu_button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
-		menu_button.add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
+		menu_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
+		menu_button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT)
+		menu_button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT)
+		menu_button.add_theme_color_override("font_focus_color", GameUiStyle.TEXT)

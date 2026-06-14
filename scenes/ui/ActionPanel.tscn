@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://d04mapcqqp3c0" path="res://scripts/ui/action_panel.gd" id="1_xpfpg"]
 [ext_resource type="Texture2D" uid="uid://cuy20b54sb72j" path="res://assets/ui/generated/icon_phase_night.png" id="2_phase_night"]
-[ext_resource type="StyleBox" uid="uid://dnybvihnfg6a6" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="4_button_primary"]
-[ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="5_button_disabled"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_primary_overlay.tres" id="4_button_primary"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_disabled_overlay.tres" id="5_button_disabled"]
 [ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
-[ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_318x76"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_base.tres" id="frame_button_base_318x76"]
 
 [node name="ActionPanel" type="Control" unique_id=921141590]
 layout_mode = 3

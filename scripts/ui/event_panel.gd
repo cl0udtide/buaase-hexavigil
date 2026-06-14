@@ -15,6 +15,7 @@ var _base_desc_text := ""
 @onready var _desc_label: Label = %DescLabel
 @onready var _result_label: Label = %ResultLabel
 @onready var _choice_list: VBoxContainer = %ChoiceList
+@onready var _choice_button_template: Button = %ChoiceButtonTemplate
 @onready var _illustration: Control = %Illustration
 @onready var _event_glyph: Label = %EventGlyph
 
@@ -106,13 +107,15 @@ func _build_choices(choice_defs: Array) -> void:
 			_choice_list.remove_child(button)
 			button.queue_free()
 	_choice_buttons.clear()
+	if _choice_button_template == null:
+		push_error("EventPanel missing ChoiceButtonTemplate")
+		return
 	for choice in choice_defs:
-		var button := Button.new()
-		button.custom_minimum_size = Vector2(0.0, 46.0)
-		button.focus_mode = Control.FOCUS_NONE
+		var button := _choice_button_template.duplicate() as Button
+		if button == null:
+			continue
+		button.visible = true
 		var base_text := String(choice.get("text", "选项"))
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_style_choice_button(button, StringName(choice.get("kind", &"secondary")))
 		var choice_id := StringName(choice.get("id", "choice"))
 		# 预检该选项指向子事件的 requires；不满足时禁用并在文案/tooltip 标出缺口。
 		var requirement := _preview_choice_requirements(choice_id)
@@ -311,26 +314,9 @@ func _apply_visual_style() -> void:
 		_desc_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	if _result_label != null:
 		_result_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	if _close_button != null:
-		_style_choice_button(_close_button, &"secondary")
 	if _event_glyph != null:
 		_event_glyph.add_theme_color_override("font_color", GameUiStyle.AMBER)
 		_event_glyph.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.65))
-func _style_choice_button(button: Button, kind: StringName) -> void:
-	GameUiStyle.center_button_text(button)
-	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
-	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_MUTED)
-	match kind:
-		&"primary":
-			button.add_theme_stylebox_override("normal", GameUiStyle.event_choice_button())
-			button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.ACCENT))
-			button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
-		_:
-			button.add_theme_stylebox_override("normal", GameUiStyle.secondary_button())
-			button.add_theme_stylebox_override("hover", GameUiStyle.accent_button(GameUiStyle.STEEL))
-			button.add_theme_stylebox_override("pressed", GameUiStyle.accent_button(GameUiStyle.AMBER))
-	button.add_theme_stylebox_override("disabled", GameUiStyle.disabled_button())
 
 
 func _get_event_cfg(event_id: StringName) -> Dictionary:

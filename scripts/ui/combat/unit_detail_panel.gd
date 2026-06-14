@@ -12,6 +12,8 @@ signal retreat_requested
 signal purchase_requested(slot_index: int)
 signal sell_requested(operator_key: StringName)
 
+const STAT_ICON_LEFT_OFFSET := 10.0
+
 @onready var _title_label: Label = %TitleLabel
 @onready var _level_label: Label = %LevelLabel
 @onready var _portrait_texture: TextureRect = %PortraitTexture
@@ -57,6 +59,7 @@ var _shop_slot_index := -1
 var _preview_operator_key := StringName()
 var _preview_operator_state := StringName()
 var _preview_sell_refund := 1
+var _covenant_stat_row: Control = null
 
 
 func _ready() -> void:
@@ -74,6 +77,9 @@ func _ready() -> void:
 	_hp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_sp_value_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	GameUiStyle.center_label_text(_title_label)
+	_covenant_stat_row = _covenant_stat_label.get_parent() as Control
+	if _covenant_stat_row != null:
+		_covenant_stat_row.mouse_filter = Control.MOUSE_FILTER_PASS
 	for label in [_atk_stat_label, _def_stat_label, _res_stat_label, _block_stat_label, _aspd_stat_label, _covenant_stat_label]:
 		label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 		label.add_theme_color_override("font_shadow_color", GameUiStyle.TEXT_SHADOW)
@@ -147,7 +153,7 @@ func show_unit(unit: Node, display_name: String, _damage_label_text: String, _di
 	_aspd_stat_label.text = "攻速 %d" % int(round(unit.get_effective_attack_speed()))
 	var unit_id := StringName(unit.unit_id) if "unit_id" in unit else StringName(unit.cfg.get("id", ""))
 	var operator_key := StringName(unit.operator_key) if "operator_key" in unit else StringName()
-	_covenant_stat_label.text = "盟约 %s" % _format_runtime_covenants(unit.cfg, unit_id, operator_key)
+	_set_covenant_stat(unit.cfg, unit_id, operator_key)
 	var active_remaining := float(unit.get_skill_active_remaining()) if unit.has_method("get_skill_active_remaining") else 0.0
 	var status_lines := PackedStringArray()
 	var active_state := "ready"
@@ -234,6 +240,7 @@ func clear_unit() -> void:
 	_block_stat_label.text = "阻挡 --"
 	_aspd_stat_label.text = "攻速 --"
 	_covenant_stat_label.text = "盟约 --"
+	_set_covenant_tooltip("")
 	_skill_title_label.text = "技能"
 	_set_skill_status_text("未选中")
 	_skill_label.text = "选择场上单位后显示技能描述。"
@@ -265,7 +272,7 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 	_res_stat_label.text = "法抗 %d" % int(cfg.get("res", 0))
 	_block_stat_label.text = "阻挡 %d" % int(cfg.get("block", 0))
 	_aspd_stat_label.text = "攻速 %d" % int(round(float(cfg.get("attack_speed", 100.0))))
-	_covenant_stat_label.text = "盟约 %s" % _format_runtime_covenants(cfg, unit_id, operator_key)
+	_set_covenant_stat(cfg, unit_id, operator_key)
 	_skill_title_label.text = String(cfg.get("skill_name", cfg.get("skill_id", "技能")))
 	_set_skill_status_text(skill_status_text)
 	_skill_label.text = String(cfg.get("skill_description", "暂无技能说明"))
@@ -281,24 +288,8 @@ func _show_cfg_preview(display_name: String, cfg: Dictionary, level_text: String
 ## 运行时盟约展示：合并基础盟约与本局灌注盟约（祭坛），灌注项加 ✦ 角标区分。
 ## unit_id 为空时回退静态配置；查 RunState 优先用实例（operator_key），无实例则用单位类型。
 func _format_runtime_covenants(cfg: Dictionary, unit_id: StringName, operator_key: StringName) -> String:
-	var base_covenants: Array[StringName] = []
-	var raw_base: Variant = cfg.get("covenants", [])
-	if typeof(raw_base) == TYPE_ARRAY:
-		for tag in (raw_base as Array):
-			var covenant := StringName(tag)
-			if covenant != StringName() and not base_covenants.has(covenant):
-				base_covenants.append(covenant)
-
-	var effective: Array = []
-	var run_state = AppRefs.run_state()
-	if run_state != null and unit_id != StringName():
-		if operator_key != StringName() and run_state.has_method("get_operator_covenants"):
-			effective = run_state.get_operator_covenants(operator_key)
-		elif run_state.has_method("get_unit_covenants"):
-			effective = run_state.get_unit_covenants(unit_id)
-	if effective.is_empty():
-		effective = base_covenants
-
+	var base_covenants := _base_covenants(cfg)
+	var effective := _effective_covenants(cfg, unit_id, operator_key, base_covenants)
 	if effective.is_empty():
 		return "无"
 	var names: Array[String] = []
@@ -312,6 +303,97 @@ func _format_runtime_covenants(cfg: Dictionary, unit_id: StringName, operator_ke
 		else:
 			names.append("✦%s" % String(covenant))
 	return "·".join(names)
+
+
+func _set_covenant_stat(cfg: Dictionary, unit_id: StringName, operator_key: StringName) -> void:
+	var covenant_text := _format_runtime_covenants(cfg, unit_id, operator_key)
+	_covenant_stat_label.text = "盟约 %s" % covenant_text
+	_set_covenant_tooltip(_format_covenant_tooltip(cfg, unit_id, operator_key))
+
+
+func _format_covenant_tooltip(cfg: Dictionary, unit_id: StringName, operator_key: StringName) -> String:
+	var base_covenants := _base_covenants(cfg)
+	var effective := _effective_covenants(cfg, unit_id, operator_key, base_covenants)
+	if effective.is_empty():
+		return ""
+	var sections: PackedStringArray = []
+	for raw_covenant: StringName in effective:
+		var covenant := StringName(raw_covenant)
+		if covenant == StringName():
+			continue
+		var state := _covenant_state(covenant)
+		var count := int(state.get("count", 0))
+		var layers := int(state.get("layers", 0))
+		var tier := int(state.get("tier", 0))
+		var active := tier >= CovenantDefs.TIER_PAIR
+		var header := "%s（%d人激活）" % [CovenantDefs.display_name(covenant), tier] if active else "%s（未激活，需 %d 人）" % [CovenantDefs.display_name(covenant), CovenantDefs.TIER_PAIR]
+		if not base_covenants.has(covenant):
+			header = "✦" + header
+		var lines := PackedStringArray([
+			header,
+			"当前：%d人 · %d层" % [count, layers],
+			"盟约层数：当前计入该盟约的干员星级总和。",
+		])
+		var descriptions: Array = CovenantDefs.describe(covenant, layers)
+		for raw_line: Variant in descriptions:
+			lines.append(String(raw_line))
+		if not base_covenants.has(covenant):
+			lines.append("✦ 表示本局祭坛灌注获得的追加盟约")
+		sections.append("\n".join(lines))
+	return "\n\n".join(sections)
+
+
+func _base_covenants(cfg: Dictionary) -> Array[StringName]:
+	var result: Array[StringName] = []
+	var raw_base: Variant = cfg.get("covenants", [])
+	if typeof(raw_base) != TYPE_ARRAY:
+		return result
+	for tag in (raw_base as Array):
+		var covenant := StringName(tag)
+		if covenant != StringName() and not result.has(covenant):
+			result.append(covenant)
+	return result
+
+
+func _effective_covenants(cfg: Dictionary, unit_id: StringName, operator_key: StringName, base_covenants: Array[StringName]) -> Array[StringName]:
+	var result: Array[StringName] = []
+	var run_state = AppRefs.run_state()
+	if run_state != null and unit_id != StringName():
+		var raw_effective: Array = []
+		if operator_key != StringName() and run_state.has_method("get_operator_covenants"):
+			raw_effective = run_state.get_operator_covenants(operator_key)
+		elif run_state.has_method("get_unit_covenants"):
+			raw_effective = run_state.get_unit_covenants(unit_id)
+		for raw_covenant: Variant in raw_effective:
+			var covenant := StringName(raw_covenant)
+			if covenant != StringName() and not result.has(covenant):
+				result.append(covenant)
+	if result.is_empty():
+		result = base_covenants.duplicate()
+	return result
+
+
+func _covenant_state(covenant_id: StringName) -> Dictionary:
+	var covenant_manager := _get_covenant_manager()
+	if covenant_manager == null or not covenant_manager.has_method("get_state"):
+		return {}
+	var state: Dictionary = covenant_manager.get_state()
+	return (state.get(covenant_id, {}) as Dictionary).duplicate(true)
+
+
+func _get_covenant_manager() -> Node:
+	var current_scene := get_tree().current_scene
+	if current_scene != null:
+		var manager := current_scene.get_node_or_null("Managers/CovenantManager")
+		if manager != null:
+			return manager
+	return get_node_or_null("../../../../../../Managers/CovenantManager")
+
+
+func _set_covenant_tooltip(text: String) -> void:
+	_covenant_stat_label.tooltip_text = text
+	if _covenant_stat_row != null:
+		_covenant_stat_row.tooltip_text = text
 
 
 func _set_action_mode(mode: StringName, can_purchase: bool, reason: String, price: int = 0, can_sell: bool = false, sell_reason: String = "", sell_refund: int = 1) -> void:
@@ -643,6 +725,11 @@ func _ensure_icon_row_for_label(label: Label, icon_id: StringName) -> void:
 	parent.remove_child(label)
 	parent.add_child(row)
 	parent.move_child(row, insert_index)
+	var spacer := Control.new()
+	spacer.name = "IconLeftOffset"
+	spacer.custom_minimum_size = Vector2(STAT_ICON_LEFT_OFFSET, 0.0)
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(spacer)
 	var icon_rect := TextureRect.new()
 	icon_rect.name = "IconTexture"
 	icon_rect.set_custom_minimum_size(Vector2(18.0, 18.0))

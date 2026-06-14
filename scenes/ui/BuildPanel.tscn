@@ -2,10 +2,9 @@
 
 [ext_resource type="Script" uid="uid://dxhe1gpotx6ns" path="res://scripts/ui/build_panel.gd" id="1_pcwhb"]
 [ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="3_panel_button_base"]
-[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_272x36"]
 [ext_resource type="StyleBox" uid="uid://ten6m123quv2" path="res://assets/ui/styles/frame_left_sidebar_base.tres" id="frame_left_sidebar_base_320x826"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_tooltip_base.tres" id="frame_tooltip_base"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_build_panel_button_active"]
 bg_color = Color(1, 1, 1, 0.09)
@@ -127,38 +126,6 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 32
 alignment = 1
 
-[node name="BuildInfoPanel" type="PanelContainer" parent="ContentMargin/MainVBox" unique_id=1132541908]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 126)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("frame_tooltip_base")
-
-[node name="BuildInfoMargin" type="MarginContainer" parent="ContentMargin/MainVBox/BuildInfoPanel" unique_id=1086996152]
-layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 22
-
-[node name="BuildInfoVBox" type="VBoxContainer" parent="ContentMargin/MainVBox/BuildInfoPanel/BuildInfoMargin" unique_id=943365451]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="BuildInfoTitle" type="Label" parent="ContentMargin/MainVBox/BuildInfoPanel/BuildInfoMargin/BuildInfoVBox" unique_id=167493063]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 15
-text_overrun_behavior = 3
-
-[node name="BuildInfoDetail" type="Label" parent="ContentMargin/MainVBox/BuildInfoPanel/BuildInfoMargin/BuildInfoVBox" unique_id=114259867]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-autowrap_mode = 3
-text_overrun_behavior = 3
-max_lines_visible = 4
-
 [node name="BottomControls" type="VBoxContainer" parent="ContentMargin/MainVBox" unique_id=598744539]
 unique_name_in_owner = true
 layout_mode = 2
@@ -167,6 +134,7 @@ theme_override_constants/separation = -3
 [node name="CategoryTabs" type="HBoxContainer" parent="ContentMargin/MainVBox/BottomControls" unique_id=472981155]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 2
 alignment = 1
 
 [node name="ResourceCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1568433604]
@@ -197,7 +165,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_build_panel_button_activ
 
 [node name="AuraCategoryButton" type="Button" parent="ContentMargin/MainVBox/BottomControls/CategoryTabs" unique_id=1437673208]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(77, 44)
+custom_minimum_size = Vector2(78, 44)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = ExtResource("3_panel_button_base")

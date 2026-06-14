@@ -17,6 +17,7 @@ signal shop_unit_purchase_requested(slot_index: int)
 signal wave_route_preview_toggled(enabled: bool)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
+const COVENANT_CHIP_SCENE := preload("res://scenes/ui/combat/CovenantChip.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone", &"mana"]
 const CORE_HP_TITLE := "核心生命"
 const LEVEL_INTRO_WIDTH_RATIO := 0.56
@@ -122,8 +123,8 @@ var _wave_spawn_card_template: PanelContainer
 var _wave_enemy_card_template: PanelContainer
 var _wave_warning_row: Control
 var _wave_warning_label: Label
-var _night_affix_row: PanelContainer
-var _night_affix_label: Label
+@onready var _night_affix_row: PanelContainer = get_node_or_null("HudChromeLayer/NightAffixRow") as PanelContainer
+@onready var _night_affix_label: Label = get_node_or_null("HudChromeLayer/NightAffixRow/NightAffixMargin/NightAffixLabel") as Label
 var _wave_countdown_row: PanelContainer
 var _wave_countdown_label: Label
 var _active_gates_line: Label = null
@@ -142,7 +143,7 @@ var _level_intro_line: ColorRect
 @onready var _top_bar: Control = %TopBar
 @onready var _top_content: MarginContainer = _top_bar.get_node_or_null("TopContent") as MarginContainer
 @onready var _top_content_row: HBoxContainer = _top_bar.get_node_or_null("TopContent/TopContentRow") as HBoxContainer
-var _covenant_row: HBoxContainer = null
+@onready var _covenant_row: HBoxContainer = get_node_or_null("HudChromeLayer/CovenantSlot/CovenantRow") as HBoxContainer
 @onready var _stage_chip: Control = %StageChip
 @onready var _core_chip: Control = %CoreChip
 @onready var _deploy_chip: Control = %DeployChip
@@ -379,6 +380,9 @@ func update_covenants(entries: Array) -> void:
 	if _covenant_row == null:
 		return
 	for child in _covenant_row.get_children():
+		if child.name == "CovenantChipSample":
+			child.visible = false
+			continue
 		child.queue_free()
 	for entry in entries:
 		if typeof(entry) == TYPE_DICTIONARY:
@@ -388,16 +392,7 @@ func update_covenants(entries: Array) -> void:
 func _ensure_covenant_row() -> void:
 	if _covenant_row != null and is_instance_valid(_covenant_row):
 		return
-	# 独立定位条：紧贴顶栏下方，与 TopHudSlot 左边缘对齐。
-	var slot := Control.new()
-	slot.name = "CovenantSlot"
-	slot.position = Vector2(66, 96)
-	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(slot)
-	_covenant_row = HBoxContainer.new()
-	_covenant_row.name = "CovenantRow"
-	_covenant_row.add_theme_constant_override("separation", 8)
-	slot.add_child(_covenant_row)
+	_covenant_row = get_node_or_null("HudChromeLayer/CovenantSlot/CovenantRow") as HBoxContainer
 
 
 func _build_covenant_chip(entry: Dictionary) -> Control:
@@ -406,38 +401,21 @@ func _build_covenant_chip(entry: Dictionary) -> Control:
 	var layers := int(entry.get("layers", 0))
 	var cov_name := String(entry.get("name", ""))
 	var active := tier >= CovenantDefs.TIER_PAIR
-	var trio := tier >= CovenantDefs.TIER_TRIO
 
-	# 复用顶栏状态 chip 的样式：激活态用 AMBER 描边高亮。
-	var chip := PanelContainer.new()
-	chip.add_theme_stylebox_override("panel", GameUiStyle.hud_cell(active))
+	var chip := COVENANT_CHIP_SCENE.instantiate() as Control
+	chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	var active_overlay := chip.get_node_or_null("ActiveOverlay") as CanvasItem
+	if active_overlay != null:
+		active_overlay.visible = active
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 5)
-	margin.add_theme_constant_override("margin_bottom", 5)
-	chip.add_child(margin)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 0)
-	margin.add_child(vbox)
-
-	var mark := "③" if trio else ("②" if active else "")
-	var name_label := Label.new()
-	name_label.text = cov_name + ((" " + mark) if mark != "" else "")
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_size_override("font_size", 14)
-	name_label.add_theme_color_override("font_color", GameUiStyle.AMBER if active else GameUiStyle.TEXT_INVERTED_DIM)
-	vbox.add_child(name_label)
-
-	var info_label := Label.new()
-	info_label.text = "%d人 · %d层" % [count, layers]
-	info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	info_label.add_theme_font_size_override("font_size", 11)
-	info_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED if active else GameUiStyle.TEXT_MUTED)
-	vbox.add_child(info_label)
+	var name_label := chip.get_node_or_null("ChipMargin/ChipVBox/NameLabel") as Label
+	if name_label != null:
+		name_label.text = "%s %d人%d层" % [cov_name, count, layers]
+		name_label.add_theme_color_override("font_color", GameUiStyle.AMBER if active else GameUiStyle.TEXT_INVERTED_DIM)
+		var min_width: float = maxf(92.0, name_label.get_combined_minimum_size().x + 56.0)
+		chip.custom_minimum_size = Vector2(min_width, chip.custom_minimum_size.y)
 
 	var lines: Array = CovenantDefs.describe(StringName(entry.get("id", "")), layers)
 	var tip := "%s（%d人激活）" % [cov_name, tier] if active else "%s（未激活，需 %d 人）" % [cov_name, CovenantDefs.TIER_PAIR]
@@ -1062,7 +1040,7 @@ func _format_wave_warning_text(data: Dictionary) -> String:
 ## 仅在菜单/三选一/结算等非昼夜阶段隐藏。
 func set_night_affixes(affixes: Array) -> void:
 	_ensure_night_affix_row()
-	if _night_affix_row == null:
+	if _night_affix_row == null or _night_affix_label == null:
 		return
 	var parts := PackedStringArray()
 	var tips := PackedStringArray()
@@ -1161,26 +1139,15 @@ func set_event_count_line(text: String, warn: bool = false) -> void:
 
 
 func _ensure_night_affix_row() -> void:
+	if _night_affix_row == null:
+		_night_affix_row = get_node_or_null("HudChromeLayer/NightAffixRow") as PanelContainer
+	if _night_affix_label == null:
+		_night_affix_label = get_node_or_null("HudChromeLayer/NightAffixRow/NightAffixMargin/NightAffixLabel") as Label
 	if _night_affix_row != null:
+		_night_affix_row.mouse_filter = Control.MOUSE_FILTER_STOP
+	if _night_affix_label != null:
+		_night_affix_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 		return
-	_night_affix_row = PanelContainer.new()
-	_night_affix_row.name = "NightAffixRow"
-	_night_affix_row.visible = false
-	_night_affix_row.z_index = 40
-	_night_affix_row.mouse_filter = Control.MOUSE_FILTER_STOP
-	_night_affix_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_night_affix_row.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_night_affix_row.offset_top = 94.0
-	add_child(_night_affix_row)
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 4)
-	margin.add_theme_constant_override("margin_bottom", 4)
-	_night_affix_row.add_child(margin)
-	_night_affix_label = Label.new()
-	_night_affix_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	margin.add_child(_night_affix_label)
 
 
 func _ensure_level_intro_banner() -> void:

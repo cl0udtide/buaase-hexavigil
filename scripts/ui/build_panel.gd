@@ -30,9 +30,6 @@ var _current_phase := GameEnums.PHASE_MENU
 @onready var _build_mode_button: Button = %BuildModeButton
 @onready var _shop_mode_button: Button = %ShopModeButton
 @onready var _selection_label: Label = %BuildSelectionLabel
-@onready var _build_info_panel: CanvasItem = %BuildInfoPanel
-@onready var _build_info_title: Label = %BuildInfoTitle
-@onready var _build_info_detail: Label = %BuildInfoDetail
 @onready var _card_list: VBoxContainer = %BuildCardList
 @onready var _category_tabs: HBoxContainer = %CategoryTabs
 @onready var _resource_button: Button = %ResourceCategoryButton
@@ -110,7 +107,6 @@ func refresh_from_state() -> void:
 	_refresh_category_buttons()
 	_refresh_bottom_controls()
 	_refresh_selection_label()
-	_refresh_build_info_panel()
 	_rebuild_cards()
 
 
@@ -491,16 +487,6 @@ func _refresh_selection_label() -> void:
 		return
 	var cfg := _get_building_cfg(_selected_building_id)
 	_selection_label.text = "当前选择：%s" % UiDisplayText.config_name(cfg, _selected_building_id)
-
-
-func _refresh_build_info_panel() -> void:
-	if _current_mode != MODE_BUILD or _selected_building_id == StringName():
-		_build_info_panel.visible = false
-		return
-	var cfg := _get_building_cfg(_selected_building_id)
-	_build_info_title.text = UiDisplayText.config_name(cfg, _selected_building_id)
-	_build_info_detail.text = _format_building_detail(cfg)
-	_build_info_panel.visible = not _build_info_detail.text.strip_edges().is_empty()
 
 
 func _on_shop_stock_changed(stock_slots: Array[Dictionary]) -> void:

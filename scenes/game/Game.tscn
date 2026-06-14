@@ -28,9 +28,9 @@
 [ext_resource type="Script" uid="uid://ddi62ic3utof6" path="res://scripts/ui/combat/combat_hud_controller.gd" id="36_combat_hud_controller"]
 [ext_resource type="Script" uid="uid://ciuvcgb2167bd" path="res://scripts/ui/map_interaction_popup.gd" id="37_map_popup"]
 [ext_resource type="Script" uid="uid://41jmr8erwrme" path="res://scripts/ui/ui_audio_binder.gd" id="38_ui_audio_binder"]
-[ext_resource type="StyleBox" uid="uid://e7mg5mbdc0gk" path="res://assets/ui/styles/frame_map_popup_base.tres" id="39_map_popup"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_map_popup_base.tres" id="39_map_popup"]
 [ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="41_button_base"]
-[ext_resource type="StyleBox" uid="uid://dnybvihnfg6a6" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="42_button_primary"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="42_button_primary"]
 [ext_resource type="StyleBox" uid="uid://dq3npkfyuft5f" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="43_button_danger"]
 [ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="44_button_disabled"]
 [ext_resource type="Texture2D" uid="uid://c87a6hol5a6y4" path="res://assets/ui/generated/icon_phase_blessing.png" id="45_popup_event_icon"]
@@ -38,7 +38,7 @@
 [ext_resource type="Texture2D" uid="uid://b27wulgsekryb" path="res://assets/ui/generated/icon_cancel.png" id="47_popup_cancel_icon"]
 [ext_resource type="Texture2D" uid="uid://2qf0tikai2s2" path="res://assets/ui/generated/icon_refresh.png" id="48_popup_refresh_icon"]
 [ext_resource type="PackedScene" uid="uid://dks4jlf2r1x6h" path="res://scenes/ui/TutorialOverlay.tscn" id="49_tutorial_overlay"]
-[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://c1p8knypnusdm" path="res://assets/ui/styles/frame_event_choice_button_base.tres" id="frame_event_choice_button_base_108x32"]
 
 [node name="Game" type="Node" unique_id=327017779]
@@ -139,9 +139,9 @@ mouse_filter = 2
 unique_name_in_owner = true
 anchors_preset = 0
 offset_left = 14.0
-offset_top = 152.0
+offset_top = 173.0
 offset_right = 334.0
-offset_bottom = 978.0
+offset_bottom = 999.0
 mouse_filter = 2
 
 [node name="BuildPanel" parent="UI/ScreenLayout/BuildPanelSlot" unique_id=150429329 instance=ExtResource("23_esr4c")]
@@ -150,8 +150,9 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -14.0
 offset_right = 0.0
-offset_bottom = 0.0
+offset_bottom = -14.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -159,9 +160,9 @@ grow_vertical = 2
 unique_name_in_owner = true
 anchors_preset = 0
 offset_left = 14.0
-offset_top = 990.0
+offset_top = 985.0
 offset_right = 332.0
-offset_bottom = 1066.0
+offset_bottom = 1061.0
 mouse_filter = 2
 
 [node name="ActionPanel" parent="UI/ScreenLayout/ActionPanelSlot" unique_id=921141590 instance=ExtResource("21_ipajp")]

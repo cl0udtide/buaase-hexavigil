@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://57b5qwm6cgvr"]
+
+[ext_resource type="StyleBox" uid="uid://dlt4iymfetgkm" path="res://assets/ui/styles/frame_covenant_chip_base.tres" id="1_chip_base"]
+[ext_resource type="StyleBox" uid="uid://27seio8kfr8o" path="res://assets/ui/styles/frame_covenant_chip_active_overlay.tres" id="2_active_overlay"]
+
+[node name="CovenantChip" type="Control" unique_id=1976980014]
+custom_minimum_size = Vector2(92, 36)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 133.0
+offset_bottom = 36.0
+size_flags_horizontal = 0
+size_flags_vertical = 4
+
+[node name="BasePanel" type="Panel" parent="." unique_id=1101357411]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("1_chip_base")
+
+[node name="ActiveOverlay" type="Panel" parent="." unique_id=1513402986]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_active_overlay")
+
+[node name="ChipMargin" type="MarginContainer" parent="." unique_id=679423384]
+z_index = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 9
+theme_override_constants/margin_right = 9
+
+[node name="ChipVBox" type="CenterContainer" parent="ChipMargin" unique_id=1848838877]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ChipMargin/ChipVBox" unique_id=1566209782]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "盟约 1人1层"
+horizontal_alignment = 1
+vertical_alignment = 1

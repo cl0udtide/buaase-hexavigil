@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="220" viewBox="0 0 640 220">
+  <defs>
+    <linearGradient id="lineTeal" x1="52" y1="56" x2="588" y2="164" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#74f6ff" stop-opacity="0"/>
+      <stop offset="0.22" stop-color="#9ffaff" stop-opacity="0.28"/>
+      <stop offset="0.54" stop-color="#fff2b6" stop-opacity="0.16"/>
+      <stop offset="0.82" stop-color="#6defff" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#74f6ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="lineAmber" x1="76" y1="176" x2="560" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd17a" stop-opacity="0"/>
+      <stop offset="0.34" stop-color="#ffd17a" stop-opacity="0.3"/>
+      <stop offset="0.68" stop-color="#e8fbff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffd17a" stop-opacity="0"/>
+    </linearGradient>
+    <symbol id="hex" viewBox="-24 -22 48 44">
+      <path d="M-12 -20 H12 L24 0 L12 20 H-12 L-24 0 Z" fill="none" stroke="#8cf8ff" stroke-width="2.3" stroke-linejoin="round" opacity="0.26"/>
+      <path d="M-7 -12 H7 L14 0 L7 12 H-7 L-14 0 Z" fill="none" stroke="#ffd077" stroke-width="1.4" stroke-linejoin="round" opacity="0.22"/>
+    </symbol>
+  </defs>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M74 132 H164 L190 106 H278 L304 130 H386 L412 104 H514 L554 76" stroke="#8cf8ff" stroke-width="1.25" opacity="0.18"/>
+    <path d="M112 174 H236 L262 154 H352 L378 176 H506" stroke="#ffd077" stroke-width="1.25" opacity="0.2"/>
+    <path d="M116 58 H210 L234 80 H306" stroke="#dffcff" stroke-width="1.05" opacity="0.16"/>
+    <path d="M414 52 H488 L514 76 H590" stroke="#dffcff" stroke-width="1.05" opacity="0.16"/>
+    <path d="M54 150 C148 92 218 156 298 106 C384 54 470 88 586 50" stroke="url(#lineTeal)" stroke-width="2.2" opacity="0.58"/>
+    <path d="M78 166 C164 126 226 174 310 124 C398 74 486 132 560 90" stroke="url(#lineAmber)" stroke-width="1.8" opacity="0.52"/>
+    <path d="M104 76 C208 40 268 70 338 56 C438 36 494 62 580 36" stroke="url(#lineTeal)" stroke-width="1.2" opacity="0.28"/>
+  </g>
+
+  <use href="#hex" x="162" y="108" width="48" height="44" opacity="0.42"/>
+  <use href="#hex" x="326" y="76" width="54" height="50" opacity="0.38"/>
+  <use href="#hex" x="478" y="122" width="44" height="40" opacity="0.36"/>
+  <use href="#hex" x="548" y="62" width="34" height="32" opacity="0.3"/>
+
+  <g fill="#f8fbff" opacity="0.26">
+    <circle cx="204" cy="152" r="1.5"/>
+    <circle cx="250" cy="76" r="1.1"/>
+    <circle cx="366" cy="142" r="1.4"/>
+    <circle cx="514" cy="112" r="1.2"/>
+    <circle cx="456" cy="58" r="1"/>
+  </g>
+</svg>

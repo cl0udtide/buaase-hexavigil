@@ -1,8 +1,46 @@
 [gd_scene format=3 uid="uid://c0oceoqeshmf3"]
 
 [ext_resource type="Script" uid="uid://byr08164d6piu" path="res://scripts/ui/event_panel.gd" id="1_0pxnh"]
-[ext_resource type="StyleBox" uid="uid://bx00ntf4uefp3" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
-[ext_resource type="StyleBox" uid="uid://dtq35b0rbnrkw" path="res://assets/ui/styles/frame_event_panel_base.tres" id="frame_event_panel_base_540x260"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
+[ext_resource type="PackedScene" uid="uid://xlvp0kndb85m" path="res://scenes/ui/EventChoiceButton.tscn" id="4_choice_button"]
+[ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="5_close_button_base"]
+[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="6_button_state_overlay"]
+[ext_resource type="Texture2D" uid="uid://ccsp1iu6rwbn2" path="res://assets/ui/generated/icon_close.png" id="7_icon_close"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_event_panel_base.tres" id="frame_event_panel_base_540x260"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_button_hover"]
+bg_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_illustration_cut_fill"]
+bg_color = Color(0.04, 0.09, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.42, 0.46, 0.55)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_illustration_cut_center"]
+bg_color = Color(0.065, 0.125, 0.16, 0.18)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.62, 0.24, 0.18)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+corner_detail = 1
 
 [node name="EventPanel" type="PanelContainer" unique_id=239470582]
 anchors_preset = 8
@@ -54,11 +92,51 @@ text_overrun_behavior = 3
 
 [node name="CloseButton" type="Button" parent="ContentMargin/MainVBox/HeaderRow" unique_id=383765572]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(92, 36)
+custom_minimum_size = Vector2(40, 44)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 focus_mode = 0
-text = "关闭"
+theme_override_styles/normal = ExtResource("5_close_button_base")
+theme_override_styles/pressed = ExtResource("5_close_button_base")
+theme_override_styles/hover = ExtResource("5_close_button_base")
+theme_override_styles/disabled = ExtResource("5_close_button_base")
+
+[node name="PrimaryOverlay" type="Panel" parent="ContentMargin/MainVBox/HeaderRow/CloseButton" unique_id=1750183114]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -4.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_close_button_hover")
+
+[node name="CloseIconTexture" type="TextureRect" parent="ContentMargin/MainVBox/HeaderRow/CloseButton" unique_id=2105111049]
+z_index = 2
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -9.0
+offset_top = -9.0
+offset_right = 9.0
+offset_bottom = 9.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_icon_close")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ButtonStateOverlay" type="Node" parent="ContentMargin/MainVBox/HeaderRow/CloseButton" unique_id=317448554]
+script = ExtResource("6_button_state_overlay")
 
 [node name="BodyRow" type="HBoxContainer" parent="ContentMargin/MainVBox" unique_id=1063922383]
 layout_mode = 2
@@ -80,7 +158,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="IllustrationFill" type="ColorRect" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=771494224]
+[node name="IllustrationFill" type="Panel" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=771494224]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -88,9 +166,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.09, 0.12, 1)
+theme_override_styles/panel = SubResource("StyleBoxFlat_illustration_cut_fill")
 
-[node name="IllustrationCenter" type="CenterContainer" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=1123440679]
+[node name="IllustrationCenter" type="PanelContainer" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=1123440679]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -98,6 +176,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_illustration_cut_center")
 
 [node name="EventGlyph" type="Label" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration/IllustrationCenter" unique_id=194620125]
 unique_name_in_owner = true
@@ -148,6 +227,11 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
+
+[node name="ChoiceButtonTemplate" parent="ContentMargin/MainVBox/BodyRow/TextAndChoices/ChoiceList" unique_id=980283821 instance=ExtResource("4_choice_button")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
 
 [node name="ResultLabel" type="Label" parent="ContentMargin/MainVBox" unique_id=464566040]
 unique_name_in_owner = true
