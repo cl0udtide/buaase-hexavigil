@@ -267,9 +267,9 @@ func _straight_step_toward_core() -> Vector2i:
 func _extra_blocked() -> Dictionary:
 	var blocked: Dictionary = {}
 	var unit_manager: Node = _owner_actor.get_unit_manager() if _owner_actor != null else null
-	if unit_manager == null or not unit_manager.has_method("get_all_units"):
+	if unit_manager == null or not unit_manager.has_method("get_all_deployed_units"):
 		return blocked
-	for unit in unit_manager.get_all_units():
+	for unit in unit_manager.get_all_deployed_units():
 		if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
 			blocked[unit.get_current_cell()] = true
 	return blocked
