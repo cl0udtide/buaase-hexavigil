@@ -109,13 +109,13 @@ World
 - `GroundLayer`
   地表层，绘制普通地块，例如平地、墙、沼泽等基础地形。
 - `ResourceLayer`
-  资源层，绘制木材点、石材点、魔力点等资源类格子。
+  资源层，绘制木材点、石材点、魔力点等地图采集类格子。经济资源共 5 种：木材、石材、魔力矿、声望、行动力，其中木/石/魔力矿在地图上有采集点，声望和行动力不落地。
 - `FogLayer`
   迷雾层，覆盖未探索区域，负责白天探索后的揭雾表现。
 - `OverlayLayer`
   覆盖层，显示额外提示信息，例如可建造范围、选中格、路径高亮、交互提示。
 - `SpawnRoot`
-  刷怪点容器，承载所有刷怪点相关节点或标记。
+  刷怪点容器，承载所有刷怪点相关节点或标记。地图共 5 个固定候选口，每晚激活数按天数阶梯递增（d1/d4/d6/d8 → 2/3/4/5 口），玩家可在白天封口；`Game.tscn` 仅预置 3 个标记节点，运行时动态补齐到 5 个。
 - `CoreRoot`
   核心建筑容器，承载玩家需要防守的核心对象。
 - `BuildingRoot`
@@ -142,11 +142,14 @@ Managers
 ├─ PathService
 ├─ BuildingManager
 ├─ UnitManager
+├─ CovenantManager
 ├─ ShopManager
 ├─ EnemyManager
 ├─ WaveManager
 ├─ BuffManager
-└─ RandomEventManager
+├─ RandomEventManager
+├─ AudioManager
+└─ TutorialManager
 ```
 
 各节点作用如下：
@@ -160,11 +163,13 @@ Managers
 - `MapManager`
   持有地图格子真相数据，负责地图状态、迷雾、格子合法性。
 - `PathService`
-  提供路径计算与路径重建能力，不持有玩法主控逻辑。
+  寻路服务，按地图阻挡重建共享距离场和正面结构（normal 绕墙 / demolisher 拆墙 双模式 flow field）；敌人沿场单调下行抵达核心，不再每怪 A*。不持有玩法主控逻辑。
 - `BuildingManager`
   管理建筑的建造、修复、销毁和运行时状态。
 - `UnitManager`
   管理干员实例槽位的部署、撤退、死亡离场、再部署和场上单位运行时状态。
+- `CovenantManager`
+  盟约运行时主控，按本局已部署干员的单位类型维护盟约 tag 与盟约激活状态；盟约是肉鸽构筑主轴。
 - `ShopManager`
   管理商店库存、刷新和购买逻辑；每次购买会生成一个独立干员槽位。
 - `EnemyManager`
@@ -172,9 +177,13 @@ Managers
 - `WaveManager`
   管理波次配置执行和待刷怪队列。
 - `BuffManager`
-  管理祝福选择与 Buff 生效逻辑。
+  管理遗物三选一抽取与遗物生效逻辑。
 - `RandomEventManager`
   管理随机事件抽取与事件结算。
+- `AudioManager`
+  音频主控，管理 BGM 切换、短音效播放和音量设置。
+- `TutorialManager`
+  新手引导主控，管理引导步骤推进与引导覆盖层显隐。
 
 ### 2.3 `UI`
 
@@ -259,9 +268,9 @@ UI
 - 当前天数
 - 行动力
 - 声望
-- 木材、石材、魔力
+- 木材、石材、魔力矿（经济资源共 5 种：木/石/魔力矿/声望/行动力，其中木/石/魔力矿为地图采集点）
 - 核心生命
-- 已获得 Buff
+- 已获得遗物
 - 已拥有干员实例槽位
 - 本局按单位类型追加的盟约 tag
 - 部署上限
@@ -302,9 +311,9 @@ UI
 - `buildings.json`
   保存建筑的静态配置，例如建筑类型、建造成本、效果范围。
 - `buffs.json`
-  保存 Buff 或祝福的静态配置。
+  保存遗物（relic）的静态配置，共 37 件，按 `category` 标注 covenant/economy 等类别。
 - `events.json`
-  保存随机事件的静态配置。
+  保存随机事件的静态配置，共 27 条顶层事件，对应 9 个根事件（每个根事件含一条主事件与若干选项分支）。
 - `wave_templates.json`
   保存夜晚关卡模板池，包括关卡标题、预览文案、分层标签、关键敌人和刷怪条目。
 - `night_affixes.json`
@@ -403,6 +412,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/core/night_manager.gd`
 - `scripts/core/buff_manager.gd`
 - `scripts/core/random_event_manager.gd`
+- `scripts/core/audio_manager.gd`
+- `scripts/core/tutorial_manager.gd`
+- `scripts/core/gameplay_settings.gd`
 - `scripts/core/game_enums.gd`
 - `scenes/bootstrap/MainMenu.tscn`
 - `scenes/bootstrap/Result.tscn`
@@ -444,6 +456,12 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   Buff 控制器，负责生成祝福选项并将 Buff 应用到当前局状态。
 - `random_event_manager.gd`
   随机事件控制器，负责抽取事件并执行事件结算。
+- `audio_manager.gd`
+  音频控制器，负责 BGM 切换、短音效播放和音量设置。
+- `tutorial_manager.gd`
+  新手引导控制器，负责引导步骤推进与引导覆盖层显隐。
+- `gameplay_settings.gd`
+  玩法设置存取，集中保存和读取玩家级玩法/音频偏好。
 - `game_enums.gd`
   公共枚举定义文件，集中定义阶段、资源类型、伤害类型等共享常量。
 - `MainMenu.tscn`
@@ -464,11 +482,13 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 
 - `scripts/map/map_manager.gd`
 - `scripts/map/path_service.gd`
+- `scripts/map/flow_field.gd`
 - `scripts/map/cell_data.gd`
 - `scripts/map/map_generator.gd`
 - `scripts/map/map_root_view.gd`
 - `scripts/map/core_view.gd`
 - `scripts/map/spawn_point_view.gd`
+- `scripts/map/generation/`（terrain-first 生成子模块：`core_picker.gd`、`terrain_field.gd`、`map_layout.gd`、`natural.gd`、`mesa.gd`、`lanes.gd`、`skeleton.gd`、`flesh.gd`、`gen_repair.gd`、`int_noise.gd` 等）
 - `scenes/world/MapRoot.tscn`
 - `scenes/world/Core.tscn`
 - `scenes/world/SpawnPoint.tscn`
@@ -482,12 +502,13 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - 提供格子坐标与可通行信息
 - 根据 `data/map_generation.json` 统一读取地图生成参数
 - 在格子上记录资源点；随机事件点由运行时覆盖层维护，地图模块只委托查询和刷新显示
-- 为敌人寻路提供底层支持
+- 重建共享距离场和正面结构（normal 绕墙 / demolisher 拆墙 双模式 flow field），敌人沿场单调下行抵达核心，不再每怪 A*
 - 为 UI 提供格子预览与作战范围绘制
 
-地图生成当前规则：
+地图生成当前规则（默认 `generator = terrain_first`）：
 
-- 地图默认 30×30，核心固定在中心，核心周围 5×5 初始可见。
+- 地图默认 30×30。核心浮动选址：CorePicker 先长自然地貌再在其上选核心位置，围绕浮动核心揭 5×5 初始可见雾。
+- 地形分四类：平地（plain，可走可建）、山岳（mountain）、水域（water）、天然高台（highland）。山岳/水域/高台均阻挡地面通行；天然高台不可走不可建，但允许远程职业部署，是远程站位地形。需区分「地形阻挡」与建筑造成的「建筑阻挡」。
 - 障碍随机生成，但核心安全半径与刷怪点安全半径内不生成障碍、资源点和事件点。
 - 障碍放置会保持刷怪点到核心的地面路径连通，避免地图生成破坏夜晚基础路径。
 - 资源类型为木材、石材、魔力，当前每种目标 12 个；其中每种至少 2 个放在初始可见区外侧的近探索圈作为开局保底。
@@ -499,11 +520,13 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `map_manager.gd`
   地图真相数据中心，统一对外提供格子状态查询。它持有格子的发现状态、地形、资源、占用状态、核心位置和刷怪点位置，并委托 `RandomEventManager` 查询运行时事件覆盖层。普通占用刷新不得重置玩家镜头；只有首次加载、生成新地图、重置地图或尺寸变化时才允许请求重置视角。
 - `path_service.gd`
-  路径计算服务，负责根据地图阻挡情况重建路径网格。
+  寻路服务，按地图阻挡情况重建共享距离场和正面结构（normal 绕墙 / demolisher 拆墙 双模式 flow field）。敌人沿场单调下行抵达核心，不再每怪 A*。建筑变化时由 `EventBus` 触发距离场重建。
+- `flow_field.gd`
+  共享距离场 + 正面结构核心算法（`EnemyFlowField`，纯静态、决定性）：从核心四连通 BFS 算出每格到核心步数，并算每格朝核心的梯度方向；敌人每步只走 dist 严格更小的邻格，保证必达核心、不成环不踱步。
 - `cell_data.gd`
-  单格数据结构，描述地形、发现状态、资源类型、可建造、可通行、占用等属性；随机事件运行时状态由 `RandomEventManager` 维护。
+  单格数据结构，描述地形、发现状态、资源类型、可建造、可通行、占用等属性。地形类型为 `TERRAIN_PLAIN`/`MOUNTAIN`/`WATER`/`HIGHLAND`，山岳/水域/高台为地形阻挡，高台额外允许远程职业部署；随机事件运行时状态由 `RandomEventManager` 维护。
 - `map_generator.gd`
-  地图生成逻辑，负责按 `data/map_generation.json` 生成初始地图，包括核心、初始迷雾、刷怪点、障碍和资源点。它保留旧的 `event_point_count` 生成入口作兼容；当前配置为 0，正式随机事件点由 `RandomEventManager` 每日刷新。
+  地图生成逻辑，按 `data/map_generation.json` 生成初始地图。默认走 terrain-first：先长自然地貌、再由 `CorePicker` 选浮动核心、放刷怪口并保证连通，最后盖到格子上并揭核心 5×5 雾；另保留 `skeleton_v2` 与 legacy 入口由 `generator` 开关切换。它保留旧的 `event_point_count` 生成入口作兼容；当前配置为 0，正式随机事件点由 `RandomEventManager` 每日刷新。`scripts/map/generation/` 下为各生成子模块（地貌分类、核心选址、出怪口布局、连通修复、噪声等）。
 - `map_root_view.gd`
   `MapRoot.tscn` 的显示与输入脚本，负责图层绘制、鼠标点击转发、攻击范围和部署预览。
 - `core_view.gd`
@@ -562,6 +585,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/combat/unit_manager.gd`
 - `scripts/combat/unit_actor.gd`
 - `scripts/combat/shop_manager.gd`
+- `scripts/combat/covenant_defs.gd`
+- `scripts/combat/covenant_manager.gd`
+- `scripts/combat/operator_progression.gd`
 - `scripts/combat/projectile.gd`
 - `scripts/combat/skills/unit_skill_behavior.gd`
 - `scripts/combat/skills/*_skill.gd`
@@ -593,7 +619,13 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `skills/*_skill.gd`
   具体单位技能行为脚本。`UnitActor` 根据 `data/units.json` 中的 `skill_behavior_key` 从注册表选择脚本，并动态挂到 `SkillBehavior` 节点；不同技能的差异优先写在这些组件里。
 - `shop_manager.gd`
-  商店主控，管理 5 格卡牌库存、购买和刷新逻辑；购买同一单位类型会新增独立槽位。
+  商店主控，管理 5 格卡牌库存、购买和刷新逻辑；购买同一单位类型会新增独立槽位。档位权重按三幕分档（见 §7.3）。
+- `covenant_defs.gd`
+  盟约静态定义，描述各盟约的成员类型、激活档位和效果。
+- `covenant_manager.gd`
+  盟约运行时主控，按本局已部署干员的单位类型维护盟约 tag 与激活状态；盟约是肉鸽构筑主轴。
+- `operator_progression.gd`
+  干员升星规则，定义星级上下限（1-3 星）、各星数值倍率和升星消耗；配合白天「定向升星」消耗魔力矿+声望给指定干员 +1 星。
 - `combat_math.gd`
   伤害与治疗计算工具。
 - `UnitActor.tscn`
@@ -625,6 +657,10 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/enemy/boss_controller.gd`
 - `scripts/enemy/enemy_movement_controller.gd`
 - `scripts/enemy/enemy_attack_controller.gd`
+- `scripts/enemy/night_template_resolver.gd`
+- `scripts/enemy/night_affix_service.gd`
+- `scripts/enemy/difficulty_scale.gd`
+- `scripts/enemy/enemy_prestige_reward.gd`
 - `scenes/actors/EnemyActor.tscn`
 
 职责：
@@ -648,6 +684,14 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
   单个敌人的移动控制器，由 `EnemyActor` 按需创建并调度。它维护路径缓存、路径进度、路径模式、阻挡状态、阻挡贴位、击退和外部移速倍率；不负责攻击结算、死亡移除或 Boss 阶段流转。普通路径模式默认避开挡路建筑；当正常路径不存在且核心所在连通区域被未损毁的挡路建筑封闭时，当前路径临时按拆除模式重算，让敌人在路线上拆除城墙。
 - `enemy_attack_controller.gd`
   单个敌人的攻击控制器，由 `EnemyActor` 按需创建并调度。它维护攻击计时，处理阻挡单位攻击、远程索敌攻击和路径建筑攻击；不负责移动、寻路、死亡移除或 Boss 阶段流转。
+- `night_template_resolver.gd`
+  夜晚关卡模板解析器，承载九天三幕节奏（`TOTAL_DAYS = 9`）：解析每天整夜多波计划、判定幕末（d3/d6/d9）Boss 晚，以及出怪口逐日激活数程（d1/d4/d6/d8 → 2/3/4/5 口）。
+- `night_affix_service.gd`
+  夜晚词缀服务，按天数和权重抽取夜晚词缀并解析其效果原语。
+- `difficulty_scale.gd`
+  难度缩放工具，按天数对敌人数值/数量做整体缩放。
+- `enemy_prestige_reward.gd`
+  敌人击杀声望奖励计算，按敌人配置和天数结算掉落声望。
 - `EnemyActor.tscn`
   敌人实例模板。
 
@@ -678,6 +722,16 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `scripts/ui/event_panel.gd`
 - `scripts/ui/blessing_panel.gd`
 - `scripts/ui/result_panel.gd`
+- `scripts/ui/dialog_panel.gd`
+- `scripts/ui/map_interaction_popup.gd`
+- `scripts/ui/tutorial_overlay.gd`
+- `scripts/ui/audio_settings_button.gd`
+- `scripts/ui/audio_settings_panel.gd`
+- `scripts/ui/ui_audio_binder.gd`
+- `scripts/ui/relic/relic_panel.gd`
+- `scripts/ui/relic/relic_strip.gd`
+- `scripts/ui/relic/relic_card.gd`
+- `scripts/ui/relic/relic_icon.gd`
 - `scripts/ui/combat/combat_hud.gd`
 - `scripts/ui/combat/combat_hud_controller.gd`
 - `scripts/ui/combat/operator_card.gd`
@@ -775,6 +829,9 @@ scene_key: building_actor -> scenes/actors/BuildingActor.tscn
 - `data/buffs.json`
 - `data/events.json`
 - `data/wave_templates.json`
+- `data/map_generation.json`
+- `data/night_affixes.json`
+- `data/ui_icons.json`
 - `assets/sprites/`
 - `assets/audio/`
 
@@ -876,8 +933,10 @@ UI -> ShopManager -> RunState -> UnitManager/UI
 同一个 `unit_id` 可以被多次购买，每次购买都会得到不同的 `operator_key`，后续部署、撤退和再部署都按这个槽位独立结算。
 
 商店每页包含 5 个槽位。新一天会免费刷新一页，玩家也可以在白天花费 2 声望刷新。
-干员按固定权重抽取：2 声望一阶 60%，4 声望二阶 30%，7 声望三阶 10%。同一页允许出现重复干员。
+干员档位权重按三幕分档（费用对应 2/4/7 声望的一/二/三阶）：d1 为 65/28/7，d4 为 50/35/15，d7 为 35/38/27（阶梯取 `<= day` 的最大键）。同一页允许出现重复干员。
 购买指定槽位后，该槽位标记为已购买并保持为空位状态，直到下一次刷新或进入新一天。
+
+定向升星：白天可花费魔力矿+声望给指定已拥有干员 +1 星（上限 3 星），数值倍率按 `operator_progression.gd` 的星级倍率结算。
 
 ### 7.4 进入夜晚
 
