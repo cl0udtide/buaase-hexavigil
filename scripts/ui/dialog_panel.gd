@@ -1,8 +1,13 @@
 class_name DialogPanel
 extends Control
 
+## 剧情演出引擎：阻断式逐句序列播放器，逐句可换皮（vn / bubble）。
+## 暂停时照跑（PROCESS_MODE_ALWAYS）；点屏幕任意处 / 空格 / 回车推进；按住 Ctrl 快进；ESC 整段跳过。
+## 由 StoryDirector 驱动（pause→play→resume）；也可被调试沙盒直接 play_story。
+
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const StoryLib = preload("res://scripts/story/story_library.gd")
 
 signal dialog_started
 signal line_started(index: int)
@@ -11,12 +16,15 @@ signal dialog_finished
 
 const SIDE_LEFT := &"left"
 const SIDE_RIGHT := &"right"
-const SIDE_NARRATOR := &"narrator"
+const SKIN_VN := &"vn"
+const SKIN_BUBBLE := &"bubble"
 const DEFAULT_TYPE_SPEED := 38.0
+const FF_TYPE_SPEED := 100000.0   # 快进时打字机近乎瞬显
+const FF_LINE_SEC := 0.05         # 快进时每句停留秒数
+const BUBBLE_DEFAULT_POS := Vector2(660.0, 280.0)
 
-var _script_data: Dictionary = {}
 var _lines: Array = []
-var _backgrounds: Dictionary = {}
+var _settings: Dictionary = {}
 var _current_index := -1
 var _type_speed := DEFAULT_TYPE_SPEED
 var _typing := false
@@ -24,6 +32,12 @@ var _visible_chars_float := 0.0
 var _line_char_count := 0
 var _line_finished_emitted := false
 var _active_side := StringName()
+var _active_skin := SKIN_VN
+var _active_text_label: RichTextLabel
+var _active_prompt: Label
+var _current_gated := false      # 当前句是否"等事件"门控（点击不推进）
+var _gate_key := StringName()
+var _ff_timer := 0.0
 var _fade_tween: Tween
 
 @onready var _background: ColorRect = %Background
@@ -35,28 +49,51 @@ var _fade_tween: Tween
 @onready var _text_label: RichTextLabel = %TextLabel
 @onready var _prompt_label: Label = %PromptLabel
 
+# 程序化构建（不改 .tscn）：全屏插图层 + 气泡皮
+var _bg_image: TextureRect
+var _bubble: PanelContainer
+var _bubble_speaker: Label
+var _bubble_label: RichTextLabel
+var _bubble_prompt: Label
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	AppTheme.apply(self)
+	_build_bg_image()
+	_build_bubble()
 	_configure_layout_nodes()
 	_apply_style()
 	_clear_side(SIDE_LEFT)
 	_clear_side(SIDE_RIGHT)
 	visible = false
+	# 主题仅装饰，放最后；即便某些无头/早期环境下出问题也不影响引擎构建。
+	AppTheme.apply(self)
 
 
 func _process(delta: float) -> void:
-	if not visible or not _typing:
+	if not visible:
 		return
-	_visible_chars_float += _type_speed * delta
-	var next_count := mini(int(_visible_chars_float), _line_char_count)
-	_text_label.visible_characters = next_count
-	if next_count >= _line_char_count:
-		_finish_typing()
+	var fast := Input.is_key_pressed(KEY_CTRL)
+	if _typing:
+		var speed := FF_TYPE_SPEED if fast else _type_speed
+		_visible_chars_float += speed * delta
+		var next_count := mini(int(_visible_chars_float), _line_char_count)
+		if _active_text_label != null:
+			_active_text_label.visible_characters = next_count
+		if next_count >= _line_char_count:
+			_finish_typing()
+		return
+	if fast and not _current_gated:
+		_ff_timer += delta
+		if _ff_timer >= FF_LINE_SEC:
+			_ff_timer = 0.0
+			_advance_unchecked()
+	else:
+		_ff_timer = 0.0
 
 
+# ---- 输入 ----
 func _gui_input(event: InputEvent) -> void:
 	_handle_advance_pointer_input(event)
 
@@ -67,8 +104,8 @@ func _on_text_box_gui_input(event: InputEvent) -> void:
 
 func _handle_advance_pointer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
-		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
 			accept_event()
 			advance()
 
@@ -77,35 +114,42 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event is InputEventKey:
-		var key_event := event as InputEventKey
-		if not key_event.pressed or key_event.echo:
+		var ke := event as InputEventKey
+		if not ke.pressed or ke.echo:
 			return
-		if key_event.keycode == KEY_SPACE or key_event.keycode == KEY_ENTER:
+		if ke.keycode == KEY_SPACE or ke.keycode == KEY_ENTER:
 			get_viewport().set_input_as_handled()
 			advance()
-		elif key_event.keycode == KEY_ESCAPE:
+		elif ke.keycode == KEY_ESCAPE:
 			get_viewport().set_input_as_handled()
 			skip()
 
 
-func play_script(script_data: Dictionary) -> void:
-	_script_data = script_data.duplicate(true)
-	_lines = _script_data.get("lines", [])
-	_backgrounds = _script_data.get("backgrounds", {})
-	var settings: Dictionary = _script_data.get("settings", {})
-	_type_speed = max(float(settings.get("type_speed", DEFAULT_TYPE_SPEED)), 0.0)
+# ---- 播放控制 ----
+func play_story(story: Dictionary) -> void:
+	_settings = story.get("settings", {})
+	_lines = story.get("lines", [])
+	_type_speed = maxf(float(_settings.get("type_speed", DEFAULT_TYPE_SPEED)), 0.0)
 	_current_index = -1
 	_typing = false
+	_ff_timer = 0.0
+	_current_gated = false
 	_line_finished_emitted = false
 	_active_side = StringName()
 	_clear_side(SIDE_LEFT)
 	_clear_side(SIDE_RIGHT)
-	_apply_background(StringName(_script_data.get("default_background", "")))
+	_bubble.visible = false
+	_apply_background("")
 	visible = true
 	modulate.a = 0.0
 	_start_panel_fade(1.0)
 	dialog_started.emit()
 	advance()
+
+
+## 兼容旧调用名（调试沙盒）。
+func play_script(story: Dictionary) -> void:
+	play_story(story)
 
 
 func advance() -> void:
@@ -114,12 +158,31 @@ func advance() -> void:
 	if _typing:
 		_finish_typing()
 		return
+	if _current_gated:
+		return
+	_advance_unchecked()
+
+
+func _advance_unchecked() -> void:
 	_current_index += 1
 	if _current_index >= _lines.size():
 		_finish_dialog()
 		return
-	var line: Dictionary = _lines[_current_index]
-	_show_line(line)
+	var line: Variant = _lines[_current_index]
+	if typeof(line) == TYPE_DICTIONARY:
+		_show_line(line)
+	else:
+		_advance_unchecked()
+
+
+## 动手门控：游戏事件发生时由 StoryDirector 调用以推进当前门控句。
+func notify_story_event(event_key: StringName) -> void:
+	if not _current_gated:
+		return
+	if _gate_key != StringName() and _gate_key != event_key:
+		return
+	_current_gated = false
+	_advance_unchecked()
 
 
 func skip() -> void:
@@ -130,52 +193,96 @@ func skip() -> void:
 	_finish_dialog()
 
 
-func restart() -> void:
-	if _script_data.is_empty():
-		return
-	play_script(_script_data)
+func is_playing() -> bool:
+	return visible
 
 
 func set_type_speed(value: float) -> void:
-	_type_speed = max(value, 0.0)
+	_type_speed = maxf(value, 0.0)
 
 
+# ---- 单句呈现 ----
 func _show_line(line: Dictionary) -> void:
-	_apply_clear_sides(line.get("clear_sides", []))
-	var background_key := StringName(line.get("background_key", ""))
-	if background_key != StringName():
-		_apply_background(background_key)
+	_apply_clear(line.get("clear", ""))
+	_apply_background(String(line.get("background", "")))
 
-	var side := StringName(line.get("side", ""))
-	var portrait_key := StringName(line.get("portrait_key", ""))
-	if _is_portrait_side(side) and portrait_key != StringName():
-		_set_portrait(side, portrait_key)
+	var skin := StringName(line.get("skin", SKIN_VN))
+	_active_skin = skin
+	if skin == SKIN_BUBBLE:
+		_setup_bubble_line(line)
+	else:
+		_setup_vn_line(line)
 
-	_active_side = side if _is_portrait_side(side) else StringName()
-	_update_portrait_focus()
-
-	var speaker := String(line.get("speaker", "")).strip_edges()
-	_speaker_plate.visible = not speaker.is_empty()
-	_speaker_label.text = speaker
+	var advance_mode := String(line.get("advance", "click"))
+	_current_gated = advance_mode.begins_with("event:")
+	_gate_key = StringName(advance_mode.substr(6)) if _current_gated else StringName()
 
 	var text := String(line.get("text", ""))
-	_text_label.text = text
+	if _active_text_label != null:
+		_active_text_label.text = text
+		_active_text_label.visible_characters = 0
 	_line_char_count = _count_visible_characters(text)
-	_text_label.visible_characters = 0
 	_visible_chars_float = 0.0
 	_line_finished_emitted = false
 	_typing = _line_char_count > 0 and _type_speed > 0.0
-	_prompt_label.text = "点击继续"
+	if _active_prompt != null:
+		_active_prompt.text = "点击继续"
 	line_started.emit(_current_index)
 	if not _typing:
 		_finish_typing()
 
 
+func _setup_vn_line(line: Dictionary) -> void:
+	_bubble.visible = false
+	_text_box.visible = true
+	var side := StringName(line.get("side", ""))
+	var portrait_key := StringName(line.get("portrait", ""))
+	if _is_portrait_side(side) and portrait_key != StringName():
+		_set_portrait(side, portrait_key)
+	_active_side = side if _is_portrait_side(side) else StringName()
+	_update_portrait_focus()
+	var speaker := String(line.get("speaker", "")).strip_edges()
+	_speaker_plate.visible = not speaker.is_empty()
+	_speaker_label.text = speaker
+	_active_text_label = _text_label
+	_active_prompt = _prompt_label
+
+
+func _setup_bubble_line(line: Dictionary) -> void:
+	_text_box.visible = false
+	_clear_side(SIDE_LEFT)
+	_clear_side(SIDE_RIGHT)
+	_bubble.visible = true
+	_place_bubble(line)
+	var speaker := String(line.get("speaker", "")).strip_edges()
+	_bubble_speaker.visible = not speaker.is_empty()
+	_bubble_speaker.text = speaker
+	_active_text_label = _bubble_label
+	_active_prompt = _bubble_prompt
+
+
+## 气泡定位：显式 position 优先；anchor(core/ui:/cell:/unit:) 的世界换算留待 StoryDirector
+## 注入屏幕坐标，暂未注入时落默认位。
+func _place_bubble(line: Dictionary) -> void:
+	var pos := BUBBLE_DEFAULT_POS
+	if line.has("position"):
+		var raw: Variant = line.get("position")
+		if typeof(raw) == TYPE_ARRAY and (raw as Array).size() >= 2:
+			pos = Vector2(float(raw[0]), float(raw[1]))
+		elif typeof(raw) == TYPE_DICTIONARY:
+			var d: Dictionary = raw
+			pos = Vector2(float(d.get("x", pos.x)), float(d.get("y", pos.y)))
+	_bubble.position = pos
+
+
+# ---- 打字机收尾 ----
 func _finish_typing() -> void:
 	_typing = false
-	_text_label.visible_characters = -1
+	if _active_text_label != null:
+		_active_text_label.visible_characters = -1
 	_visible_chars_float = float(_line_char_count)
-	_prompt_label.text = "再次点击进入下一句"
+	if _active_prompt != null:
+		_active_prompt.text = "再次点击进入下一句"
 	if not _line_finished_emitted:
 		_line_finished_emitted = true
 		line_finished.emit(_current_index)
@@ -183,6 +290,7 @@ func _finish_typing() -> void:
 
 func _finish_dialog() -> void:
 	_typing = false
+	_current_gated = false
 	dialog_finished.emit()
 	_start_panel_fade(0.0, Callable(self, "_hide_after_fade"))
 
@@ -192,12 +300,13 @@ func _hide_after_fade() -> void:
 	modulate.a = 1.0
 
 
-func _apply_clear_sides(raw_clear_sides: Variant) -> void:
-	if typeof(raw_clear_sides) == TYPE_STRING:
-		raw_clear_sides = [raw_clear_sides]
-	if typeof(raw_clear_sides) != TYPE_ARRAY:
+# ---- 立绘 ----
+func _apply_clear(raw_clear: Variant) -> void:
+	if typeof(raw_clear) == TYPE_STRING:
+		raw_clear = [raw_clear]
+	if typeof(raw_clear) != TYPE_ARRAY:
 		return
-	for raw_side in raw_clear_sides:
+	for raw_side in raw_clear:
 		var side := StringName(raw_side)
 		if side == &"all":
 			_clear_side(SIDE_LEFT)
@@ -233,7 +342,8 @@ func _clear_side(side: StringName) -> void:
 		return
 	target.visible = false
 	target.texture = null
-	target.remove_meta("portrait_key")
+	if target.has_meta("portrait_key"):
+		target.remove_meta("portrait_key")
 
 
 func _update_portrait_focus() -> void:
@@ -248,23 +358,11 @@ func _update_portrait_focus() -> void:
 		tween.tween_property(target, "modulate", focus_color, 0.16)
 
 
-func _apply_background(background_key: StringName) -> void:
-	var fallback := Color(0.040, 0.052, 0.064, 1.0)
-	if background_key == StringName():
-		_background.color = fallback
-		return
-	var raw_background: Variant = _backgrounds.get(String(background_key), _backgrounds.get(background_key, {}))
-	if typeof(raw_background) == TYPE_DICTIONARY:
-		var cfg: Dictionary = raw_background
-		_background.color = _parse_color(String(cfg.get("color", "")), fallback)
-	elif typeof(raw_background) == TYPE_STRING:
-		_background.color = _parse_color(String(raw_background), fallback)
-	else:
-		_background.color = fallback
-
-
-func _get_portrait_texture(_portrait_key: StringName) -> Texture2D:
-	return null
+func _get_portrait_texture(portrait_key: StringName) -> Texture2D:
+	var path := StoryLib.resolve_portrait_path(portrait_key)
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
 
 
 func _get_portrait_rect(side: StringName) -> TextureRect:
@@ -277,6 +375,35 @@ func _get_portrait_rect(side: StringName) -> TextureRect:
 
 func _is_portrait_side(side: StringName) -> bool:
 	return side == SIDE_LEFT or side == SIDE_RIGHT
+
+
+# ---- 背景三档：透明(map)/纯色(#hex)/插图(key) ----
+func _apply_background(bg: String) -> void:
+	var fallback := Color(0.040, 0.052, 0.064, 1.0)
+	if bg.is_empty() or bg == "map":
+		_bg_image.visible = false
+		_background.color = Color(fallback.r, fallback.g, fallback.b, 0.0)
+		return
+	if bg.begins_with("#"):
+		_bg_image.visible = false
+		_background.color = _parse_color(bg, fallback)
+		return
+	var path := StoryLib.resolve_background_path(bg)
+	if not path.is_empty() and ResourceLoader.exists(path):
+		_bg_image.texture = load(path) as Texture2D
+		_bg_image.visible = true
+		_background.color = Color(0.0, 0.0, 0.0, 1.0)
+	else:
+		_bg_image.visible = false
+		_background.color = fallback
+
+
+func _parse_color(raw: String, fallback: Color) -> Color:
+	if raw.is_empty():
+		return fallback
+	if raw.begins_with("#"):
+		return Color.html(raw)
+	return fallback
 
 
 func _count_visible_characters(bbcode_text: String) -> int:
@@ -295,14 +422,6 @@ func _count_visible_characters(bbcode_text: String) -> int:
 	return count
 
 
-func _parse_color(raw_color: String, fallback: Color) -> Color:
-	if raw_color.is_empty():
-		return fallback
-	if raw_color.begins_with("#"):
-		return Color.html(raw_color)
-	return fallback
-
-
 func _start_panel_fade(target_alpha: float, callback: Callable = Callable()) -> void:
 	if _fade_tween != null and _fade_tween.is_valid():
 		_fade_tween.kill()
@@ -310,6 +429,56 @@ func _start_panel_fade(target_alpha: float, callback: Callable = Callable()) -> 
 	_fade_tween.tween_property(self, "modulate:a", target_alpha, 0.18)
 	if callback.is_valid():
 		_fade_tween.tween_callback(callback)
+
+
+# ---- 程序化构建 ----
+func _build_bg_image() -> void:
+	_bg_image = TextureRect.new()
+	_bg_image.name = "BackgroundImage"
+	_bg_image.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bg_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_bg_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_bg_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bg_image.visible = false
+	add_child(_bg_image)
+	move_child(_bg_image, 2)   # Background(0)/BackdropGrid(1) 之后、立绘之前
+
+
+func _build_bubble() -> void:
+	_bubble = PanelContainer.new()
+	_bubble.name = "Bubble"
+	_bubble.custom_minimum_size = Vector2(560.0, 0.0)
+	_bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bubble.visible = false
+	add_child(_bubble)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 22)
+	margin.add_theme_constant_override("margin_right", 22)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bubble.add_child(margin)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(vbox)
+	_bubble_speaker = Label.new()
+	_bubble_speaker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bubble_speaker.visible = false
+	vbox.add_child(_bubble_speaker)
+	_bubble_label = RichTextLabel.new()
+	_bubble_label.bbcode_enabled = true
+	_bubble_label.fit_content = true
+	_bubble_label.scroll_active = false
+	_bubble_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_bubble_label.custom_minimum_size = Vector2(516.0, 0.0)
+	_bubble_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(_bubble_label)
+	_bubble_prompt = Label.new()
+	_bubble_prompt.text = "点击继续"
+	_bubble_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_bubble_prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(_bubble_prompt)
 
 
 func _configure_layout_nodes() -> void:
@@ -323,6 +492,8 @@ func _configure_layout_nodes() -> void:
 	_text_label.bbcode_enabled = true
 	_text_label.scroll_active = false
 	_text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_active_text_label = _text_label
+	_active_prompt = _prompt_label
 
 
 func _set_descendant_mouse_filter(root: Node, filter: int) -> void:
@@ -340,3 +511,10 @@ func _apply_style() -> void:
 	_text_label.add_theme_font_size_override("normal_font_size", 23)
 	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	_prompt_label.add_theme_font_size_override("font_size", 15)
+	_bubble.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, 1.0, 10.0))
+	_bubble_speaker.add_theme_color_override("font_color", GameUiStyle.ACCENT)
+	_bubble_speaker.add_theme_font_size_override("font_size", 16)
+	_bubble_label.add_theme_color_override("default_color", GameUiStyle.TEXT)
+	_bubble_label.add_theme_font_size_override("normal_font_size", 20)
+	_bubble_prompt.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+	_bubble_prompt.add_theme_font_size_override("font_size", 13)
