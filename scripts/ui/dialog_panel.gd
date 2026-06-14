@@ -524,8 +524,8 @@ func _configure_layout_nodes() -> void:
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# 立绘缩小（sprite 仅 128px，避免高倍放大糊）并下移，使下半身压在对话框之下。
-	_set_portrait_rect(_left_portrait, 0.05, 0.27)
-	_set_portrait_rect(_right_portrait, 0.73, 0.95)
+	_set_portrait_rect(_left_portrait, 0.17, 0.36)
+	_set_portrait_rect(_right_portrait, 0.59, 0.78)
 	# 对话框几何：保持宽（盖住立绘下半身），压低高度去掉空白，下沿贴近屏底。
 	_text_box.offset_left = 150.0
 	_text_box.offset_right = -150.0
@@ -572,7 +572,7 @@ func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> vo
 func _apply_style() -> void:
 	# 对话框 / 名牌 / 气泡全部复用游戏现成 UI 框，与 HUD 风格一致：
 	#   对话框=事件弹窗框，名牌=干员标题条，气泡=地图弹窗框。
-	_text_box.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.DETAIL_SECTION, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, false))
+	_text_box.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.MAP_POPUP, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, false))
 
 	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.OPERATOR_TITLE_STRIP, GameUiStyle.BG_CARD, GameUiStyle.ACCENT))
 	_speaker_plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
