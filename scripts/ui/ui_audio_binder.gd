@@ -2,6 +2,7 @@ extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 
+const CUE_NONE := &""
 const CUE_CLICK := &"ui_click"
 const CUE_CONFIRM := &"ui_confirm"
 const CUE_CANCEL := &"ui_cancel"
@@ -20,7 +21,7 @@ const BUTTON_CUE_BY_NAME := {
 	"MenuButton": CUE_CANCEL,
 	"RetryButton": CUE_CONFIRM,
 	"StartButton": CUE_CONFIRM,
-	"StartNightButton": CUE_CONFIRM,
+	"StartNightButton": CUE_CLICK,
 	"TriggerEventButton": CUE_CONFIRM,
 	"CollectButton": CUE_CONFIRM,
 	"RepairButton": CUE_CONFIRM,
@@ -244,6 +245,8 @@ func _on_bound_operator_card_tree_exited(instance_id: int) -> void:
 
 
 func _emit_cue(cue_key: StringName) -> void:
+	if cue_key == CUE_NONE:
+		return
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		event_bus.audio_cue_requested.emit(cue_key)
