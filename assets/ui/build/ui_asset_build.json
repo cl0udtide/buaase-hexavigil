@@ -1199,7 +1199,8 @@
       "max_pre_scale": 4,
       "margin_mode": "scale_from_template",
       "content_margin_mode": "scale_from_template",
-      "interpolation": "nearest"
+      "interpolation": "nearest",
+      "png_scale_mode": "exact_target"
     },
     "frame_skill_desc_box": {
       "kind": "stylebox_texture",

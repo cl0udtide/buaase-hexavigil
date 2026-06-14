@@ -140,6 +140,12 @@ var _level_intro_line: ColorRect
 
 @onready var _settings_button: Button = %SettingsButton
 @onready var _settings_panel: Control = %AudioSettingsPanel
+@onready var _popup_layer: Control = get_node_or_null("PopupLayer") as Control
+@onready var _settings_panel_slot: Control = get_node_or_null("PopupLayer/SettingsPanelSlot") as Control
+@onready var _cheat_panel_slot: Control = get_node_or_null("PopupLayer/CheatPanelSlot") as Control
+@onready var _cheat_panel_center: Control = get_node_or_null("PopupLayer/CheatPanelSlot/CheatPanelCenter") as Control
+@onready var _relic_panel_slot: Control = get_node_or_null("PopupLayer/RelicPanelSlot") as Control
+@onready var _relic_panel_center: Control = get_node_or_null("PopupLayer/RelicPanelSlot/RelicPanelCenter") as Control
 @onready var _top_bar: Control = %TopBar
 @onready var _top_content: MarginContainer = _top_bar.get_node_or_null("TopContent") as MarginContainer
 @onready var _top_content_row: HBoxContainer = _top_bar.get_node_or_null("TopContent/TopContentRow") as HBoxContainer
@@ -166,6 +172,7 @@ var _level_intro_line: ColorRect
 @onready var _speed_1_button: Button = %Speed1Button
 @onready var _speed_2_button: Button = %Speed2Button
 @onready var _relic_strip: Control = %RelicStrip
+@onready var _cheat_panel: Control = %CheatPanel
 @onready var _relic_panel: Control = %RelicPanel
 @onready var _wave_preview_panel: Control = %WavePreviewPanel
 @onready var _wave_preview_content: VBoxContainer = _wave_preview_panel.get_node_or_null("WavePreviewMargin/WavePreviewContent") as VBoxContainer
@@ -458,6 +465,15 @@ func toggle_settings_panel() -> void:
 		_show_overlay_panel(&"settings")
 
 
+func toggle_cheat_panel() -> void:
+	if _cheat_panel == null:
+		return
+	if _cheat_panel.visible:
+		_hide_overlay_panel(&"cheat")
+	else:
+		_show_overlay_panel(&"cheat")
+
+
 func close_top_panel() -> bool:
 	while not _open_panel_stack.is_empty():
 		var panel_name: StringName = _open_panel_stack.pop_back()
@@ -467,6 +483,9 @@ func close_top_panel() -> bool:
 			return true
 	if _settings_panel != null and _settings_panel.visible:
 		_hide_overlay_panel(&"settings")
+		return true
+	if _cheat_panel != null and _cheat_panel.visible:
+		_hide_overlay_panel(&"cheat")
 		return true
 	if _relic_panel != null and _relic_panel.visible:
 		_hide_overlay_panel(&"relic")
@@ -1644,6 +1663,8 @@ func _bind_overlay_panels() -> void:
 			_settings_button.pressed.connect(_on_settings_button_pressed)
 	if _settings_panel != null and _settings_panel.has_signal("close_requested"):
 		_settings_panel.connect(&"close_requested", Callable(self, "_on_settings_panel_close_requested"))
+	if _settings_panel != null and _settings_panel.has_signal("cheat_panel_requested"):
+		_settings_panel.connect(&"cheat_panel_requested", Callable(self, "_on_cheat_panel_requested"))
 	if _relic_strip != null:
 		if _relic_strip.has_signal("panel_requested"):
 			_relic_strip.connect(&"panel_requested", Callable(self, "_on_relic_panel_requested"))
@@ -1651,6 +1672,8 @@ func _bind_overlay_panels() -> void:
 			_relic_strip.connect(&"relic_pressed", Callable(self, "_on_relic_strip_relic_pressed"))
 	if _relic_panel != null and _relic_panel.has_signal("close_requested"):
 		_relic_panel.connect(&"close_requested", Callable(self, "_on_relic_panel_close_requested"))
+	if _cheat_panel != null and _cheat_panel.has_signal("close_requested"):
+		_cheat_panel.connect(&"close_requested", Callable(self, "_on_cheat_panel_close_requested"))
 
 
 func _on_settings_button_pressed() -> void:
@@ -1659,6 +1682,15 @@ func _on_settings_button_pressed() -> void:
 
 func _on_settings_panel_close_requested() -> void:
 	_hide_overlay_panel(&"settings")
+
+
+func _on_cheat_panel_requested() -> void:
+	_hide_overlay_panel(&"settings")
+	_show_overlay_panel(&"cheat")
+
+
+func _on_cheat_panel_close_requested() -> void:
+	_hide_overlay_panel(&"cheat")
 
 
 func _on_relic_panel_requested() -> void:
@@ -1685,6 +1717,7 @@ func _show_overlay_panel(panel_name: StringName) -> void:
 		panel.visible = true
 	_move_control_to_front(panel)
 	_mark_panel_top(panel_name)
+	_sync_overlay_panel_layers()
 
 
 func _hide_overlay_panel(panel_name: StringName) -> void:
@@ -1696,12 +1729,15 @@ func _hide_overlay_panel(panel_name: StringName) -> void:
 	else:
 		panel.visible = false
 	_remove_panel_from_stack(panel_name)
+	_sync_overlay_panel_layers()
 
 
 func _panel_for_name(panel_name: StringName) -> Control:
 	match panel_name:
 		&"settings":
 			return _settings_panel
+		&"cheat":
+			return _cheat_panel
 		&"relic":
 			return _relic_panel
 		_:
@@ -1732,3 +1768,21 @@ func _show_control_ancestors(control: Control) -> void:
 			var canvas_item: CanvasItem = current as CanvasItem
 			canvas_item.visible = true
 		current = current.get_parent()
+
+
+func _sync_overlay_panel_layers() -> void:
+	var settings_visible := _settings_panel != null and _settings_panel.visible
+	var cheat_visible := _cheat_panel != null and _cheat_panel.visible
+	var relic_visible := _relic_panel != null and _relic_panel.visible
+	if _settings_panel_slot != null:
+		_settings_panel_slot.visible = settings_visible
+	if _cheat_panel_center != null:
+		_cheat_panel_center.visible = cheat_visible
+	if _cheat_panel_slot != null:
+		_cheat_panel_slot.visible = cheat_visible
+	if _relic_panel_center != null:
+		_relic_panel_center.visible = relic_visible
+	if _relic_panel_slot != null:
+		_relic_panel_slot.visible = relic_visible
+	if _popup_layer != null:
+		_popup_layer.visible = settings_visible or cheat_visible or relic_visible

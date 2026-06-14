@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dt2d2gea25boo" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="5_w2pd7"]
 [ext_resource type="PackedScene" uid="uid://s77oiy0amfv8" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
 [ext_resource type="Script" uid="uid://wfh31hvbgi12" path="res://scripts/ui/audio_settings_panel.gd" id="9_7wb5u"]
+[ext_resource type="Script" path="res://scripts/ui/cheat_panel.gd" id="10_cheat_panel"]
 [ext_resource type="Texture2D" uid="uid://c021jrk5jeuwx" path="res://assets/ui/generated/frame_slider_handle.png" id="26_sliderhandle"]
 [ext_resource type="Texture2D" uid="uid://nkhvnstaq2rn" path="res://assets/ui/generated/icon_settings_gear.png" id="27_iconsettings"]
 [ext_resource type="Texture2D" uid="uid://d0f3i3gyl2gnc" path="res://assets/ui/generated/icon_phase_day.png" id="28_iconphase"]
@@ -1673,7 +1674,6 @@ mouse_filter = 2
 
 [node name="AudioSettingsPanel" type="Control" parent="PopupLayer/SettingsPanelSlot" unique_id=1813098785]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2033,7 +2033,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 29
+theme_override_constants/margin_left = 23
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 6
@@ -2094,6 +2094,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 8.0
+offset_right = -4.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -2112,6 +2116,87 @@ theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
 [node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=1352742178]
 script = ExtResource("button_state_overlay")
+
+[node name="CheatPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619701]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CheatPanelCenter" type="Control" parent="PopupLayer/CheatPanelSlot" unique_id=2016619702]
+visible = false
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CheatPanel" type="Control" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter" unique_id=2016619703]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 560)
+anchors_preset = 0
+offset_right = 640.0
+offset_bottom = 560.0
+script = ExtResource("10_cheat_panel")
+
+[node name="PanelBase" type="Panel" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel" unique_id=2016619704]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ContentMargin" type="MarginContainer" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel" unique_id=2016619705]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="MainVBox" type="VBoxContainer" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin" unique_id=2016619706]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin/MainVBox" unique_id=2016619707]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin/MainVBox/Header" unique_id=2016619708]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+theme_override_font_sizes/font_size = 20
+text = "作弊面板"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin/MainVBox/Header" unique_id=2016619709]
+custom_minimum_size = Vector2(72, 34)
+layout_mode = 2
+focus_mode = 0
+text = "关闭"
+
+[node name="CheatScroll" type="ScrollContainer" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin/MainVBox" unique_id=2016619710]
+custom_minimum_size = Vector2(0, 450)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CheatBody" type="VBoxContainer" parent="PopupLayer/CheatPanelSlot/CheatPanelCenter/CheatPanel/ContentMargin/MainVBox/CheatScroll" unique_id=2016619711]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="RelicPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619765]
 unique_name_in_owner = true
