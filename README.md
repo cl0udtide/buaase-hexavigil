@@ -12,8 +12,6 @@
   `data/` 目录下各 JSON 配置表的结构、字段定义和引用关系。
 - [玩法循环与模块分工](docs/玩法循环与模块分工.markdown)
   单局玩法循环（白天运营 / 夜间塔防 / 肉鸽结算）与模块分工说明。
-- [肉鸽构筑与战斗优化方案](docs/肉鸽构筑与战斗优化方案.md)
-  构筑与战斗系统的优化路线图（含 P2/P3 待办与平衡方法论）。
 - [UI_SYSTEM.md](docs/UI_SYSTEM.md)
   作战 HUD 目标风格、UI 分层规范、场景与脚本职责边界、后续重构清单。
 - 美术生图提示词库：[UI](docs/UI_ASSET_GENERATION_PROMPTS.md) / [角色](docs/CHARACTER_ASSET_GENERATION_PROMPTS.md) / [特效](docs/EFFECT_ASSET_GENERATION_PROMPTS.md) / [地图](docs/MAP_ASSET_GENERATION_PROMPTS.md)

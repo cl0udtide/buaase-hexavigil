@@ -2,8 +2,7 @@ extends RefCounted
 class_name DifficultyScale
 
 ## 按天数缩放出怪难度的全局开关。模板只描述构成形状，难度成长统一在这里调。
-## 设计见 docs/superpowers/specs/2026-06-13-night-spawn-9day-rework-design.md §1-§2。
-## 纯静态、确定性，可脱离 DataRepo 测试。数值为占位（平衡定稿见 P3-4）。
+## 纯静态、确定性，可脱离 DataRepo 测试。数值为占位（平衡未定稿）。
 
 ## 杂兵数量系数：乘到每个 group 的 count 上（Boss 条目不缩放）。逐天爬升。
 ## 前期 <1 压人数（治"前期怪太多"），线性涨到末日 1.45；数量是次要杠杆，主难度交给数值。

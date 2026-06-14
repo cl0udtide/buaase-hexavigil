@@ -6,7 +6,6 @@ extends RefCounted
 ## - compute_front：每格的梯度方向 g（朝核心）与横向轴 axis（仅用于同代价分流排序）。
 ## - descend_step：每步只走 dist 严格更小的邻；多个并列时按个体相位在横向序上分流。
 ##   严格单调 ⇒ 必达核心、绝不成环/踱步（可证明终止）；铺开宽度交给"距离场种子"等旁路。
-## 设计稿：docs/敌人地形正面推进与覆盖预览设计.md
 
 const CARDINALS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 
