@@ -14,6 +14,9 @@ const VALID_SKINS: Array[StringName] = [SKIN_BUBBLE, SKIN_VN]
 const UNIT_SPRITE_FMT := "res://assets/sprites/units/%s/idle/%s_idle_000.png"
 const ENEMY_SPRITE_FMT := "res://assets/sprites/enemies/%s/idle/%s_idle_000.png"
 
+## VN 全屏插图背景 key → 资源路径。
+const BACKGROUND_DIR := "res://assets/story/backgrounds/"
+
 
 ## 扫目录下全部 *.json，按 id 索引成 {id: cfg}。非法/无 id 的文件跳过，不阻断其余。
 static func load_dir(dir_path: String) -> Dictionary:
@@ -87,6 +90,14 @@ static func resolve_portrait_path(portrait_key: StringName) -> String:
 		var enemy_id := key.substr(6)
 		return ENEMY_SPRITE_FMT % [enemy_id, enemy_id]
 	return ""
+
+
+## 全屏插图 background key → 资源路径（不存在返回空，调用方回退纯色）。
+static func resolve_background_path(key: String) -> String:
+	if key.is_empty():
+		return ""
+	var path := BACKGROUND_DIR + key + ".png"
+	return path if ResourceLoader.exists(path) else ""
 
 
 ## 取某触发对应的全部剧情 id（确定性排序）。供 StoryDirector 建 trigger→story 映射。
