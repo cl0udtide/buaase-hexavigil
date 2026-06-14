@@ -120,6 +120,66 @@ static func _desired_index(width: int, phase: float, half_width: int) -> int:
 	return clampi(int(round(idx)), 0, width - 1)
 
 
+## 纯单调下行：只走 dist 严格更小的邻；多个可选时按相位在"横向序"上分流铺开。
+## 绝不增距 ⇒ 每步严格降 dist ⇒ 必达核心、绝不震荡（可证明终止）。
+## extra_blocked 软避让（干员）：优先未占的下行邻，全被占则照走（窄口接敌）。
+static func descend_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase: float, extra_blocked: Dictionary) -> Vector2i:
+	if not dist.has(cell):
+		return cell
+	var cur_d: int = int(dist[cell])
+	if cur_d == 0:
+		return cell
+	var axis: Vector2i = (front.get(cell, {}) as Dictionary).get("axis", Vector2i.ZERO)
+	var opts: Array = []
+	for dir in CARDINALS:
+		var nb: Vector2i = cell + dir
+		if not dist.has(nb) or int(dist[nb]) >= cur_d:
+			continue
+		var lat: int = 0
+		if axis != Vector2i.ZERO:
+			var delta: Vector2i = nb - cell
+			lat = delta.x * axis.x + delta.y * axis.y
+		opts.append({"cell": nb, "lat": lat, "blocked": bool(extra_blocked.get(nb, false))})
+	if opts.is_empty():
+		return cell
+	var pool: Array = opts.filter(func(o): return not bool(o["blocked"]))
+	if pool.is_empty():
+		pool = opts  # 全被占（窄口）：照走进去接敌
+	pool.sort_custom(func(a, b):
+		if int(a["lat"]) != int(b["lat"]):
+			return int(a["lat"]) < int(b["lat"])
+		var ca: Vector2i = a["cell"]
+		var cb: Vector2i = b["cell"]
+		if ca.y != cb.y:
+			return ca.y < cb.y
+		return ca.x < cb.x
+	)
+	var idx: int = clampi(int(clampf(phase, 0.0, 1.0) * float(pool.size())), 0, pool.size() - 1)
+	return (pool[idx] as Dictionary)["cell"]
+
+
+## 横向铺开一步：朝相位槽位向外挪一格（不许向内）。到位/无法再铺时返回原格（=该转入下行）。
+static func spread_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase: float, half_width: int) -> Vector2i:
+	var f: Dictionary = front.get(cell, {})
+	if f.is_empty():
+		return cell
+	var width: int = int(f.get("width", 1))
+	var axis: Vector2i = f.get("axis", Vector2i.ZERO)
+	if axis == Vector2i.ZERO or width <= 1:
+		return cell
+	var cur_index: int = int(round(float(f.get("frac", 0.0)) * float(max(width - 1, 1))))
+	var desired: int = _desired_index(width, phase, half_width)
+	if cur_index == desired:
+		return cell
+	var step_sign: int = 1 if desired > cur_index else -1
+	var new_index: int = cur_index + step_sign
+	var center: float = float(width - 1) * 0.5
+	if absf(float(new_index) - center) < absf(float(cur_index) - center) - 0.001:
+		return cell
+	var lat_cell: Vector2i = cell + (axis if step_sign > 0 else -axis)
+	return lat_cell if dist.has(lat_cell) else cell
+
+
 static func _passable(cells: Dictionary, blocked: Dictionary, cell: Vector2i) -> bool:
 	if bool(blocked.get(cell, false)):
 		return false
