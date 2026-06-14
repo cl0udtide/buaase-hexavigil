@@ -822,6 +822,7 @@ func _on_operator_sell_requested(operator_key: StringName) -> void:
 
 func _on_unit_deployed(_unit_runtime_id: int, _operator_key: StringName, _unit_id: StringName, _cell: Vector2i) -> void:
 	_update_operator_cards()
+	_queue_wave_preview_refresh()
 
 
 func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
@@ -829,6 +830,7 @@ func _on_unit_removed(unit_runtime_id: int, _reason: int) -> void:
 		_clear_selected_unit()
 		_refresh_detail_panel()
 	_queue_operator_cards_update()
+	_queue_wave_preview_refresh()
 
 
 func _on_path_grid_changed() -> void:
@@ -1108,13 +1110,23 @@ func _refresh_wave_preview() -> void:
 		_clear_wave_routes()
 		return
 	var hover_cell: Vector2i = _get_blocking_build_preview_cell() if phase == GameEnums.PHASE_DAY else INVALID_CELL
-	var signature: String = "%d|%d|%s|%d|%d|%d|%d" % [int(run_state.day), phase, str(hover_cell), int(preview.get("total_count", 0)), _wave_route_revision, int(preview.get("wave_count", 1)), (preview.get("affixes", []) as Array).size()]
+	var hard_blocked_cells: Dictionary = {}
+	if hover_cell != INVALID_CELL:
+		hard_blocked_cells[hover_cell] = true
+	var soft_blocked_cells: Dictionary = _get_deployed_unit_cells()
+	var signature: String = "%d|%d|%s|%s|%d|%d|%d|%d" % [
+		int(run_state.day),
+		phase,
+		_cell_dict_signature(hard_blocked_cells),
+		_cell_dict_signature(soft_blocked_cells),
+		int(preview.get("total_count", 0)),
+		_wave_route_revision,
+		int(preview.get("wave_count", 1)),
+		(preview.get("affixes", []) as Array).size()
+	]
 	if signature != _last_wave_preview_signature:
 		_last_wave_preview_signature = signature
-		var extra_blocked_cells: Dictionary = {}
-		if hover_cell != INVALID_CELL:
-			extra_blocked_cells[hover_cell] = true
-		var routes: Array[Dictionary] = _build_wave_route_previews(preview, extra_blocked_cells)
+		var routes: Array[Dictionary] = _build_wave_route_previews(preview, hard_blocked_cells, soft_blocked_cells)
 		_set_wave_routes(routes)
 	else:
 		_apply_wave_route_visibility()
@@ -1253,7 +1265,7 @@ func _build_night_preview_data(run_state: Node) -> Dictionary:
 	return {}
 
 
-func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictionary) -> Array[Dictionary]:
+func _build_wave_route_previews(preview: Dictionary, hard_blocked_cells: Dictionary, soft_blocked_cells: Dictionary) -> Array[Dictionary]:
 	var routes_by_key: Dictionary = {}
 	var entries: Array = preview.get("entries", [])
 	for entry_variant: Variant in entries:
@@ -1287,15 +1299,14 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 			return String(a.get("path_mode", "")) < String(b.get("path_mode", ""))
 		return spawn_a < spawn_b
 	)
-	# 计数累加完成后，按本路线怪量算覆盖面（与移动共用 path_service 的场）。
-	# 注：覆盖基于当前已落地的墙；放墙后由 path_grid_changed 刷新（不再做悬停假设性预览）。
+	# 计数累加完成后，按真实下行候选算可能路径（与敌人移动共用 path_service 的场）。
 	for index in range(routes.size()):
 		var route: Dictionary = routes[index]
 		var path_mode := StringName(route.get("path_mode", &"normal"))
-		var half_width := _coverage_half_width(int(route.get("count", 0)))
+		var spawn_cell: Vector2i = route.get("spawn_cell", Vector2i.ZERO)
 		var coverage_result: Dictionary = {}
 		if _path_service != null and _path_service.has_method("compute_coverage"):
-			coverage_result = _path_service.compute_coverage(route.get("spawn_cell", Vector2i.ZERO), path_mode, half_width)
+			coverage_result = _path_service.compute_coverage(spawn_cell, path_mode, 0, hard_blocked_cells, soft_blocked_cells)
 		route["coverage"] = coverage_result.get("coverage", [])
 		route["centerline"] = coverage_result.get("centerline", [])
 		route["ok"] = bool(coverage_result.get("ok", false))
@@ -1305,11 +1316,6 @@ func _build_wave_route_previews(preview: Dictionary, extra_blocked_cells: Dictio
 		route["route_summary"] = _format_route_enemy_summary(route)
 		routes[index] = route
 	return routes
-
-
-## 覆盖正面半宽：随本路线来袭怪量增长（与 enemy_movement_controller 同公式，平衡占位）。
-func _coverage_half_width(count: int) -> int:
-	return clampi(int(round(0.6 * sqrt(float(maxi(count, 1))))), 1, 8)
 
 
 func _add_enemy_to_route(route: Dictionary, entry: Dictionary) -> void:
@@ -1407,6 +1413,35 @@ func _collect_route_warning_lines(routes: Array[Dictionary]) -> PackedStringArra
 		if not warnings.has(line):
 			warnings.append(line)
 	return warnings
+
+
+func _get_deployed_unit_cells() -> Dictionary:
+	var cells: Dictionary = {}
+	if _unit_manager == null or not _unit_manager.has_method("get_all_deployed_units"):
+		return cells
+	for unit in _unit_manager.get_all_deployed_units():
+		if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
+			cells[unit.get_current_cell()] = true
+	return cells
+
+
+func _cell_dict_signature(cells: Dictionary) -> String:
+	if cells.is_empty():
+		return "-"
+	var sorted_cells: Array[Vector2i] = []
+	for cell_variant: Variant in cells.keys():
+		if bool(cells.get(cell_variant, false)):
+			var cell: Vector2i = cell_variant
+			sorted_cells.append(cell)
+	sorted_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		if a.y != b.y:
+			return a.y < b.y
+		return a.x < b.x
+	)
+	var parts := PackedStringArray()
+	for cell: Vector2i in sorted_cells:
+		parts.append("%d,%d" % [cell.x, cell.y])
+	return ";".join(parts)
 
 
 func _get_blocking_build_preview_cell() -> Vector2i:

@@ -3,7 +3,8 @@ extends RefCounted
 
 ## 敌人共享距离场 + 纯单调下行（flow field 标准做法，纯静态、决定性）。
 ## - compute_distance：从核心四连通 BFS，跳过 blocked 与不可走格 → 每格"到核心步数"。
-## - compute_front：每格的梯度方向 g（朝核心）与横向轴 axis（仅用于同代价分流排序）。
+## - compute_front：每格的梯度方向 g（朝核心）与横向轴 axis（用于同代价分流排序）。
+## - descend_choices：列出某格所有真实可选的下行邻，供移动与路径预览共用。
 ## - descend_step：每步只走 dist 严格更小的邻；多个并列时按个体相位在横向序上分流。
 ##   严格单调 ⇒ 必达核心、绝不成环/踱步（可证明终止）；铺开宽度交给"距离场种子"等旁路。
 
@@ -32,7 +33,7 @@ static func compute_distance(cells: Dictionary, core: Vector2i, blocked: Diction
 
 
 ## 每个有 dist 的格：梯度 g（朝 dist 最小邻、并列按 R,D,L,U）+ 横向轴 axis（g 的垂直方向）。
-## g 供覆盖预览描中心线；axis 供 descend_step 做同代价分流的横向排序。
+## axis 供同代价分流排序；g 保留给调试与兼容调用。
 static func compute_front(_cells: Dictionary, dist: Dictionary, _blocked: Dictionary) -> Dictionary:
 	var front: Dictionary = {}
 	for cell_variant: Variant in dist.keys():
@@ -42,17 +43,17 @@ static func compute_front(_cells: Dictionary, dist: Dictionary, _blocked: Dictio
 	return front
 
 
-## 单只怪的下一步：只走 dist 严格更小的邻（绝不持平/上升 ⇒ 绝不踱步）；并列时按相位在
-## 横向序上分流，让等长的平行路被均匀占满而非挤一列。extra_blocked 软避让（干员）：
-## 优先未占的下行邻，若全被占（窄口）则照走进去接敌。
-static func descend_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase: float, extra_blocked: Dictionary) -> Vector2i:
+## 某格的真实下行候选：只包含 dist 严格更小的邻；extra_blocked 为软避让。
+## 值可用 bool 或 int 表示避让等级：0/false=不避让，1=干员等软阻挡，2=墙等更不优先目标。
+## 总是选择避让等级最低的一组候选；若全被同级软阻挡，则保留全部，允许窄口接敌/拆墙。
+static func descend_choices(dist: Dictionary, front: Dictionary, cell: Vector2i, extra_blocked: Dictionary) -> Array[Vector2i]:
 	if not dist.has(cell):
-		return cell
+		return []
 	var cur_d: int = int(dist[cell])
 	if cur_d == 0:
-		return cell
+		return []
 	var axis: Vector2i = (front.get(cell, {}) as Dictionary).get("axis", Vector2i.ZERO)
-	var opts: Array = []
+	var opts: Array[Dictionary] = []
 	for dir in CARDINALS:
 		var nb: Vector2i = cell + dir
 		if not dist.has(nb) or int(dist[nb]) >= cur_d:
@@ -61,13 +62,17 @@ static func descend_step(dist: Dictionary, front: Dictionary, cell: Vector2i, ph
 		if axis != Vector2i.ZERO:
 			var delta: Vector2i = nb - cell
 			lat = delta.x * axis.x + delta.y * axis.y
-		opts.append({"cell": nb, "lat": lat, "blocked": bool(extra_blocked.get(nb, false))})
+		opts.append({"cell": nb, "lat": lat, "block_score": _soft_block_score(extra_blocked, nb)})
 	if opts.is_empty():
-		return cell
-	var pool: Array = opts.filter(func(o): return not bool(o["blocked"]))
-	if pool.is_empty():
-		pool = opts
-	pool.sort_custom(func(a, b):
+		return []
+	var best_block_score := 1_000_000_000
+	for opt: Dictionary in opts:
+		best_block_score = mini(best_block_score, int(opt["block_score"]))
+	var pool: Array[Dictionary] = []
+	for opt: Dictionary in opts:
+		if int(opt["block_score"]) == best_block_score:
+			pool.append(opt)
+	pool.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if int(a["lat"]) != int(b["lat"]):
 			return int(a["lat"]) < int(b["lat"])
 		var ca: Vector2i = a["cell"]
@@ -76,8 +81,32 @@ static func descend_step(dist: Dictionary, front: Dictionary, cell: Vector2i, ph
 			return ca.y < cb.y
 		return ca.x < cb.x
 	)
+	var cells: Array[Vector2i] = []
+	for item: Dictionary in pool:
+		var choice_cell: Vector2i = item["cell"]
+		cells.append(choice_cell)
+	return cells
+
+
+## 单只怪的下一步：只走 dist 严格更小的邻（绝不持平/上升 ⇒ 绝不踱步）；并列时按相位在
+## 横向序上分流，让等长的平行路被均匀占满而非挤一列。
+static func descend_step(dist: Dictionary, front: Dictionary, cell: Vector2i, phase: float, extra_blocked: Dictionary) -> Vector2i:
+	var pool: Array[Vector2i] = descend_choices(dist, front, cell, extra_blocked)
+	if pool.is_empty():
+		return cell
 	var idx: int = clampi(int(clampf(phase, 0.0, 1.0) * float(pool.size())), 0, pool.size() - 1)
-	return (pool[idx] as Dictionary)["cell"]
+	return pool[idx]
+
+
+static func _soft_block_score(extra_blocked: Dictionary, cell: Vector2i) -> int:
+	if not extra_blocked.has(cell):
+		return 0
+	var value: Variant = extra_blocked.get(cell)
+	if typeof(value) == TYPE_BOOL:
+		return 1 if bool(value) else 0
+	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+		return maxi(int(value), 0)
+	return 1
 
 
 static func _passable(cells: Dictionary, blocked: Dictionary, cell: Vector2i) -> bool:
