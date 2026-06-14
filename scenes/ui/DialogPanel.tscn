@@ -1,20 +1,21 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://bqtqdi3kpqsk5"]
 
-[ext_resource type="Script" path="res://scripts/ui/dialog_panel.gd" id="1_dialog_panel"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_box_base.tres" id="frame_dialog_box_base_1700x238"]
-[ext_resource type="StyleBoxTexture" path="res://assets/ui/styles/frame_dialog_speaker_plate_base.tres" id="frame_dialog_speaker_plate_base_240x42"]
+[ext_resource type="Script" uid="uid://cvrrk3dy358w4" path="res://scripts/ui/dialog_panel.gd" id="1_dialog_panel"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_map_popup_base.tres" id="4_bubble_panel"]
+[ext_resource type="AudioStream" uid="uid://cyfr77il8kxmk" path="res://assets/audio/sfx/dialog_blip_neutral.ogg" id="5_dialog_blip"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_dialog_box_base.tres" id="frame_dialog_box_base_1700x238"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_dialog_speaker_plate_base.tres" id="frame_dialog_speaker_plate_base_240x42"]
 
-[node name="DialogPanel" type="Control"]
+[node name="DialogPanel" type="Control" unique_id=2031065670]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1_dialog_panel")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=450731703]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -25,7 +26,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.04, 0.052, 0.064, 1)
 
-[node name="BackdropGrid" type="ColorRect" parent="."]
+[node name="BackdropGrid" type="ColorRect" parent="." unique_id=905613595]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,82 +36,191 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.18)
 
-[node name="LeftPortrait" type="TextureRect" parent="."]
+[node name="BackgroundImage" type="TextureRect" parent="." unique_id=559101481]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
-anchor_left = 0.02
-anchor_top = 0.08
-anchor_right = 0.49
-anchor_bottom = 0.82
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
 
-[node name="RightPortrait" type="TextureRect" parent="."]
+[node name="LeftPortrait" type="TextureRect" parent="." unique_id=702748775]
 unique_name_in_owner = true
 layout_mode = 1
-anchor_left = 0.51
-anchor_top = 0.08
-anchor_right = 0.98
-anchor_bottom = 0.82
+anchors_preset = -1
+anchor_left = 0.17
+anchor_top = 0.45
+anchor_right = 0.36
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
-[node name="TextBox" type="PanelContainer" parent="."]
+[node name="RightPortrait" type="TextureRect" parent="." unique_id=548023980]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.59
+anchor_top = 0.45
+anchor_right = 0.78
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextBox" type="PanelContainer" parent="." unique_id=272866850]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 110.0
-offset_top = -282.0
-offset_right = -110.0
-offset_bottom = -44.0
+offset_left = 150.0
+offset_top = -188.0
+offset_right = -150.0
+offset_bottom = -34.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 0
 theme_override_styles/panel = ExtResource("frame_dialog_box_base_1700x238")
 
-[node name="TextMargin" type="MarginContainer" parent="TextBox"]
+[node name="TextMargin" type="MarginContainer" parent="TextBox" unique_id=1046076733]
 layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 37
 
-[node name="VBoxContainer" type="VBoxContainer" parent="TextBox/TextMargin"]
+[node name="VBoxContainer" type="VBoxContainer" parent="TextBox/TextMargin" unique_id=703841462]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="SpeakerPlate" type="PanelContainer" parent="TextBox/TextMargin/VBoxContainer"]
+[node name="SpeakerPlate" type="PanelContainer" parent="TextBox/TextMargin/VBoxContainer" unique_id=376653536]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(240, 42)
+custom_minimum_size = Vector2(130, 63)
 layout_mode = 2
+size_flags_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_dialog_speaker_plate_base_240x42")
 
-[node name="SpeakerMargin" type="MarginContainer" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate"]
+[node name="SpeakerMargin" type="MarginContainer" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate" unique_id=1796167313]
 layout_mode = 2
+theme_override_constants/margin_left = 23
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
 
-[node name="SpeakerLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin"]
+[node name="SpeakerLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin" unique_id=2119867560]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.894118, 0.92549, 0.941176, 1)
+theme_override_font_sizes/font_size = 26
 text = "角色名"
 vertical_alignment = 1
-text_overrun_behavior = 3
+autowrap_mode = 0
+text_overrun_behavior = 0
 
-[node name="TextLabel" type="RichTextLabel" parent="TextBox/TextMargin/VBoxContainer"]
+[node name="TextLabel" type="RichTextLabel" parent="TextBox/TextMargin/VBoxContainer" unique_id=647628848]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 104)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.894118, 0.92549, 0.941176, 1)
+theme_override_constants/line_separation = 6
+theme_override_font_sizes/normal_font_size = 24
 bbcode_enabled = true
 text = "剧情文本"
 fit_content = true
 scroll_active = false
 
-[node name="PromptLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer"]
+[node name="PromptLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer" unique_id=1701224043]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.654902, 0.701961, 1)
+theme_override_font_sizes/font_size = 14
 text = "点击继续"
 horizontal_alignment = 2
 text_overrun_behavior = 3
+
+[node name="Bubble" type="PanelContainer" parent="." unique_id=1461414197]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(580, 0)
+layout_mode = 0
+offset_left = 670.0
+offset_top = 96.0
+offset_right = 1250.0
+offset_bottom = 225.0
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("4_bubble_panel")
+
+[node name="BubbleMargin" type="MarginContainer" parent="Bubble" unique_id=1870740728]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 14
+
+[node name="BubbleRow" type="HBoxContainer" parent="Bubble/BubbleMargin" unique_id=1421488655]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="BubbleAvatar" type="TextureRect" parent="Bubble/BubbleMargin/BubbleRow" unique_id=227628018]
+unique_name_in_owner = true
+visible = false
+clip_contents = true
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="BubbleTextColumn" type="VBoxContainer" parent="Bubble/BubbleMargin/BubbleRow" unique_id=1828856547]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="BubbleSpeaker" type="Label" parent="Bubble/BubbleMargin/BubbleRow/BubbleTextColumn" unique_id=541003404]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.356863, 0.811765, 0.956863, 1)
+theme_override_font_sizes/font_size = 16
+
+[node name="BubbleLabel" type="RichTextLabel" parent="Bubble/BubbleMargin/BubbleRow/BubbleTextColumn" unique_id=1397407602]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.894118, 0.92549, 0.941176, 1)
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="BubblePrompt" type="Label" parent="Bubble/BubbleMargin/BubbleRow/BubbleTextColumn" unique_id=1533524844]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.654902, 0.701961, 1)
+theme_override_font_sizes/font_size = 13
+text = "点击继续"
+horizontal_alignment = 2
+
+[node name="DialogBlipPlayer" type="AudioStreamPlayer" parent="." unique_id=2023225048]
+unique_name_in_owner = true
+process_mode = 3
+stream = ExtResource("5_dialog_blip")
