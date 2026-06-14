@@ -9,7 +9,8 @@ signal story_finished(story_id: StringName)
 const DIALOG_PANEL_SCENE := "res://scenes/ui/DialogPanel.tscn"
 const STORY_LAYER := 100
 const CORE_NODE_PATH := "World/CoreRoot/Core"
-const BUBBLE_HALF_WIDTH := 290.0   # 气泡近似半宽，用于相对锚点居中
+const BUBBLE_HALF_WIDTH := 290.0   # 气泡近似半宽，用于水平居中
+const TOP_FLOAT_Y := 96.0          # 气泡顶部漂浮的 y（避开顶栏；实机微调）
 
 var _panel: Control   # DialogPanel；不写成 class_name 类型以避开无头解析期未注册
 var _playing_id := StringName()
@@ -96,18 +97,13 @@ func _resolve_anchors(cfg: Dictionary) -> void:
 		line["position"] = [pos.x, pos.y]
 
 
-func _resolve_anchor(anchor: String) -> Vector2:
-	if anchor == "core":
-		var core := _find_core_node()
-		if core != null:
-			var screen: Vector2 = core.get_global_transform_with_canvas().origin
-			return screen + Vector2(-BUBBLE_HALF_WIDTH, -210.0)   # 置于核心上方居中
-	# 兜底：屏幕中央偏上
+## 气泡定位：当前一律顶部居中漂浮（核心锚定实机观感不佳，已弃用；保留 core 解析函数备后续）。
+func _resolve_anchor(_anchor: String) -> Vector2:
+	var width := 1920.0
 	var viewport := get_viewport()
 	if viewport != null:
-		var size := Vector2(viewport.get_visible_rect().size)
-		return Vector2(size.x * 0.5 - BUBBLE_HALF_WIDTH, size.y * 0.34)
-	return Vector2(670.0, 360.0)
+		width = float(viewport.get_visible_rect().size.x)
+	return Vector2(width * 0.5 - BUBBLE_HALF_WIDTH, TOP_FLOAT_Y)
 
 
 func _find_core_node() -> Node2D:

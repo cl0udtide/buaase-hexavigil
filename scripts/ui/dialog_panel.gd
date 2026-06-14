@@ -21,7 +21,7 @@ const SKIN_BUBBLE := &"bubble"
 const DEFAULT_TYPE_SPEED := 38.0
 const FF_TYPE_SPEED := 100000.0   # 快进时打字机近乎瞬显
 const FF_LINE_SEC := 0.05         # 快进时每句停留秒数
-const BUBBLE_DEFAULT_POS := Vector2(660.0, 280.0)
+const BUBBLE_DEFAULT_POS := Vector2(670.0, 96.0)   # 顶部居中漂浮（1920 宽近似）
 
 var _lines: Array = []
 var _settings: Dictionary = {}
@@ -369,8 +369,8 @@ func _get_portrait_texture(portrait_key: StringName) -> Texture2D:
 	return load(path) as Texture2D
 
 
-## 气泡头像：从说话角色 sprite 裁出头部区域（顶部居中），做成小头像。
-## 裁切比例是启发式（idle 帧头部大致在上方居中），具体观感后续按角色微调。
+## 气泡头像：从说话角色 sprite 顶部居中裁出一块正方头部区域。
+## 用正方裁区 + 正方头像框（COVERED 同比例 → 不会再切掉脑袋两侧）；比例后续可微调。
 func _make_head_avatar(portrait_key: StringName) -> Texture2D:
 	var tex := _get_portrait_texture(portrait_key)
 	if tex == null:
@@ -379,11 +379,10 @@ func _make_head_avatar(portrait_key: StringName) -> Texture2D:
 	var h := float(tex.get_height())
 	if w <= 0.0 or h <= 0.0:
 		return null
-	var crop_w := w * 0.52
-	var crop_h := h * 0.46
+	var side := minf(w, h) * 0.66
 	var atlas := AtlasTexture.new()
 	atlas.atlas = tex
-	atlas.region = Rect2((w - crop_w) * 0.5, h * 0.04, crop_w, crop_h)
+	atlas.region = Rect2((w - side) * 0.5, h * 0.03, side, side)
 	return atlas
 
 
@@ -485,7 +484,7 @@ func _build_bubble() -> void:
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(hbox)
 	_bubble_avatar = TextureRect.new()
-	_bubble_avatar.custom_minimum_size = Vector2(76.0, 90.0)
+	_bubble_avatar.custom_minimum_size = Vector2(88.0, 88.0)
 	_bubble_avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_bubble_avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	_bubble_avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -523,6 +522,9 @@ func _configure_layout_nodes() -> void:
 		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# 立绘缩小（sprite 仅 128px，避免高倍放大糊）并下移，使下半身压在对话框之下。
+	_set_portrait_rect(_left_portrait, 0.05, 0.27)
+	_set_portrait_rect(_right_portrait, 0.73, 0.95)
 	_text_box.mouse_filter = Control.MOUSE_FILTER_STOP
 	_text_box.gui_input.connect(_on_text_box_gui_input)
 	_set_descendant_mouse_filter(_text_box, Control.MOUSE_FILTER_IGNORE)
@@ -531,6 +533,18 @@ func _configure_layout_nodes() -> void:
 	_text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_active_text_label = _text_label
 	_active_prompt = _prompt_label
+
+
+## 立绘矩形：横向 [a_left,a_right] 锚点，纵向固定（上 0.60→下 1.0，下半身越过对话框顶进框后）。
+func _set_portrait_rect(portrait: TextureRect, a_left: float, a_right: float) -> void:
+	portrait.anchor_left = a_left
+	portrait.anchor_right = a_right
+	portrait.anchor_top = 0.45
+	portrait.anchor_bottom = 1.0
+	portrait.offset_left = 0.0
+	portrait.offset_top = 0.0
+	portrait.offset_right = 0.0
+	portrait.offset_bottom = 0.0
 
 
 func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> void:
