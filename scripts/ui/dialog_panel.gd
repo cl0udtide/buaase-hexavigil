@@ -12,6 +12,7 @@ signal dialog_started
 signal line_started(index: int)
 signal line_finished(index: int)
 signal dialog_finished
+signal dialog_skipped
 
 const SIDE_LEFT := &"left"
 const SIDE_RIGHT := &"right"
@@ -37,7 +38,9 @@ var _active_side := StringName()
 var _active_skin := SKIN_VN
 var _active_text_label: RichTextLabel
 var _active_prompt: Label
+var _current_finished_prompt := ""
 var _current_gated := false      # 当前句是否"等事件"门控（点击不推进）
+var _gate_release_pending := false
 var _gate_key := StringName()
 var _ff_timer := 0.0
 var _fade_tween: Tween
@@ -103,6 +106,10 @@ func _on_text_box_gui_input(event: InputEvent) -> void:
 	_handle_advance_pointer_input(event)
 
 
+func _on_bubble_gui_input(event: InputEvent) -> void:
+	_handle_advance_pointer_input(event)
+
+
 func _handle_advance_pointer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
@@ -135,6 +142,8 @@ func play_story(story: Dictionary) -> void:
 	_typing = false
 	_ff_timer = 0.0
 	_current_gated = false
+	_gate_release_pending = false
+	_current_finished_prompt = ""
 	_line_finished_emitted = false
 	_active_side = StringName()
 	_clear_side(SIDE_LEFT)
@@ -182,6 +191,10 @@ func notify_story_event(event_key: StringName) -> void:
 		return
 	if _gate_key != StringName() and _gate_key != event_key:
 		return
+	if _typing:
+		_current_gated = false
+		_gate_release_pending = true
+		return
 	_current_gated = false
 	_advance_unchecked()
 
@@ -191,6 +204,7 @@ func skip() -> void:
 		return
 	if _typing:
 		_finish_typing()
+	dialog_skipped.emit()
 	_finish_dialog()
 
 
@@ -216,7 +230,9 @@ func _show_line(line: Dictionary) -> void:
 
 	var advance_mode := String(line.get("advance", "click"))
 	_current_gated = advance_mode.begins_with("event:")
+	_gate_release_pending = false
 	_gate_key = StringName(advance_mode.substr(6)) if _current_gated else StringName()
+	_current_finished_prompt = String(line.get("finished_prompt", ""))
 
 	var text := String(line.get("text", ""))
 	if _active_text_label != null:
@@ -227,7 +243,7 @@ func _show_line(line: Dictionary) -> void:
 	_line_finished_emitted = false
 	_typing = _line_char_count > 0 and _type_speed > 0.0
 	if _active_prompt != null:
-		_active_prompt.text = "点击继续"
+		_active_prompt.text = String(line.get("prompt", "点击继续"))
 	line_started.emit(_current_index)
 	_play_dialog_blip_for_current_line()
 	if not _typing:
@@ -288,10 +304,18 @@ func _finish_typing() -> void:
 		_active_text_label.visible_characters = -1
 	_visible_chars_float = float(_line_char_count)
 	if _active_prompt != null:
-		_active_prompt.text = "再次点击进入下一句"
+		if not _current_finished_prompt.is_empty():
+			_active_prompt.text = _current_finished_prompt
+		elif _current_gated:
+			_active_prompt.text = "完成当前操作后继续"
+		else:
+			_active_prompt.text = "再次点击进入下一句"
 	if not _line_finished_emitted:
 		_line_finished_emitted = true
 		line_finished.emit(_current_index)
+	if _gate_release_pending:
+		_gate_release_pending = false
+		call_deferred("_advance_unchecked")
 
 
 func _finish_dialog() -> void:
@@ -500,6 +524,9 @@ func _configure_layout_nodes() -> void:
 	_text_box.mouse_filter = Control.MOUSE_FILTER_STOP
 	_text_box.gui_input.connect(_on_text_box_gui_input)
 	_set_descendant_mouse_filter(_text_box, Control.MOUSE_FILTER_IGNORE)
+	_bubble.mouse_filter = Control.MOUSE_FILTER_STOP
+	_bubble.gui_input.connect(_on_bubble_gui_input)
+	_set_descendant_mouse_filter(_bubble, Control.MOUSE_FILTER_IGNORE)
 	_active_text_label = _text_label
 	_active_prompt = _prompt_label
 
