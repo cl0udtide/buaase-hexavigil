@@ -103,19 +103,15 @@ func _run_scenario(sc: Dictionary) -> void:
 	print("\n================ %s ================" % sc["name"])
 	print("尺寸 %dx%d  核心 %s  出怪口 %s  怪数 %d  half_width %d" % [w, h, str(core), str(gates), n, half])
 
-	var with_fix := _simulate(dist, front, core, gates, units, n, half, int(sc["frames"]), int(sc["snaps"]), w, h, walls, true)
-	print("【修复版·不回头】到核心 %d/%d，用 %d 帧；摇摆/卡住 %d 只；正面最大宽度 %d 行/列" % [
-		with_fix["reached"], n, with_fix["frames_used"], with_fix["stuck"], with_fix["max_width"]])
-	var no_fix := _simulate(dist, front, core, gates, units, n, half, int(sc["frames"]), 0, w, h, walls, false)
-	print("【对照·无修复(允许回头)】到核心 %d/%d，摇摆/卡住 %d 只" % [no_fix["reached"], n, no_fix["stuck"]])
-	if no_fix["stuck"] > with_fix["stuck"] or no_fix["reached"] < with_fix["reached"]:
-		print("  → 该地形复现了摇摆，不回头修复有效。")
+	var res := _simulate(dist, front, core, gates, units, n, half, int(sc["frames"]), int(sc["snaps"]), w, h, walls)
+	print("【mono 纯单调下行】到核心 %d/%d，用 %d 帧；卡住 %d 只；正面最大宽度 %d 行/列" % [
+		res["reached"], n, res["frames_used"], res["stuck"], res["max_width"]])
 	if gates.size() >= 2:
 		print("  各口覆盖叠加（A=口1 B=口2 X=两口都扫到 → 重叠时两个都在，非只显一个）:")
-		print(_render_coverage(with_fix["trails"], core, units, walls, w, h))
+		print(_render_coverage(res["trails"], core, units, walls, w, h))
 
 
-func _simulate(dist: Dictionary, front: Dictionary, core: Vector2i, gates: Array, units: Dictionary, n: int, half: int, max_frames: int, snaps: int, w: int, h: int, walls: Dictionary, use_prev: bool) -> Dictionary:
+func _simulate(dist: Dictionary, front: Dictionary, core: Vector2i, gates: Array, units: Dictionary, n: int, _half: int, max_frames: int, snaps: int, w: int, h: int, walls: Dictionary) -> Dictionary:
 	var phases := _phases(n)
 	var agents: Array = []
 	var trails: Array = []
@@ -157,13 +153,10 @@ func _simulate(dist: Dictionary, front: Dictionary, core: Vector2i, gates: Array
 			if a["reached"]:
 				continue
 			var extra := {}
-			if use_prev and a["prev"] != INVALID:
-				extra[a["prev"]] = true
 			for u_key in units.keys():
 				extra[u_key] = true
-			var nxt: Vector2i = FlowField.next_step(dist, front, a["cell"], a["phase"], half, extra)
+			var nxt: Vector2i = FlowField.descend_step(dist, front, a["cell"], a["phase"], extra)
 			if nxt != a["cell"]:
-				a["prev"] = a["cell"]
 				a["cell"] = nxt
 				(trails[int(a["gate"])] as Dictionary)[nxt] = true
 			if a["cell"] == core:

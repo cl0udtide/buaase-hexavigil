@@ -34,6 +34,11 @@ func _cfg() -> Dictionary:
 
 
 func _run() -> void:
+	var render_seed := OS.get_environment("RENDER_SEED")
+	if render_seed != "":
+		_render_one(int(render_seed))
+		quit(0)
+		return
 	var strategy := OS.get_environment("STRATEGY")
 	if strategy == "":
 		strategy = "current"
@@ -164,26 +169,84 @@ func _sim_map(strategy: String, dist: Dictionary, front: Dictionary, core: Vecto
 	return {"stuck": stuck, "width": max_width, "avg_steps": float(steps_sum) / float(maxi(n, 1)), "sample_cycle": sample_cycle}
 
 
-## 按策略走一步。current=现行 next_step；mono/twomode 见下。
-func _step(strategy: String, dist: Dictionary, front: Dictionary, a: Dictionary, half: int) -> Vector2i:
-	var cell: Vector2i = a["cell"]
-	var phase: float = a["phase"]
-	match strategy:
-		"mono":
-			return FlowField.descend_step(dist, front, cell, phase, {})
-		"twomode":
-			if not a["spread_done"]:
-				var sp := FlowField.spread_step(dist, front, cell, phase, half)
-				if sp == cell:
-					a["spread_done"] = true
-				else:
-					return sp
-			return FlowField.descend_step(dist, front, cell, phase, {})
-		_:
-			var extra := {}
-			if a["prev"] != INVALID:
-				extra[a["prev"]] = true
-			return FlowField.next_step(dist, front, cell, phase, half, extra)
+## 走一步：纯单调下行（flow field 标准做法）。STRATEGY 现仅保留 mono，参数留作兼容。
+func _step(_strategy: String, dist: Dictionary, front: Dictionary, a: Dictionary, _half: int) -> Vector2i:
+	return FlowField.descend_step(dist, front, a["cell"], a["phase"], {})
+
+
+## 渲染单张真实生成地图上 mono 的行进，看正面到底是"一个宽面"还是"几条蚂蚁线"。
+func _render_one(seed: int) -> void:
+	var cfg := _cfg()
+	var w := int(cfg["width"])
+	var h := int(cfg["height"])
+	var per_gate := int(OS.get_environment("PER_GATE")) if OS.get_environment("PER_GATE") != "" else 6
+	var gen: Dictionary = MapGen.generate(w, h, seed, cfg, [])
+	var cells: Dictionary = gen.get("cells", {})
+	var core: Vector2i = gen.get("core_cell", Vector2i.ZERO)
+	var walls: Dictionary = {}
+	for key in cells.keys():
+		if not (cells[key] as CellDataRef).walkable:
+			walls[key] = true
+	var dist: Dictionary = FlowField.compute_distance(cells, core, walls)
+	var front: Dictionary = FlowField.compute_front(cells, dist, walls)
+	var live: Array = []
+	for sc in gen.get("spawn_cells", []):
+		if dist.has(sc as Vector2i):
+			live.append(sc as Vector2i)
+	var n := per_gate * maxi(live.size(), 1)
+	var phases := _phases(n)
+	var agents: Array = []
+	for i in range(n):
+		agents.append({"cell": live[i % live.size()], "phase": float(phases[i]), "reached": false})
+	print("== 真图 seed %d  %dx%d  核心 %s  活跃口 %d  怪 %d ==" % [seed, w, h, str(core), live.size(), n])
+	var snaps := {6: true, 16: true, 28: true, 44: true}
+	for f in range(4 * (w + h)):
+		var alive := 0
+		for a in agents:
+			if not a["reached"]:
+				alive += 1
+		if snaps.has(f):
+			print("-- 帧 %d（存活 %d）--" % [f, alive])
+			print(_render_grid(agents, core, live, walls, w, h))
+		if alive == 0:
+			break
+		for a in agents:
+			if a["reached"]:
+				continue
+			var nxt: Vector2i = FlowField.descend_step(dist, front, a["cell"], a["phase"], {})
+			if nxt != a["cell"]:
+				a["cell"] = nxt
+			if a["cell"] == core:
+				a["reached"] = true
+
+
+func _render_grid(agents: Array, core: Vector2i, gates: Array, walls: Dictionary, w: int, h: int) -> String:
+	var count: Dictionary = {}
+	for a in agents:
+		if a["reached"]:
+			continue
+		count[a["cell"]] = int(count.get(a["cell"], 0)) + 1
+	var gate_set: Dictionary = {}
+	for g in gates:
+		gate_set[g] = true
+	var lines: Array = []
+	for y in range(h):
+		var row := ""
+		for x in range(w):
+			var c := Vector2i(x, y)
+			if walls.has(c):
+				row += "#"
+			elif c == core:
+				row += "C"
+			elif count.has(c):
+				var k: int = count[c]
+				row += "*" if k > 9 else str(k)
+			elif gate_set.has(c):
+				row += "S"
+			else:
+				row += "."
+		lines.append(row)
+	return "\n".join(lines)
 
 
 func _phases(n: int) -> Array:
