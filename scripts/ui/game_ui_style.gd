@@ -79,6 +79,15 @@ const STROKE_SOFT := Color(0.180, 0.230, 0.245, 1.0)
 const STROKE_STRONG := Color(0.760, 0.530, 0.180, 1.0)
 const ACCENT := Color(0.260, 0.760, 0.920, 1.0)
 const AMBER := Color(0.950, 0.650, 0.220, 1.0)
+
+## 出怪口主题色：按编号钉死（S1→橙、S4→青…），地图覆盖/徽标与右栏段头共用，跨视图同色。
+const ROUTE_PREVIEW_COLORS: Array[Color] = [
+	Color(1.0, 0.54, 0.20),
+	Color(0.20, 0.78, 1.0),
+	Color(0.86, 0.62, 1.0),
+	Color(0.38, 0.95, 0.58),
+	Color(1.0, 0.84, 0.24),
+]
 const DANGER := Color(0.860, 0.230, 0.185, 1.0)
 const SUCCESS := Color(0.290, 0.700, 0.430, 1.0)
 const VIOLET := Color(0.500, 0.420, 0.760, 1.0)
@@ -177,6 +186,19 @@ static func fit_centered_icon(control: Control, icon_size: Vector2) -> void:
 	control.offset_top = -icon_size.y * 0.5
 	control.offset_right = icon_size.x * 0.5
 	control.offset_bottom = icon_size.y * 0.5
+
+
+## 按出怪口编号取主题色：S1→0号(橙)、S4→3号(青)，跨局稳定；解析不出编号则退字符串哈希。
+## 颜色钉在 spawn_key 上（而非路线 index），避免地图(字母序)与右栏(首见序)排序不同导致串色。
+static func route_color_for_spawn_key(spawn_key: String) -> Color:
+	var digits := ""
+	for ch in spawn_key:
+		if ch >= "0" and ch <= "9":
+			digits += ch
+	var n := (digits.to_int() - 1) if not digits.is_empty() else absi(spawn_key.hash())
+	if n < 0:
+		n = absi(spawn_key.hash())
+	return ROUTE_PREVIEW_COLORS[n % ROUTE_PREVIEW_COLORS.size()]
 
 
 static func flat_panel(fill: Color, border: Color, border_width: float = 1.0, radius: float = 6.0) -> StyleBoxFlat:

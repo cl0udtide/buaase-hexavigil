@@ -53,13 +53,7 @@ const UNIT_VISUAL_TEXTURE_SIZE := 128.0
 const UNIT_VISUAL_DISPLAY_SIZE := 72.0
 const UNIT_VISUAL_OFFSET := Vector2(0.0, -8.0)
 const UNIT_PREVIEW_MODULATE := Color(1.0, 1.0, 1.0, 0.78)
-const ROUTE_PREVIEW_COLORS: Array[Color] = [
-	Color(1.0, 0.54, 0.20, 0.95),
-	Color(0.20, 0.78, 1.0, 0.95),
-	Color(0.86, 0.62, 1.0, 0.95),
-	Color(0.38, 0.95, 0.58, 0.95),
-	Color(1.0, 0.84, 0.24, 0.95)
-]
+# 路线配色已统一到 GameUiStyle.route_color_for_spawn_key（按出怪口编号定色，地图与右栏共用）。
 const ROUTE_WARNING_COLOR := Color(1.0, 0.22, 0.20, 0.96)
 const ROUTE_LABEL_DISTANCE_FROM_CORE_TILES := 2
 const ROUTE_LABEL_BADGE_BG := Color(0.015, 0.032, 0.048, 0.90)
@@ -166,6 +160,8 @@ var _deploy_range_preview_cells: Array[Vector2i] = []
 var _deploy_preview_visual_key := ""
 var _deploy_preview_texture: Texture2D = null
 var _wave_route_previews: Array[Dictionary] = []
+# 当前高亮的出怪口（悬停右栏段时由 controller 设入）；非空时其余覆盖片压暗。
+var _highlight_spawn_key: String = ""
 var _hovered_event_cell := Vector2i(-1, -1)
 
 
@@ -428,6 +424,14 @@ func set_wave_route_previews(routes: Array[Dictionary]) -> void:
 
 func clear_wave_route_previews() -> void:
 	_wave_route_previews.clear()
+	queue_redraw()
+
+
+## 悬停右栏某出怪口段→高亮地图上该口覆盖片、压暗其余（联动，解重合歧义）。空串=取消高亮。
+func set_wave_route_highlight(spawn_key: String) -> void:
+	if _highlight_spawn_key == spawn_key:
+		return
+	_highlight_spawn_key = spawn_key
 	queue_redraw()
 
 
@@ -820,27 +824,30 @@ func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 			var arr: Array = cell_routes.get(cell_variant, [])
 			arr.append(index)
 			cell_routes[cell_variant] = arr
-	# 2) 单遍填充：单口=该口色，多口=混色加深（永不互相遮盖）
+	# 2) 单遍填充：单口=该口色，多口=混色加深（永不互相遮盖）。高亮某口时非该口覆盖格压暗。
 	for cell_variant2: Variant in cell_routes.keys():
 		var cell: Vector2i = cell_variant2
 		if not map_manager.is_inside(cell):
 			continue
 		var idxs: Array = cell_routes[cell_variant2]
+		var focus := _cell_focus(idxs)
 		var rect := Rect2(Vector2(float(cell.x), float(cell.y)) * CELL_SIZE, Vector2.ONE * CELL_SIZE).grow(-1.0)
 		if idxs.size() == 1:
 			var col := _get_route_color(_wave_route_previews[int(idxs[0])], int(idxs[0]))
-			draw_rect(rect, Color(col.r, col.g, col.b, 0.16))
+			draw_rect(rect, Color(col.r, col.g, col.b, 0.16 * focus))
 		else:
 			var mixed := _mix_route_colors(idxs)
-			draw_rect(rect, Color(mixed.r, mixed.g, mixed.b, 0.34))
-	# 3) 每口轮廓：按 index 向内缩一圈，完全重合时呈同心环
+			draw_rect(rect, Color(mixed.r, mixed.g, mixed.b, 0.34 * focus))
+	# 3) 每口轮廓：按 index 向内缩一圈，完全重合时呈同心环。高亮口加粗提亮、其余压暗。
 	for index in range(_wave_route_previews.size()):
 		var route: Dictionary = _wave_route_previews[index]
 		var color := _get_route_color(route, index)
+		var spawn_key := String(route.get("spawn_key", ""))
+		var is_hi := _highlight_spawn_key != "" and spawn_key == _highlight_spawn_key
 		var cover_set: Dictionary = {}
 		for cell_variant3: Variant in route.get("coverage", []):
 			cover_set[cell_variant3] = true
-		_draw_coverage_outline(map_manager, cover_set, color, float(index) * 2.5)
+		_draw_coverage_outline(map_manager, cover_set, color, float(index) * 2.5, _route_focus(spawn_key), is_hi)
 		var centerline: Array = route.get("centerline", [])
 		if not centerline.is_empty():
 			var label_info := _make_route_label_info(map_manager, centerline, _get_route_offset(index), color, route)
@@ -862,9 +869,26 @@ func _mix_route_colors(idxs: Array) -> Color:
 	return Color(r / n, g / n, b / n, 1.0)
 
 
+## 高亮聚焦：无高亮→1.0；高亮某口时，该口=1.0、其余=0.28（压暗）。
+func _route_focus(spawn_key: String) -> float:
+	if _highlight_spawn_key == "":
+		return 1.0
+	return 1.0 if spawn_key == _highlight_spawn_key else 0.28
+
+
+func _cell_focus(idxs: Array) -> float:
+	if _highlight_spawn_key == "":
+		return 1.0
+	for i: Variant in idxs:
+		if String(_wave_route_previews[int(i)].get("spawn_key", "")) == _highlight_spawn_key:
+			return 1.0
+	return 0.28
+
+
 ## 沿覆盖区域边界描该口颜色的轮廓（只画"邻格不在本集"的格边），向内缩 inset 像素以便多口同心。
-func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Color, inset: float) -> void:
-	var line_color := Color(color.r, color.g, color.b, 0.9)
+func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Color, inset: float, focus: float = 1.0, emphasize: bool = false) -> void:
+	var line_color := Color(color.r, color.g, color.b, 0.9 * focus)
+	var width := 3.8 if emphasize else 2.5
 	var lo := inset
 	var hi := CELL_SIZE - inset
 	for cell_variant: Variant in cover_set.keys():
@@ -889,7 +913,7 @@ func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Col
 			else:
 				seg_a = base + Vector2(lo, lo)
 				seg_b = base + Vector2(hi, lo)
-			draw_line(seg_a, seg_b, line_color, 2.5, true)
+			draw_line(seg_a, seg_b, line_color, width, true)
 
 
 func _make_route_label_info(map_manager: Node, path: Array, offset: Vector2, color: Color, route: Dictionary) -> Dictionary:
@@ -1081,11 +1105,11 @@ func _event_bubble_center(map_manager: Node, cell: Vector2i) -> Vector2:
 	return map_manager.cell_to_world(cell) + EVENT_BUBBLE_FLOAT_OFFSET
 
 
-## 每个出怪口一色（高对比调色板按序取）便于读图；模式信息走标签/摘要文本。
-func _get_route_color(route: Dictionary, index: int) -> Color:
+## 每个出怪口一色：按 spawn_key 取（GameUiStyle 共享色源），与右栏段头同色。模式信息走摘要文本。
+func _get_route_color(route: Dictionary, _index: int) -> Color:
 	if not bool(route.get("ok", false)):
 		return ROUTE_WARNING_COLOR
-	return ROUTE_PREVIEW_COLORS[index % ROUTE_PREVIEW_COLORS.size()]
+	return GameUiStyle.route_color_for_spawn_key(String(route.get("spawn_key", "")))
 
 
 func _get_route_offset(index: int) -> Vector2:

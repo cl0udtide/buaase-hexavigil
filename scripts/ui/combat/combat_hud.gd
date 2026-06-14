@@ -15,6 +15,7 @@ signal retreat_requested
 signal operator_sell_requested(operator_key: StringName)
 signal shop_unit_purchase_requested(slot_index: int)
 signal wave_route_preview_toggled(enabled: bool)
+signal wave_spawn_segment_hovered(spawn_key: String)
 
 const OPERATOR_CARD_SCENE := preload("res://scenes/ui/combat/OperatorCard.tscn")
 const RESOURCE_ORDER: Array[StringName] = [&"ap", &"prestige", &"wood", &"stone", &"mana"]
@@ -882,7 +883,15 @@ func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dict
 		key_label.text = "%s · 主攻" % spawn_key
 	else:
 		key_label.text = spawn_key
-	key_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
+	# 段头按出怪口同色（与地图覆盖/徽标共用 GameUiStyle 色源）+ 左缘同色竖条，作为"侧栏即图例"。
+	var route_color := GameUiStyle.route_color_for_spawn_key(spawn_key)
+	key_label.add_theme_color_override("font_color", route_color)
+	var base_sb := card.get_theme_stylebox("panel")
+	if base_sb is StyleBoxFlat:
+		var accent := (base_sb as StyleBoxFlat).duplicate() as StyleBoxFlat
+		accent.border_color = route_color
+		accent.border_width_left = maxi(accent.border_width_left, 4)
+		card.add_theme_stylebox_override("panel", accent)
 	var chips := card.get_node_or_null("SpawnCardRow/WaveEnemyCardsFlow") as HFlowContainer
 	for child in chips.get_children():
 		child.queue_free()
@@ -890,7 +899,19 @@ func _build_wave_spawn_card(spawn_key: String, entries: Array, key_enemies: Dict
 		if typeof(entry_variant) == TYPE_DICTIONARY:
 			var entry: Dictionary = entry_variant
 			chips.add_child(_build_wave_enemy_chip(entry, key_enemies.has(StringName(entry.get("enemy_id", "")))))
+	# 悬停联动：子控件全置 IGNORE 让整段稳定可悬停；段卡发 hover 信号→地图高亮该口、压暗其余。
+	_set_descendants_mouse_ignore(card)
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	card.mouse_entered.connect(func() -> void: wave_spawn_segment_hovered.emit(spawn_key))
+	card.mouse_exited.connect(func() -> void: wave_spawn_segment_hovered.emit(""))
 	return card
+
+
+func _set_descendants_mouse_ignore(node: Node) -> void:
+	for child in node.get_children():
+		if child is Control:
+			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_set_descendants_mouse_ignore(child)
 
 
 func _build_wave_enemy_chip(entry: Dictionary, highlighted: bool) -> Control:
