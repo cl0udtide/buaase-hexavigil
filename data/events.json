@@ -1,154 +1,198 @@
 [
   {
-    "id": "event_black_market",
-    "name": "黑市商人",
-    "desc": "一名兜帽商人在废墟间支起摊位。货品来路不明，但确实是好东西——他指了指核心的方向，开出了价码。",
+    "id": "event_phoebe",
+    "name": "奇怪的商人",
+    "image": "res://assets/story/events/event_phoebe.png",
+    "desc": "一名带着白帽子的金发修女来到了你的营地。看这外貌一看就是来加入你们的正义伙伴吧。诶……什么叫你只是来做交易的？",
     "effect_type": "contract",
     "choices": [
       {
-        "id": "deal",
-        "text": "用核心结构换货",
+        "id": "fame",
+        "text": "什么叫你只需要我们宣传你的名号？",
         "kind": "primary",
-        "event_id": "event_black_market_deal",
-        "effect_desc": "核心生命上限 -2，获得一件稀有遗物。"
+        "event_id": "event_phoebe_fame",
+        "effect_desc": "失去 40% 声望，换一件普通遗物。"
+      },
+      {
+        "id": "all",
+        "text": "你这么多好东西，再多给点吧，我们什么都会做的",
+        "kind": "primary",
+        "event_id": "event_phoebe_all",
+        "effect_desc": "核心生命上限减半（最多减到 1），换一件普通遗物 + 一件稀有遗物。"
       },
       {
         "id": "leave",
-        "text": "保持距离",
+        "text": "怪人，滚开",
         "kind": "secondary",
-        "event_id": "event_black_market_leave",
-        "effect_desc": "不做交易，安全离开。"
+        "event_id": "event_phoebe_leave",
+        "effect_desc": "什么都不会发生。"
       }
     ]
   },
   {
-    "id": "event_black_market_deal",
-    "name": "黑市商人",
-    "desc": "商人撬走了两块核心装甲板，留下一只沉重的箱子。里面的东西确实物有所值。",
+    "id": "event_phoebe_fame",
+    "name": "奇怪的商人",
+    "image": "res://assets/story/events/event_phoebe_fame.png",
+    "desc": "这种好事不要白不要，虽然大家一起念叨奇怪的词很有损名声，但那可是遗物啊。于是当天，所有有空的干员们都在一起念念有词地祈祷。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "effects": [
-      {
-        "type": "core_max_hp_add",
-        "value": -2
-      },
-      {
-        "type": "grant_random_relic",
-        "rarity_min": 2,
-        "rarity_max": 3
-      }
-    ]
-  },
-  {
-    "id": "event_black_market_leave",
-    "name": "黑市商人",
-    "desc": "你们没有冒险。商人耸耸肩，收起摊位消失在雾里。",
-    "effect_type": "contract",
-    "hidden_in_map_pool": true
-  },
-  {
-    "id": "event_war_wager",
-    "name": "战争赌局",
-    "desc": "一位伤痕累累的雇佣兵军官拦住了队伍：“敢不敢赌一把？今晚的进攻会更凶，但要是你们的核心毫发无伤，我的人脉会送来像样的报酬。”",
-    "effect_type": "contract",
-    "choices": [
-      {
-        "id": "accept",
-        "text": "接下赌约",
-        "kind": "primary",
-        "event_id": "event_war_wager_accept",
-        "effect_desc": "今晚追加一条夜晚词缀；若核心一夜未失血，明早额外进行一次遗物三选一。"
-      },
-      {
-        "id": "decline",
-        "text": "拒绝",
-        "kind": "secondary",
-        "event_id": "event_war_wager_decline",
-        "effect_desc": "不冒这个险。"
-      }
+      { "type": "prestige_pct_loss", "pct": 0.4 },
+      { "type": "grant_random_relic", "rarity_min": 1, "rarity_max": 1 }
     ],
-    "max_day": 8
+    "choices": [
+      { "id": "close", "text": "菲比啾比……菲比啾比……" }
+    ]
   },
   {
-    "id": "event_war_wager_accept",
-    "name": "战争赌局",
-    "desc": "军官咧嘴一笑，吹了声口哨。远处的阴影开始躁动——赌约生效了。",
+    "id": "event_phoebe_all",
+    "name": "奇怪的商人",
+    "image": "res://assets/story/events/event_phoebe_all.png",
+    "desc": "修女饶有兴致地看着你，于是不由分说地把一个黑洞样式的东西按进了你的胸膛，并告诉你阿列夫一对你不会造成生命危险，祂吃饱了生命力之后就会自己离去的。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
     "effects": [
+      { "type": "core_max_hp_halve" },
+      { "type": "grant_random_relic", "rarity_min": 1, "rarity_max": 1 },
+      { "type": "grant_random_relic", "rarity_min": 2, "rarity_max": 3 }
+    ],
+    "choices": [
+      { "id": "close", "text": "感觉被掏空了……" }
+    ]
+  },
+  {
+    "id": "event_phoebe_leave",
+    "name": "奇怪的商人",
+    "image": "res://assets/story/events/event_phoebe_leave.png",
+    "desc": "修女耸耸肩，收起摊位消失在雾里。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "这种家伙肯定不能相信" }
+    ]
+  },
+  {
+    "id": "event_stone",
+    "name": "持石的好处",
+    "image": "res://assets/story/events/event_stone.png",
+    "desc": "营地的政委突然找到了你，声称她找到了一个看起来很别致的石头，只要把这个石头挂在营地显眼的地方，敌人就会发动更加声势浩大的攻击，但相应的，战利品也能变多。而当你问她为什么时，她却三缄其口。",
+    "effect_type": "contract",
+    "max_day": 8,
+    "choices": [
       {
-        "type": "night_affix_add_random"
+        "id": "take",
+        "text": "我喜欢持石",
+        "kind": "primary",
+        "event_id": "event_stone_take",
+        "effect_desc": "今晚追加一条随机夜晚词缀；若核心一夜未失血，明早额外进行一次遗物三选一。"
       },
       {
-        "type": "wager_no_leak"
+        "id": "tired",
+        "text": "我现在守得已经很累了",
+        "kind": "secondary",
+        "event_id": "event_stone_tired",
+        "effect_desc": "什么都不会发生。"
       }
     ]
   },
   {
-    "id": "event_war_wager_decline",
-    "name": "战争赌局",
-    "desc": "军官失望地摆摆手。今晚会照常到来。",
+    "id": "event_stone_take",
+    "name": "持石的好处",
+    "image": "res://assets/story/events/event_stone_take.png",
+    "desc": "政委看起来很开心：“有趣的master”。",
     "effect_type": "contract",
-    "hidden_in_map_pool": true
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "night_affix_add_random" },
+      { "type": "wager_no_leak" }
+    ],
+    "choices": [
+      { "id": "close", "text": "灵感菇" }
+    ]
   },
   {
-    "id": "event_smuggler_caravan",
-    "name": "走私商队",
-    "desc": "商队头领拍了拍货箱：“魔力矿，硬通货，童叟无欺。买也行，卖也行。”",
+    "id": "event_stone_tired",
+    "name": "持石的好处",
+    "image": "res://assets/story/events/event_stone_tired.png",
+    "desc": "政委看起来不开心：“无趣的master”。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "何意味" }
+    ]
+  },
+  {
+    "id": "event_kroos",
+    "name": "？！奸商！？",
+    "image": "res://assets/story/events/event_kroos.png",
+    "desc": "一直跟随着大部队的一个商人突然找到了你，告诉你她囤了一大批的资源，问你想不想要交易。",
     "effect_type": "contract",
     "choices": [
       {
-        "id": "buy_mana",
-        "text": "买入魔力矿",
+        "id": "buy",
+        "text": "来点魔力矿",
         "kind": "primary",
-        "event_id": "event_caravan_buy",
-        "effect_desc": "支付 4 声望，获得 3 魔力矿。"
+        "event_id": "event_kroos_buy",
+        "effect_desc": "花 8 声望换 3 魔力矿。"
       },
       {
-        "id": "sell_mana",
-        "text": "卖出魔力矿",
+        "id": "sell",
+        "text": "来点人才情报",
+        "kind": "primary",
+        "event_id": "event_kroos_sell",
+        "effect_desc": "交 3 魔力矿换 6 声望。"
+      },
+      {
+        "id": "leave",
+        "text": "你是人啊，敢跟集体讨价还价",
         "kind": "secondary",
-        "event_id": "event_caravan_sell",
-        "effect_desc": "交出 3 魔力矿，获得 5 声望。"
+        "event_id": "event_kroos_leave",
+        "effect_desc": "结束交易。"
       }
     ]
   },
   {
-    "id": "event_caravan_buy",
-    "name": "走私商队",
-    "desc": "成交。矿石沉甸甸的，成色不错。",
+    "id": "event_kroos_buy",
+    "name": "？！奸商！？",
+    "image": "res://assets/story/events/event_kroos_buy.png",
+    "desc": "商人很高兴，表示货源充足，可以继续交易。",
     "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
-    "requires": {
-      "prestige": 4
-    },
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 3,
-      "prestige": -4
-    }
+    "requires": { "prestige": 8 },
+    "payload": { "wood": 0, "stone": 0, "mana": 3, "prestige": -8 },
+    "choices": [
+      { "id": "again", "text": "我再看看", "event_id": "event_kroos" }
+    ]
   },
   {
-    "id": "event_caravan_sell",
-    "name": "走私商队",
-    "desc": "头领清点完矿石，把一袋报酬丢了过来。",
+    "id": "event_kroos_sell",
+    "name": "？！奸商！？",
+    "image": "res://assets/story/events/event_kroos_sell.png",
+    "desc": "商人很高兴，表示货源充足，可以继续交易。",
     "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
-    "requires": {
-      "mana": 3
-    },
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": -3,
-      "prestige": 5
-    }
+    "requires": { "mana": 3 },
+    "payload": { "wood": 0, "stone": 0, "mana": -3, "prestige": 6 },
+    "choices": [
+      { "id": "again", "text": "我再看看", "event_id": "event_kroos" }
+    ]
+  },
+  {
+    "id": "event_kroos_leave",
+    "name": "？！奸商！？",
+    "image": "res://assets/story/events/event_kroos_leave.png",
+    "desc": "商人向你挤眉弄眼，很不服气的样子。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "你这坏东西" }
+    ]
   },
   {
     "id": "event_altar",
-    "name": "古代祭坛",
-    "desc": "半埋在土里的环形祭坛仍在低声嗡鸣。把魔力矿放上凹槽，就能将一种盟约的烙印灌注给某类干员，使本局所有同名实例都继承它。",
+    "name": "上古祭坛",
+    "image": "res://assets/story/events/event_altar.png",
+    "desc": "半埋在土里的环形祭坛仍在低声嗡鸣，仿佛是某人在诡异地笑。祭坛上被刻着不可名状的图案。让干员躺在祭坛上，用魔力矿的粉末倒在干员身上，就能把一种盟约的烙印灌进这个干员，让本局所有同名实例都继承它。",
     "effect_type": "contract",
     "min_day": 2,
     "weight": 2,
@@ -156,262 +200,370 @@
   },
   {
     "id": "event_altar_infused",
-    "name": "古代祭坛",
-    "desc": "矿石化为流光没入干员的轮廓，新的烙印亮起，随后祭坛彻底沉寂。",
+    "name": "上古祭坛",
+    "image": "res://assets/story/events/event_altar_infused.png",
+    "desc": "祭坛的笑声突然变得狂放，在一阵尖锐地大笑之后，干员感觉充满了力量。",
     "effect_type": "contract",
-    "hidden_in_map_pool": true
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "塔不灭！诶……我为什么要说这个。" }
+    ]
   },
   {
     "id": "event_altar_leave",
-    "name": "古代祭坛",
+    "name": "上古祭坛",
+    "image": "res://assets/story/events/event_altar_leave.png",
     "desc": "你们没有惊动祭坛。嗡鸣声在身后渐渐远去。",
     "effect_type": "contract",
-    "hidden_in_map_pool": true
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "这东西太危险了。" }
+    ]
   },
   {
-    "id": "event_mercenary_camp",
-    "name": "雇佣兵营地",
-    "desc": "篝火旁坐着几名待价而沽的佣兵。中介摊开名册：“价格好说，但人选得抽签。”",
+    "id": "event_market",
+    "name": "人才市场",
+    "image": "res://assets/story/events/event_market.png",
+    "desc": "一批看起来很有实力的人来到了营地，不过他们似乎并不打算平白无故地加入你。",
     "effect_type": "contract",
     "choices": [
       {
-        "id": "hire_mid",
-        "text": "雇一名中坚佣兵",
+        "id": "mid",
+        "text": "亮出你消灭黑潮造物的战利品",
         "kind": "primary",
-        "event_id": "event_mercenary_hire_mid",
-        "effect_desc": "支付 2 声望，获得一名随机 4 费干员。"
+        "event_id": "event_market_mid",
+        "effect_desc": "花 6 声望，随机得三名 4 费干员。"
       },
       {
-        "id": "hire_high",
-        "text": "雇一名精锐佣兵",
+        "id": "high",
+        "text": "我有原石",
         "kind": "primary",
-        "event_id": "event_mercenary_hire_high",
-        "effect_desc": "支付 4 声望，获得一名随机 7 费干员。"
+        "event_id": "event_market_high",
+        "effect_desc": "花 6 声望和 3 魔力矿，随机得三名 7 费干员。"
       },
       {
         "id": "leave",
-        "text": "绕开营地",
+        "text": "当下比较拮据，事成之后必有重赏",
         "kind": "secondary",
-        "event_id": "event_mercenary_leave",
-        "effect_desc": "不做交易。"
+        "event_id": "event_market_leave",
+        "effect_desc": "什么都不会发生。"
       }
     ]
   },
   {
-    "id": "event_mercenary_hire_mid",
-    "name": "雇佣兵营地",
-    "desc": "中介摇了摇签筒。走出帐篷的身影披挂整齐，朝你们点了点头。",
+    "id": "event_market_mid",
+    "name": "人才市场",
+    "image": "res://assets/story/events/event_market_mid.png",
+    "desc": "有一些人看中了你们的队伍。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
-    "requires": {
-      "prestige": 2
-    },
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 0,
-      "prestige": -2
-    },
+    "requires": { "prestige": 6 },
+    "payload": { "wood": 0, "stone": 0, "mana": 0, "prestige": -6 },
     "effects": [
-      {
-        "type": "grant_random_operator",
-        "unit_cost": 4
-      }
+      { "type": "grant_random_operator", "unit_cost": 4 },
+      { "type": "grant_random_operator", "unit_cost": 4 },
+      { "type": "grant_random_operator", "unit_cost": 4 }
+    ],
+    "choices": [
+      { "id": "close", "text": "欢迎加入" }
     ]
   },
   {
-    "id": "event_mercenary_hire_high",
-    "name": "雇佣兵营地",
-    "desc": "签筒停住，中介挑了挑眉：“运气不错。”帐篷里走出的人物气场迥然不同。",
+    "id": "event_market_high",
+    "name": "人才市场",
+    "image": "res://assets/story/events/event_market_high.png",
+    "desc": "虽然你的矿和记忆中的外表不一样，但是同为亮晶晶的石头，还是有不少精英愿意买单。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
-    "requires": {
-      "prestige": 4
-    },
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 0,
-      "prestige": -4
-    },
+    "requires": { "prestige": 6, "mana": 3 },
+    "payload": { "wood": 0, "stone": 0, "mana": -3, "prestige": -6 },
     "effects": [
-      {
-        "type": "grant_random_operator",
-        "unit_cost": 7
-      }
+      { "type": "grant_random_operator", "unit_cost": 7 },
+      { "type": "grant_random_operator", "unit_cost": 7 },
+      { "type": "grant_random_operator", "unit_cost": 7 }
+    ],
+    "choices": [
+      { "id": "close", "text": "启动！" }
     ]
   },
   {
-    "id": "event_mercenary_leave",
-    "name": "雇佣兵营地",
-    "desc": "篝火的光被你们留在了身后。",
+    "id": "event_market_leave",
+    "name": "人才市场",
+    "image": "res://assets/story/events/event_market_leave.png",
+    "desc": "0 个人回应了你。",
     "effect_type": "contract",
-    "hidden_in_map_pool": true
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "别走啊——" }
+    ]
   },
   {
-    "id": "event_old_arsenal",
-    "name": "废弃军械库",
-    "desc": "锈蚀的大门虚掩着，里面堆满还能用的建材。但搬运的动静一定会引来注意。",
+    "id": "event_warehouse",
+    "name": "古代仓库？",
+    "image": "res://assets/story/events/event_warehouse.png",
+    "desc": "你们找到了一座建筑，里面堆满了各种看不懂的物件。他们看起来像是有特殊作用的精密造物，但以你们的技术眼光来看，唯一利用他们的方式是全部拆开将材料重新利用。",
     "effect_type": "contract",
     "choices": [
       {
         "id": "loot",
-        "text": "搬空军械库",
+        "text": "拆！",
         "kind": "primary",
-        "event_id": "event_arsenal_loot",
-        "effect_desc": "获得 4 木材 3 石材，但今晚追加一条随机夜晚词缀。"
+        "event_id": "event_warehouse_loot",
+        "effect_desc": "得 10 木材 + 10 石材 + 5 魔力矿。"
       },
       {
         "id": "leave",
-        "text": "原样封好大门",
+        "text": "总感觉这样不太好",
         "kind": "secondary",
-        "event_id": "event_arsenal_leave",
-        "effect_desc": "不冒险。"
+        "event_id": "event_warehouse_leave",
+        "effect_desc": "什么都不会发生。"
       }
     ]
   },
   {
-    "id": "event_arsenal_loot",
-    "name": "废弃军械库",
-    "desc": "建材装了满满几车。远处传来一声悠长的嚎叫——今晚不会安生了。",
-    "effect_type": "contract",
+    "id": "event_warehouse_loot",
+    "name": "古代仓库？",
+    "image": "res://assets/story/events/event_warehouse_loot.png",
+    "desc": "你们剪断各种连线，砸开外壳，将所有能利用的材料带了回去。",
+    "effect_type": "material_and_prestige",
     "hidden_in_map_pool": true,
-    "payload": {
-      "wood": 4,
-      "stone": 3,
-      "mana": 0,
-      "prestige": 0
-    },
-    "effects": [
-      {
-        "type": "night_affix_add_random"
-      }
+    "payload": { "wood": 10, "stone": 10, "mana": 5, "prestige": 0 },
+    "choices": [
+      { "id": "close", "text": "我好像在考古课上学过这几个字母，好像写的是”N,V,I,D,I……“" }
     ]
   },
   {
-    "id": "event_arsenal_leave",
-    "name": "废弃军械库",
+    "id": "event_warehouse_leave",
+    "name": "古代仓库？",
+    "image": "res://assets/story/events/event_warehouse_leave.png",
     "desc": "大门重新合拢，灰尘落定。",
     "effect_type": "contract",
-    "hidden_in_map_pool": true
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "说不定以后会有更好的利用方式" }
+    ]
   },
   {
-    "id": "event_mana_rift",
-    "name": "魔力裂隙",
-    "desc": "地面裂开一道细缝，幽蓝的源质雾气正缓缓外溢。引导它能采到不少魔力矿，封住它则更稳妥。",
+    "id": "event_dinner",
+    "name": "吃什么",
+    "image": "res://assets/story/events/event_dinner.png",
+    "desc": "不知道营地里哪个人先说了一句“吃什么”，然后所有人都神神叨叨的不停念叨：“是啊，吃什么。”这下你必须要给他们想好晚饭吃什么了。",
     "effect_type": "contract",
     "choices": [
       {
-        "id": "siphon",
-        "text": "引导裂隙",
+        "id": "bbq",
+        "text": "吃烧烤源石虫",
         "kind": "primary",
-        "event_id": "event_rift_siphon",
-        "effect_desc": "获得 5 魔力矿，但今晚敌人获得「巫术潮汐」词缀（法抗 +20）。"
+        "event_id": "event_dinner_bbq",
+        "effect_desc": "获得特殊遗物【好吃的】：所有干员生命值上限 +30%。"
       },
       {
-        "id": "seal",
-        "text": "用石材封堵",
-        "kind": "secondary",
-        "event_id": "event_rift_seal",
-        "effect_desc": "消耗 1 石材，获得 4 声望。"
+        "id": "wine",
+        "text": "喝酒吧，上大盏！",
+        "kind": "primary",
+        "event_id": "event_dinner_wine",
+        "effect_desc": "获得特殊遗物【好酒】：所有干员攻击力 +50%，但「干员自动开启技能」会被强制开启。"
       }
     ]
   },
   {
-    "id": "event_rift_siphon",
-    "name": "魔力裂隙",
-    "desc": "采集装置收满了结晶。雾气漫过营地时，你们闻到了雷雨将至的味道。",
+    "id": "event_dinner_bbq",
+    "name": "吃什么",
+    "image": "res://assets/story/events/event_dinner_bbq.png",
+    "desc": "干员吃饱了。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 5,
-      "prestige": 0
-    },
     "effects": [
-      {
-        "type": "night_affix_add",
-        "affix_id": "arcane_tide"
-      }
+      { "type": "grant_relic", "relic_id": "relic_event_tasty" }
+    ],
+    "choices": [
+      { "id": "close", "text": "源石虫，不是我害了你，是这乱世害了你啊" }
     ]
   },
   {
-    "id": "event_rift_seal",
-    "name": "魔力裂隙",
-    "desc": "石材压住裂缝，雾气散尽。附近的幸存者送来了谢礼。",
+    "id": "event_dinner_wine",
+    "name": "吃什么",
+    "image": "res://assets/story/events/event_dinner_wine.png",
+    "desc": "干员们喝了个微醺，看起来他们壮了不少胆，不过似乎有点不那么听得清指挥了。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
-    "requires": {
-      "stone": 1
-    },
-    "payload": {
-      "wood": 0,
-      "stone": -1,
-      "mana": 0,
-      "prestige": 4
-    }
+    "effects": [
+      { "type": "grant_relic", "relic_id": "relic_event_good_wine" }
+    ],
+    "choices": [
+      { "id": "close", "text": "这酒，有力气" }
+    ]
   },
   {
-    "id": "event_landslide_contract",
-    "name": "塌方契约",
-    "desc": "工兵头目敲了敲手里的爆破筒：“看见那些口子了吗？给点魔力矿当工钱，今晚我让其中一个塌得严严实实。”",
+    "id": "event_swords",
+    "name": "两把剑",
+    "image": "res://assets/story/events/event_swords.png",
+    "desc": "一个自称骑士的少女游荡到了你们的营地，她看起来非常强，但是并不打算加入你们，不过她表示可以在她的两把好剑中留下一把。",
     "effect_type": "contract",
-    "choices": []
-  },
-  {
-    "id": "event_landslide_leave",
-    "name": "塌方契约",
-    "desc": "你婉拒了。工兵耸耸肩，收起了家伙。",
-    "effect_type": "contract",
-    "hidden_in_map_pool": true
-  },
-  {
-    "id": "event_gate_wager",
-    "name": "开口赌约",
-    "desc": "斥候压低声音：“东面有条暗道，敌人还没发现。要是我们故意把它捅开，今晚会更难——但乱中取利，报酬丰厚。”",
-    "effect_type": "contract",
-    "max_day": 8,
     "choices": [
       {
-        "id": "accept",
-        "text": "捅开暗道",
+        "id": "human",
+        "text": "我要人之剑",
         "kind": "primary",
-        "event_id": "event_gate_wager_accept",
-        "effect_desc": "今晚一个沉默出怪口提前开放；立即获得 3 声望与 2 魔力矿。"
+        "event_id": "event_swords_human",
+        "effect_desc": "获得特殊遗物【人权剑：奥特尔】：所有干员攻速 +30。"
       },
       {
-        "id": "decline",
-        "text": "保持隐蔽",
-        "kind": "secondary",
-        "event_id": "event_gate_wager_decline",
-        "effect_desc": "不冒这个险。"
+        "id": "arts",
+        "text": "我要异之剑",
+        "kind": "primary",
+        "event_id": "event_swords_arts",
+        "effect_desc": "获得特殊遗物【异权剑：赫格利】：所有法术干员的攻击无视 30 点法抗。"
+      },
+      {
+        "id": "divine",
+        "text": "等等，你背后还藏着一把吧",
+        "kind": "primary",
+        "event_id": "event_swords_divine",
+        "effect_desc": "失去 10 声望，获得特殊遗物【神权剑：提尔芬】：所有干员攻击附带其攻击力 20% 的真实伤害。"
       }
     ]
   },
   {
-    "id": "event_gate_wager_accept",
-    "name": "开口赌约",
-    "desc": "巨石滚落，暗道洞开。远处传来兴奋的嚎叫。",
+    "id": "event_swords_human",
+    "name": "两把剑",
+    "image": "res://assets/story/events/event_swords_human.png",
+    "desc": "“好眼光，这是我最常用的佩剑。”少女给你留下了剑之后离开了。",
     "effect_type": "contract",
     "hidden_in_map_pool": true,
-    "payload": {
-      "wood": 0,
-      "stone": 0,
-      "mana": 2,
-      "prestige": 3
-    },
     "effects": [
+      { "type": "grant_relic", "relic_id": "relic_event_sword_human" }
+    ],
+    "choices": [
+      { "id": "close", "text": "再见" }
+    ]
+  },
+  {
+    "id": "event_swords_arts",
+    "name": "两把剑",
+    "image": "res://assets/story/events/event_swords_arts.png",
+    "desc": "“这把剑里的力量性质有点不寻常，你谨慎一点。”少女给你留下了剑之后离开了。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "grant_relic", "relic_id": "relic_event_sword_arts" }
+    ],
+    "choices": [
+      { "id": "close", "text": "不送" }
+    ]
+  },
+  {
+    "id": "event_swords_divine",
+    "name": "两把剑",
+    "image": "res://assets/story/events/event_swords_divine.png",
+    "desc": "“呃，这个剑是义人用的……算了，给你吧。”少女很不情愿地把剑给了你。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "prestige_loss", "value": 10 },
+      { "type": "grant_relic", "relic_id": "relic_event_sword_divine" }
+    ],
+    "choices": [
+      { "id": "close", "text": "这把一看就是最好的" }
+    ]
+  },
+  {
+    "id": "event_artofwar",
+    "name": "兵法",
+    "image": "res://assets/story/events/event_artofwar.png",
+    "desc": "来了一个客人，他高声宣讲着他戎马一生的心得。你饶有兴趣地听他讲话，但是越听越觉得莫名其妙。听了几个小时，脑子里晕乎乎的，只记得几个词。",
+    "effect_type": "contract",
+    "choices": [
       {
-        "type": "gate_open_extra_tonight"
+        "id": "arrogant",
+        "text": "胜兵必骄，骄兵必败",
+        "kind": "primary",
+        "event_id": "event_artofwar_arrogant",
+        "effect_desc": "获得特殊遗物【已成骄兵】：敌人防御与法抗按核心已损失生命比例降低。"
+      },
+      {
+        "id": "grieving",
+        "text": "败兵必哀，哀兵必胜",
+        "kind": "primary",
+        "event_id": "event_artofwar_grieving",
+        "effect_desc": "获得特殊遗物【已成哀兵】：我方攻击力按核心已损失生命比例提升。"
       }
     ]
   },
   {
-    "id": "event_gate_wager_decline",
-    "name": "开口赌约",
-    "desc": "斥候点点头，把地图塞回了怀里。",
+    "id": "event_artofwar_arrogant",
+    "name": "兵法",
+    "image": "res://assets/story/events/event_artofwar_arrogant.png",
+    "desc": "似乎传来了什么神奇的力量，你感觉这个世界的气运发生了一些变化。",
     "effect_type": "contract",
-    "hidden_in_map_pool": true
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "grant_relic", "relic_id": "relic_event_arrogant" }
+    ],
+    "choices": [
+      { "id": "close", "text": "天意啊" }
+    ]
+  },
+  {
+    "id": "event_artofwar_grieving",
+    "name": "兵法",
+    "image": "res://assets/story/events/event_artofwar_grieving.png",
+    "desc": "似乎传来了什么神奇的力量，你感觉这个世界的气运发生了一些变化。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "grant_relic", "relic_id": "relic_event_grieving" }
+    ],
+    "choices": [
+      { "id": "close", "text": "天意啊" }
+    ]
+  },
+  {
+    "id": "event_pinkdragon",
+    "name": "粉色奶龙？",
+    "image": "res://assets/story/events/event_pinkdragon.png",
+    "desc": "一个体型颇大的粉色生物晃悠悠地扑了过来，仔细一看那外形非常像黑潮造物头目之一的奶龙酋长！干员们顿时警惕起来，但你却感觉它没有恶意，而且它好像想说什么。",
+    "effect_type": "contract",
+    "choices": [
+      {
+        "id": "talk",
+        "text": "跟它聊聊",
+        "kind": "primary",
+        "event_id": "event_pinkdragon_talk",
+        "effect_desc": "获得特殊遗物【企鹅创可贴】：boss 凑凑企鹅不再有二阶段，一阶段被击败后直接死亡。"
+      },
+      {
+        "id": "shoo",
+        "text": "什么东西？走啊！",
+        "kind": "secondary",
+        "event_id": "event_pinkdragon_shoo",
+        "effect_desc": "真有人忍心选这个吗"
+      }
+    ]
+  },
+  {
+    "id": "event_pinkdragon_talk",
+    "name": "粉色奶龙？",
+    "image": "res://assets/story/events/event_pinkdragon_talk.png",
+    "desc": "这个粉色的奶龙跟你说了一大堆你听不懂的话，什么“tomori酱变成企鹅了”“都怪涂山白白喵和川崎仁仁菜”。你感觉云里雾里。最后，它给了你一个企鹅图案的创可贴。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "effects": [
+      { "type": "grant_relic", "relic_id": "relic_event_penguin_bandage" }
+    ],
+    "choices": [
+      { "id": "close", "text": "在敌人转阶段的时候贴在它身上就可以了对吧。" }
+    ]
+  },
+  {
+    "id": "event_pinkdragon_shoo",
+    "name": "粉色奶龙？",
+    "image": "res://assets/story/events/event_pinkdragon_shoo.png",
+    "desc": "粉色的奶龙发出了独特的哭声，离开了营地。",
+    "effect_type": "contract",
+    "hidden_in_map_pool": true,
+    "choices": [
+      { "id": "close", "text": "我都做了些什么……" }
+    ]
   }
 ]

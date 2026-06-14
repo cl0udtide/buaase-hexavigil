@@ -177,7 +177,7 @@ func _draw() -> void:
 	draw_line(Vector2(0.0, -8.0), Vector2(0.0, 8.0), DEBUG_COLOR, 1.5)
 
 
-func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0, source: Node = null) -> void:
+func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0, source: Node = null, res_ignore_flat: int = 0) -> void:
 	if (_boss_controller != null and _boss_controller.is_transitioning()) or bool(cfg.get("invulnerable", false)):
 		_debug_log("敌人 %s#%d 处于无敌状态，免疫本次伤害" % [_debug_name(), runtime_id])
 		return
@@ -186,7 +186,8 @@ func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0, s
 	if damage_type == GameEnums.DAMAGE_PHYSICAL:
 		final_damage = CombatMath.calc_physical_damage(value, int(round(float(_get_effective_defense()) * (1.0 - ignore))))
 	elif damage_type == GameEnums.DAMAGE_MAGIC:
-		final_damage = CombatMath.calc_magic_damage(value, int(round(float(_get_effective_resistance()) * (1.0 - ignore))))
+		var eff_res := max(int(round(float(_get_effective_resistance()) * (1.0 - ignore))) - max(res_ignore_flat, 0), 0)
+		final_damage = CombatMath.calc_magic_damage(value, eff_res)
 	final_damage = max(int(round(float(final_damage) * _get_vulnerability_multiplier(damage_type))), 0)
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_enemy_damage_taken_percent"):

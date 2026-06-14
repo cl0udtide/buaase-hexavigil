@@ -3,10 +3,16 @@ extends PanelContainer
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+
+# 统一页面模型：每个事件页 = 文案 + 插图 + 选项。
+# 选项 = 文本 + 悬停效果说明 + 指向的下一页(event_id)。
+# 点选项：event_id 为空 → 关闭面板；否则执行目标页的底层效果并翻到目标页。
+# 首次有效翻页消耗行动力 + 移除地图事件点；之后的翻页（含循环回开场）不再消耗。
 var _current_cell := Vector2i(-1, -1)
+var _root_event_id := StringName()
 var _current_event_id := StringName()
+var _event_consumed := false
 var _choice_buttons: Array[Button] = []
-var _resolved := false
 var _base_desc_text := ""
 
 @onready var _eyebrow_label: Label = %EyebrowLabel
@@ -17,6 +23,7 @@ var _base_desc_text := ""
 @onready var _choice_list: VBoxContainer = %ChoiceList
 @onready var _choice_button_template: Button = %ChoiceButtonTemplate
 @onready var _illustration: Control = %Illustration
+@onready var _event_image: TextureRect = %EventImage
 @onready var _event_glyph: Label = %EventGlyph
 
 
@@ -44,61 +51,76 @@ func show_event_for_cell(cell: Vector2i) -> void:
 	var event_id: StringName = random_event_manager.get_event_id_at_cell(cell)
 	if event_id == StringName():
 		return
-	# 优先按格子取配置：祭坛等事件的选项是按格子动态生成的。
-	var cfg: Dictionary = {}
-	if random_event_manager.has_method("get_event_cfg_at_cell"):
-		cfg = random_event_manager.get_event_cfg_at_cell(cell)
-	elif random_event_manager.has_method("get_event_cfg"):
-		cfg = random_event_manager.get_event_cfg(event_id)
-	else:
-		cfg = _get_event_cfg(event_id)
-	if cfg.is_empty():
-		return
 	_current_cell = cell
-	_current_event_id = event_id
-	_show_event_config(cfg)
+	_root_event_id = event_id
+	_event_consumed = false
+	_show_page(event_id)
 
 
 func show_event(event_cfg: Dictionary) -> void:
 	_current_cell = Vector2i(-1, -1)
-	_current_event_id = StringName(event_cfg.get("id", ""))
-	_show_event_config(event_cfg)
+	_root_event_id = StringName(event_cfg.get("id", ""))
+	_event_consumed = false
+	_render_page(event_cfg)
 
 
 func hide_event() -> void:
 	visible = false
 	_current_cell = Vector2i(-1, -1)
+	_root_event_id = StringName()
 	_current_event_id = StringName()
-	_resolved = false
+	_event_consumed = false
 	_base_desc_text = ""
 	_result_label.text = ""
 	if _close_button != null:
 		_close_button.visible = false
-	_set_impact_text("")
+	_apply_event_image({})
 	_build_choices([])
 
 
-func _show_event_config(event_cfg: Dictionary) -> void:
+## 取某页配置：开场页可能是祭坛等动态选项事件，需按格子取动态 choices。
+func _get_page_cfg(event_id: StringName) -> Dictionary:
+	var random_event_manager := _get_random_event_manager()
+	if event_id == _root_event_id and _current_cell.x >= 0 \
+			and random_event_manager != null and random_event_manager.has_method("get_event_cfg_at_cell"):
+		var dyn: Dictionary = random_event_manager.get_event_cfg_at_cell(_current_cell)
+		if not dyn.is_empty():
+			return dyn
+	return _get_event_cfg(event_id)
+
+
+func _show_page(event_id: StringName, effect_result: Dictionary = {}) -> void:
+	var cfg := _get_page_cfg(event_id)
+	if cfg.is_empty():
+		hide_event()
+		return
+	_render_page(cfg, effect_result)
+
+
+## 渲染任意一页：标题、描述、插图、效果回显、选项。
+func _render_page(cfg: Dictionary, effect_result: Dictionary = {}) -> void:
 	_set_modal_layer_visible(true)
 	visible = true
-	_resolved = false
-	_result_label.text = ""
+	_current_event_id = StringName(cfg.get("id", _current_event_id))
 	if _close_button != null:
 		_close_button.visible = false
-	_set_impact_text("")
+	_apply_event_image(cfg)
 	if _eyebrow_label != null:
 		_eyebrow_label.text = _make_eyebrow_text()
 	if _title_label != null:
-		_title_label.text = String(event_cfg.get("name", event_cfg.get("id", "事件")))
+		_title_label.text = String(cfg.get("name", cfg.get("id", "事件")))
+	_base_desc_text = String(cfg.get("desc", "一处未记录的异常信号正在地图上浮现。"))
 	if _desc_label != null:
-		_base_desc_text = String(event_cfg.get("desc", "一处未记录的异常信号正在地图上浮现。"))
 		_desc_label.text = _base_desc_text
-	var choices := _get_choice_defs(event_cfg)
-	if choices.is_empty():
-		_build_choices([])
-		_resolve_current_event(StringName())
+	if not effect_result.is_empty() and effect_result.get("ok", false):
+		_result_label.text = _format_visible_effect_text(effect_result)
 	else:
-		_build_choices(choices)
+		_result_label.text = ""
+	var choices := _get_choice_defs(cfg)
+	_build_choices(choices)
+	# 兜底：某页没有任何选项时，给一个关闭按钮，避免卡死。
+	if choices.is_empty():
+		_enable_dismiss_after_resolution()
 
 
 func _build_choices(choice_defs: Array) -> void:
@@ -116,9 +138,9 @@ func _build_choices(choice_defs: Array) -> void:
 			continue
 		button.visible = true
 		var base_text := String(choice.get("text", "选项"))
-		var choice_id := StringName(choice.get("id", "choice"))
-		# 预检该选项指向子事件的 requires；不满足时禁用并在文案/tooltip 标出缺口。
-		var requirement := _preview_choice_requirements(choice_id)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# 预检该选项指向页的 requires；不满足时禁用并在文案/tooltip 标出缺口。
+		var requirement := _preview_choice_requirements(choice)
 		var tooltip := _choice_tooltip_text(choice)
 		if not bool(requirement.get("ok", true)):
 			var reason := String(requirement.get("reason", "条件不足"))
@@ -128,7 +150,7 @@ func _build_choices(choice_defs: Array) -> void:
 		else:
 			button.text = base_text
 		button.tooltip_text = tooltip
-		button.pressed.connect(_on_choice_pressed.bind(choice_id))
+		button.pressed.connect(_on_choice_pressed.bind((choice as Dictionary).duplicate(true)))
 		_choice_list.add_child(button)
 		_choice_buttons.append(button)
 
@@ -143,38 +165,42 @@ func _get_choice_defs(event_cfg: Dictionary) -> Array:
 	return choices
 
 
-func _on_choice_pressed(choice_id: StringName) -> void:
-	_resolve_current_event(choice_id)
-
-
-func _resolve_current_event(choice_id: StringName) -> void:
-	if _resolved:
+func _on_choice_pressed(choice: Dictionary) -> void:
+	var target := StringName(choice.get("event_id", ""))
+	# 收尾选项：无指向 → 关闭面板。
+	if target == StringName():
+		hide_event()
 		return
-	if _current_cell.x < 0:
-		return
-	_resolved = true
 	_set_choices_disabled(true)
-	var day_manager := _get_day_manager()
-	if day_manager == null or not day_manager.has_method("try_trigger_event"):
-		_result_label.text = "事件系统尚未初始化"
-		_resolved = false
-		_set_choices_disabled(false)
-		_enable_dismiss_after_resolution()
-		return
-	var result: Dictionary = day_manager.try_trigger_event(_current_cell, choice_id)
-	if result.get("ok", false):
-		_show_resolved_event_from_result(result)
-	_set_result_text(result)
+	var choice_id := StringName(choice.get("id", ""))
+	var result: Dictionary
+	if not _event_consumed:
+		# 首次：消耗行动力 + 移除事件点，并执行目标页效果。
+		var day_manager := _get_day_manager()
+		if day_manager == null or not day_manager.has_method("try_trigger_event"):
+			_result_label.text = "事件系统尚未初始化"
+			_set_choices_disabled(false)
+			return
+		result = day_manager.try_trigger_event(_current_cell, choice_id)
+		if result.get("ok", false):
+			_event_consumed = true
+	else:
+		# 后续翻页（含循环回开场）：只执行目标页效果，不再消耗行动力/事件点。
+		var random_event_manager := _get_random_event_manager()
+		if random_event_manager != null and random_event_manager.has_method("apply_event"):
+			result = random_event_manager.apply_event(target)
+		else:
+			result = {"ok": false, "message": "事件系统不可用"}
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
-		event_bus.random_event_choice_selected.emit(_current_event_id, _current_cell, choice_id, result)
+		event_bus.random_event_choice_selected.emit(_root_event_id, _current_cell, choice_id, result)
 	if result.get("ok", false):
-		_build_choices([])
-		_enable_dismiss_after_resolution()
+		var next_id := StringName((result.get("payload", {}) as Dictionary).get("event_id", target))
+		_show_page(next_id, result)
 	else:
-		_resolved = false
+		# requires 不足等：留在当前页并提示。
 		_set_choices_disabled(false)
-		_enable_dismiss_after_resolution()
+		_result_label.text = String(result.get("message", "无法进行该选项"))
 
 
 func _set_choices_disabled(disabled: bool) -> void:
@@ -183,22 +209,11 @@ func _set_choices_disabled(disabled: bool) -> void:
 			button.disabled = disabled
 
 
-func _format_event_result(result: Dictionary) -> String:
-	if not result.get("ok", false):
-		return String(result.get("message", "事件处理失败"))
-	var payload: Dictionary = result.get("payload", {})
-	var event_id := StringName(payload.get("event_id", _current_event_id))
-	var cfg := _get_event_cfg(event_id)
-	var event_name := String(cfg.get("name", event_id))
-	var lines: PackedStringArray = []
-	lines.append("%s已处理" % event_name)
-	lines.append(_format_visible_effect_text(result))
-	return "\n".join(lines)
-
-
 func _format_visible_effect_text(result: Dictionary) -> String:
 	var lines: PackedStringArray = []
-	lines.append(_format_effect_summary(result))
+	var summary := _format_effect_summary(result)
+	if not summary.strip_edges().is_empty():
+		lines.append(summary)
 	var payload: Dictionary = result.get("payload", {})
 	var ap_cost := int(payload.get("ap_cost", 0))
 	if ap_cost > 0:
@@ -213,18 +228,8 @@ func _format_effect_summary(result: Dictionary) -> String:
 	var event_id := StringName(payload.get("event_id", _current_event_id))
 	var cfg := _get_event_cfg(event_id)
 	var effect_payload: Dictionary = payload.get("effect_payload", cfg.get("payload", {}))
-	return "实际效果：%s" % _format_effect_payload(effect_payload)
-
-
-func _set_result_text(result: Dictionary) -> void:
-	_result_label.text = _format_event_result(result)
-	if result.get("ok", false):
-		_set_impact_text(_format_visible_effect_text(result))
-
-
-func _set_impact_text(text: String) -> void:
-	if _desc_label != null:
-		_desc_label.text = _base_desc_text if text.strip_edges().is_empty() else "%s\n\n%s" % [_base_desc_text, text]
+	var body := _format_effect_payload(effect_payload)
+	return "实际效果：%s" % body if not body.is_empty() else ""
 
 
 func _format_effect_payload(effect_payload: Dictionary) -> String:
@@ -237,7 +242,7 @@ func _format_effect_payload(effect_payload: Dictionary) -> String:
 	if not summary.is_empty():
 		parts.append(summary)
 	if parts.is_empty():
-		return "无资源或声望变化"
+		return ""
 	return "，".join(parts)
 
 
@@ -247,16 +252,6 @@ func _append_resource_delta(parts: PackedStringArray, payload: Dictionary, key: 
 		return
 	var prefix := "+" if amount > 0 else ""
 	parts.append("%s%d %s" % [prefix, amount, label])
-
-
-func _show_resolved_event_from_result(result: Dictionary) -> void:
-	var payload: Dictionary = result.get("payload", {})
-	var event_id := StringName(payload.get("event_id", _current_event_id))
-	var cfg := _get_event_cfg(event_id)
-	if cfg.is_empty():
-		return
-	_current_event_id = event_id
-	_show_resolved_event_config(cfg)
 
 
 func _make_eyebrow_text() -> String:
@@ -269,6 +264,7 @@ func _on_request_open_event_panel(cell: Vector2i) -> void:
 	show_event_for_cell(cell)
 
 
+## 其他系统直接触发事件（如某些自动结算）时，在面板未占用同格时弹出结算页。
 func _on_random_event_triggered(event_id: StringName, cell: Vector2i) -> void:
 	if visible and _current_cell == cell:
 		return
@@ -276,32 +272,34 @@ func _on_random_event_triggered(event_id: StringName, cell: Vector2i) -> void:
 	if cfg.is_empty():
 		return
 	_current_cell = cell
-	_current_event_id = event_id
-	_show_resolved_event_config(cfg)
-	_set_result_text({
+	_root_event_id = event_id
+	_event_consumed = true
+	_render_page(cfg, {
 		"ok": true,
 		"payload": {
 			"event_id": event_id,
 			"effect_payload": cfg.get("payload", {}),
 		},
 	})
-	_build_choices([])
-	_enable_dismiss_after_resolution()
 
 
-func _show_resolved_event_config(event_cfg: Dictionary) -> void:
-	_set_modal_layer_visible(true)
-	visible = true
-	_resolved = true
-	if _close_button != null:
-		_close_button.visible = false
-	if _eyebrow_label != null:
-		_eyebrow_label.text = _make_eyebrow_text()
-	if _title_label != null:
-		_title_label.text = String(event_cfg.get("name", event_cfg.get("id", "事件")))
-	if _desc_label != null:
-		_base_desc_text = String(event_cfg.get("desc", "一处未记录的异常信号正在地图上浮现。"))
-		_desc_label.text = _base_desc_text
+func _apply_event_image(event_cfg: Dictionary) -> void:
+	var image_path := String(event_cfg.get("image", "")).strip_edges()
+	var texture: Texture2D = null
+	if not image_path.is_empty() and ResourceLoader.exists(image_path):
+		texture = load(image_path) as Texture2D
+	if texture != null:
+		if _event_image != null:
+			_event_image.texture = texture
+			_event_image.visible = true
+		if _event_glyph != null:
+			_event_glyph.visible = false
+	else:
+		if _event_image != null:
+			_event_image.texture = null
+			_event_image.visible = false
+		if _event_glyph != null:
+			_event_glyph.visible = true
 
 
 func _apply_visual_style() -> void:
@@ -324,24 +322,34 @@ func _get_event_cfg(event_id: StringName) -> Dictionary:
 	return data_repo.get_event_cfg(event_id) if data_repo != null and data_repo.has_method("get_event_cfg") else {}
 
 
-## 预检选项前置资源：返回 {ok, reason, shortfalls}；管理器不可用时按满足处理。
-func _preview_choice_requirements(choice_id: StringName) -> Dictionary:
-	if _current_event_id == StringName() or choice_id == StringName():
-		return {"ok": true}
+## 预检选项指向页的前置资源：返回 {ok, reason, ...}；管理器不可用或无前置时按满足处理。
+func _preview_choice_requirements(choice: Dictionary) -> Dictionary:
 	var random_event_manager := _get_random_event_manager()
-	if random_event_manager == null or not random_event_manager.has_method("preview_choice_requirements"):
+	if random_event_manager == null:
 		return {"ok": true}
-	return random_event_manager.preview_choice_requirements(_current_event_id, choice_id)
+	var target := StringName(choice.get("event_id", ""))
+	if target == StringName():
+		# 祭坛/塌方等动态选项：无静态 event_id，用旧的按选项预检。
+		var cid := StringName(choice.get("id", ""))
+		if (String(cid).begins_with("infuse_") or String(cid).begins_with("seal_")) \
+				and random_event_manager.has_method("preview_choice_requirements"):
+			return random_event_manager.preview_choice_requirements(_current_event_id, cid)
+		return {"ok": true}
+	var target_cfg := _get_event_cfg(target)
+	var requires: Variant = target_cfg.get("requires", {})
+	if not (requires is Dictionary) or (requires as Dictionary).is_empty():
+		return {"ok": true}
+	if random_event_manager.has_method("preview_requirements"):
+		return random_event_manager.preview_requirements(requires)
+	return {"ok": true}
 
 
 func _choice_tooltip_text(choice: Dictionary) -> String:
-	for key in ["effect_desc", "tooltip", "preview", "effect_text", "desc"]:
+	for key in ["effect_desc", "tooltip", "preview", "effect_text"]:
 		var text := String(choice.get(key, "")).strip_edges()
 		if not text.is_empty():
 			return text
-	var target_event_id := StringName(choice.get("event_id", choice.get("trigger_event_id", "")))
-	var cfg := _get_event_cfg(target_event_id)
-	return String(cfg.get("desc", "")).strip_edges()
+	return ""
 
 
 func _enable_dismiss_after_resolution() -> void:

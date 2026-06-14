@@ -19,6 +19,7 @@ const SPAWN_SAFE_RADIUS := 2
 const ALTAR_EVENT_ID: StringName = &"event_altar"
 const ALTAR_OFFER_COUNT := 3
 const ALTAR_MANA_COST := 2
+const ALTAR_MEME_TEXTS := ["灌注塔菲喵", "灌注塔菲谢谢喵", "这祭坛应该是唐朝的"]
 
 # --- 塌方契约事件 ---
 const LANDSLIDE_EVENT_ID: StringName = &"event_landslide_contract"
@@ -275,6 +276,34 @@ func _apply_contract_effects(cfg: Dictionary, run_state: Node) -> PackedStringAr
 					var data_repo = AppRefs.data_repo()
 					var affix_cfg: Dictionary = data_repo.get_night_affix_cfg(fixed_affix) if data_repo != null else {}
 					summary_lines.append("今晚追加词缀：%s" % String(affix_cfg.get("name", fixed_affix)))
+			&"prestige_pct_loss":
+				var pct := clampf(float(effect.get("pct", 0.0)), 0.0, 1.0)
+				var lost := int(floor(float(maxi(int(run_state.prestige), 0)) * pct))
+				if lost > 0:
+					run_state.add_prestige(-lost)
+				summary_lines.append("失去 %d 声望（当前的 %d%%）" % [lost, int(round(pct * 100.0))])
+			&"core_max_hp_halve":
+				var old_max := int(run_state.core_hp_max)
+				var new_max := maxi(int(floor(float(old_max) / 2.0)), 1)
+				if run_state.has_method("add_core_max_hp") and new_max != old_max:
+					run_state.add_core_max_hp(new_max - old_max)
+				summary_lines.append("核心生命上限减半（%d → %d）" % [old_max, new_max])
+			&"grant_relic":
+				var relic_id := StringName(effect.get("relic_id", ""))
+				if relic_id != StringName() and _buff_manager != null and _buff_manager.has_method("apply_blessing"):
+					var grant_result: Dictionary = _buff_manager.apply_blessing(relic_id)
+					var data_repo = AppRefs.data_repo()
+					var rc: Dictionary = data_repo.get_buff_cfg(relic_id) if data_repo != null else {}
+					if grant_result.get("ok", false):
+						summary_lines.append("获得遗物：%s" % String(rc.get("name", relic_id)))
+					else:
+						summary_lines.append("已拥有遗物：%s" % String(rc.get("name", relic_id)))
+			&"prestige_loss":
+				var amount := int(effect.get("value", 0))
+				var actual := mini(maxi(amount, 0), maxi(int(run_state.prestige), 0))
+				if actual > 0:
+					run_state.add_prestige(-actual)
+				summary_lines.append("失去 %d 声望" % actual)
 			_:
 				pass
 	return summary_lines
@@ -289,7 +318,10 @@ func _grant_random_relic(rarity_min: int, rarity_max: int) -> StringName:
 	for buff_id in data_repo.get_all_buff_ids():
 		if run_state.has_buff(buff_id):
 			continue
-		var rarity := int(data_repo.get_buff_cfg(buff_id).get("rarity", 1))
+		var relic_cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		if bool(relic_cfg.get("event_only", false)):
+			continue
+		var rarity := int(relic_cfg.get("rarity", 1))
 		if rarity >= rarity_min and rarity <= rarity_max:
 			candidates.append(buff_id)
 	if candidates.is_empty():
@@ -513,18 +545,30 @@ func _pick_event_for_day(day: int, rng: RandomNumberGenerator) -> StringName:
 # ---------------------------------------------------------------------------
 func _build_altar_choices(cell: Vector2i) -> Array:
 	var choices: Array = []
-	for offer_variant: Variant in _ensure_altar_offers(cell):
-		var offer: Dictionary = offer_variant
+	var offers := _ensure_altar_offers(cell)
+	# 固定生成三个灌注选项（按钮是塔菲梗文案，悬停才是准确的"某干员灌注某盟约"描述）。
+	# 候选不足时重复同一个，完全没有干员时三个都提示无法灌注、点了什么都不会发生。
+	for i in range(ALTAR_OFFER_COUNT):
+		var meme := String(ALTAR_MEME_TEXTS[i]) if i < ALTAR_MEME_TEXTS.size() else "灌注盟约"
+		if offers.is_empty():
+			choices.append({
+				"id": "altar_empty_%d" % i,
+				"text": meme,
+				"kind": "primary",
+				"effect_desc": "你还没有任何干员，无法灌注盟约——什么都不会发生。",
+			})
+			continue
+		var offer: Dictionary = offers[i % offers.size()]
 		choices.append({
-			"id": String(offer.get("choice_id", "")),
-			"text": "灌注「%s」→ %s" % [String(offer.get("covenant", "")), String(offer.get("operator_name", ""))],
+			"id": String(offer.get("choice_id", "infuse_%d" % i)),
+			"text": meme,
 			"kind": "primary",
 			"event_id": "event_altar_infused",
-			"effect_desc": "消耗 %d 魔力矿，本局中所有 %s（包括后续购买）永久获得「%s」盟约。" % [ALTAR_MANA_COST, String(offer.get("operator_name", "")), String(offer.get("covenant", ""))],
+			"effect_desc": "消耗 %d 魔力矿，把「%s」盟约灌注给 %s——本局所有 %s（含之后购买）永久继承。" % [ALTAR_MANA_COST, String(offer.get("covenant", "")), String(offer.get("operator_name", "")), String(offer.get("operator_name", ""))],
 		})
 	choices.append({
 		"id": "leave",
-		"text": "离开祭坛",
+		"text": "感觉躺上去智力会降低，还是算了吧",
 		"kind": "secondary",
 		"event_id": "event_altar_leave",
 		"effect_desc": "不进行灌注。",

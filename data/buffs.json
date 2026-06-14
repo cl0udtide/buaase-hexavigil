@@ -572,5 +572,92 @@
     "effect_type": "core_breach_stun_all_enemies",
     "effect_value": 3.0,
     "icon_path": "res://assets/ui/generated/icon_relic_little_gran_faro.png"
+  },
+  {
+    "id": "relic_event_tasty",
+    "name": "好吃的",
+    "desc": "来自「吃什么」的犒赏：所有干员生命值上限 +30%。",
+    "rarity": 2,
+    "category": "mechanic",
+    "event_only": true,
+    "effect_type": "unit_hp_percent",
+    "effect_value": 0.3
+  },
+  {
+    "id": "relic_event_good_wine",
+    "name": "好酒",
+    "desc": "来自「吃什么」的犒赏：所有干员攻击力 +50%，但所有干员被迫自动开启技能（无视设置）。",
+    "rarity": 3,
+    "category": "mechanic",
+    "event_only": true,
+    "effects": [
+      { "effect_type": "unit_atk_percent", "effect_value": 0.5 },
+      { "effect_type": "unit_force_auto_skill", "effect_value": 1 }
+    ]
+  },
+  {
+    "id": "relic_event_sword_human",
+    "name": "人权剑·奥特尔",
+    "desc": "卡提希娅留下的佩剑：所有干员攻速 +30。",
+    "rarity": 2,
+    "category": "mechanic",
+    "event_only": true,
+    "effect_type": "unit_attack_speed_add",
+    "effect_value": 30
+  },
+  {
+    "id": "relic_event_sword_arts",
+    "name": "异权剑·赫格利",
+    "desc": "卡提希娅留下的佩剑：所有法术干员的攻击无视目标 30 点法抗。",
+    "rarity": 2,
+    "category": "mechanic",
+    "event_only": true,
+    "effect_type": "unit_res_ignore_flat",
+    "effect_value": 30,
+    "damage_type_filter": "magic"
+  },
+  {
+    "id": "relic_event_sword_divine",
+    "name": "神权剑·提尔芬",
+    "desc": "卡提希娅藏起的佩剑：所有干员的攻击额外附带相当于其攻击力 20% 的真实伤害。",
+    "rarity": 3,
+    "category": "mechanic",
+    "event_only": true,
+    "effect_type": "unit_attack_true_damage_percent",
+    "effect_value": 0.2
+  },
+  {
+    "id": "relic_event_arrogant",
+    "name": "已成骄兵",
+    "desc": "骄兵必败：敌人的防御力与法抗，按核心当前已损失生命的比例同步降低（核心越残，敌人越脆）。",
+    "rarity": 3,
+    "category": "mechanic",
+    "event_only": true,
+    "effects": [
+      { "effect_type": "core_loss_ratio_effect", "target_effect_type": "enemy_def_percent", "effect_value": -1.0 },
+      { "effect_type": "core_loss_ratio_effect", "target_effect_type": "enemy_res_percent", "effect_value": -1.0 }
+    ]
+  },
+  {
+    "id": "relic_event_grieving",
+    "name": "已成哀兵",
+    "desc": "哀兵必胜：我方干员的攻击力，按核心当前已损失生命的比例提升（核心越残，我方越强）。",
+    "rarity": 3,
+    "category": "mechanic",
+    "event_only": true,
+    "effect_type": "core_loss_ratio_effect",
+    "target_effect_type": "unit_atk_percent",
+    "effect_value": 1.0
+  },
+  {
+    "id": "relic_event_penguin_bandage",
+    "name": "企鹅创可贴",
+    "desc": "贴在凑凑企鹅身上：它不再进入第二形态，第一形态被击败即直接死亡。",
+    "rarity": 3,
+    "category": "mechanic",
+    "event_only": true,
+    "effect_type": "boss_skip_second_phase",
+    "effect_value": 1,
+    "enemy_id_filter": "coucou_penguin"
   }
 ]
