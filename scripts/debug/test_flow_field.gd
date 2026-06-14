@@ -19,6 +19,7 @@ func _run() -> void:
 	_test_distance_wall()
 	_test_next_step()
 	_test_front_simulation()
+	_test_oscillation()
 	_test_determinism()
 	if _failures == 0:
 		print("ALL FLOW_FIELD TESTS PASSED")
@@ -121,20 +122,43 @@ func _test_next_step() -> void:
 
 ## 仿真：一只怪从 start 逐步走到 core，记录首次跨过 mid_x 时所在的行。
 func _sim_enemy(dist: Dictionary, front: Dictionary, start: Vector2i, core: Vector2i, phase: float, half_width: int, mid_x: int) -> Dictionary:
+	# 跟真控制器一致：把上一格作为软避让传入，防止被梯度拽回去左右摇摆。
 	var cell := start
+	var prev := Vector2i(-9999, -9999)
 	var steps := 0
 	var row_at_mid := -999
 	while cell != core and steps < 300:
 		if cell.x >= mid_x and row_at_mid == -999:
 			row_at_mid = cell.y
-		var nxt: Vector2i = FlowField.next_step(dist, front, cell, phase, half_width, {})
+		var extra := {}
+		if prev != Vector2i(-9999, -9999):
+			extra[prev] = true
+		var nxt: Vector2i = FlowField.next_step(dist, front, cell, phase, half_width, extra)
 		if nxt == cell:
 			break
+		prev = cell
 		cell = nxt
 		steps += 1
 	if cell.x >= mid_x and row_at_mid == -999:
 		row_at_mid = cell.y
 	return {"reached": cell == core, "row_at_mid": row_at_mid}
+
+
+func _sim_reaches(dist: Dictionary, front: Dictionary, start: Vector2i, core: Vector2i, phase: float, half_width: int, use_prev: bool) -> bool:
+	var cell := start
+	var prev := Vector2i(-9999, -9999)
+	var steps := 0
+	while cell != core and steps < 400:
+		var extra := {}
+		if use_prev and prev != Vector2i(-9999, -9999):
+			extra[prev] = true
+		var nxt: Vector2i = FlowField.next_step(dist, front, cell, phase, half_width, extra)
+		if nxt == cell:
+			break
+		prev = cell
+		cell = nxt
+		steps += 1
+	return cell == core
 
 
 func _phases(n: int) -> Array:
@@ -183,6 +207,46 @@ func _test_front_simulation() -> void:
 		crows[rc["row_at_mid"]] = true
 	_expect(creached, "走廊所有怪都到核心")
 	_expect(crows.size() == 1, "走廊收成单行(实得 %d)" % crows.size())
+
+
+func _test_oscillation() -> void:
+	print("[oscillation: 对角偏置场 '不回头' 修复]")
+	# 核心右上、出怪口左下：对角偏置 + 大量梯度并列，最易触发"铺开后被拽回上一格"的摇摆。
+	var core := Vector2i(10, 0)
+	var gate := Vector2i(0, 6)
+	var cells := _grid(11, 7)
+	var dist: Dictionary = FlowField.compute_distance(cells, core, {})
+	var front: Dictionary = FlowField.compute_front(cells, dist, {})
+	var phases := _phases(8)
+	var reached_prev := 0
+	var reached_noprev := 0
+	for p: float in phases:
+		if _sim_reaches(dist, front, gate, core, float(p), 6, true):
+			reached_prev += 1
+		if _sim_reaches(dist, front, gate, core, float(p), 6, false):
+			reached_noprev += 1
+	_expect(reached_prev == phases.size(), "对角场 不回头: 全部到核心 (%d/%d)" % [reached_prev, phases.size()])
+	_expect(reached_prev >= reached_noprev, "对角场 不回头不比无修复差 (prev %d vs noprev %d)" % [reached_prev, reached_noprev])
+	# 带障碍：中间一道墙掰弯距离场，绕行"阴影区"最易触发回拽摇摆（更接近 live 地形）。
+	var wall: Dictionary = {}
+	for yy in [2, 3, 4]:
+		wall[Vector2i(5, yy)] = true
+	var wcore := Vector2i(10, 3)
+	var wgate := Vector2i(0, 3)
+	var wdist: Dictionary = FlowField.compute_distance(cells, wcore, wall)
+	var wfront: Dictionary = FlowField.compute_front(cells, wdist, wall)
+	var wphases := _phases(10)
+	var w_prev := 0
+	var w_noprev := 0
+	for p2: float in wphases:
+		if _sim_reaches(wdist, wfront, wgate, wcore, float(p2), 6, true):
+			w_prev += 1
+		if _sim_reaches(wdist, wfront, wgate, wcore, float(p2), 6, false):
+			w_noprev += 1
+	_expect(w_prev == wphases.size(), "带墙场 不回头: 全部到核心 (%d/%d)" % [w_prev, wphases.size()])
+	_expect(w_prev >= w_noprev, "带墙场 不回头不比无修复差 (prev %d vs noprev %d)" % [w_prev, w_noprev])
+	if w_noprev < w_prev:
+		print("    （带墙场复现了摇摆：无修复仅 %d/%d 到核心，修复后 %d/%d）" % [w_noprev, wphases.size(), w_prev, wphases.size()])
 
 
 func _test_determinism() -> void:

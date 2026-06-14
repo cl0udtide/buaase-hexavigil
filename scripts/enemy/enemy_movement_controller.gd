@@ -22,12 +22,15 @@ const PHASE_GOLDEN := 0.6180339887498949
 # 正面半宽 = clamp(K*sqrt(本波怪量), 1, CAP)（平衡占位）。
 const HALF_WIDTH_K := 0.6
 const HALF_WIDTH_CAP := 8
+const INVALID_CELL := Vector2i(-9999, -9999)
 
 var _owner_actor: Node2D = null
 var _blocked_by := -1
 var _base_path_mode: StringName = PATH_MODE_NORMAL
 var _path_mode: StringName = PATH_MODE_NORMAL
 var _lateral_phase: float = 0.0
+# 上一格：作为软避让传给 next_step，避免被梯度拽回来上一格而左右死循环。
+var _prev_cell: Vector2i = INVALID_CELL
 var _block_slot := 0
 var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
@@ -48,6 +51,7 @@ func reset() -> void:
 	_block_anchor_dir = Vector2.ZERO
 	_crowd_offset = Vector2.ZERO
 	_external_move_speed_multiplier = 1.0
+	_prev_cell = INVALID_CELL
 	refresh_path_mode()
 
 
@@ -121,6 +125,8 @@ func process_path_movement(delta: float) -> bool:
 	var target_pos: Vector2 = map_manager.cell_to_world(step_cell) + _crowd_offset
 	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, get_effective_move_speed() * CELL_SIZE * delta)
 	if _owner_actor.global_position.distance_to(target_pos) < 2.0:
+		if step_cell != _owner_actor.current_cell:
+			_prev_cell = _owner_actor.current_cell
 		_owner_actor.current_cell = step_cell
 		return has_arrived()
 	return false
@@ -285,6 +291,8 @@ func _extra_blocked() -> Dictionary:
 	for unit in unit_manager.get_all_units():
 		if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
 			blocked[unit.get_current_cell()] = true
+	if _prev_cell != INVALID_CELL:
+		blocked[_prev_cell] = true
 	return blocked
 
 
