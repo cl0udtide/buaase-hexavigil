@@ -417,6 +417,7 @@ func clear_deploy_preview() -> void:
 
 func set_wave_route_previews(routes: Array[Dictionary]) -> void:
 	_wave_route_previews.clear()
+	_highlight_spawn_key = ""  # 预览换代时复位高亮，避免悬停态残留导致整片偏暗一帧
 	for route: Dictionary in routes:
 		_wave_route_previews.append(route.duplicate(true))
 	queue_redraw()
@@ -424,6 +425,7 @@ func set_wave_route_previews(routes: Array[Dictionary]) -> void:
 
 func clear_wave_route_previews() -> void:
 	_wave_route_previews.clear()
+	_highlight_spawn_key = ""
 	queue_redraw()
 
 
