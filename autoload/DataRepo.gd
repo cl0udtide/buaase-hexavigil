@@ -3,6 +3,8 @@ extends Node
 signal data_loaded
 signal data_reload_failed(message: String)
 
+const StoryLib = preload("res://scripts/story/story_library.gd")
+
 
 const DATA_FILES := {
 	"units": "res://data/units.json",
@@ -18,6 +20,9 @@ const CONFIG_FILES := {
 	"map_generation": "res://data/map_generation.json",
 	"ui_icons": "res://data/ui_icons.json"
 }
+
+## 剧情一段一文件，扫这个目录加载（区别于上面的单文件表）。
+const STORIES_DIR := "res://data/stories"
 
 const SCENE_REGISTRY := {
 	&"unit_actor": "res://scenes/actors/UnitActor.tscn",
@@ -44,6 +49,8 @@ var _configs: Dictionary = {
 	"ui_icons": {}
 }
 
+var _stories: Dictionary = {}
+
 var _loaded := false
 
 
@@ -61,6 +68,8 @@ func load_all() -> void:
 	for config_name: String in CONFIG_FILES.keys():
 		loaded_configs[config_name] = _load_config(CONFIG_FILES[config_name])
 	_configs = loaded_configs
+
+	_stories = StoryLib.load_dir(STORIES_DIR)
 
 	_loaded = true
 	data_loaded.emit()
@@ -130,6 +139,22 @@ func get_map_generation_cfg() -> Dictionary:
 
 func get_ui_icon_catalog() -> Dictionary:
 	return _configs["ui_icons"].duplicate(true)
+
+
+func get_story_cfg(story_id: StringName) -> Dictionary:
+	return _stories.get(story_id, {}).duplicate(true)
+
+
+func get_all_story_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for story_id in _stories.keys():
+		ids.append(StringName(story_id))
+	ids.sort()
+	return ids
+
+
+func get_story_ids_by_trigger(trigger: String) -> Array[StringName]:
+	return StoryLib.ids_by_trigger(_stories, trigger)
 
 
 func get_scene_by_key(scene_key: StringName) -> PackedScene:

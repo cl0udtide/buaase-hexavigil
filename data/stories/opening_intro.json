@@ -1,0 +1,35 @@
+{
+	"id": "opening_intro",
+	"trigger": "run_start",
+	"replay": "always",
+	"settings": { "type_speed": 38 },
+	"lines": [
+		{
+			"skin": "vn",
+			"background": "#0b0e12",
+			"speaker": "守夜干员",
+			"side": "left",
+			"portrait": "unit:blaze",
+			"text": "天一黑，它们就从地图边缘涌进来。"
+		},
+		{
+			"skin": "vn",
+			"speaker": "守夜干员",
+			"side": "left",
+			"portrait": "unit:blaze",
+			"text": "我们要守住的，只有这一座核心。"
+		},
+		{
+			"skin": "vn",
+			"speaker": "核心 AI",
+			"side": "right",
+			"portrait": "unit:ceobe",
+			"text": "九个夜晚。撑过去，增援就到。"
+		},
+		{
+			"skin": "bubble",
+			"anchor": "core",
+			"text": "这就是核心——它被摧毁，防线就结束了。"
+		}
+	]
+}
