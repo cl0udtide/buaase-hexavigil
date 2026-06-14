@@ -4,7 +4,10 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const NightAffixService = preload("res://scripts/enemy/night_affix_service.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
-const CORE_DESTROYED_RESULT_DELAY := 1.6
+const CORE_DESTROYED_RESULT_DELAY := 2.0
+const DEFEAT_RESULT_HIT_DELAY := 1.656
+const NIGHT_START_TRANSITION_DELAY := 5.25
+const RUN_END_AUDIO_DELAY := 1.9
 
 
 @onready var _day_manager: Node = get_node_or_null("../DayManager")
@@ -16,6 +19,7 @@ const CORE_DESTROYED_RESULT_DELAY := 1.6
 @onready var _wave_manager: Node = get_node_or_null("../WaveManager")
 
 var _run_end_requested := false
+var _night_start_transitioning := false
 
 
 func _ready() -> void:
@@ -49,6 +53,7 @@ func enter_day(day: int) -> void:
 	var run_state = AppRefs.run_state()
 	if run_state == null:
 		return
+	_night_start_transitioning = false
 	run_state.set_day(day)
 	run_state.set_phase(GameEnums.PHASE_DAY)
 	run_state.night_wager_active = false
@@ -74,15 +79,24 @@ func enter_day(day: int) -> void:
 func enter_night() -> void:
 	var run_state = AppRefs.run_state()
 	var event_bus = AppRefs.event_bus()
-	if run_state == null:
+	if run_state == null or _night_start_transitioning:
 		return
+	_night_start_transitioning = true
 	run_state.set_phase(GameEnums.PHASE_NIGHT)
 	if _unit_manager != null and _unit_manager.has_method("refresh_predeployed_units_for_night"):
 		_unit_manager.refresh_predeployed_units_for_night()
-	if _night_manager != null and _night_manager.has_method("start_night"):
-		_night_manager.start_night(run_state.day)
 	if event_bus != null:
 		event_bus.night_started.emit(run_state.day)
+	if NIGHT_START_TRANSITION_DELAY > 0.0 and get_tree() != null:
+		await get_tree().create_timer(NIGHT_START_TRANSITION_DELAY).timeout
+	if not is_inside_tree():
+		return
+	if run_state == null or run_state.phase != GameEnums.PHASE_NIGHT:
+		_night_start_transitioning = false
+		return
+	_night_start_transitioning = false
+	if _night_manager != null and _night_manager.has_method("start_night"):
+		_night_manager.start_night(run_state.day)
 
 
 func enter_blessing() -> void:
@@ -109,9 +123,7 @@ func enter_blessing() -> void:
 func end_run(win: bool) -> void:
 	if _run_end_requested:
 		return
-	_run_end_requested = true
-	_set_result_phase()
-	_emit_run_ended(win)
+	_end_run_after_delay(win, RUN_END_AUDIO_DELAY)
 
 
 func _set_result_phase() -> void:
@@ -130,11 +142,14 @@ func _end_run_after_delay(win: bool, delay_seconds: float) -> void:
 	if _run_end_requested:
 		return
 	_run_end_requested = true
-	_set_result_phase()
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.run_ending.emit(win, delay_seconds)
 	if delay_seconds > 0.0 and get_tree() != null:
 		await get_tree().create_timer(delay_seconds).timeout
 	if not is_inside_tree():
 		return
+	_set_result_phase()
 	_emit_run_ended(win)
 
 
@@ -206,7 +221,7 @@ func _on_night_cleared(_day: int) -> void:
 
 
 func _on_core_destroyed() -> void:
-	_end_run_after_delay(false, CORE_DESTROYED_RESULT_DELAY)
+	_end_run_after_delay(false, DEFEAT_RESULT_HIT_DELAY)
 
 
 func _on_blessing_chosen(buff_id: StringName) -> void:

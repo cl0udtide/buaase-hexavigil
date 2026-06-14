@@ -23,6 +23,8 @@ func _run() -> void:
 	_test_sfx_gain_policy(audio_manager)
 	_test_sfx_prewarm_cache(audio_manager)
 	_test_core_destroyed_result_delay()
+	_test_night_transition_delay()
+	_test_run_end_audio_delay()
 	_test_core_destroyed_emits_once()
 	_test_event_handlers_exist(audio_manager)
 	audio_manager.queue_free()
@@ -38,6 +40,10 @@ func _test_sfx_paths(audio_manager: Node) -> void:
 		&"building_destroyed": "res://assets/audio/sfx/building_destroyed.ogg",
 		&"enemy_death_small": "res://assets/audio/sfx/enemy_death_small.ogg",
 		&"enemy_death_large": "res://assets/audio/sfx/enemy_death_large.ogg",
+		&"night_start": "res://assets/audio/sfx/night_start.ogg",
+		&"wave_start": "res://assets/audio/sfx/wave_start.ogg",
+		&"wave_advance": "res://assets/audio/sfx/wave_advance.ogg",
+		&"result_defeat": "res://assets/audio/sfx/result_defeat.ogg",
 	}
 	for key_variant: Variant in expected_paths.keys():
 		var key := StringName(key_variant)
@@ -87,6 +93,12 @@ func _test_sfx_gain_policy(audio_manager: Node) -> void:
 	_expect(is_equal_approx(float(audio_manager.call("_base_sfx_linear_volume")), 0.85 * 0.85 * 1.18), "global sfx gain raises baseline volume")
 	_expect(is_equal_approx(float(audio_manager.call("_get_sfx_volume_scale", &"core_hit")), 1.35), "core hit gets warning gain")
 	_expect(is_equal_approx(float(audio_manager.call("_get_sfx_volume_scale", &"core_destroyed")), 1.15), "core destroyed gets extra gain")
+	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"night_start")) >= 1.5, "night start gets foreground gain")
+	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"wave_start")) >= 1.6, "wave start gets foreground gain")
+	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"wave_advance")) >= 1.6, "wave advance gets foreground gain")
+	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"result_defeat")) >= 1.15, "defeat result gets foreground gain")
+	_expect(float(audio_manager.call("_get_sfx_pitch_scale", &"wave_start")) > 1.0, "wave start gets sharper pitch")
+	_expect(float(audio_manager.call("_get_sfx_pitch_scale", &"wave_advance")) > 1.0, "wave advance gets sharper pitch")
 
 
 func _test_sfx_prewarm_cache(audio_manager: Node) -> void:
@@ -98,7 +110,16 @@ func _test_sfx_prewarm_cache(audio_manager: Node) -> void:
 
 
 func _test_core_destroyed_result_delay() -> void:
-	_expect(float(GameControllerScript.CORE_DESTROYED_RESULT_DELAY) >= 1.5, "core destroyed waits before result scene")
+	_expect(float(GameControllerScript.CORE_DESTROYED_RESULT_DELAY) >= 1.8, "core destroyed waits before result scene")
+	_expect(is_equal_approx(float(GameControllerScript.DEFEAT_RESULT_HIT_DELAY), 1.656), "defeat result scene aligns to hit time")
+
+
+func _test_night_transition_delay() -> void:
+	_expect(float(GameControllerScript.NIGHT_START_TRANSITION_DELAY) >= 5.0, "night start transition lets bgm fade in before waves")
+
+
+func _test_run_end_audio_delay() -> void:
+	_expect(float(GameControllerScript.RUN_END_AUDIO_DELAY) >= 1.8, "run end waits for bgm fade before result scene")
 
 
 func _test_core_destroyed_emits_once() -> void:
@@ -134,6 +155,11 @@ func _test_event_handlers_exist(audio_manager: Node) -> void:
 		"_on_core_destroyed",
 		"_on_building_destroyed",
 		"_on_enemy_died",
+		"_on_night_started",
+		"_on_night_wave_started",
+		"_on_run_ending",
+		"_play_night_start_sfx_after_click",
+		"play_detached_sfx",
 	]:
 		_expect(audio_manager.has_method(method_name), "%s handler exists" % method_name)
 

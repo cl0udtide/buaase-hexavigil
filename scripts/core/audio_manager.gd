@@ -42,11 +42,18 @@ const SFX_BUILDING_HIT := &"building_hit"
 const SFX_BUILDING_DESTROYED := &"building_destroyed"
 const SFX_ENEMY_DEATH_SMALL := &"enemy_death_small"
 const SFX_ENEMY_DEATH_LARGE := &"enemy_death_large"
+const SFX_NIGHT_START := &"night_start"
+const SFX_WAVE_START := &"wave_start"
+const SFX_WAVE_ADVANCE := &"wave_advance"
+const SFX_RESULT_DEFEAT := &"result_defeat"
 
-const FADE_SECONDS := 0.65
+const FADE_SECONDS := 1.8
+const NIGHT_START_SFX_DELAY := 0.22
+const NIGHT_START_BGM_DELAY := 1.5
 const SFX_POOL_SIZE := 8
 const SFX_GLOBAL_VOLUME_SCALE := 1.18
 const SFX_MAX_VOLUME_SCALE := 1.75
+const DETACHED_SFX_PLAYER_NAME := "DetachedResultSfxPlayer"
 const SETTINGS_PATH := "user://audio_settings.cfg"
 const SETTINGS_SECTION := "audio"
 
@@ -93,7 +100,11 @@ var sfx_paths := {
 	SFX_BUILDING_HIT: "res://assets/audio/sfx/building_hit.ogg",
 	SFX_BUILDING_DESTROYED: "res://assets/audio/sfx/building_destroyed.ogg",
 	SFX_ENEMY_DEATH_SMALL: "res://assets/audio/sfx/enemy_death_small.ogg",
-	SFX_ENEMY_DEATH_LARGE: "res://assets/audio/sfx/enemy_death_large.ogg"
+	SFX_ENEMY_DEATH_LARGE: "res://assets/audio/sfx/enemy_death_large.ogg",
+	SFX_NIGHT_START: "res://assets/audio/sfx/night_start.ogg",
+	SFX_WAVE_START: "res://assets/audio/sfx/wave_start.ogg",
+	SFX_WAVE_ADVANCE: "res://assets/audio/sfx/wave_advance.ogg",
+	SFX_RESULT_DEFEAT: "res://assets/audio/sfx/result_defeat.ogg"
 }
 
 var _bgm_player: AudioStreamPlayer
@@ -103,6 +114,7 @@ var _current_bgm_key := StringName()
 var _fade_tween: Tween
 var _stream_cache := {}
 var _last_sfx_played_msec := {}
+var _night_bgm_request_id := 0
 var sfx_cooldowns := {
 	SFX_IMPACT_PHYSICAL: 0.045,
 	SFX_IMPACT_ARTS: 0.055,
@@ -210,6 +222,30 @@ func play_sfx_stream(stream: AudioStream, pitch_scale: float = 1.0, volume_scale
 	player.play()
 
 
+func play_detached_sfx(sfx_key: StringName) -> void:
+	if _is_sfx_throttled(sfx_key):
+		return
+	var path := String(sfx_paths.get(sfx_key, ""))
+	if path.is_empty():
+		return
+	var stream := _load_stream(path)
+	if stream == null:
+		push_warning("Missing detached SFX stream for key: %s" % sfx_key)
+		return
+	var tree := get_tree()
+	if tree == null or tree.root == null:
+		play_sfx(sfx_key)
+		return
+	var player := AudioStreamPlayer.new()
+	player.name = DETACHED_SFX_PLAYER_NAME
+	player.stream = stream
+	player.pitch_scale = _get_sfx_pitch_scale(sfx_key)
+	player.volume_db = _linear_to_db(_base_sfx_linear_volume() * clampf(_get_sfx_volume_scale(sfx_key), 0.0, SFX_MAX_VOLUME_SCALE))
+	tree.root.add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
+
+
 func set_master_volume(value: float) -> void:
 	master_volume = clamp(value, 0.0, 1.0)
 	_apply_volumes()
@@ -253,6 +289,8 @@ func _bind_events() -> void:
 		return
 	event_bus.day_started.connect(_on_day_started)
 	event_bus.night_started.connect(_on_night_started)
+	event_bus.night_wave_started.connect(_on_night_wave_started)
+	event_bus.run_ending.connect(_on_run_ending)
 	event_bus.run_ended.connect(_on_run_ended)
 	event_bus.core_damaged.connect(_on_core_damaged)
 	event_bus.core_destroyed.connect(_on_core_destroyed)
@@ -356,6 +394,10 @@ func _get_sfx_pitch_scale(sfx_key: StringName) -> float:
 			return randf_range(0.94, 1.08)
 		SFX_ENEMY_DEATH_LARGE:
 			return randf_range(0.90, 1.04)
+		SFX_WAVE_START:
+			return 1.08
+		SFX_WAVE_ADVANCE:
+			return 1.10
 	return 1.0
 
 
@@ -365,6 +407,14 @@ func _get_sfx_volume_scale(sfx_key: StringName) -> float:
 			return 1.35
 		SFX_CORE_DESTROYED:
 			return 1.15
+		SFX_NIGHT_START:
+			return 1.55
+		SFX_WAVE_START:
+			return 1.68
+		SFX_WAVE_ADVANCE:
+			return 1.62
+		SFX_RESULT_DEFEAT:
+			return 1.2
 		SFX_ENEMY_DEATH_SMALL:
 			return randf_range(0.78, 0.96)
 		SFX_ENEMY_DEATH_LARGE:
@@ -373,14 +423,48 @@ func _get_sfx_volume_scale(sfx_key: StringName) -> float:
 
 
 func _on_day_started(_day: int) -> void:
+	_night_bgm_request_id += 1
 	play_day_bgm()
 
 
 func _on_night_started(day: int) -> void:
+	stop_bgm()
+	_night_bgm_request_id += 1
+	_play_night_start_sfx_after_click(_night_bgm_request_id)
+	_play_night_bgm_after_intro(day, _night_bgm_request_id)
+
+
+func _play_night_start_sfx_after_click(request_id: int) -> void:
+	if NIGHT_START_SFX_DELAY > 0.0 and get_tree() != null:
+		await get_tree().create_timer(NIGHT_START_SFX_DELAY).timeout
+	if not is_inside_tree() or request_id != _night_bgm_request_id:
+		return
+	play_sfx(SFX_NIGHT_START)
+
+
+func _play_night_bgm_after_intro(day: int, request_id: int) -> void:
+	if NIGHT_START_BGM_DELAY > 0.0 and get_tree() != null:
+		await get_tree().create_timer(NIGHT_START_BGM_DELAY).timeout
+	if not is_inside_tree() or request_id != _night_bgm_request_id:
+		return
+	var run_state = AppRefs.run_state()
+	if run_state != null and int(run_state.phase) != GameEnums.PHASE_NIGHT:
+		return
 	if NightTemplateResolver.is_boss_night(day):
 		play_boss_bgm()
 	else:
 		play_night_bgm()
+
+
+func _on_night_wave_started(wave_index: int, _wave_count: int) -> void:
+	play_sfx(SFX_WAVE_START if wave_index <= 0 else SFX_WAVE_ADVANCE)
+
+
+func _on_run_ending(win: bool, _delay_seconds: float) -> void:
+	_night_bgm_request_id += 1
+	stop_bgm()
+	if not win:
+		play_detached_sfx(SFX_RESULT_DEFEAT)
 
 
 func _on_run_ended(_win: bool) -> void:
