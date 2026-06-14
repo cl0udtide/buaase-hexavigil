@@ -7,6 +7,7 @@ extends Control
 
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
+const UiFrameSpec = preload("res://scripts/ui/ui_frame_spec.gd")
 const StoryLib = preload("res://scripts/story/story_library.gd")
 
 signal dialog_started
@@ -525,6 +526,20 @@ func _configure_layout_nodes() -> void:
 	# 立绘缩小（sprite 仅 128px，避免高倍放大糊）并下移，使下半身压在对话框之下。
 	_set_portrait_rect(_left_portrait, 0.05, 0.27)
 	_set_portrait_rect(_right_portrait, 0.73, 0.95)
+	# 对话框几何：保持宽（盖住立绘下半身），压低高度去掉空白，下沿贴近屏底。
+	_text_box.offset_left = 150.0
+	_text_box.offset_right = -150.0
+	_text_box.offset_top = -188.0
+	_text_box.offset_bottom = -34.0
+	var text_margin := _text_box.get_node_or_null("TextMargin") as MarginContainer
+	if text_margin != null:
+		text_margin.add_theme_constant_override("margin_left", 40)
+		text_margin.add_theme_constant_override("margin_right", 40)
+		text_margin.add_theme_constant_override("margin_top", 18)
+		text_margin.add_theme_constant_override("margin_bottom", 16)
+		var vbox := text_margin.get_node_or_null("VBoxContainer") as VBoxContainer
+		if vbox != null:
+			vbox.add_theme_constant_override("separation", 10)
 	_text_box.mouse_filter = Control.MOUSE_FILTER_STOP
 	_text_box.gui_input.connect(_on_text_box_gui_input)
 	_set_descendant_mouse_filter(_text_box, Control.MOUSE_FILTER_IGNORE)
@@ -555,14 +570,27 @@ func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> vo
 
 
 func _apply_style() -> void:
-	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT_ON_PARCHMENT)
-	_speaker_label.add_theme_font_size_override("font_size", 22)
-	GameUiStyle.center_label_text(_speaker_label)
-	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT_INVERTED)
-	_text_label.add_theme_font_size_override("normal_font_size", 23)
-	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
-	_prompt_label.add_theme_font_size_override("font_size", 15)
-	_bubble.add_theme_stylebox_override("panel", GameUiStyle.panel(GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, 1.0, 10.0))
+	# 对话框 / 名牌 / 气泡全部复用游戏现成 UI 框，与 HUD 风格一致：
+	#   对话框=事件弹窗框，名牌=干员标题条，气泡=地图弹窗框。
+	_text_box.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.DETAIL_SECTION, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, false))
+
+	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.OPERATOR_TITLE_STRIP, GameUiStyle.BG_CARD, GameUiStyle.ACCENT))
+	_speaker_plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_speaker_plate.custom_minimum_size = Vector2.ZERO
+	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
+	_speaker_label.add_theme_font_size_override("font_size", 18)
+	_speaker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_speaker_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	_speaker_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_speaker_label.custom_minimum_size = Vector2.ZERO
+
+	_text_label.add_theme_color_override("default_color", GameUiStyle.TEXT)
+	_text_label.add_theme_font_size_override("normal_font_size", 24)
+	_text_label.add_theme_constant_override("line_separation", 6)
+	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
+	_prompt_label.add_theme_font_size_override("font_size", 14)
+
+	_bubble.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.MAP_POPUP, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT))
 	_bubble_speaker.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_bubble_speaker.add_theme_font_size_override("font_size", 16)
 	_bubble_label.add_theme_color_override("default_color", GameUiStyle.TEXT)
