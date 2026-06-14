@@ -578,7 +578,7 @@ func _apply_style() -> void:
 	_speaker_plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_speaker_plate.custom_minimum_size = Vector2.ZERO
 	_speaker_label.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_speaker_label.add_theme_font_size_override("font_size", 18)
+	_speaker_label.add_theme_font_size_override("font_size", 26)
 	_speaker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_speaker_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	_speaker_label.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -590,7 +590,7 @@ func _apply_style() -> void:
 	_prompt_label.add_theme_color_override("font_color", GameUiStyle.TEXT_DIM)
 	_prompt_label.add_theme_font_size_override("font_size", 14)
 
-	_bubble.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.MAP_POPUP, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT))
+	_bubble.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.DETAIL_SECTION, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT))
 	_bubble_speaker.add_theme_color_override("font_color", GameUiStyle.ACCENT)
 	_bubble_speaker.add_theme_font_size_override("font_size", 16)
 	_bubble_label.add_theme_color_override("default_color", GameUiStyle.TEXT)
