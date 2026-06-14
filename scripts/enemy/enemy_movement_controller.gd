@@ -17,20 +17,14 @@ const BLOCK_SPREAD_DISTANCE := CELL_SIZE * 0.22
 const BLOCK_SNAP_SPEED := CELL_SIZE * 6.0
 const CROWD_SPREAD_DISTANCE := CELL_SIZE * 0.18
 const CROWD_SNAP_SPEED := CELL_SIZE * 5.0
-# 横向相位：黄金比低差异序列，相邻 runtime_id 错开左右翼。
+# 相位：黄金比低差异序列，相邻 runtime_id 错开 → 同代价分流时占不同平行路。
 const PHASE_GOLDEN := 0.6180339887498949
-# 正面半宽 = clamp(K*sqrt(本波怪量), 1, CAP)（平衡占位）。
-const HALF_WIDTH_K := 0.6
-const HALF_WIDTH_CAP := 8
-const INVALID_CELL := Vector2i(-9999, -9999)
 
 var _owner_actor: Node2D = null
 var _blocked_by := -1
 var _base_path_mode: StringName = PATH_MODE_NORMAL
 var _path_mode: StringName = PATH_MODE_NORMAL
 var _lateral_phase: float = 0.0
-# 上一格：作为软避让传给 next_step，避免被梯度拽回来上一格而左右死循环。
-var _prev_cell: Vector2i = INVALID_CELL
 var _block_slot := 0
 var _block_slot_count := 1
 var _block_anchor_dir := Vector2.ZERO
@@ -51,7 +45,6 @@ func reset() -> void:
 	_block_anchor_dir = Vector2.ZERO
 	_crowd_offset = Vector2.ZERO
 	_external_move_speed_multiplier = 1.0
-	_prev_cell = INVALID_CELL
 	refresh_path_mode()
 
 
@@ -125,8 +118,6 @@ func process_path_movement(delta: float) -> bool:
 	var target_pos: Vector2 = map_manager.cell_to_world(step_cell) + _crowd_offset
 	_owner_actor.global_position = _owner_actor.global_position.move_toward(target_pos, get_effective_move_speed() * CELL_SIZE * delta)
 	if _owner_actor.global_position.distance_to(target_pos) < 2.0:
-		if step_cell != _owner_actor.current_cell:
-			_prev_cell = _owner_actor.current_cell
 		_owner_actor.current_cell = step_cell
 		return has_arrived()
 	return false
@@ -241,12 +232,11 @@ func _next_step_cell() -> Vector2i:
 	var path_service := _path_service()
 	if path_service == null:
 		return _owner_actor.current_cell
-	return FlowField.next_step(
+	return FlowField.descend_step(
 		path_service.get_dist_map(_path_mode),
 		path_service.get_front_map(_path_mode),
 		_owner_actor.current_cell,
 		_lateral_phase,
-		_half_width(),
 		_extra_blocked()
 	)
 
@@ -272,17 +262,8 @@ func _straight_step_toward_core() -> Vector2i:
 	return cur
 
 
-func _half_width() -> int:
-	var count := 1
-	var enemy_manager: Node = _owner_actor.get_enemy_manager() if _owner_actor != null else null
-	if enemy_manager != null and enemy_manager.has_method("get_alive_enemy_count"):
-		count = max(int(enemy_manager.get_alive_enemy_count()), 1)
-	return clampi(int(round(HALF_WIDTH_K * sqrt(float(count)))), 1, HALF_WIDTH_CAP)
-
-
-## 怪应"能绕则绕"的占用格 = 已部署干员所在格。开阔处绕行、窄口无路则照走进去接敌
-## （软避让，见 FlowField.next_step 第 5 步）。被某干员阻挡中的怪走 process_blocked_motion，
-## 不经此处，故无需排除自己的阻挡者。
+## 怪应"能绕则绕"的占用格 = 已部署干员所在格。descend_step 优先未占的下行邻、
+## 窄口无路则照走进去接敌。被阻挡中的怪走 process_blocked_motion，不经此处。
 func _extra_blocked() -> Dictionary:
 	var blocked: Dictionary = {}
 	var unit_manager: Node = _owner_actor.get_unit_manager() if _owner_actor != null else null
@@ -291,8 +272,6 @@ func _extra_blocked() -> Dictionary:
 	for unit in unit_manager.get_all_units():
 		if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
 			blocked[unit.get_current_cell()] = true
-	if _prev_cell != INVALID_CELL:
-		blocked[_prev_cell] = true
 	return blocked
 
 
