@@ -1,11 +1,12 @@
 [gd_scene format=3 uid="uid://c0oceoqeshmf3"]
 
 [ext_resource type="Script" uid="uid://byr08164d6piu" path="res://scripts/ui/event_panel.gd" id="1_0pxnh"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
+[ext_resource type="StyleBox" uid="uid://cnr68go6uir0x" path="res://assets/ui/styles/frame_detail_section_base.tres" id="3_detail_section"]
 [ext_resource type="PackedScene" uid="uid://xlvp0kndb85m" path="res://scenes/ui/EventChoiceButton.tscn" id="4_choice_button"]
-[ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="5_close_button_base"]
-[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="6_button_state_overlay"]
+[ext_resource type="StyleBox" uid="uid://kb88apl8fpb0" path="res://assets/ui/styles/frame_button_base.tres" id="5_close_button_base"]
+[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="6_button_state_overlay"]
 [ext_resource type="Texture2D" uid="uid://ccsp1iu6rwbn2" path="res://assets/ui/generated/icon_close.png" id="7_icon_close"]
+[ext_resource type="Script" path="res://scripts/ui/cut_corner_texture_rect.gd" id="8_cut_texture"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_event_panel_base.tres" id="frame_event_panel_base_540x260"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_button_hover"]
@@ -23,10 +24,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.22, 0.42, 0.46, 0.55)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
 corner_detail = 1
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_illustration_cut_center"]
@@ -36,10 +37,10 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.82, 0.62, 0.24, 0.18)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
 corner_detail = 1
 
 [node name="EventPanel" type="PanelContainer" unique_id=239470582]
@@ -163,29 +164,37 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_illustration_cut_fill")
 
-[node name="EventImage" type="TextureRect" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=311226190]
+[node name="EventImage" type="Control" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=311226190]
 unique_name_in_owner = true
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 3.0
+offset_right = -1.0
+offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-expand_mode = 1
-stretch_mode = 6
+script = ExtResource("8_cut_texture")
+cut_size = 7.0
 
 [node name="IllustrationCenter" type="PanelContainer" parent="ContentMargin/MainVBox/BodyRow/IllustrationCard/Illustration" unique_id=1123440679]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

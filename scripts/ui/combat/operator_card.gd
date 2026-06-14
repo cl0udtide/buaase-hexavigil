@@ -26,6 +26,7 @@ var _press_start_mouse := Vector2.ZERO
 var _drag_started := false
 var _operator_info: Dictionary = {}
 var _unit_cfg: Dictionary = {}
+var _overlay_rect_margins: Dictionary = {}
 var _class_icon_label: Label
 var _cooldown_icon_texture: TextureRect
 var _covenant_badge: Label
@@ -81,6 +82,7 @@ func _ready() -> void:
 	_add_label_shadow(_cd_stat_label)
 	_prepare_class_icon_texture()
 	_prepare_cooldown_icon_texture()
+	_cache_overlay_rect_margins()
 	_sync_state_overlays()
 	_apply_density()
 	_apply_card_style()
@@ -271,14 +273,12 @@ func _sync_card_rects() -> void:
 	var card_rect_controls: Array[Control] = [
 		_card_base,
 		_card_content,
-		_selected_overlay,
-		_deployed_overlay,
-		_cooldown_overlay,
-		_cooldown_selected_overlay,
 		_cooldown_top_content,
 	]
 	for control: Control in card_rect_controls:
 		_place_card_rect(control, origin, card_size)
+	for control: Control in [_selected_overlay, _deployed_overlay, _cooldown_overlay, _cooldown_selected_overlay]:
+		_place_overlay_rect(control, origin, card_size)
 
 
 func _place_card_rect(control: Control, origin: Vector2, card_size: Vector2) -> void:
@@ -288,6 +288,37 @@ func _place_card_rect(control: Control, origin: Vector2, card_size: Vector2) -> 
 	control.position = origin
 	control.size = card_size
 	control.custom_minimum_size = card_size
+
+
+func _cache_overlay_rect_margins() -> void:
+	var base_size: Vector2 = custom_minimum_size
+	if base_size == Vector2.ZERO:
+		base_size = UiTokens.OPERATOR_CARD_SIZE
+	_overlay_rect_margins.clear()
+	for control: Control in [_selected_overlay, _deployed_overlay, _cooldown_overlay, _cooldown_selected_overlay]:
+		if control == null:
+			continue
+		var margins := Vector4(
+			control.offset_left,
+			control.offset_top,
+			base_size.x - control.offset_right,
+			base_size.y - control.offset_bottom
+		)
+		_overlay_rect_margins[control] = margins
+
+
+func _place_overlay_rect(control: Control, origin: Vector2, card_size: Vector2) -> void:
+	if control == null:
+		return
+	var raw_margins: Variant = _overlay_rect_margins.get(control, Vector4.ZERO)
+	var margins: Vector4 = raw_margins if raw_margins is Vector4 else Vector4.ZERO
+	control.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	control.position = origin + Vector2(margins.x, margins.y)
+	control.size = Vector2(
+		maxf(0.0, card_size.x - margins.x - margins.z),
+		maxf(0.0, card_size.y - margins.y - margins.w)
+	)
+	control.custom_minimum_size = control.size
 
 
 func _state_label_text() -> String:

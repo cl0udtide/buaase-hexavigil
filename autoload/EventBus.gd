@@ -115,6 +115,8 @@ signal blessing_choices_ready(choice_ids: Array[StringName])
 # slot ∈ {covenant 盟约导向 / economy 经济 / random 随机}。UI 据此标注每张卡的来源。
 signal blessing_choices_with_sources_ready(entries: Array)
 @warning_ignore("unused_signal")
+signal blessing_panel_shown()
+@warning_ignore("unused_signal")
 signal audio_cue_requested(cue_key: StringName)
 @warning_ignore("unused_signal")
 signal core_destroyed()

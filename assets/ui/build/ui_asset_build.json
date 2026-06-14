@@ -912,8 +912,8 @@
         80
       ],
       "base_size": [
-        243,
-        235
+        223,
+        217
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -3077,8 +3077,8 @@
         80
       ],
       "base_size": [
-        263,
-        269
+        244,
+        251
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -3098,8 +3098,8 @@
         80
       ],
       "base_size": [
-        282,
-        282
+        260,
+        262
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -3118,8 +3118,8 @@
         80
       ],
       "base_size": [
-        287,
-        288
+        267,
+        268
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -3779,6 +3779,134 @@
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
       "interpolation": "nearest"
+    },
+    "icon_relic_event_tasty": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_tasty.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_tasty.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_good_wine": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_good_wine.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_good_wine.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_sword_human": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_sword_human.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_sword_human.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_sword_arts": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_sword_arts.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_sword_arts.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_sword_divine": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_sword_divine.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_sword_divine.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_arrogant": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_arrogant.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_arrogant.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_grieving": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_grieving.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_grieving.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
+    },
+    "icon_relic_event_penguin_bandage": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_event_penguin_bandage.png",
+      "output_png": "res://assets/ui/generated/icon_relic_event_penguin_bandage.png",
+      "target_size": [
+        256,
+        256
+      ],
+      "base_size": [
+        256,
+        256
+      ],
+      "pre_scale": 1,
+      "max_pre_scale": 1,
+      "interpolation": "bilinear"
     }
   }
 }

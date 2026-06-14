@@ -166,3 +166,24 @@ Chroma-key 要求：
 
 这些是遗物卡中的小物件图标。每个图标是独立物件，不带 UI 边框。风格：清新战术奇幻、低饱和、轻微工艺感、小尺寸仍然清楚。图标主体要居中，留足 #FF00FF 间距，边缘干净。
 ```
+
+## 7. 事件遗物图标补充批次
+
+保存源图为：`source_sheet_40_relic_event_icons.png`
+
+裁剪顺序：
+
+1. `icon_relic_event_tasty`：好吃的，精致餐盘/犒赏食物。
+2. `icon_relic_event_good_wine`：好酒，酒瓶与酒杯。
+3. `icon_relic_event_sword_human`：人权剑·奥特尔，冷钢人类王权剑。
+4. `icon_relic_event_sword_arts`：异权剑·赫格利，带法术能量的异色剑。
+5. `icon_relic_event_sword_divine`：神权剑·提尔芬，神圣金色剑。
+6. `icon_relic_event_arrogant`：已成骄兵，傲慢破裂军旗或高举头盔。
+7. `icon_relic_event_grieving`：已成哀兵，哀悼面具或泪痕战旗。
+8. `icon_relic_event_penguin_bandage`：企鹅创可贴，可爱的企鹅形创可贴或绷带。
+
+```text
+请生成一张遗物图标资产源图，纯色背景 #FF00FF，包含 8 个图标，按裁剪顺序排列。不要文字、数字、外框或底板。
+
+这些是事件专属遗物卡中的小物件图标。每个图标是独立物件，不带 UI 边框。风格：清新战术奇幻、低饱和、轻微工艺感、小尺寸仍然清楚。图标主体要居中，留足 #FF00FF 间距，边缘干净。
+```

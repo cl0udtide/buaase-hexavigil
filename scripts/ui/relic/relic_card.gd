@@ -23,7 +23,6 @@ var _slot_source := StringName()
 @onready var _common_backplate: Panel = %CommonBackplate
 @onready var _uncommon_backplate: Panel = %UncommonBackplate
 @onready var _rare_backplate: Panel = %RareBackplate
-@onready var _icon_frame: Panel = %IconFrame
 @onready var _hover_overlay: Panel = %HoverOverlay
 @onready var _name_label: Label = %NameLabel
 @onready var _rarity_label: Label = %RarityLabel

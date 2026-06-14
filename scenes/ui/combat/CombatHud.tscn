@@ -1649,7 +1649,7 @@ theme_override_constants/separation = 10
 [node name="InteractionLayer" type="Control" parent="." unique_id=185512381]
 unique_name_in_owner = true
 visible = false
-z_index = 30
+z_index = 50
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2266,7 +2266,6 @@ script = ExtResource("button_state_overlay")
 
 [node name="CheatOpenButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=2016619720]
 unique_name_in_owner = true
-visible = false
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3

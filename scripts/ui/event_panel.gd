@@ -2,6 +2,7 @@ extends PanelContainer
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
+const CutCornerTextureRect = preload("res://scripts/ui/cut_corner_texture_rect.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 # 统一页面模型：每个事件页 = 文案 + 插图 + 选项。
@@ -23,7 +24,8 @@ var _base_desc_text := ""
 @onready var _choice_list: VBoxContainer = %ChoiceList
 @onready var _choice_button_template: Button = %ChoiceButtonTemplate
 @onready var _illustration: Control = %Illustration
-@onready var _event_image: TextureRect = %EventImage
+@onready var _event_image: CutCornerTextureRect = %EventImage
+@onready var _illustration_center: Control = %IllustrationCenter
 @onready var _event_glyph: Label = %EventGlyph
 
 
@@ -292,12 +294,16 @@ func _apply_event_image(event_cfg: Dictionary) -> void:
 		if _event_image != null:
 			_event_image.texture = texture
 			_event_image.visible = true
+		if _illustration_center != null:
+			_illustration_center.visible = false
 		if _event_glyph != null:
 			_event_glyph.visible = false
 	else:
 		if _event_image != null:
 			_event_image.texture = null
 			_event_image.visible = false
+		if _illustration_center != null:
+			_illustration_center.visible = true
 		if _event_glyph != null:
 			_event_glyph.visible = true
 

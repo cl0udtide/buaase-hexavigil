@@ -1,6 +1,6 @@
-[gd_resource type="StyleBoxTexture" format=3]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://ccmku2htlcgfc"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_result_panel_base.png" id="1_texture"]
+[ext_resource type="Texture2D" uid="uid://c508hnvmn2s1v" path="res://assets/ui/generated/frame_result_panel_base.png" id="1_texture"]
 
 [resource]
 content_margin_left = 27.4717
@@ -12,4 +12,3 @@ texture_margin_left = 62.7925
 texture_margin_top = 147.2782
 texture_margin_right = 62.7925
 texture_margin_bottom = 147.2782
-draw_center = true

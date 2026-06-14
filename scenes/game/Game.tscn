@@ -187,6 +187,7 @@ z_index = 110
 [node name="FloatingLayer" type="Control" parent="UI" unique_id=808469509]
 unique_name_in_owner = true
 visible = false
+z_index = 30
 layout_mode = 3
 anchors_preset = 0
 offset_right = 1920.0

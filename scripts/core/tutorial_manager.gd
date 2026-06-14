@@ -13,6 +13,7 @@ const STEP_WAVE := &"wave"
 const STEP_NIGHT := &"night"
 const STEP_DEPLOY := &"deploy"
 const STEP_SKILL := &"skill"
+const STEP_DEFENSE_CLEAR := &"defense_clear"
 const STEP_BLESSING := &"blessing"
 const STEP_DONE := &"done"
 const STORY_FINISH_START_DELAY := 0.22
@@ -29,6 +30,7 @@ var _steps: Array[Dictionary] = [
 	{"id": STEP_WAVE, "title": "查看今晚敌情", "speaker": "干员 A", "portrait": "unit:blaze", "body": "入夜前，看一眼今晚的敌情。敌群、路线和出现方向都会影响布防；木墙改变道路时，路线预览也会立刻变化。", "hint": "", "wait": false},
 	{"id": STEP_NIGHT, "title": "进入夜晚", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "太阳快下去了。master，点击左下角的进入黑夜按钮，第一批黑潮造物很快就会来了。", "hint": "", "wait": true},
 	{"id": STEP_SKILL, "title": "释放技能", "speaker": "干员 A", "portrait": "unit:blaze", "body": "战斗中，干员会积累技力。选中已部署干员，可以查看他的状态和技能；技力准备好时，尝试释放一次技能。", "hint": "", "wait": true},
+	{"id": STEP_DEFENSE_CLEAR, "title": "守住核心", "speaker": "干员 A", "portrait": "unit:blaze", "body": "很好，技能已经接入战线。接下来稳住防守，等这一夜的黑潮被清理完；核心防守成功后，地脉回响会凝成可选择的遗物。", "hint": "", "wait": true},
 	{"id": STEP_BLESSING, "title": "选择遗物", "speaker": "干员 B", "portrait": "unit:ceobe", "body": "守住了……核心的波动也稳定下来了。它好像凝出了几份地脉回响，这些遗物会影响接下来的每一天。master，选择任意一件。", "hint": "", "wait": true},
 	{"id": STEP_DONE, "title": "教程完成", "speaker": "干员 A", "portrait": "unit:blaze", "body": "第一天的循环已经走完：白天扩张、采集、建造和招募，夜晚部署、迎敌并守住核心。master，正式行动开始吧。", "hint": "", "wait": false}
 ]
@@ -42,6 +44,7 @@ var _built_once := false
 var _bought_once := false
 var _deployed_once := false
 var _skill_cast_once := false
+var _blessing_panel_shown_once := false
 var _blessing_chosen_once := false
 
 @onready var _overlay = get_node_or_null("../../UI/TutorialOverlay")
@@ -60,6 +63,7 @@ func _ready() -> void:
 		event_bus.night_started.connect(_on_night_started)
 		event_bus.unit_deployed.connect(_on_unit_deployed)
 		event_bus.unit_skill_cast.connect(_on_unit_skill_cast)
+		event_bus.blessing_panel_shown.connect(_on_blessing_panel_shown)
 		event_bus.blessing_chosen.connect(_on_blessing_chosen)
 	if _overlay != null:
 		_overlay.next_requested.connect(_on_next_requested)
@@ -201,6 +205,9 @@ func _try_complete_current_step() -> void:
 		STEP_SKILL:
 			if _skill_cast_once:
 				_complete_current_waiting_step()
+		STEP_DEFENSE_CLEAR:
+			if _blessing_panel_shown_once:
+				_complete_current_waiting_step()
 		STEP_BLESSING:
 			if _blessing_chosen_once:
 				_complete_current_waiting_step()
@@ -256,11 +263,11 @@ func _get_focus_cells(step_id: StringName) -> Array[Vector2i]:
 
 
 func _should_skip_map_focus(step_id: StringName) -> bool:
-	return step_id == STEP_BUILD or step_id == STEP_DEPLOY or step_id == STEP_SKILL or step_id == STEP_BLESSING or step_id == STEP_WAVE
+	return step_id == STEP_BUILD or step_id == STEP_DEPLOY or step_id == STEP_SKILL or step_id == STEP_DEFENSE_CLEAR or step_id == STEP_BLESSING or step_id == STEP_WAVE
 
 
 func _get_overlay_position(step_id: StringName) -> StringName:
-	if step_id == STEP_DEPLOY or step_id == STEP_NIGHT or step_id == STEP_SKILL or step_id == STEP_BLESSING:
+	if step_id == STEP_DEPLOY or step_id == STEP_NIGHT or step_id == STEP_SKILL or step_id == STEP_DEFENSE_CLEAR or step_id == STEP_BLESSING:
 		return &"top_center"
 	return &"bottom_center"
 
@@ -352,6 +359,11 @@ func _on_unit_deployed(_unit_runtime_id: int, _operator_key: StringName, _unit_i
 
 func _on_unit_skill_cast(_unit_runtime_id: int, _unit_id: StringName) -> void:
 	_skill_cast_once = true
+	_try_complete_current_step()
+
+
+func _on_blessing_panel_shown() -> void:
+	_blessing_panel_shown_once = true
 	_try_complete_current_step()
 
 

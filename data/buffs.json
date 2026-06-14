@@ -581,7 +581,8 @@
     "category": "mechanic",
     "event_only": true,
     "effect_type": "unit_hp_percent",
-    "effect_value": 0.3
+    "effect_value": 0.3,
+    "icon_path": "res://assets/ui/generated/icon_relic_event_tasty.png"
   },
   {
     "id": "relic_event_good_wine",
@@ -593,7 +594,8 @@
     "effects": [
       { "effect_type": "unit_atk_percent", "effect_value": 0.5 },
       { "effect_type": "unit_force_auto_skill", "effect_value": 1 }
-    ]
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_event_good_wine.png"
   },
   {
     "id": "relic_event_sword_human",
@@ -603,7 +605,8 @@
     "category": "mechanic",
     "event_only": true,
     "effect_type": "unit_attack_speed_add",
-    "effect_value": 30
+    "effect_value": 30,
+    "icon_path": "res://assets/ui/generated/icon_relic_event_sword_human.png"
   },
   {
     "id": "relic_event_sword_arts",
@@ -614,7 +617,8 @@
     "event_only": true,
     "effect_type": "unit_res_ignore_flat",
     "effect_value": 30,
-    "damage_type_filter": "magic"
+    "damage_type_filter": "magic",
+    "icon_path": "res://assets/ui/generated/icon_relic_event_sword_arts.png"
   },
   {
     "id": "relic_event_sword_divine",
@@ -624,7 +628,8 @@
     "category": "mechanic",
     "event_only": true,
     "effect_type": "unit_attack_true_damage_percent",
-    "effect_value": 0.2
+    "effect_value": 0.2,
+    "icon_path": "res://assets/ui/generated/icon_relic_event_sword_divine.png"
   },
   {
     "id": "relic_event_arrogant",
@@ -636,7 +641,8 @@
     "effects": [
       { "effect_type": "core_loss_ratio_effect", "target_effect_type": "enemy_def_percent", "effect_value": -1.0 },
       { "effect_type": "core_loss_ratio_effect", "target_effect_type": "enemy_res_percent", "effect_value": -1.0 }
-    ]
+    ],
+    "icon_path": "res://assets/ui/generated/icon_relic_event_arrogant.png"
   },
   {
     "id": "relic_event_grieving",
@@ -647,7 +653,8 @@
     "event_only": true,
     "effect_type": "core_loss_ratio_effect",
     "target_effect_type": "unit_atk_percent",
-    "effect_value": 1.0
+    "effect_value": 1.0,
+    "icon_path": "res://assets/ui/generated/icon_relic_event_grieving.png"
   },
   {
     "id": "relic_event_penguin_bandage",
@@ -658,6 +665,7 @@
     "event_only": true,
     "effect_type": "boss_skip_second_phase",
     "effect_value": 1,
-    "enemy_id_filter": "coucou_penguin"
+    "enemy_id_filter": "coucou_penguin",
+    "icon_path": "res://assets/ui/generated/icon_relic_event_penguin_bandage.png"
   }
 ]

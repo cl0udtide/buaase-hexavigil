@@ -186,7 +186,7 @@ func receive_damage(value: int, damage_type: int, defense_ignore: float = 0.0, s
 	if damage_type == GameEnums.DAMAGE_PHYSICAL:
 		final_damage = CombatMath.calc_physical_damage(value, int(round(float(_get_effective_defense()) * (1.0 - ignore))))
 	elif damage_type == GameEnums.DAMAGE_MAGIC:
-		var eff_res := max(int(round(float(_get_effective_resistance()) * (1.0 - ignore))) - max(res_ignore_flat, 0), 0)
+		var eff_res: int = max(int(round(float(_get_effective_resistance()) * (1.0 - ignore))) - max(res_ignore_flat, 0), 0)
 		final_damage = CombatMath.calc_magic_damage(value, eff_res)
 	final_damage = max(int(round(float(final_damage) * _get_vulnerability_multiplier(damage_type))), 0)
 	var run_state = AppRefs.run_state()

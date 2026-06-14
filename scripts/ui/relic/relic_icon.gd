@@ -13,7 +13,6 @@ var _cfg: Dictionary = {}
 @onready var _common_backplate: Panel = %CommonBackplate
 @onready var _uncommon_backplate: Panel = %UncommonBackplate
 @onready var _rare_backplate: Panel = %RareBackplate
-@onready var _icon_frame: Panel = %IconFrame
 
 
 func _ready() -> void:
@@ -31,7 +30,6 @@ func configure(new_buff_id: StringName, cfg: Dictionary, _highlighted: bool = fa
 
 
 func _apply_config() -> void:
-	var rarity := int(_cfg.get("rarity", 1))
 	var texture := UiArtRegistry.get_icon_texture(_cfg)
 	_icon_texture.texture = texture
 	_icon_texture.visible = texture != null
