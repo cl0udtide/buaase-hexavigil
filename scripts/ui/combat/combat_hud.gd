@@ -1516,7 +1516,7 @@ func _refresh_deploy_deck_scroll_content() -> void:
 	if visible_card_count > 1:
 		card_width += separation * float(visible_card_count - 1)
 	if _deck_panel != null:
-		var deck_visible := visible_card_count > 0
+		var deck_visible := not _cards_by_operator_key.is_empty()
 		_deck_panel.visible = deck_visible
 		if _deck_filter_bar != null:
 			_deck_filter_bar.visible = deck_visible
