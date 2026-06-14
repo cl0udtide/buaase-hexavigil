@@ -572,7 +572,7 @@ func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> vo
 func _apply_style() -> void:
 	# 对话框 / 名牌 / 气泡全部复用游戏现成 UI 框，与 HUD 风格一致：
 	#   对话框=事件弹窗框，名牌=干员标题条，气泡=地图弹窗框。
-	_text_box.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.MAP_POPUP, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, false))
+	_text_box.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.RIGHT_DETAIL_SIDEBAR, GameUiStyle.BG_GLASS, GameUiStyle.STROKE_SOFT, false))
 
 	_speaker_plate.add_theme_stylebox_override("panel", GameUiStyle.frame_box(UiFrameSpec.OPERATOR_TITLE_STRIP, GameUiStyle.BG_CARD, GameUiStyle.ACCENT))
 	_speaker_plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
