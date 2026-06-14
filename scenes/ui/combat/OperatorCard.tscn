@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://c7jldlop83igt"]
 
 [ext_resource type="Script" uid="uid://dvngnxtdahi02" path="res://scripts/ui/combat/operator_card.gd" id="1_hry6b"]
-[ext_resource type="StyleBox" uid="uid://do2ok15hwtd8c" path="res://assets/ui/styles/frame_operator_card_base.tres" id="frame_operator_card_base_164x184"]
-[ext_resource type="StyleBox" uid="uid://b6q7mcn4iywde" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="frame_operator_stat_row_132x30"]
-[ext_resource type="StyleBox" uid="uid://csdhjbtdi6o1v" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="frame_operator_title_strip_132x42"]
+[ext_resource type="StyleBox" uid="uid://btwqvi0wt4mrb" path="res://assets/ui/styles/frame_operator_card_base.tres" id="frame_operator_card_base_164x184"]
+[ext_resource type="StyleBox" uid="uid://dukipy1ahcgru" path="res://assets/ui/styles/frame_operator_stat_row.tres" id="frame_operator_stat_row_132x30"]
+[ext_resource type="StyleBox" uid="uid://bggc2lijwg0o7" path="res://assets/ui/styles/frame_operator_title_strip.tres" id="frame_operator_title_strip_132x42"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover_overlay"]
 bg_color = Color(1, 0.93, 0.7, 0.08)
@@ -45,8 +45,8 @@ theme_override_styles/panel = ExtResource("frame_operator_card_base_164x184")
 
 [node name="CardContent" type="MarginContainer" parent="." unique_id=1076543747]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(164, 184)
 z_index = 5
+custom_minimum_size = Vector2(164, 184)
 layout_mode = 0
 offset_right = 164.0
 offset_bottom = 184.0
@@ -203,8 +203,10 @@ unique_name_in_owner = true
 visible = false
 z_index = 8
 layout_mode = 0
-offset_right = 164.0
-offset_bottom = 184.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = 157.0
+offset_bottom = 177.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hover_overlay")
 
@@ -213,8 +215,10 @@ unique_name_in_owner = true
 visible = false
 z_index = 2
 layout_mode = 0
-offset_right = 164.0
-offset_bottom = 184.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = 157.0
+offset_bottom = 177.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_deployed_overlay")
 
@@ -223,8 +227,10 @@ unique_name_in_owner = true
 visible = false
 z_index = 10
 layout_mode = 0
-offset_right = 164.0
-offset_bottom = 184.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = 157.0
+offset_bottom = 177.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_cooldown_overlay")
 
@@ -233,8 +239,10 @@ unique_name_in_owner = true
 visible = false
 z_index = 11
 layout_mode = 0
-offset_right = 164.0
-offset_bottom = 184.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = 157.0
+offset_bottom = 177.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_cooldown_overlay")
 

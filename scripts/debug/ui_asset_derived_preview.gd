@@ -489,14 +489,15 @@ func _asset_summary(asset: Dictionary) -> String:
 	var actual_target := _actual_target_size(asset)
 	var config_target := _array_size(asset.get("target_size", []))
 	var target_label := "%.0fx%.0f actual" % [actual_target.x, actual_target.y] if actual_target != Vector2.ZERO else "%.0fx%.0f config" % [config_target.x, config_target.y]
+	var kind := str(asset.get("kind", ""))
 	return "%s  source/base %.0fx%.0f  target %s  scale %s  pre_scale %s  interpolation %s" % [
-		String(asset.get("kind", "")),
+		kind,
 		base.x,
 		base.y,
 		target_label,
-		"ninepatch_preserve" if String(asset.get("kind", "")) == "stylebox_texture" else "actual_size",
-		String(asset.get("pre_scale", "")),
-		String(asset.get("interpolation", "")),
+		"ninepatch_preserve" if kind == "stylebox_texture" else "actual_size",
+		str(asset.get("pre_scale", "")),
+		str(asset.get("interpolation", "")),
 	]
 
 

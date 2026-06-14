@@ -32,6 +32,7 @@ func show_choices_with_sources(entries: Array) -> void:
 	_last_sources_frame = Engine.get_process_frames()
 	_set_modal_layer_visible(true)
 	visible = true
+	_emit_panel_shown()
 	_clear_choices()
 	var data_repo = AppRefs.data_repo()
 	for raw_entry: Variant in entries:
@@ -64,6 +65,7 @@ func show_choices(choice_ids: Array[StringName]) -> void:
 		return
 	_set_modal_layer_visible(true)
 	visible = true
+	_emit_panel_shown()
 	_clear_choices()
 	var data_repo = AppRefs.data_repo()
 	for buff_id in choice_ids:
@@ -111,6 +113,12 @@ func _make_choice_card() -> Control:
 		return null
 	card.visible = true
 	return card
+
+
+func _emit_panel_shown() -> void:
+	var event_bus = AppRefs.event_bus()
+	if event_bus != null:
+		event_bus.blessing_panel_shown.emit()
 
 
 func _set_modal_layer_visible(value: bool) -> void:

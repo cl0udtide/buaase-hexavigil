@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://cgwyuojbbko8v" path="res://assets/ui/generated/icon_retreat.png" id="22_iconretreat"]
 [ext_resource type="StyleBox" uid="uid://0u6xyvkwmtso" path="res://assets/ui/styles/bar_progress_fill_hp.tres" id="bar_progress_fill_hp"]
 [ext_resource type="StyleBox" uid="uid://i8yl57jr0gnd" path="res://assets/ui/styles/bar_progress_fill_sp.tres" id="bar_progress_fill_sp"]
-[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://kb88apl8fpb0" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base"]
 [ext_resource type="StyleBox" uid="uid://cbf8j75m1eeg6" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="frame_button_danger_overlay_344x44"]
 [ext_resource type="StyleBox" uid="uid://kl122ddpky58" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_344x60"]
@@ -499,7 +499,7 @@ theme_override_constants/separation = -6
 
 [node name="SkillHeaderRow" type="HBoxContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=966195898]
 layout_mode = 2
-theme_override_constants/separation = 67
+theme_override_constants/separation = 53
 
 [node name="SkillIconStack" type="Control" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=417700747]
 unique_name_in_owner = true
@@ -557,8 +557,8 @@ theme_override_styles/panel = ExtResource("frame_skill_icon_frame_64x64")
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
 text = "技能"
-vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="SkillDescFrame" type="PanelContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=1214507721]
