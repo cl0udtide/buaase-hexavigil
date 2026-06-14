@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_distance()
 	_test_front()
 	_test_descend_basic()
+	_test_descend_choices()
 	_test_descend_spread()
 	_test_mono_reaches()
 	_test_determinism()
@@ -111,6 +112,21 @@ func _test_descend_basic() -> void:
 	var of: Dictionary = FlowField.compute_front(cells, od, {})
 	var around := FlowField.descend_step(od, of, Vector2i(0, 0), 0.0, {Vector2i(1, 0): true})
 	_expect(around != Vector2i(1, 0) and od.has(around), "下行邻之一被占 → 绕另一个(得 %s)" % str(around))
+
+
+func _test_descend_choices() -> void:
+	print("[descend: 候选]")
+	var cells := _grid(5, 5)
+	var dist: Dictionary = FlowField.compute_distance(cells, Vector2i(4, 4), {})
+	var front: Dictionary = FlowField.compute_front(cells, dist, {})
+	var choices: Array[Vector2i] = FlowField.descend_choices(dist, front, Vector2i(0, 0), {})
+	_expect(choices.size() == 2 and choices.has(Vector2i(1, 0)) and choices.has(Vector2i(0, 1)), "开阔对角有两个真实下行候选")
+	var avoid_wall: Array[Vector2i] = FlowField.descend_choices(dist, front, Vector2i(0, 0), {Vector2i(1, 0): true})
+	_expect(avoid_wall.size() == 1 and avoid_wall[0] == Vector2i(0, 1), "候选之一软阻挡 → 只保留未阻挡候选")
+	var all_blocked: Array[Vector2i] = FlowField.descend_choices(dist, front, Vector2i(0, 0), {Vector2i(1, 0): true, Vector2i(0, 1): true})
+	_expect(all_blocked.size() == 2, "全部候选软阻挡 → 保留全部以便窄口接敌/拆墙")
+	var priority: Array[Vector2i] = FlowField.descend_choices(dist, front, Vector2i(0, 0), {Vector2i(1, 0): 2, Vector2i(0, 1): 1})
+	_expect(priority.size() == 1 and priority[0] == Vector2i(0, 1), "软阻挡分级: 同长时干员/空路优先于墙")
 
 
 func _test_descend_spread() -> void:

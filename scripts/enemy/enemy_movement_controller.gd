@@ -86,16 +86,13 @@ func has_arrived() -> bool:
 	return map_manager != null and _owner_actor.current_cell == map_manager.get_core_cell()
 
 
-## 朝核心的梯度前进格（attack_controller 用它判路上是否有可拆的墙）。
+## 下一步实际前进格（attack_controller 用它判路上是否有可拆的墙）。
 func get_next_path_cell() -> Vector2i:
 	if _owner_actor == null:
 		return Vector2i.ZERO
 	if has_arrived():
 		return _owner_actor.current_cell
-	if _path_mode == PATH_MODE_FLYING:
-		return _straight_step_toward_core()
-	var g := _gradient_dir()
-	return _owner_actor.current_cell + g if g != Vector2i.ZERO else _owner_actor.current_cell
+	return _next_step_cell()
 
 
 func get_path_mode() -> StringName:
@@ -241,14 +238,6 @@ func _next_step_cell() -> Vector2i:
 	)
 
 
-func _gradient_dir() -> Vector2i:
-	var path_service := _path_service()
-	if path_service == null:
-		return Vector2i.ZERO
-	var front: Dictionary = path_service.get_front_map(_path_mode).get(_owner_actor.current_cell, {})
-	return front.get("g", Vector2i.ZERO)
-
-
 func _straight_step_toward_core() -> Vector2i:
 	var map_manager := _get_map_manager()
 	if map_manager == null:
@@ -262,16 +251,20 @@ func _straight_step_toward_core() -> Vector2i:
 	return cur
 
 
-## 怪应"能绕则绕"的占用格 = 已部署干员所在格。descend_step 优先未占的下行邻、
-## 窄口无路则照走进去接敌。被阻挡中的怪走 process_blocked_motion，不经此处。
+## 怪应"能绕则绕"的占用格 = 已部署干员所在格；拆墙路径额外把墙视为软阻挡。
+## descend_step 优先未占的下行邻，窄口无路则照走进去接敌/拆墙。
 func _extra_blocked() -> Dictionary:
 	var blocked: Dictionary = {}
 	var unit_manager: Node = _owner_actor.get_unit_manager() if _owner_actor != null else null
-	if unit_manager == null or not unit_manager.has_method("get_all_deployed_units"):
-		return blocked
-	for unit in unit_manager.get_all_deployed_units():
-		if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
-			blocked[unit.get_current_cell()] = true
+	if unit_manager != null and unit_manager.has_method("get_all_deployed_units"):
+		for unit in unit_manager.get_all_deployed_units():
+			if unit != null and is_instance_valid(unit) and unit.has_method("get_current_cell"):
+				blocked[unit.get_current_cell()] = 1
+	if _path_mode == PATH_MODE_DEMOLISHER:
+		var path_service := _path_service()
+		if path_service != null and path_service.has_method("get_path_blocker_cells"):
+			for cell_variant: Variant in path_service.get_path_blocker_cells().keys():
+				blocked[cell_variant] = 2
 	return blocked
 
 

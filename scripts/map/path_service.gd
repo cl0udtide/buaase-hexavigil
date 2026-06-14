@@ -7,6 +7,7 @@ const PATH_MODE_NORMAL: StringName = &"normal"
 const PATH_MODE_DEMOLISHER: StringName = &"demolisher"
 const PATH_MODE_FLYING: StringName = &"flying"
 const MIN_PREVIEW_PATH_CELLS := 4
+const PREVIEW_CENTER_PHASE := 0.5
 const CARDINAL_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.RIGHT,
 	Vector2i.DOWN,
@@ -81,6 +82,19 @@ func get_front_map(path_mode: StringName) -> Dictionary:
 	return _front_by_mode.get(path_mode, {})
 
 
+func get_path_blocker_cells() -> Dictionary:
+	if not _grid_ready:
+		rebuild_from_map()
+	var blockers: Dictionary = {}
+	for cell_variant: Variant in _normal_blocked_cells.keys():
+		if not bool(_normal_blocked_cells.get(cell_variant, false)):
+			continue
+		if bool(_terrain_blocked_cells.get(cell_variant, false)):
+			continue
+		blockers[cell_variant] = true
+	return blockers
+
+
 func has_route(cell: Vector2i, path_mode: StringName) -> bool:
 	return (_dist_by_mode.get(path_mode, {}) as Dictionary).has(cell)
 
@@ -90,10 +104,16 @@ func get_core_distance(cell: Vector2i, path_mode: StringName) -> int:
 	return int((_dist_by_mode.get(path_mode, {}) as Dictionary).get(cell, -1))
 
 
-## 出怪口覆盖面预览：从口沿场下行的中心线 + 按 half_width 的横向带之并集。
-## 与敌人移动共用同一套场（预览即实际会扫过的范围）。
+## 出怪口覆盖面预览：从出怪口沿真实下行候选展开，展示怪物当前可能走到的格子。
+## hard_blocked_cells 用于白天拖拽墙体的假设阻挡；soft_blocked_cells 与敌人移动同义，优先绕开但窄口可进入。
 ## 返回 {ok, status, message, coverage:Array[Vector2i], centerline:Array[Vector2i], effective_path_mode}。
-func compute_coverage(spawn_cell: Vector2i, requested_mode: StringName, half_width: int) -> Dictionary:
+func compute_coverage(
+		spawn_cell: Vector2i,
+		requested_mode: StringName,
+		_half_width: int,
+		hard_blocked_cells: Dictionary = {},
+		soft_blocked_cells: Dictionary = {}
+	) -> Dictionary:
 	if _map_manager == null:
 		return {"ok": false, "status": &"no_path", "message": "", "coverage": [], "centerline": [], "effective_path_mode": requested_mode}
 	if not _grid_ready:
@@ -105,53 +125,95 @@ func compute_coverage(spawn_cell: Vector2i, requested_mode: StringName, half_wid
 	var mode := requested_mode
 	var status: StringName = &"ok"
 	var message := ""
-	if not has_route(spawn_cell, mode):
-		if mode == PATH_MODE_NORMAL and has_route(spawn_cell, PATH_MODE_DEMOLISHER):
+	var route_maps: Dictionary = _get_route_maps_for_coverage(mode, hard_blocked_cells)
+	var dist: Dictionary = route_maps.get("dist", {})
+	var front: Dictionary = route_maps.get("front", {})
+	if not dist.has(spawn_cell):
+		if mode == PATH_MODE_NORMAL:
+			var demolisher_maps: Dictionary = _get_route_maps_for_coverage(PATH_MODE_DEMOLISHER, hard_blocked_cells)
+			var demolisher_dist: Dictionary = demolisher_maps.get("dist", {})
+			if not demolisher_dist.has(spawn_cell):
+				return {"ok": false, "status": &"no_path", "message": "无法生成从出怪点到核心的有效路径", "coverage": [], "centerline": [], "effective_path_mode": requested_mode}
 			mode = PATH_MODE_DEMOLISHER
 			status = &"core_enclosed"
 			message = "普通路线封闭：敌人将改走拆墙路径"
+			route_maps = demolisher_maps
+			dist = demolisher_dist
+			front = route_maps.get("front", {})
 		else:
 			return {"ok": false, "status": &"no_path", "message": "无法生成从出怪点到核心的有效路径", "coverage": [], "centerline": [], "effective_path_mode": requested_mode}
-	var centerline := _trace_gradient_line(spawn_cell, mode)
-	var coverage := _coverage_band(centerline, mode, maxi(half_width, 0))
+	var preview_soft_blocked: Dictionary = _get_soft_blocked_for_coverage(mode, hard_blocked_cells, soft_blocked_cells)
+	var centerline := _trace_phase_line(spawn_cell, dist, front, preview_soft_blocked)
+	var coverage := _trace_possible_cells(spawn_cell, dist, front, preview_soft_blocked)
 	return {"ok": true, "status": status, "message": message, "coverage": coverage, "centerline": centerline, "effective_path_mode": mode}
 
 
-func _trace_gradient_line(spawn_cell: Vector2i, mode: StringName) -> Array[Vector2i]:
-	var front: Dictionary = _front_by_mode.get(mode, {})
+func _get_route_maps_for_coverage(path_mode: StringName, hard_blocked_cells: Dictionary) -> Dictionary:
+	if path_mode == PATH_MODE_DEMOLISHER or hard_blocked_cells.is_empty():
+		return {
+			"dist": get_dist_map(path_mode),
+			"front": get_front_map(path_mode)
+		}
+	var blocked_cells: Dictionary = _get_blocked_cells_for_mode(path_mode, hard_blocked_cells)
+	var core: Vector2i = _map_manager.get_core_cell()
+	var dist: Dictionary = FlowField.compute_distance(_cells, core, blocked_cells)
+	return {
+		"dist": dist,
+		"front": FlowField.compute_front(_cells, dist, blocked_cells)
+	}
+
+
+func _get_soft_blocked_for_coverage(path_mode: StringName, hard_blocked_cells: Dictionary, soft_blocked_cells: Dictionary) -> Dictionary:
+	var blocked: Dictionary = {}
+	_merge_truthy_cells(blocked, soft_blocked_cells)
+	if path_mode == PATH_MODE_DEMOLISHER:
+		_merge_truthy_cells(blocked, get_path_blocker_cells(), 2)
+		_merge_truthy_cells(blocked, hard_blocked_cells, 2)
+	return blocked
+
+
+func _trace_phase_line(spawn_cell: Vector2i, dist: Dictionary, front: Dictionary, soft_blocked_cells: Dictionary) -> Array[Vector2i]:
 	var line: Array[Vector2i] = []
 	var cell := spawn_cell
 	var guard := 0
 	var limit := _cells.size() + 1
-	while front.has(cell) and guard < limit:
+	while dist.has(cell) and guard < limit:
 		line.append(cell)
-		var g: Vector2i = (front[cell] as Dictionary).get("g", Vector2i.ZERO)
-		if g == Vector2i.ZERO:
+		var next_cell: Vector2i = FlowField.descend_step(dist, front, cell, PREVIEW_CENTER_PHASE, soft_blocked_cells)
+		if next_cell == cell:
 			break
-		cell += g
+		cell = next_cell
 		guard += 1
 	return line
 
 
-func _coverage_band(centerline: Array[Vector2i], mode: StringName, half_width: int) -> Array[Vector2i]:
-	var dist: Dictionary = _dist_by_mode.get(mode, {})
-	var front: Dictionary = _front_by_mode.get(mode, {})
+func _trace_possible_cells(spawn_cell: Vector2i, dist: Dictionary, front: Dictionary, soft_blocked_cells: Dictionary) -> Array[Vector2i]:
+	if not dist.has(spawn_cell):
+		return []
 	var covered: Dictionary = {}
-	for c: Vector2i in centerline:
-		covered[c] = true
-		var axis: Vector2i = (front.get(c, {}) as Dictionary).get("axis", Vector2i.ZERO)
-		if axis == Vector2i.ZERO:
+	var stack: Array[Vector2i] = [spawn_cell]
+	while not stack.is_empty():
+		var cell: Vector2i = stack.pop_back()
+		if covered.has(cell):
 			continue
-		for sign_dir: Vector2i in [axis, -axis]:
-			var probe: Vector2i = c + sign_dir
-			var steps := 0
-			while steps < half_width and dist.has(probe):
-				covered[probe] = true
-				probe += sign_dir
-				steps += 1
+		covered[cell] = true
+		var choices: Array[Vector2i] = FlowField.descend_choices(dist, front, cell, soft_blocked_cells)
+		for next_cell: Vector2i in choices:
+			if not covered.has(next_cell):
+				stack.append(next_cell)
+	return _sorted_cell_keys(covered)
+
+
+func _sorted_cell_keys(cells: Dictionary) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
-	for key: Vector2i in covered.keys():
-		out.append(key)
+	for cell_variant: Variant in cells.keys():
+		var cell: Vector2i = cell_variant
+		out.append(cell)
+	out.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		if a.y != b.y:
+			return a.y < b.y
+		return a.x < b.x
+	)
 	return out
 
 
@@ -304,6 +366,12 @@ func _get_blocked_cells_for_mode(path_mode: StringName, extra_blocked_cells: Dic
 		if bool(extra_blocked_cells.get(cell_variant, false)):
 			blocked_cells[cell_variant] = true
 	return blocked_cells
+
+
+func _merge_truthy_cells(target: Dictionary, source: Dictionary, score: int = 1) -> void:
+	for cell_variant: Variant in source.keys():
+		if bool(source.get(cell_variant, false)):
+			target[cell_variant] = score
 
 
 func _make_flying_path(start_cell: Vector2i, end_cell: Vector2i) -> Array[Vector2i]:

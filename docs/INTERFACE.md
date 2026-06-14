@@ -842,9 +842,10 @@ func get_debug_info() -> String
 func rebuild_from_map() -> void
 func get_dist_map(path_mode: StringName) -> Dictionary
 func get_front_map(path_mode: StringName) -> Dictionary
+func get_path_blocker_cells() -> Dictionary
 func has_route(cell: Vector2i, path_mode: StringName) -> bool
 func get_core_distance(cell: Vector2i, path_mode: StringName) -> int
-func compute_coverage(spawn_cell: Vector2i, requested_mode: StringName, half_width: int) -> Dictionary
+func compute_coverage(spawn_cell: Vector2i, requested_mode: StringName, half_width: int, hard_blocked_cells: Dictionary = {}, soft_blocked_cells: Dictionary = {}) -> Dictionary
 func find_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]
 func find_path_preview(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Dictionary
 func get_cell_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> Array[Vector2i]
@@ -867,6 +868,10 @@ func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
   输入：路径模式。
   行为：读取指定模式下的正面结构场，供敌人沿场铺面推进时判断同距等值面。
   返回：`Dictionary`。
+- `get_path_blocker_cells()`
+  输入：无。
+  行为：返回普通路径视为阻挡、拆墙路径可通过的格子，用于拆墙怪在等长路线中优先选择无墙候选。
+  返回：`Dictionary`，键为格子坐标，值为 `true`。
 - `has_route(cell, path_mode)`
   输入：格子与路径模式。
   行为：判断该格在指定模式下是否存在通往核心的路线（距离场可达）。
@@ -875,9 +880,9 @@ func set_cell_blocked(cell: Vector2i, blocked: bool) -> void
   输入：格子与路径模式。
   行为：读取该格在指定模式下到核心的距离场步数。
   返回：`int`；不可达时返回约定的不可达值。
-- `compute_coverage(spawn_cell, requested_mode, half_width)`
-  输入：出怪口格、请求的路径模式、覆盖半宽。
-  行为：沿距离场梯度从出怪口铺出一条中心线，再按半宽展开成覆盖带，用于覆盖面路线预览。
+- `compute_coverage(spawn_cell, requested_mode, half_width, hard_blocked_cells, soft_blocked_cells)`
+  输入：出怪口格、请求的路径模式、兼容保留的覆盖半宽、可选硬阻挡集合、可选软阻挡集合。
+  行为：沿距离场的真实下行候选展开可能路径；硬阻挡用于墙体拖拽等假设封堵，软阻挡用于干员/拆墙怪避墙等“能绕则绕、窄口可进”的预览；软阻挡值可用 `1` 表示干员、`2` 表示墙等更不优先目标。
   返回：`Dictionary`，含中心线与覆盖格集合。
 - `find_path(start_cell, end_cell, path_mode, extra_blocked_cells)`
   输入：起点格、终点格、路径模式、可选额外阻挡集合。

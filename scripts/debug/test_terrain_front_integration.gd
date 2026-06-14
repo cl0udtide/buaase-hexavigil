@@ -50,8 +50,24 @@ func _run() -> void:
 	_expect(bool(cov["ok"]), "开阔: 覆盖 ok")
 	var cov_n := (cov["coverage"] as Array).size()
 	var center_n := (cov["centerline"] as Array).size()
-	_expect(cov_n > center_n, "开阔: 覆盖面(%d) 宽于中心线(%d)" % [cov_n, center_n])
+	_expect(cov_n == center_n, "开阔同行: 真实候选不再虚扩覆盖(%d/%d)" % [cov_n, center_n])
 	(open["managers"] as Node).free()
+
+	var diagonal := _make(5, 5, Vector2i(4, 4), {"S1": Vector2i(0, 0)})
+	var ps_diag = diagonal["ps"]
+	var cov_diag: Dictionary = ps_diag.compute_coverage(Vector2i(0, 0), &"normal", 0)
+	_expect(bool(cov_diag["ok"]), "开阔对角: 覆盖 ok")
+	_expect((cov_diag["coverage"] as Array).size() > (cov_diag["centerline"] as Array).size(), "开阔对角: 真实候选覆盖多条等长路径")
+	var cov_soft: Dictionary = ps_diag.compute_coverage(Vector2i(0, 0), &"normal", 0, {}, {Vector2i(1, 0): true})
+	_expect(not (cov_soft["coverage"] as Array).has(Vector2i(1, 0)) and (cov_soft["coverage"] as Array).has(Vector2i(0, 1)), "软阻挡: 有等长空路时预览绕开")
+	(diagonal["managers"] as Node).free()
+
+	var demo := _make(5, 5, Vector2i(4, 4), {"S1": Vector2i(0, 0)})
+	var ps_demo = demo["ps"]
+	ps_demo.set_cell_blocked(Vector2i(1, 0), true)
+	var cov_demo: Dictionary = ps_demo.compute_coverage(Vector2i(0, 0), &"demolisher", 0)
+	_expect(not (cov_demo["coverage"] as Array).has(Vector2i(1, 0)) and (cov_demo["coverage"] as Array).has(Vector2i(0, 1)), "拆墙路径: 等长时优先无墙候选")
+	(demo["managers"] as Node).free()
 
 	var corr := _make(11, 1, Vector2i(10, 0), {"S1": Vector2i(0, 0)})
 	var ps2 = corr["ps"]
