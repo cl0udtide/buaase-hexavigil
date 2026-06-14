@@ -1,6 +1,6 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://dnuj0ge6t0by0"]
+[gd_resource type="StyleBoxTexture" format=3]
 
-[ext_resource type="Texture2D" uid="uid://djfc6ijl2qsac" path="res://assets/ui/generated/frame_operator_card_selected_overlay.png" id="1_texture"]
+[ext_resource type="Texture2D" path="res://assets/ui/generated/frame_operator_card_selected_overlay.png" id="1_texture"]
 
 [resource]
 content_margin_left = 6.4104
@@ -12,3 +12,4 @@ texture_margin_left = 34.1889
 texture_margin_top = 34.1667
 texture_margin_right = 34.1889
 texture_margin_bottom = 34.1667
+draw_center = true

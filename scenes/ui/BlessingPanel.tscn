@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://d2uqqs7dick5f"]
 
 [ext_resource type="Script" uid="uid://c4kbid07uaofr" path="res://scripts/ui/blessing_panel.gd" id="1_qxd7t"]
+[ext_resource type="StyleBox" uid="uid://c1yg0t7q4sugv" path="res://assets/ui/styles/frame_blessing_panel_base.tres" id="2_panel"]
+[ext_resource type="PackedScene" uid="uid://ctt71dket5rq8" path="res://scenes/ui/relic/RelicCard.tscn" id="3_relic_card"]
 
 [node name="BlessingPanel" type="PanelContainer" unique_id=951710564]
 anchors_preset = 8
@@ -14,14 +16,15 @@ offset_right = 300.0
 offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = ExtResource("2_panel")
 script = ExtResource("1_qxd7t")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=640000106]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 44
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ContentMargin" unique_id=1170401306]
 unique_name_in_owner = true
@@ -29,13 +32,19 @@ layout_mode = 2
 theme_override_constants/separation = 10
 metadata/_edit_lock_ = true
 
-[node name="TitleLabel" type="Label" parent="ContentMargin/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="ContentMargin/VBoxContainer" unique_id=1787747680]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0)
+theme_override_font_sizes/font_size = 22
 text = "选择一件遗物"
 horizontal_alignment = 1
 
-[node name="ChoiceList" type="VBoxContainer" parent="ContentMargin/VBoxContainer"]
+[node name="ChoiceList" type="VBoxContainer" parent="ContentMargin/VBoxContainer" unique_id=2051205611]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+
+[node name="ChoiceCardTemplate" parent="ContentMargin/VBoxContainer/ChoiceList" unique_id=589839653 instance=ExtResource("3_relic_card")]
+unique_name_in_owner = true
+layout_mode = 2

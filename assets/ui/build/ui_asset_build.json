@@ -872,8 +872,8 @@
         44
       ],
       "base_size": [
-        228,
-        137
+        515,
+        171
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -3061,6 +3061,720 @@
       "base_size": [
         250,
         230
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "frame_relic_rarity_common_backplate": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_relic_rarity_common_backplate.png",
+      "template_style": "res://assets/ui/templates/frame_relic_rarity_common_backplate.tres",
+      "output_png": "res://assets/ui/generated/frame_relic_rarity_common_backplate.png",
+      "output_style": "res://assets/ui/styles/frame_relic_rarity_common_backplate.tres",
+      "target_size": [
+        80,
+        80
+      ],
+      "base_size": [
+        263,
+        269
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest",
+      "png_scale_mode": "exact_target"
+    },
+    "frame_relic_rarity_uncommon_backplate": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_relic_rarity_uncommon_backplate.png",
+      "template_style": "res://assets/ui/templates/frame_relic_rarity_uncommon_backplate.tres",
+      "output_png": "res://assets/ui/generated/frame_relic_rarity_uncommon_backplate.png",
+      "output_style": "res://assets/ui/styles/frame_relic_rarity_uncommon_backplate.tres",
+      "target_size": [
+        80,
+        80
+      ],
+      "base_size": [
+        282,
+        282
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_relic_rarity_rare_backplate": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_relic_rarity_rare_backplate.png",
+      "template_style": "res://assets/ui/templates/frame_relic_rarity_rare_backplate.tres",
+      "output_png": "res://assets/ui/generated/frame_relic_rarity_rare_backplate.png",
+      "output_style": "res://assets/ui/styles/frame_relic_rarity_rare_backplate.tres",
+      "target_size": [
+        80,
+        80
+      ],
+      "base_size": [
+        287,
+        288
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest",
+      "png_scale_mode": "exact_target"
+    },
+    "frame_relic_rarity_common_card_base": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_relic_rarity_common_card_base.png",
+      "template_style": "res://assets/ui/templates/frame_relic_rarity_common_card_base.tres",
+      "output_png": "res://assets/ui/generated/frame_relic_rarity_common_card_base.png",
+      "output_style": "res://assets/ui/styles/frame_relic_rarity_common_card_base.tres",
+      "target_size": [
+        360,
+        145
+      ],
+      "base_size": [
+        479,
+        380
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_relic_rarity_uncommon_card_base": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_relic_rarity_uncommon_card_base.png",
+      "template_style": "res://assets/ui/templates/frame_relic_rarity_uncommon_card_base.tres",
+      "output_png": "res://assets/ui/generated/frame_relic_rarity_uncommon_card_base.png",
+      "output_style": "res://assets/ui/styles/frame_relic_rarity_uncommon_card_base.tres",
+      "target_size": [
+        360,
+        145
+      ],
+      "base_size": [
+        463,
+        379
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_relic_rarity_rare_card_base": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_relic_rarity_rare_card_base.png",
+      "template_style": "res://assets/ui/templates/frame_relic_rarity_rare_card_base.tres",
+      "output_png": "res://assets/ui/generated/frame_relic_rarity_rare_card_base.png",
+      "output_style": "res://assets/ui/styles/frame_relic_rarity_rare_card_base.tres",
+      "target_size": [
+        360,
+        145
+      ],
+      "base_size": [
+        481,
+        382
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "icon_relic_legion_mirror": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_legion_mirror.png",
+      "output_png": "res://assets/ui/generated/icon_relic_legion_mirror.png",
+      "target_size": [
+        215,
+        293
+      ],
+      "base_size": [
+        215,
+        293
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_first_aid_kit": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_first_aid_kit.png",
+      "output_png": "res://assets/ui/generated/icon_relic_first_aid_kit.png",
+      "target_size": [
+        238,
+        242
+      ],
+      "base_size": [
+        238,
+        242
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_noble_rapier": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_noble_rapier.png",
+      "output_png": "res://assets/ui/generated/icon_relic_noble_rapier.png",
+      "target_size": [
+        222,
+        312
+      ],
+      "base_size": [
+        222,
+        312
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_silver_fork": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_silver_fork.png",
+      "output_png": "res://assets/ui/generated/icon_relic_silver_fork.png",
+      "target_size": [
+        147,
+        304
+      ],
+      "base_size": [
+        147,
+        304
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_gaul_bank_check": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_gaul_bank_check.png",
+      "output_png": "res://assets/ui/generated/icon_relic_gaul_bank_check.png",
+      "target_size": [
+        228,
+        200
+      ],
+      "base_size": [
+        228,
+        200
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_water_of_life": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_water_of_life.png",
+      "output_png": "res://assets/ui/generated/icon_relic_water_of_life.png",
+      "target_size": [
+        174,
+        291
+      ],
+      "base_size": [
+        174,
+        291
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_gargoyle_statuette": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_gargoyle_statuette.png",
+      "output_png": "res://assets/ui/generated/icon_relic_gargoyle_statuette.png",
+      "target_size": [
+        193,
+        300
+      ],
+      "base_size": [
+        193,
+        300
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_torn_photo": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_torn_photo.png",
+      "output_png": "res://assets/ui/generated/icon_relic_torn_photo.png",
+      "target_size": [
+        232,
+        249
+      ],
+      "base_size": [
+        232,
+        249
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_emperors_collection": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_emperors_collection.png",
+      "output_png": "res://assets/ui/generated/icon_relic_emperors_collection.png",
+      "target_size": [
+        250,
+        253
+      ],
+      "base_size": [
+        250,
+        253
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_certificate_of_longevity": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_certificate_of_longevity.png",
+      "output_png": "res://assets/ui/generated/icon_relic_certificate_of_longevity.png",
+      "target_size": [
+        207,
+        273
+      ],
+      "base_size": [
+        207,
+        273
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_demolition_protocol_erase": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_demolition_protocol_erase.png",
+      "output_png": "res://assets/ui/generated/icon_relic_demolition_protocol_erase.png",
+      "target_size": [
+        275,
+        288
+      ],
+      "base_size": [
+        275,
+        288
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_old_palm_fan": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_old_palm_fan.png",
+      "output_png": "res://assets/ui/generated/icon_relic_old_palm_fan.png",
+      "target_size": [
+        278,
+        299
+      ],
+      "base_size": [
+        278,
+        299
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_unyielding": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_unyielding.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_unyielding.png",
+      "target_size": [
+        137,
+        313
+      ],
+      "base_size": [
+        137,
+        313
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_precision": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_precision.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_precision.png",
+      "target_size": [
+        270,
+        260
+      ],
+      "base_size": [
+        270,
+        260
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_steadfast": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_steadfast.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_steadfast.png",
+      "target_size": [
+        255,
+        270
+      ],
+      "base_size": [
+        255,
+        270
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_swift": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_swift.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_swift.png",
+      "target_size": [
+        149,
+        326
+      ],
+      "base_size": [
+        149,
+        326
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_raid": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_raid.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_raid.png",
+      "target_size": [
+        188,
+        330
+      ],
+      "base_size": [
+        188,
+        330
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_sargon": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_sargon.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_sargon.png",
+      "target_size": [
+        236,
+        322
+      ],
+      "base_size": [
+        236,
+        322
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_cov_foresight": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_cov_foresight.png",
+      "output_png": "res://assets/ui/generated/icon_relic_cov_foresight.png",
+      "target_size": [
+        206,
+        289
+      ],
+      "base_size": [
+        206,
+        289
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_war_horn": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_war_horn.png",
+      "output_png": "res://assets/ui/generated/icon_relic_war_horn.png",
+      "target_size": [
+        275,
+        272
+      ],
+      "base_size": [
+        275,
+        272
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_emergency_activator": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_emergency_activator.png",
+      "output_png": "res://assets/ui/generated/icon_relic_emergency_activator.png",
+      "target_size": [
+        261,
+        285
+      ],
+      "base_size": [
+        261,
+        285
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_rainbow_urn": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_rainbow_urn.png",
+      "output_png": "res://assets/ui/generated/icon_relic_rainbow_urn.png",
+      "target_size": [
+        226,
+        340
+      ],
+      "base_size": [
+        226,
+        340
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_stereoscopic_art_installation": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_stereoscopic_art_installation.png",
+      "output_png": "res://assets/ui/generated/icon_relic_stereoscopic_art_installation.png",
+      "target_size": [
+        269,
+        310
+      ],
+      "base_size": [
+        269,
+        310
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_mandate_form": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_mandate_form.png",
+      "output_png": "res://assets/ui/generated/icon_relic_mandate_form.png",
+      "target_size": [
+        251,
+        336
+      ],
+      "base_size": [
+        251,
+        336
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_demon_kings_ritual_vessel": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_demon_kings_ritual_vessel.png",
+      "output_png": "res://assets/ui/generated/icon_relic_demon_kings_ritual_vessel.png",
+      "target_size": [
+        211,
+        330
+      ],
+      "base_size": [
+        211,
+        330
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_glory_combo": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_glory_combo.png",
+      "output_png": "res://assets/ui/generated/icon_relic_glory_combo.png",
+      "target_size": [
+        303,
+        262
+      ],
+      "base_size": [
+        303,
+        262
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_little_gran_faro": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_little_gran_faro.png",
+      "output_png": "res://assets/ui/generated/icon_relic_little_gran_faro.png",
+      "target_size": [
+        248,
+        322
+      ],
+      "base_size": [
+        248,
+        322
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_support_supply_station": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_support_supply_station.png",
+      "output_png": "res://assets/ui/generated/icon_relic_support_supply_station.png",
+      "target_size": [
+        268,
+        306
+      ],
+      "base_size": [
+        268,
+        306
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_rusty_hammer": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_rusty_hammer.png",
+      "output_png": "res://assets/ui/generated/icon_relic_rusty_hammer.png",
+      "target_size": [
+        245,
+        321
+      ],
+      "base_size": [
+        245,
+        321
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_solo_music_box": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_solo_music_box.png",
+      "output_png": "res://assets/ui/generated/icon_relic_solo_music_box.png",
+      "target_size": [
+        265,
+        310
+      ],
+      "base_size": [
+        265,
+        310
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_money_eye": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_money_eye.png",
+      "output_png": "res://assets/ui/generated/icon_relic_money_eye.png",
+      "target_size": [
+        290,
+        195
+      ],
+      "base_size": [
+        290,
+        195
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_support_crane": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_support_crane.png",
+      "output_png": "res://assets/ui/generated/icon_relic_support_crane.png",
+      "target_size": [
+        178,
+        335
+      ],
+      "base_size": [
+        178,
+        335
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_golden_expedition": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_golden_expedition.png",
+      "output_png": "res://assets/ui/generated/icon_relic_golden_expedition.png",
+      "target_size": [
+        279,
+        332
+      ],
+      "base_size": [
+        279,
+        332
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_gin_goblet": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_gin_goblet.png",
+      "output_png": "res://assets/ui/generated/icon_relic_gin_goblet.png",
+      "target_size": [
+        166,
+        294
+      ],
+      "base_size": [
+        166,
+        294
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_assault_protocol_blade": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_assault_protocol_blade.png",
+      "output_png": "res://assets/ui/generated/icon_relic_assault_protocol_blade.png",
+      "target_size": [
+        284,
+        335
+      ],
+      "base_size": [
+        284,
+        335
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_fortress_protocol_hold": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_fortress_protocol_hold.png",
+      "output_png": "res://assets/ui/generated/icon_relic_fortress_protocol_hold.png",
+      "target_size": [
+        230,
+        300
+      ],
+      "base_size": [
+        230,
+        300
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "interpolation": "nearest"
+    },
+    "icon_relic_ranged_protocol_counter": {
+      "kind": "texture",
+      "source_png": "res://assets/ui/source/icon_relic_ranged_protocol_counter.png",
+      "output_png": "res://assets/ui/generated/icon_relic_ranged_protocol_counter.png",
+      "target_size": [
+        301,
+        307
+      ],
+      "base_size": [
+        301,
+        307
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,

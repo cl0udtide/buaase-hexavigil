@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://ctt71dket5rq8"]
 
 [ext_resource type="Script" uid="uid://ddvsavyr0e72r" path="res://scripts/ui/relic/relic_card.gd" id="1_wj53c"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_card_base.tres" id="2_card"]
-[ext_resource type="StyleBox" uid="uid://bt8auka0etguy" path="res://assets/ui/styles/frame_relic_icon_backplate.tres" id="3_backplate"]
-[ext_resource type="StyleBox" uid="uid://dbtflcvlcyear" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="4_frame"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rarity_overlay"]
-bg_color = Color(1, 1, 1, 1)
+[ext_resource type="StyleBox" uid="uid://nos2hrww3ddw" path="res://assets/ui/styles/frame_relic_rarity_common_card_base.tres" id="2_common_card"]
+[ext_resource type="StyleBox" uid="uid://bfeub78hb1en8" path="res://assets/ui/styles/frame_relic_rarity_common_backplate.tres" id="3_common_backplate"]
+[ext_resource type="StyleBox" uid="uid://cn2oyrasmtntp" path="res://assets/ui/styles/frame_relic_icon_frame.tres" id="4_frame"]
+[ext_resource type="StyleBox" uid="uid://depna5u5umhon" path="res://assets/ui/styles/frame_relic_rarity_uncommon_card_base.tres" id="5_uncommon_card"]
+[ext_resource type="StyleBox" uid="uid://dvppllx1koqcl" path="res://assets/ui/styles/frame_relic_rarity_rare_card_base.tres" id="6_rare_card"]
+[ext_resource type="StyleBox" uid="uid://bhoomh5crsd1j" path="res://assets/ui/styles/frame_relic_rarity_uncommon_backplate.tres" id="7_uncommon_backplate"]
+[ext_resource type="StyleBox" uid="uid://crjk4gsseb6pa" path="res://assets/ui/styles/frame_relic_rarity_rare_backplate.tres" id="8_rare_backplate"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover_overlay"]
 bg_color = Color(1, 1, 1, 0.11)
@@ -24,7 +25,7 @@ offset_right = 318.0
 offset_bottom = 145.0
 script = ExtResource("1_wj53c")
 
-[node name="CardBase" type="Panel" parent="." unique_id=219335592]
+[node name="CommonCardBase" type="Panel" parent="." unique_id=219335592]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(165, 0)
 layout_mode = 0
@@ -33,12 +34,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("2_card")
+theme_override_styles/panel = ExtResource("2_common_card")
 
-[node name="RarityOverlay" type="Panel" parent="." unique_id=1530203976]
+[node name="UncommonCardBase" type="Panel" parent="." unique_id=219335593]
 unique_name_in_owner = true
 visible = false
-z_index = 1
 custom_minimum_size = Vector2(165, 0)
 layout_mode = 0
 anchor_right = 1.0
@@ -46,7 +46,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_rarity_overlay")
+theme_override_styles/panel = ExtResource("5_uncommon_card")
+
+[node name="RareCardBase" type="Panel" parent="." unique_id=219335594]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(165, 0)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("6_rare_card")
 
 [node name="ContentMargin" type="MarginContainer" parent="." unique_id=1388233875]
 z_index = 5
@@ -73,7 +85,7 @@ custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="IconBackplate" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1195616625]
+[node name="CommonBackplate" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1195616625]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
@@ -81,7 +93,29 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("3_backplate")
+theme_override_styles/panel = ExtResource("3_common_backplate")
+
+[node name="UncommonBackplate" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1195616626]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("7_uncommon_backplate")
+
+[node name="RareBackplate" type="Panel" parent="ContentMargin/Row/IconStack" unique_id=1195616627]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("8_rare_backplate")
 
 [node name="IconTexture" type="TextureRect" parent="ContentMargin/Row/IconStack" unique_id=1308036082]
 unique_name_in_owner = true
@@ -171,15 +205,15 @@ text_overrun_behavior = 3
 [node name="HoverOverlay" type="Panel" parent="." unique_id=1214079419]
 unique_name_in_owner = true
 visible = false
-z_index = 2
+z_index = 8
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 18.0
-offset_top = 19.0
-offset_right = -22.0
-offset_bottom = -17.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

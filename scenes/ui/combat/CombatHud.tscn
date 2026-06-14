@@ -24,30 +24,30 @@
 [ext_resource type="Texture2D" uid="uid://ju400741ecya" path="res://assets/ui/generated/icon_volume_master.png" id="39_iconmaster"]
 [ext_resource type="Texture2D" uid="uid://bfqyue7s2r0jy" path="res://assets/ui/generated/icon_volume_music.png" id="40_iconmusic"]
 [ext_resource type="Texture2D" uid="uid://fd186uu137hp" path="res://assets/ui/generated/icon_volume_sfx.png" id="41_iconsfx"]
-[ext_resource type="StyleBox" uid="uid://uvivb585047e" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
+[ext_resource type="StyleBox" uid="uid://bkanc7fr68h35" path="res://assets/ui/styles/frame_bottom_deploy_rail_base.tres" id="42_deckrail"]
 [ext_resource type="Texture2D" uid="uid://dl31hx46la2rr" path="res://assets/ui/generated/icon_map_range.png" id="43_iconmaprange"]
 [ext_resource type="Texture2D" uid="uid://ck3mdlo5c2ihi" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
-[ext_resource type="StyleBox" uid="uid://labjvwcm7myu" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
-[ext_resource type="StyleBox" uid="uid://c4x7cosstwm8p" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
+[ext_resource type="StyleBox" uid="uid://rwxknafk5tyq" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
+[ext_resource type="StyleBox" uid="uid://bvmvitgj8xblm" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
 [ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
-[ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
-[ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
-[ext_resource type="StyleBox" uid="uid://dwccrh7x1418u" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
-[ext_resource type="StyleBox" uid="uid://dahqsahj0lb61" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
-[ext_resource type="StyleBox" uid="uid://dwt3mq5xkani2" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="frame_resource_delta_badge_48x22"]
-[ext_resource type="StyleBox" uid="uid://dwjmtxkgejdty" path="res://assets/ui/styles/frame_resource_item_base.tres" id="frame_resource_item_base_130x74"]
-[ext_resource type="StyleBox" uid="uid://cwsmbjtf6sjq" path="res://assets/ui/styles/frame_settings_button_base.tres" id="frame_settings_button_base_72x72"]
-[ext_resource type="StyleBox" uid="uid://cyqc53fsxmibg" path="res://assets/ui/styles/frame_settings_panel_base.tres" id="frame_settings_panel_base_420x226"]
-[ext_resource type="StyleBox" uid="uid://cel04tso7e41p" path="res://assets/ui/styles/frame_settings_row_base.tres" id="frame_settings_row_base_392x48"]
-[ext_resource type="StyleBox" uid="uid://njjkepx7qyqj" path="res://assets/ui/styles/frame_slider_fill.tres" id="frame_slider_fill_170x36"]
-[ext_resource type="StyleBox" uid="uid://bxv3pvqhxtl6" path="res://assets/ui/styles/frame_slider_track.tres" id="frame_slider_track_170x36"]
-[ext_resource type="StyleBox" uid="uid://cgmyjlx2ehek1" path="res://assets/ui/styles/frame_speed_toggle_base.tres" id="frame_speed_toggle_base_200x82"]
-[ext_resource type="StyleBox" uid="uid://ci5o1hcbbiha8" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_300x82"]
-[ext_resource type="StyleBox" uid="uid://dqc7qedo212ud" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
-[ext_resource type="StyleBox" uid="uid://da2623j4po865" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
+[ext_resource type="StyleBox" uid="uid://kb88apl8fpb0" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
+[ext_resource type="StyleBox" uid="uid://kl122ddpky58" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
+[ext_resource type="StyleBox" uid="uid://bc3i2gfnh5clh" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
+[ext_resource type="StyleBox" uid="uid://bgyy10d53mqo3" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
+[ext_resource type="StyleBox" uid="uid://tec7abejr2xj" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="frame_resource_delta_badge_48x22"]
+[ext_resource type="StyleBox" uid="uid://bakmn00x7ccyr" path="res://assets/ui/styles/frame_resource_item_base.tres" id="frame_resource_item_base_130x74"]
+[ext_resource type="StyleBox" uid="uid://mxt44oev7psh" path="res://assets/ui/styles/frame_settings_button_base.tres" id="frame_settings_button_base_72x72"]
+[ext_resource type="StyleBox" uid="uid://bba6i7c718y30" path="res://assets/ui/styles/frame_settings_panel_base.tres" id="frame_settings_panel_base_420x226"]
+[ext_resource type="StyleBox" uid="uid://cga61wvw3xxac" path="res://assets/ui/styles/frame_settings_row_base.tres" id="frame_settings_row_base_392x48"]
+[ext_resource type="StyleBox" uid="uid://rlrqusqhplhf" path="res://assets/ui/styles/frame_slider_fill.tres" id="frame_slider_fill_170x36"]
+[ext_resource type="StyleBox" uid="uid://q8d55mv6e2vw" path="res://assets/ui/styles/frame_slider_track.tres" id="frame_slider_track_170x36"]
+[ext_resource type="StyleBox" uid="uid://n21ujpaqcfl3" path="res://assets/ui/styles/frame_speed_toggle_base.tres" id="frame_speed_toggle_base_200x82"]
+[ext_resource type="StyleBox" uid="uid://8224uye62h3s" path="res://assets/ui/styles/frame_top_status_chip_base.tres" id="frame_top_status_chip_base_300x82"]
+[ext_resource type="StyleBox" uid="uid://bqqi1kb0fb862" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
+[ext_resource type="StyleBox" uid="uid://b4e2bmo4rr72e" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
+[ext_resource type="StyleBox" uid="uid://c2akb4lo04irv" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_spawn_card_base.tres" id="frame_wave_spawn_card_base_328x132"]
-[ext_resource type="StyleBox" uid="uid://eskrf41m02ig" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
+[ext_resource type="StyleBox" uid="uid://dx8awq3trhvot" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_button_highlight"]
 bg_color = Color(1, 1, 1, 0.08)
@@ -1012,9 +1012,9 @@ text_overrun_behavior = 3
 [node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = -7.0
+offset_left = 3.0
 offset_top = 84.0
-offset_right = 824.0
+offset_right = 834.0
 offset_bottom = 128.0
 mouse_filter = 2
 
@@ -1034,9 +1034,9 @@ grow_vertical = 2
 [node name="CovenantSlot" type="Control" parent="HudChromeLayer" unique_id=2074888924]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 4.0
+offset_left = 14.0
 offset_top = 127.0
-offset_right = 1191.0
+offset_right = 1201.0
 offset_bottom = 162.58499
 mouse_filter = 2
 
@@ -1664,7 +1664,6 @@ mouse_filter = 2
 
 [node name="SettingsPanelSlot" type="Control" parent="PopupLayer" unique_id=1597879175]
 unique_name_in_owner = true
-visible = false
 anchors_preset = 0
 offset_left = 14.0
 offset_top = 58.0
@@ -2116,6 +2115,25 @@ theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
 [node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=1352742178]
 script = ExtResource("button_state_overlay")
+
+[node name="CheatOpenButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=2016619720]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "打开本局调试用作弊工具"
+focus_mode = 0
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_pressed_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_disabled_color = Color(0.47, 0.52, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = ExtResource("frame_button_base_compact")
+theme_override_styles/pressed = ExtResource("frame_button_base_compact")
+theme_override_styles/hover = ExtResource("frame_button_base_compact")
+theme_override_styles/disabled = ExtResource("frame_button_base_compact")
+text = "打开作弊面板"
 
 [node name="CheatPanelSlot" type="Control" parent="PopupLayer" unique_id=2016619701]
 unique_name_in_owner = true

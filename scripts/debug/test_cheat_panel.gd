@@ -22,8 +22,13 @@ func _init() -> void:
 	if settings_panel.find_child("CheatScroll", true, false) != null:
 		_fail("cheat controls should not be embedded in settings panel")
 	var panel_size := settings_panel.size
-	if panel_size.x < 400.0 or panel_size.y < 326.0:
+	if panel_size.x < 400.0 or panel_size.y < 260.0:
 		_fail("settings panel size is invalid: %s" % panel_size)
+	if not cheat_open_button.visible and panel_size.y > 300.0:
+		_fail("hidden cheat entry should not reserve settings panel height: %s" % panel_size)
+	cheat_open_button.visible = true
+	settings_panel.call("show_panel")
+	await process_frame
 	cheat_open_button.emit_signal("pressed")
 	await process_frame
 	if settings_panel.visible:

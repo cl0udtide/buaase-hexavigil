@@ -2,8 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c16ijra2igfos" path="res://scripts/ui/relic/relic_strip.gd" id="1_c303q"]
 [ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_strip_base.tres" id="2_strip"]
-[ext_resource type="StyleBox" uid="uid://ccs0owrq281ng" path="res://assets/ui/styles/frame_relic_entry_button_base.tres" id="3_entry"]
-[ext_resource type="Texture2D" uid="uid://d08ds42h0ed85" path="res://assets/ui/generated/icon_relic_bag.png" id="4_relicbag"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_relic_entry_button_base.tres" id="3_entry"]
 
 [node name="RelicStrip" type="Control" unique_id=625474051]
 custom_minimum_size = Vector2(126, 40)
@@ -67,17 +66,7 @@ theme_override_constants/margin_bottom = 6
 [node name="EntryButtonRow" type="HBoxContainer" parent="StripMargin/Row/EntryButton/EntryButtonContent" unique_id=2058013865]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 5
 alignment = 1
-
-[node name="EntryIconTexture" type="TextureRect" parent="StripMargin/Row/EntryButton/EntryButtonContent/EntryButtonRow" unique_id=1926863532]
-custom_minimum_size = Vector2(17, 17)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-texture = ExtResource("4_relicbag")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="EntryLabel" type="Label" parent="StripMargin/Row/EntryButton/EntryButtonContent/EntryButtonRow" unique_id=1486393541]
 unique_name_in_owner = true

@@ -1,14 +1,14 @@
-[gd_resource type="StyleBoxTexture" format=3 uid="uid://eskrf41m02ig"]
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://dx8awq3trhvot"]
 
 [ext_resource type="Texture2D" uid="uid://dv0gbqp3sfp2o" path="res://assets/ui/generated/frame_wave_warning_row_base.png" id="1_texture"]
 
 [resource]
-content_margin_left = 3.8868
-content_margin_top = 1.551
-content_margin_right = 3.8868
-content_margin_bottom = 1.551
+content_margin_left = 3.9811
+content_margin_top = 1.5918
+content_margin_right = 3.9811
+content_margin_bottom = 1.5918
 texture = ExtResource("1_texture")
-texture_margin_left = 18.6566
-texture_margin_top = 5.4286
-texture_margin_right = 18.6566
-texture_margin_bottom = 5.4286
+texture_margin_left = 19.1094
+texture_margin_top = 5.5714
+texture_margin_right = 19.1094
+texture_margin_bottom = 5.5714

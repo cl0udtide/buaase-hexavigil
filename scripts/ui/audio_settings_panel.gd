@@ -2,7 +2,6 @@ extends Control
 
 const GameplaySettings = preload("res://scripts/core/gameplay_settings.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 
 signal close_requested
 signal cheat_panel_requested
@@ -10,7 +9,6 @@ signal cheat_panel_requested
 @export var audio_manager_path: NodePath
 
 const PANEL_WIDTH := 420.0
-const PANEL_HEIGHT := 326.0
 
 @onready var _master_slider: HSlider = %MasterSlider
 @onready var _music_slider: HSlider = %MusicSlider
@@ -20,11 +18,11 @@ const PANEL_HEIGHT := 326.0
 @onready var _sfx_value_label: Label = %SfxValueLabel
 @onready var _close_button: Button = get_node_or_null("%CloseButton") as Button
 @onready var _auto_skill_button: Button = get_node_or_null("%AutoSkillButton") as Button
-@onready var _main_vbox: VBoxContainer = get_node_or_null("ContentMargin/MainVBox") as VBoxContainer
+@onready var _cheat_open_button: Button = get_node_or_null("%CheatOpenButton") as Button
+@onready var _content_margin: MarginContainer = get_node_or_null("ContentMargin") as MarginContainer
 
 var _audio_manager: Node
 var _updating := false
-var _cheat_open_button: Button
 
 
 func _ready() -> void:
@@ -34,7 +32,7 @@ func _ready() -> void:
 		_close_button.pressed.connect(func() -> void: close_requested.emit())
 	_bind_sliders()
 	_bind_auto_skill_toggle()
-	_build_cheat_entry()
+	_bind_cheat_button()
 	refresh_from_audio_manager()
 	refresh_from_gameplay_settings()
 	_apply_panel_size()
@@ -98,25 +96,10 @@ func _bind_auto_skill_toggle() -> void:
 	_auto_skill_button.toggled.connect(_on_auto_skill_toggled)
 
 
-func _build_cheat_entry() -> void:
-	if _main_vbox == null or _cheat_open_button != null:
+func _bind_cheat_button() -> void:
+	if _cheat_open_button == null:
 		return
-	_cheat_open_button = Button.new()
-	_cheat_open_button.name = "CheatOpenButton"
-	_cheat_open_button.custom_minimum_size = Vector2(0.0, 34.0)
-	_cheat_open_button.focus_mode = Control.FOCUS_NONE
-	_cheat_open_button.text = "打开作弊面板"
-	_cheat_open_button.tooltip_text = "打开本局调试用作弊工具"
-	_cheat_open_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_cheat_open_button.add_theme_font_size_override("font_size", 13)
-	_cheat_open_button.add_theme_color_override("font_color", GameUiStyle.TEXT)
-	_cheat_open_button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
-	_cheat_open_button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT_INVERTED)
-	_cheat_open_button.add_theme_stylebox_override("normal", GameUiStyle.compact_button(false))
-	_cheat_open_button.add_theme_stylebox_override("hover", GameUiStyle.compact_button(true))
-	_cheat_open_button.add_theme_stylebox_override("pressed", GameUiStyle.compact_button(true))
 	_cheat_open_button.pressed.connect(func() -> void: cheat_panel_requested.emit())
-	_main_vbox.add_child(_cheat_open_button)
 
 
 func _on_master_changed(value: float) -> void:
@@ -165,11 +148,21 @@ func _refresh_auto_skill_button() -> void:
 
 
 func _apply_panel_size() -> void:
-	custom_minimum_size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
+	var panel_height := _desired_panel_height()
+	custom_minimum_size = Vector2(PANEL_WIDTH, panel_height)
 	var parent_control := get_parent() as Control
 	if parent_control != null:
 		parent_control.offset_right = parent_control.offset_left + PANEL_WIDTH
-		parent_control.offset_bottom = parent_control.offset_top + PANEL_HEIGHT
+		parent_control.offset_bottom = parent_control.offset_top + panel_height
+
+
+func _desired_panel_height() -> float:
+	if _content_margin == null:
+		return custom_minimum_size.y
+	var content_height := _content_margin.get_combined_minimum_size().y
+	if content_height <= 0.0:
+		return custom_minimum_size.y
+	return ceil(content_height)
 
 
 func _format_percent(value: float) -> String:

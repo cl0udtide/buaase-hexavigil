@@ -29,12 +29,8 @@ const LEVEL_INTRO_MIN_TOP := 124.0
 
 const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
-const MESSAGE_WARNING_OVERLAY_ALPHA := 0.92
-const MESSAGE_WARNING_OVERLAY_FRAME := &"frame_button_danger_overlay"
-const MESSAGE_WARNING_OVERLAY_PATCH_MARGIN := 18
-const MESSAGE_CHIP_BASE_Z := 0
-const MESSAGE_CHIP_WARNING_Z := 1
-const MESSAGE_CHIP_CONTENT_Z := 2
+const MESSAGE_NORMAL_ICON := &"top_enemy_queue"
+const MESSAGE_WARNING_ICON := &"button_close"
 const DEPLOY_SCROLLBAR_THICKNESS := 26.0
 const DEPLOY_SCROLLBAR_MIN_GRAB := 64
 const DEPLOY_SCROLLBAR_STEP := 48
@@ -112,7 +108,7 @@ var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
 var _core_hp_current := 0
 var _core_hp_max := 0
-var _message_warning_overlay: NinePatchRect
+var _message_warning_active := false
 var _bullet_time_feedback_tween: Tween
 var _level_intro_tween: Tween
 var _wave_level_name_label: Label
@@ -130,6 +126,7 @@ var _wave_countdown_label: Label
 var _active_gates_line: Label = null
 var _event_count_line: Label = null
 var _wave_preview_available := false
+var _wave_preview_force_compact := false
 var _right_detail_active := false
 var _level_intro_banner: Control
 var _level_intro_content: VBoxContainer
@@ -206,7 +203,6 @@ func _ready() -> void:
 	_core_clip.resized.connect(_refresh_core_fill)
 	_collect_resource_items()
 	_style_top_cards()
-	_setup_message_warning_overlay()
 	_wave_preview_title_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED)
 	_wave_preview_title_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	_wave_preview_title_label.add_theme_constant_override("shadow_offset_x", 0)
@@ -293,7 +289,7 @@ func set_top_values(core_text: String, deploy_text: String, queue_text: String) 
 	_apply_chip_icon(_stage_chip, _phase_icon_id_for_text(queue_text))
 	_apply_chip_icon(_core_chip, &"top_core_hp")
 	_apply_chip_icon(_deploy_chip, &"top_deploy_limit")
-	_apply_chip_icon(_message_chip, &"top_enemy_queue")
+	_apply_message_warning_state(_message_warning_active)
 	_set_core_progress_from_text(core_text)
 
 
@@ -322,10 +318,9 @@ func set_core_hp(current: int, max_value: int) -> void:
 func show_message(text_value: String, warning := false) -> void:
 	var display_text := _localized_message_text(text_value)
 	_message_label.text = display_text
-	if _message_warning_overlay == null:
-		_setup_message_warning_overlay()
-	if _message_warning_overlay != null:
-		_message_warning_overlay.visible = warning or _is_warning_message(display_text) or _is_warning_message(text_value)
+	var is_warning := warning or _is_warning_message(display_text) or _is_warning_message(text_value)
+	_message_warning_active = is_warning
+	_apply_message_warning_state(_message_warning_active)
 
 
 func set_resource_values(resource_text: String, tooltip_text_value: String = "") -> void:
@@ -533,6 +528,11 @@ func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 	_apply_right_column_visibility()
 
 
+func set_wave_preview_compact_mode(enabled: bool) -> void:
+	_wave_preview_force_compact = enabled
+	_apply_right_column_visibility()
+
+
 func play_level_intro(day: int, name: String, desc: String) -> void:
 	_ensure_level_intro_banner()
 	if _level_intro_banner == null:
@@ -696,12 +696,13 @@ func _set_right_detail_active(active: bool) -> void:
 
 
 func _apply_right_column_visibility() -> void:
+	var compact := _right_detail_active or _wave_preview_force_compact
 	if _wave_preview_panel != null:
 		_wave_preview_panel.visible = _wave_preview_available
-		_wave_preview_panel.custom_minimum_size.y = WAVE_PREVIEW_COMPACT_HEIGHT if _right_detail_active else WAVE_PREVIEW_NORMAL_HEIGHT
-		_wave_preview_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _right_detail_active else Control.SIZE_EXPAND_FILL
+		_wave_preview_panel.custom_minimum_size.y = WAVE_PREVIEW_COMPACT_HEIGHT if compact else WAVE_PREVIEW_NORMAL_HEIGHT
+		_wave_preview_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if compact else Control.SIZE_EXPAND_FILL
 	if _wave_preview_scroll != null:
-		_wave_preview_scroll.visible = _wave_preview_available and not _right_detail_active
+		_wave_preview_scroll.visible = _wave_preview_available and not compact
 	if _detail_panel != null:
 		if not _right_detail_active:
 			_detail_panel.visible = false
@@ -1437,43 +1438,14 @@ func _style_top_cards() -> void:
 			_apply_resource_delta_label_style(delta, 0)
 
 
-func _setup_message_warning_overlay() -> void:
-	if _message_chip == null:
-		return
-	_message_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var chip_base := _message_chip.get_node_or_null("ChipBase") as Panel
-	if chip_base != null:
-		chip_base.z_index = MESSAGE_CHIP_BASE_Z
-	var existing_overlay := _message_chip.get_node_or_null("MessageWarningOverlay")
-	if existing_overlay != null and not (existing_overlay is NinePatchRect):
-		_message_chip.remove_child(existing_overlay)
-		existing_overlay.queue_free()
-		existing_overlay = null
-	_message_warning_overlay = existing_overlay as NinePatchRect
-	if _message_warning_overlay == null:
-		_message_warning_overlay = NinePatchRect.new()
-		_message_warning_overlay.name = "MessageWarningOverlay"
-		_message_chip.add_child(_message_warning_overlay)
-	_message_warning_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_message_warning_overlay.offset_left = 0.0
-	_message_warning_overlay.offset_top = 0.0
-	_message_warning_overlay.offset_right = 0.0
-	_message_warning_overlay.offset_bottom = 0.0
-	_message_warning_overlay.z_index = MESSAGE_CHIP_WARNING_Z
-	_message_warning_overlay.z_as_relative = true
-	_message_warning_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_message_warning_overlay.visible = false
-	_message_warning_overlay.modulate = Color(1.0, 1.0, 1.0, MESSAGE_WARNING_OVERLAY_ALPHA)
-	_message_warning_overlay.texture = UiArtRegistry.get_frame_texture(MESSAGE_WARNING_OVERLAY_FRAME)
-	_message_warning_overlay.draw_center = true
-	_message_warning_overlay.patch_margin_left = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
-	_message_warning_overlay.patch_margin_top = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
-	_message_warning_overlay.patch_margin_right = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
-	_message_warning_overlay.patch_margin_bottom = MESSAGE_WARNING_OVERLAY_PATCH_MARGIN
-	_message_chip.move_child(_message_warning_overlay, mini(1, _message_chip.get_child_count() - 1))
-	_message_label.z_index = MESSAGE_CHIP_CONTENT_Z
+func _apply_message_warning_state(warning: bool) -> void:
+	if _message_label != null:
+		var color: Color = GameUiStyle.DANGER if warning else GameUiStyle.TEXT_DIM
+		_message_label.add_theme_color_override("font_color", color)
 	if _message_icon_texture != null:
-		_message_icon_texture.z_index = MESSAGE_CHIP_CONTENT_Z
+		var icon_key: StringName = MESSAGE_WARNING_ICON if warning else MESSAGE_NORMAL_ICON
+		_message_icon_texture.texture = UiArtRegistry.get_catalog_icon(icon_key)
+		_message_icon_texture.visible = _message_icon_texture.texture != null
 		_message_icon_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 

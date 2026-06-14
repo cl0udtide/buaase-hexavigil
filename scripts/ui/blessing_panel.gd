@@ -2,11 +2,9 @@ extends Control
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
-const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
-
-const RELIC_CARD_SCENE := preload("res://scenes/ui/relic/RelicCard.tscn")
 
 @onready var _choice_list: VBoxContainer = %ChoiceList
+@onready var _choice_card_template: Control = %ChoiceCardTemplate
 
 
 var _last_sources_frame := -1
@@ -14,7 +12,8 @@ var _last_sources_frame := -1
 
 func _ready() -> void:
 	AppTheme.apply(self)
-	_apply_visual_style()
+	if _choice_card_template != null:
+		_choice_card_template.visible = false
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
 		# 优先用带来源的信号；旧的纯 id 信号作为兼容兜底（同帧已渲染则跳过）。
@@ -43,14 +42,19 @@ func show_choices_with_sources(entries: Array) -> void:
 		if buff_id == StringName():
 			continue
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
-		var card = RELIC_CARD_SCENE.instantiate()
-		card.configure(buff_id, cfg, {
+		var card := _make_choice_card()
+		if card == null:
+			continue
+		if not card.has_method("configure"):
+			continue
+		card.call("configure", buff_id, cfg, {
 			"selectable": true,
 			"choice_mode": true,
 			"slot_source": StringName(entry.get("slot", "")),
 		})
 		card.set_meta("audio_cue", &"blessing_chosen")
-		card.pressed.connect(_on_choice_pressed)
+		if card.has_signal("pressed"):
+			card.connect(&"pressed", Callable(self, "_on_choice_pressed"))
 		_choice_list.add_child(card)
 
 
@@ -64,29 +68,24 @@ func show_choices(choice_ids: Array[StringName]) -> void:
 	var data_repo = AppRefs.data_repo()
 	for buff_id in choice_ids:
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id) if data_repo != null else {}
-		var card = RELIC_CARD_SCENE.instantiate()
-		card.configure(buff_id, cfg, {
+		var card := _make_choice_card()
+		if card == null:
+			continue
+		if not card.has_method("configure"):
+			continue
+		card.call("configure", buff_id, cfg, {
 			"selectable": true,
 			"choice_mode": true
 		})
 		card.set_meta("audio_cue", &"blessing_chosen")
-		card.pressed.connect(_on_choice_pressed)
+		if card.has_signal("pressed"):
+			card.connect(&"pressed", Callable(self, "_on_choice_pressed"))
 		_choice_list.add_child(card)
 
 
 func hide_panel() -> void:
 	visible = false
 
-
-func _apply_visual_style() -> void:
-	add_theme_stylebox_override("panel", GameUiStyle.blessing_panel())
-	GameUiStyle.apply_frame_margin(get_node_or_null("ContentMargin") as MarginContainer, GameUiStyle.FRAME_BLESSING_PANEL)
-	var title := get_node_or_null("ContentMargin/VBoxContainer/TitleLabel") as Label
-	if title != null:
-		title.add_theme_color_override("font_color", GameUiStyle.TEXT)
-		title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-		title.add_theme_font_size_override("font_size", 22)
-		GameUiStyle.center_label_text(title)
 
 func _on_choice_pressed(buff_id: StringName) -> void:
 	if buff_id == StringName():
@@ -99,7 +98,19 @@ func _on_choice_pressed(buff_id: StringName) -> void:
 
 func _clear_choices() -> void:
 	for child in _choice_list.get_children():
+		if child == _choice_card_template:
+			continue
 		child.queue_free()
+
+
+func _make_choice_card() -> Control:
+	if _choice_card_template == null:
+		return null
+	var card := _choice_card_template.duplicate() as Control
+	if card == null:
+		return null
+	card.visible = true
+	return card
 
 
 func _set_modal_layer_visible(value: bool) -> void:
