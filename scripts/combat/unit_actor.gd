@@ -479,6 +479,35 @@ func get_effective_defense_ignore() -> float:
 	return clampf(_sum_modifier(&"defense_ignore"), 0.0, 0.95)
 
 
+# 攻击时无视目标固定法抗点数（异权剑·赫格利等遗物），仅在法术伤害结算时扣减目标法抗。
+func get_effective_resistance_ignore_flat() -> int:
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_total_for_unit"):
+		return 0
+	return max(int(round(float(run_state.get_buff_effect_total_for_unit(&"unit_res_ignore_flat", cfg)))), 0)
+
+
+# 遗物（神权剑·提尔芬）：每次攻击额外附带一发等于自身攻击力固定比例的真实伤害。
+func _apply_attack_true_damage_rider(target: Node) -> void:
+	if target == null or not is_instance_valid(target) or not target.has_method("receive_damage"):
+		return
+	var run_state = AppRefs.run_state()
+	if run_state == null or not run_state.has_method("get_buff_effect_total_for_unit"):
+		return
+	var pct := float(run_state.get_buff_effect_total_for_unit(&"unit_attack_true_damage_percent", cfg))
+	if pct <= 0.0:
+		return
+	var bonus := maxi(int(round(float(get_effective_atk()) * pct)), 1)
+	target.receive_damage(bonus, GameEnums.DAMAGE_TRUE, 0.0, self)
+
+
+# 遗物（好酒）：强制开启自动施放技能，无视玩家设置。
+func _is_force_auto_skill_relic_active() -> bool:
+	var run_state = AppRefs.run_state()
+	return run_state != null and run_state.has_method("get_buff_effect_total_for_unit") \
+		and float(run_state.get_buff_effect_total_for_unit(&"unit_force_auto_skill", cfg)) > 0.0
+
+
 # 每秒 SP 回复：基础（含技能覆盖）×(1+遗物%) + 盟约 flat 加值。
 func get_effective_sp_recover_per_sec() -> float:
 	var recover_per_sec := float(cfg.get("sp_recover_per_sec", 0.0))
@@ -1097,7 +1126,7 @@ func _try_auto_cast_skill() -> void:
 	if _skill_behavior == null or not _skill_behavior.has_method("should_auto_cast"):
 		return
 	var config_auto_cast := bool(_skill_behavior.should_auto_cast())
-	if not config_auto_cast and not GameplaySettings.is_auto_skill_cast_enabled():
+	if not config_auto_cast and not _is_force_auto_skill_relic_active() and not GameplaySettings.is_auto_skill_cast_enabled():
 		return
 	if not can_cast_skill():
 		return
@@ -1208,6 +1237,8 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 	if _skill_behavior != null and _skill_behavior.has_method("modify_attack_damage"):
 		damage_value = max(int(_skill_behavior.modify_attack_damage(damage_value, target)), 1)
 	var defense_ignore := get_effective_defense_ignore()
+	var res_ignore_flat := get_effective_resistance_ignore_flat()
+	_apply_attack_true_damage_rider(target)
 	_debug_log("单位 %s#%d 攻击敌人 %s#%d，%s伤害 %d" % [_debug_name(), runtime_id, target.enemy_id, target.get_runtime_id(), _damage_type_text(damage_type), damage_value])
 	if _uses_projectile_attack():
 		var launched_count := 0
@@ -1221,6 +1252,8 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 				projectile_payload["trigger_after_attack"] = true
 			if not projectile_payload.has("defense_ignore"):
 				projectile_payload["defense_ignore"] = defense_ignore
+			if not projectile_payload.has("res_ignore_flat"):
+				projectile_payload["res_ignore_flat"] = res_ignore_flat
 			var projectile := launch_projectile(target, projectile_payload)
 			if projectile != null:
 				launched_count += 1
@@ -1228,16 +1261,16 @@ func _attack_target(target: Node, gain_sp_on_attack: bool = true) -> void:
 			if gain_sp_on_attack:
 				gain_sp(int(cfg.get("sp_gain_on_attack", 0)) + _get_relic_sp_on_attack_add())
 			return
-	_resolve_attack_hit(target, damage_value, damage_type, true, defense_ignore)
+	_resolve_attack_hit(target, damage_value, damage_type, true, defense_ignore, res_ignore_flat)
 	if gain_sp_on_attack:
 		gain_sp(int(cfg.get("sp_gain_on_attack", 0)) + _get_relic_sp_on_attack_add())
 
 
-func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true, defense_ignore: float = 0.0) -> void:
+func _resolve_attack_hit(target: Node, damage_value: int, damage_type_value: int, trigger_after_attack: bool = true, defense_ignore: float = 0.0, res_ignore_flat: int = 0) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	if target.has_method("receive_damage"):
-		target.receive_damage(damage_value, damage_type_value, defense_ignore, self)
+		target.receive_damage(damage_value, damage_type_value, defense_ignore, self, res_ignore_flat)
 	if trigger_after_attack and _skill_behavior != null and _skill_behavior.has_method("after_attack"):
 		_skill_behavior.after_attack(target, damage_value)
 
@@ -1250,7 +1283,8 @@ func _on_projectile_hit(_projectile: Node, target: Node, projectile_payload: Dic
 		int(projectile_payload.get("damage", get_effective_atk())),
 		int(projectile_payload.get("damage_type", damage_type)),
 		bool(projectile_payload.get("trigger_after_attack", true)),
-		float(projectile_payload.get("defense_ignore", 0.0))
+		float(projectile_payload.get("defense_ignore", 0.0)),
+		int(projectile_payload.get("res_ignore_flat", 0))
 	)
 
 

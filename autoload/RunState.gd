@@ -453,7 +453,7 @@ func get_buff_effect_total_for_enemy(effect_type: StringName, enemy_cfg: Diction
 		"enemy_id": StringName(enemy_cfg.get("id", "")),
 		"damage_type": StringName(enemy_cfg.get("damage_type", ""))
 	}
-	return _get_filtered_buff_effect_total(effect_type, tags)
+	return _get_filtered_buff_effect_total(effect_type, tags) + _get_dynamic_enemy_buff_effect_total(effect_type, tags)
 
 
 func get_enemy_damage_taken_percent(damage_type: int, enemy_cfg: Dictionary) -> float:
@@ -510,6 +510,12 @@ func _get_dynamic_unit_buff_effect_total(effect_type: StringName, tags: Dictiona
 			if not _buff_effect_is_active(effect):
 				continue
 			match StringName(effect.get("effect_type", "")):
+				&"core_loss_ratio_effect":
+					if StringName(effect.get("target_effect_type", "")) != effect_type:
+						continue
+					if not _buff_matches_tags(effect, tags):
+						continue
+					total += float(effect.get("effect_value", 0.0)) * _core_loss_ratio()
 				&"prestige_chunk_effect":
 					if StringName(effect.get("target_effect_type", "")) != effect_type:
 						continue
@@ -543,6 +549,52 @@ func _get_dynamic_unit_buff_effect_total(effect_type: StringName, tags: Dictiona
 						layers = min(layers, max_layers)
 					total += float(effect.get("effect_value", 0.0)) * float(max(layers, 0))
 	return total
+
+
+## 核心已损失生命占上限的比例（0=满血，趋近 1=濒死），供动态遗物按战损放大效果。
+func _core_loss_ratio() -> float:
+	return float(max(core_hp_max - core_hp, 0)) / float(max(core_hp_max, 1))
+
+
+## 敌人侧动态层：当前仅支持 core_loss_ratio_effect（按核心战损比例修饰 enemy_*_percent）。
+func _get_dynamic_enemy_buff_effect_total(effect_type: StringName, tags: Dictionary) -> float:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return 0.0
+	var total := 0.0
+	for buff_id in buffs:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		for effect in _get_buff_effect_entries(cfg):
+			if not _buff_effect_is_active(effect):
+				continue
+			if StringName(effect.get("effect_type", "")) != &"core_loss_ratio_effect":
+				continue
+			if StringName(effect.get("target_effect_type", "")) != effect_type:
+				continue
+			if not _buff_matches_tags(effect, tags):
+				continue
+			total += float(effect.get("effect_value", 0.0)) * _core_loss_ratio()
+	return total
+
+
+## 是否有遗物让指定 boss 跳过二阶段（一阶段死即真死）。enemy_id_filter 限定具体 boss。
+func should_boss_skip_phases(enemy_actor: Node = null) -> bool:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null:
+		return false
+	var target_enemy_id := StringName()
+	if enemy_actor != null and is_instance_valid(enemy_actor):
+		target_enemy_id = StringName(enemy_actor.get("enemy_id"))
+	for buff_id in buffs:
+		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
+		for effect in _get_buff_effect_entries(cfg):
+			if StringName(effect.get("effect_type", "")) != &"boss_skip_second_phase":
+				continue
+			var only := StringName(effect.get("enemy_id_filter", ""))
+			if only != StringName() and target_enemy_id != StringName() and only != target_enemy_id:
+				continue
+			return true
+	return false
 
 
 func _get_buff_effect_entries(cfg: Dictionary) -> Array[Dictionary]:

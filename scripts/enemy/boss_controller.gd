@@ -2,6 +2,7 @@ extends Node
 
 const CELL_SIZE := 64.0
 const GroundHazardZone = preload("res://scripts/effects/ground_hazard_zone.gd")
+const AppRefs = preload("res://scripts/common/app_refs.gd")
 
 var _owner_actor: Node = null
 var _initial_cfg: Dictionary = {}
@@ -40,6 +41,9 @@ func is_transitioning() -> bool:
 
 func try_consume_death_for_phase_transition() -> bool:
 	if not _enabled or _phase_transitioning:
+		return false
+	var run_state = AppRefs.run_state()
+	if run_state != null and run_state.has_method("should_boss_skip_phases") and run_state.should_boss_skip_phases(_owner_actor):
 		return false
 	var next_phase_cfg: Dictionary = _get_next_phase_cfg()
 	if next_phase_cfg.is_empty():

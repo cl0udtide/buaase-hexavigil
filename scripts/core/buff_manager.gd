@@ -56,6 +56,8 @@ func get_random_blessing_choices_with_sources(count: int = 0) -> Array[Dictionar
 		var cfg: Dictionary = data_repo.get_buff_cfg(buff_id)
 		if cfg.is_empty():
 			continue
+		if bool(cfg.get("event_only", false)):
+			continue
 		cfg["id"] = buff_id
 		unowned.append(cfg)
 
