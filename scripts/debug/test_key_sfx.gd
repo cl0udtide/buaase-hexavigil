@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_enemy_death_variation(audio_manager)
 	_test_sfx_gain_policy(audio_manager)
 	_test_sfx_prewarm_cache(audio_manager)
+	_test_audio_process_mode(audio_manager)
 	_test_core_destroyed_result_delay()
 	_test_night_transition_delay()
 	_test_run_end_audio_delay()
@@ -109,6 +110,18 @@ func _test_sfx_prewarm_cache(audio_manager: Node) -> void:
 	for key in [&"core_hit", &"core_destroyed", &"building_hit", &"building_destroyed"]:
 		var path := String(sfx_paths.get(key, ""))
 		_expect(stream_cache.has(path), "%s is prewarmed" % key)
+
+
+func _test_audio_process_mode(audio_manager: Node) -> void:
+	_expect(audio_manager.process_mode == Node.PROCESS_MODE_ALWAYS, "audio manager runs while story pauses the tree")
+	var bgm_player := audio_manager.get("_bgm_player") as AudioStreamPlayer
+	_expect(bgm_player != null and bgm_player.process_mode == Node.PROCESS_MODE_ALWAYS, "bgm player runs while paused")
+	var sfx_players: Array = audio_manager.get("_sfx_players")
+	var sfx_modes_valid := not sfx_players.is_empty()
+	for player_variant in sfx_players:
+		var player := player_variant as AudioStreamPlayer
+		sfx_modes_valid = sfx_modes_valid and player != null and player.process_mode == Node.PROCESS_MODE_ALWAYS
+	_expect(sfx_modes_valid, "sfx players run while paused")
 
 
 func _test_core_destroyed_result_delay() -> void:
