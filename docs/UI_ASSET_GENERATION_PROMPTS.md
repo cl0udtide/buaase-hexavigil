@@ -639,6 +639,8 @@
 
 ## 23. 第 21 轮：遗物图标第一批
 
+> 当前遗物图标与稀有度底板的新版生成清单已迁移到 `docs/UI_RELIC_ASSET_GENERATION_TODO.md`。该文档列出了所有 `data/buffs.json` 中缺少 `icon_path` 的遗物，以及新版 `RelicStrip` 入口按钮、`RelicIcon` / `RelicCard` 稀有度底板的生成和接入步骤。
+
 保存源图为：`source_sheet_21_relic_icons_a.png`
 
 裁剪顺序：

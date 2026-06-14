@@ -1,6 +1,6 @@
 extends SceneTree
 
-const GENERATOR_VERSION := "ui-derived-assets-v7-ninepatch-short-axis-scale"
+const GENERATOR_VERSION := "ui-derived-assets-v8-icon-texturerect-source-size"
 const CONFIG_PATH := "res://assets/ui/build/ui_asset_build.json"
 const MANIFEST_PATH := "res://assets/ui/build/ui_asset_build_manifest.json"
 const ACTUAL_SIZE_PATH := "res://assets/ui/build/ui_asset_actual_sizes.json"
@@ -170,8 +170,12 @@ func _generate_png(asset_name: String, source_png: String, output_png: String, p
 				output_width = maxi(1, int(round(float(source_width) * scale)))
 				output_height = maxi(1, int(round(float(source_height) * scale)))
 		else:
-			output_width = target_size.x
-			output_height = target_size.y
+			if _should_preserve_texture_source_size(asset_name, asset_config):
+				output_width = source_width
+				output_height = source_height
+			else:
+				output_width = target_size.x
+				output_height = target_size.y
 	elif pre_scale != 1:
 		output_width = source_width * pre_scale
 		output_height = source_height * pre_scale
@@ -203,6 +207,30 @@ func _ninepatch_preserve_scale(source_size: Vector2i, target_size: Vector2i) -> 
 	var target_is_landscape := target_size.x >= target_size.y
 	var scale := float(target_size.y) / float(source_size.y) if target_is_landscape else float(target_size.x) / float(source_size.x)
 	return minf(1.0, maxf(scale, 0.0))
+
+
+func _should_preserve_texture_source_size(asset_name: String, asset_config: Dictionary) -> bool:
+	if String(asset_config.get("kind", "")) != "texture":
+		return false
+	if not asset_name.begins_with("icon_"):
+		return false
+	var output_png := String(asset_config.get("output_png", ""))
+	if output_png.is_empty():
+		return false
+	var bucket: Dictionary = _actual_sizes.get("textures", {})
+	var record: Dictionary = bucket.get(output_png, {})
+	var raw_uses: Variant = record.get("uses", [])
+	if not (raw_uses is Array):
+		return true
+	var uses := raw_uses as Array
+	if uses.is_empty():
+		return true
+	for use in uses:
+		if not (use is Dictionary):
+			continue
+		if String((use as Dictionary).get("slot", "")) == "icon":
+			return false
+	return true
 
 
 func _generate_style(asset_name: String, template_style: String, output_png: String, output_style: String, png_scale: Vector2, asset_config: Dictionary) -> void:
