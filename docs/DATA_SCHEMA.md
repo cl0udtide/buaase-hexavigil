@@ -321,7 +321,8 @@ UI 必须通过 `UiArtRegistry` 读取图标，读取优先级为：显式路径
 | `projectile_visual_height` | `float` | 飞行物贴图显示高度 |
 | `projectile_visual_length` | `float` | 飞行物贴图显示长度 |
 | `attack_splash_radius` | `int` | 命中时溅射的格半径；配置后普攻命中范围内多个目标 |
-| `attack_splash_damage_type` | `String` | 溅射伤害的伤害类型 |
+| `attack_splash_atk_multiplier` | `float` | 可选，溅射伤害相对当前攻击力的倍率，未配置默认 `1.0` |
+| `attack_splash_damage_type` | `String` | 溅射伤害的伤害类型，未配置默认 `magic` |
 | `attack_splash_effect` | `String` | 溅射命中特效贴图路径 |
 | `reflect_physical_percent` | `float` | 反弹物理伤害比例；近战攻击者按此比例承受反伤 |
 | `reflect_effect` | `String` | 反伤触发特效贴图路径 |
@@ -351,7 +352,7 @@ Boss 多阶段规则：
   {
     "id": "medical_station",
     "name": "医疗站",
-    "desc": "一定范围内的友军持续回复 2 生命/秒",
+    "desc": "一定范围内的友军持续回复 15 生命/秒，防御 +10，法抗 +5",
     "building_type": "aura",
     "sort_order": 110,
     "icon_path": "res://assets/ui/generated/icon_building_medical_station.png",
@@ -367,7 +368,9 @@ Boss 多阶段规则：
     "effect_radius": 2,
     "effect_shape": "trimmed_square",
     "effect_type": "heal",
-    "effect_value": 2,
+    "effect_value": 15,
+    "unit_def_add": 10,
+    "unit_res_add": 5,
     "place_rule": "plain_only",
     "scene_key": "building_actor"
   }
@@ -401,6 +404,8 @@ Boss 多阶段规则：
 | `effect_value` | `int` / `float` | 效果数值 |
 | `night_mana_cost` | `int` | 夜间该建筑保持开启时每段持续扣除的魔力矿（战火圣坛等可开关建筑用）；未配置默认 0 |
 | `initial_enabled` | `bool` | 可开关建筑的初始开关态；未配置默认 `true`（开启） |
+| `unit_def_add` | `int` / `float` | 可选，`heal` 光环额外给予范围内干员的防御加值 |
+| `unit_res_add` | `int` / `float` | 可选，`heal` 光环额外给予范围内干员的法抗加值 |
 | `sort_order` | `int` | UI 排序值；`BuildPanel` 按该值从小到大显示，同值按 `id` 排序 |
 | `icon_path` | `String` | 建筑图标路径，`BuildPanel` 优先通过统一接口读取 |
 | `icon_text` | `String` | 图片缺失时的文本兜底 |

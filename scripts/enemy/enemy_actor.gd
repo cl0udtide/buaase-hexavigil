@@ -64,6 +64,7 @@ var _shield_hp := 0
 var _max_shield_hp := 0
 var _regen_carry := 0.0
 var _stat_scale := 1.0
+var _max_hp_scale := 1.0
 var _regen_effect_cooldown := 0.0
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
@@ -133,7 +134,8 @@ func setup_from_cfg(new_enemy_id: StringName, new_cfg: Dictionary, spawn_cell: V
 	cfg = new_cfg.duplicate(true)
 	cfg["id"] = new_enemy_id
 	_stat_scale = float(cfg.get("_stat_scale", 1.0))
-	DifficultyScale.apply_stat_scale(cfg, _stat_scale)
+	_max_hp_scale = float(cfg.get("_max_hp_scale", _stat_scale))
+	DifficultyScale.apply_stat_scale(cfg, _stat_scale, _max_hp_scale)
 	max_hp = int(cfg.get("max_hp", 1))
 	var run_state = AppRefs.run_state()
 	if run_state != null and run_state.has_method("get_buff_effect_total_for_enemy"):
@@ -898,7 +900,7 @@ func _setup_boss_controller() -> void:
 
 func _apply_phase_cfg(phase_cfg: Dictionary) -> void:
 	var scaled_phase := phase_cfg.duplicate(true)
-	DifficultyScale.apply_stat_scale(scaled_phase, _stat_scale)
+	DifficultyScale.apply_stat_scale(scaled_phase, _stat_scale, _max_hp_scale)
 	cfg.merge(scaled_phase, true)
 	if _movement_controller != null:
 		_movement_controller.refresh_path_mode()

@@ -68,7 +68,7 @@
   {
     "id": "medical_station",
     "name": "医疗站",
-    "desc": "一定范围内的友军持续回复 2 生命/秒",
+    "desc": "一定范围内的友军持续回复 15 生命/秒，防御 +10，法抗 +5",
     "sort_order": 110,
     "icon_text": "疗",
     "building_type": "aura",
@@ -83,7 +83,9 @@
     "effect_radius": 2,
     "effect_shape": "trimmed_square",
     "effect_type": "heal",
-    "effect_value": 2,
+    "effect_value": 15,
+    "unit_def_add": 10,
+    "unit_res_add": 5,
     "place_rule": "plain_only",
     "scene_key": "building_actor",
     "icon_path": "res://assets/ui/generated/icon_building_medical_station.png"

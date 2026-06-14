@@ -12,6 +12,7 @@ var _failures: int = 0
 func _init() -> void:
 	_test_count_scale()
 	_test_stat_scale()
+	_test_max_hp_scale()
 	_test_boss_stat_scale()
 	_test_scaled_count()
 	_test_apply_stat_scale()
@@ -49,7 +50,7 @@ func _test_count_scale() -> void:
 
 
 func _test_stat_scale() -> void:
-	# 九天数值系数：逐天上升、后段更陡，末日 2.30×。
+	# 九天非生命数值系数：逐天上升、后段更陡，末日 2.30×。
 	var expected := {1: 1.0, 2: 1.08, 4: 1.30, 6: 1.62, 9: 2.30}
 	for day in expected:
 		_expect_approx(DifficultyScale.stat_scale_for_day(day), float(expected[day]), "stat_scale day %d" % day)
@@ -62,8 +63,19 @@ func _test_stat_scale() -> void:
 	_expect_approx(DifficultyScale.stat_scale_for_day(20), 2.30, "stat_scale fallback -> day9")
 
 
+func _test_max_hp_scale() -> void:
+	var expected := {1: 1.0, 6: 1.62, 7: 1.82, 8: 2.90, 9: 4.00}
+	for day in expected:
+		_expect_approx(DifficultyScale.max_hp_scale_for_day(day), float(expected[day]), "max_hp_scale day %d" % day)
+	_expect_approx(DifficultyScale.max_hp_scale_for_day(20), 4.00, "max_hp_scale fallback -> day9")
+	_expect_approx(DifficultyScale.boss_max_hp_scale_for_day(6), 1.6, "boss max_hp scale d6")
+	_expect_approx(DifficultyScale.boss_max_hp_scale_for_day(7), 1.6, "boss max_hp scale d7 -> key6")
+	_expect_approx(DifficultyScale.boss_max_hp_scale_for_day(8), 2.90, "boss max_hp scale d8")
+	_expect_approx(DifficultyScale.boss_max_hp_scale_for_day(9), 4.00, "boss max_hp scale d9")
+
+
 func _test_boss_stat_scale() -> void:
-	# Boss 独立曲线，d3=1.0 下限，末战拉到 2.5×。
+	# Boss 非生命独立曲线，d3=1.0 下限，末战拉到 2.5×。
 	_expect_approx(DifficultyScale.boss_stat_scale_for_day(3), 1.0, "boss scale d3")
 	_expect_approx(DifficultyScale.boss_stat_scale_for_day(6), 1.6, "boss scale d6")
 	_expect_approx(DifficultyScale.boss_stat_scale_for_day(9), 2.5, "boss scale d9")
@@ -98,6 +110,10 @@ func _test_apply_stat_scale() -> void:
 	var cfg3 := {"max_hp": 1}
 	DifficultyScale.apply_stat_scale(cfg3, 0.01)
 	_expect(int(cfg3["max_hp"]) >= 1, "max_hp floor 1")
+	var cfg4 := {"max_hp": 100, "atk": 50, "def": 20, "res": 10}
+	DifficultyScale.apply_stat_scale(cfg4, 1.5, 2.9)
+	_expect(int(cfg4["max_hp"]) == 290, "independent max_hp scale 100*2.9 = 290")
+	_expect(int(cfg4["atk"]) == 75, "independent max_hp scale keeps atk using stat scale")
 
 
 func _test_stat_scale_for_enemy() -> void:
@@ -108,6 +124,8 @@ func _test_stat_scale_for_enemy() -> void:
 	# 同一天：Boss 走 boss 曲线，杂兵走 stat 曲线。
 	_expect_approx(DifficultyScale.stat_scale_for_enemy(boss_cfg, 6), 1.6, "boss enemy d6 -> boss scale")
 	_expect_approx(DifficultyScale.stat_scale_for_enemy(normal_cfg, 6), 1.62, "normal enemy d6 -> stat scale")
+	_expect_approx(DifficultyScale.max_hp_scale_for_enemy(boss_cfg, 9), 4.0, "boss enemy d9 -> boss max_hp scale")
+	_expect_approx(DifficultyScale.max_hp_scale_for_enemy(normal_cfg, 9), 4.0, "normal enemy d9 -> max_hp scale")
 
 
 func _test_nine_day_schedule() -> void:

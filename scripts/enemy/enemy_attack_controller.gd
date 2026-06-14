@@ -176,7 +176,8 @@ func _apply_attack_splash(primary_target: Node) -> void:
 	var radius := int(_owner_actor.cfg.get("attack_splash_radius", 0))
 	if radius <= 0:
 		return
-	var splash_damage := int(_owner_actor.cfg.get("atk", 1))
+	var splash_multiplier: float = maxf(float(_owner_actor.cfg.get("attack_splash_atk_multiplier", 1.0)), 0.0)
+	var splash_damage: int = int(round(float(_owner_actor.cfg.get("atk", 1)) * splash_multiplier))
 	if splash_damage <= 0:
 		return
 	var splash_type := _parse_damage_type(String(_owner_actor.cfg.get("attack_splash_damage_type", "magic")))

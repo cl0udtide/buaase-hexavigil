@@ -327,7 +327,11 @@ func _build_wave_preview(cfg: Dictionary, seed_day: int, template_id: StringName
 			enemy_cfg = NightAffixService.apply_to_enemy_cfg(enemy_cfg, affix_cfgs)
 		var preview_run_state = AppRefs.run_state()
 		var preview_day: int = int(preview_run_state.day) if preview_run_state != null else seed_day
-		DifficultyScale.apply_stat_scale(enemy_cfg, DifficultyScale.stat_scale_for_enemy(enemy_cfg, preview_day))
+		DifficultyScale.apply_stat_scale(
+			enemy_cfg,
+			DifficultyScale.stat_scale_for_enemy(enemy_cfg, preview_day),
+			DifficultyScale.max_hp_scale_for_enemy(enemy_cfg, preview_day)
+		)
 		var aggregate_key := "%s|%s" % [String(spawn_key), String(enemy_id)]
 		if not entries_by_key.has(aggregate_key):
 			entries_by_key[aggregate_key] = {
@@ -521,7 +525,7 @@ func _load_affix_cfgs(affix_ids: Array) -> Array[Dictionary]:
 	return cfgs
 
 
-## spawn 时的 cfg 覆盖：当天赏金缩放 + 词缀修饰（若有）+ 当晚数值系数 _stat_scale（enemy_actor 读取并套用，含阶段切换）。
+## spawn 时的 cfg 覆盖：当天赏金缩放 + 词缀修饰（若有）+ 当晚数值系数（enemy_actor 读取并套用，含阶段切换）。
 func _enemy_spawn_cfg_override(enemy_id: StringName) -> Dictionary:
 	if enemy_id == StringName():
 		return {}
@@ -535,6 +539,7 @@ func _enemy_spawn_cfg_override(enemy_id: StringName) -> Dictionary:
 	if not _affix_cfgs.is_empty():
 		override = NightAffixService.apply_to_enemy_cfg(override, _affix_cfgs)
 	override["_stat_scale"] = DifficultyScale.stat_scale_for_enemy(base_cfg, day)
+	override["_max_hp_scale"] = DifficultyScale.max_hp_scale_for_enemy(base_cfg, day)
 	_enemy_cfg_override_cache[enemy_id] = override
 	return override
 

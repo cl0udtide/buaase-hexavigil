@@ -13,7 +13,7 @@ const COUNT_SCALE_BY_DAY := {
 }
 const DEFAULT_COUNT_SCALE := 1.0
 
-## 杂兵数值系数：乘到 max_hp/atk/def/res 上。逐天上升且后段更陡（治"后期太简单"）。
+## 杂兵非生命数值系数：乘到 atk/def/res 上。逐天上升且后段更陡（治"后期太简单"）。
 ## 每日步长递增（.08→.25），末日 2.30× 追上玩家复利。
 const STAT_SCALE_BY_DAY := {
 	1: 1.0, 2: 1.08, 3: 1.18,
@@ -22,7 +22,15 @@ const STAT_SCALE_BY_DAY := {
 }
 const DEFAULT_STAT_SCALE := 1.0
 
-## Boss 数值系数：Boss 走这条独立曲线（不吃 STAT_SCALE，免双重缩放）。
+## 杂兵生命系数：只乘到 max_hp 上。后两天独立抬高，攻防法抗仍走 STAT_SCALE。
+const MAX_HP_SCALE_BY_DAY := {
+	1: 1.0, 2: 1.08, 3: 1.18,
+	4: 1.30, 5: 1.45, 6: 1.62,
+	7: 1.82, 8: 2.90, 9: 4.00,
+}
+const DEFAULT_MAX_HP_SCALE := 1.0
+
+## Boss 非生命数值系数：Boss 走这条独立曲线（不吃 STAT_SCALE，免双重缩放）。
 ## Boss 只在幕末（d3/d6/d9）出场，故只需三点；d3=1.0 为下限（不低于现状），末战拉到 2.5×。
 const BOSS_STAT_SCALE_BY_DAY := {
 	3: 1.0,
@@ -31,8 +39,17 @@ const BOSS_STAT_SCALE_BY_DAY := {
 }
 const DEFAULT_BOSS_STAT_SCALE := 1.0
 
-## 受本系数缩放的敌人数值字段。
-const SCALED_STATS: Array[String] = ["max_hp", "atk", "def", "res"]
+## Boss 生命系数：只乘到 max_hp 上。d8/d9 与杂兵生命倍率对齐，便于终盘统一调血量。
+const BOSS_MAX_HP_SCALE_BY_DAY := {
+	3: 1.0,
+	6: 1.6,
+	8: 2.90,
+	9: 4.00,
+}
+const DEFAULT_BOSS_MAX_HP_SCALE := 1.0
+
+## 受非生命数值系数缩放的敌人数值字段。
+const SCALED_NON_HP_STATS: Array[String] = ["atk", "def", "res"]
 
 
 ## 阶梯取值：命中精确键则直接返回，否则回退到 <= day 的最大键；都没有则用 default。
@@ -57,8 +74,16 @@ static func stat_scale_for_day(day: int) -> float:
 	return _stepwise(STAT_SCALE_BY_DAY, day, DEFAULT_STAT_SCALE)
 
 
+static func max_hp_scale_for_day(day: int) -> float:
+	return _stepwise(MAX_HP_SCALE_BY_DAY, day, DEFAULT_MAX_HP_SCALE)
+
+
 static func boss_stat_scale_for_day(day: int) -> float:
 	return _stepwise(BOSS_STAT_SCALE_BY_DAY, day, DEFAULT_BOSS_STAT_SCALE)
+
+
+static func boss_max_hp_scale_for_day(day: int) -> float:
+	return _stepwise(BOSS_MAX_HP_SCALE_BY_DAY, day, DEFAULT_BOSS_MAX_HP_SCALE)
 
 
 static func is_boss_cfg(enemy_cfg: Dictionary) -> bool:
@@ -70,18 +95,25 @@ static func stat_scale_for_enemy(enemy_cfg: Dictionary, day: int) -> float:
 	return boss_stat_scale_for_day(day) if is_boss_cfg(enemy_cfg) else stat_scale_for_day(day)
 
 
+## 该敌人当晚的生命系数：Boss 用 boss 生命曲线，其余用杂兵生命曲线。
+static func max_hp_scale_for_enemy(enemy_cfg: Dictionary, day: int) -> float:
+	return boss_max_hp_scale_for_day(day) if is_boss_cfg(enemy_cfg) else max_hp_scale_for_day(day)
+
+
 ## 缩放后的数量：向上取整、下限 1。
 static func scaled_count(count: int, scale: float) -> int:
 	return maxi(int(ceil(float(count) * scale)), 1)
 
 
-## 就地把数值系数乘到 cfg 的 max_hp/atk/def/res 上。
+## 就地把数值系数乘到 cfg 上。max_hp 可使用独立倍率，传负数时沿用 scale。
 ## max_hp 下限 1，其余下限 0，整数四舍五入（与 NightAffixService 口径一致）。
-static func apply_stat_scale(target_cfg: Dictionary, scale: float) -> void:
+static func apply_stat_scale(target_cfg: Dictionary, scale: float, max_hp_scale: float = -1.0) -> void:
+	var hp_scale: float = max_hp_scale if max_hp_scale >= 0.0 else scale
+	if target_cfg.has("max_hp") and not is_equal_approx(hp_scale, 1.0):
+		target_cfg["max_hp"] = maxi(int(round(float(target_cfg["max_hp"]) * hp_scale)), 1)
 	if is_equal_approx(scale, 1.0):
 		return
-	for stat in SCALED_STATS:
+	for stat in SCALED_NON_HP_STATS:
 		if not target_cfg.has(stat):
 			continue
-		var minimum := 1 if stat == "max_hp" else 0
-		target_cfg[stat] = maxi(int(round(float(target_cfg[stat]) * scale)), minimum)
+		target_cfg[stat] = maxi(int(round(float(target_cfg[stat]) * scale)), 0)
