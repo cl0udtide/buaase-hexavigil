@@ -3,6 +3,7 @@ extends Control
 const AppTheme = preload("res://scripts/ui/app_theme.gd")
 const GameUiStyle = preload("res://scripts/ui/game_ui_style.gd")
 const UiArtRegistry = preload("res://scripts/ui/ui_art_registry.gd")
+const UiDisplayText = preload("res://scripts/ui/ui_display_text.gd")
 const EnemyIconHelper = preload("res://scripts/ui/combat/enemy_icon_helper.gd")
 
 signal operator_card_pressed(operator_key: StringName)
@@ -32,6 +33,8 @@ const BULLET_TIME_OVERLAY_ALPHA := 1.0
 const MESSAGE_NORMAL_ICON := &"top_enemy_queue"
 const MESSAGE_WARNING_ICON := &"button_close"
 const DEPLOY_SCROLLBAR_STEP := 48
+const DEPLOY_FILTER_ALL := &"all"
+const DEPLOY_FILTER_CLASS_ORDER: Array[StringName] = [&"guard", &"sniper", &"caster", &"defender"]
 const WAVE_PREVIEW_NORMAL_HEIGHT := 316.0
 const WAVE_PREVIEW_COMPACT_HEIGHT := 208.0
 const RESOURCE_DELTA_GAIN_COLOR := Color(0.440, 0.650, 0.470, 1.0)
@@ -101,6 +104,10 @@ const MESSAGE_TEXT_OVERRIDES := {
 }
 
 var _cards_by_operator_key: Dictionary = {}
+var _operator_base_visible_by_key: Dictionary = {}
+var _operator_class_by_key: Dictionary = {}
+var _deploy_filter_buttons: Dictionary = {}
+var _deploy_filter_class: StringName = DEPLOY_FILTER_ALL
 var _resource_item_controls: Dictionary = {}
 var _open_panel_stack: Array[StringName] = []
 var _core_hp_ratio := 0.0
@@ -176,6 +183,10 @@ var _level_intro_line: ColorRect
 @onready var _deck_panel: Control = %DeployDeck
 @onready var _deck_scroll: ScrollContainer = _deck_panel.get_node_or_null("DeckMargin/ScrollContainer") as ScrollContainer
 @onready var _deck_container: HBoxContainer = %DeployDeckContainer
+@onready var _deck_filter_bar: HBoxContainer = %DeckFilterBar
+@onready var _all_deck_filter_button: Button = %AllDeckFilterButton
+@onready var _deck_filter_button_template: Button = %DeckFilterButtonTemplate
+@onready var _data_repo: Node = get_node_or_null("/root/DataRepo")
 @onready var _detail_panel: Control = %UnitDetailPanel
 @onready var _legend_panel: Control = %LegendPanel
 @onready var _drag_ghost: Control = %DragGhost
@@ -212,6 +223,7 @@ func _ready() -> void:
 	_bind_wave_preview_nodes()
 	_ensure_level_intro_banner()
 	_setup_deploy_deck_scroll()
+	_setup_deploy_filter_bar()
 	_style_legend_panel()
 	_speed_active_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speed_active_overlay.modulate = Color(1.0, 1.0, 1.0, SPEED_ACTIVE_OVERLAY_ALPHA)
@@ -635,12 +647,18 @@ func set_operators(operators: Array[Dictionary]) -> void:
 	for child in _deck_container.get_children():
 		child.queue_free()
 	_cards_by_operator_key.clear()
+	_operator_base_visible_by_key.clear()
+	_operator_class_by_key.clear()
 	_deck_panel.visible = not operators.is_empty()
+	if _deck_filter_bar != null:
+		_deck_filter_bar.visible = not operators.is_empty()
 	_deck_container.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_deck_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_deck_container.custom_minimum_size = Vector2.ZERO
 	for operator_info in operators:
 		var operator_key := StringName((operator_info as Dictionary).get("key", ""))
+		if operator_key == StringName():
+			continue
 		var card = OPERATOR_CARD_SCENE.instantiate()
 		card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		card.setup(operator_key, operator_info)
@@ -649,6 +667,10 @@ func set_operators(operators: Array[Dictionary]) -> void:
 			card.connect(&"operator_card_drag_started", func(key: StringName) -> void: operator_card_drag_started.emit(key))
 		_deck_container.add_child(card)
 		_cards_by_operator_key[operator_key] = card
+		_operator_base_visible_by_key[operator_key] = true
+		_operator_class_by_key[operator_key] = _operator_class_from_info(operator_info)
+	_rebuild_deploy_filter_buttons()
+	_apply_deploy_filter()
 	if _deck_scroll != null:
 		_deck_scroll.scroll_horizontal = 0
 	call_deferred("_refresh_deploy_deck_scroll_content")
@@ -662,9 +684,12 @@ func set_operator_card(operator_key: StringName, text_value: String, state: Stri
 
 func set_operator_card_visible(operator_key: StringName, visible: bool) -> void:
 	var card := _cards_by_operator_key.get(operator_key) as Control
-	if card == null or card.visible == visible:
+	if card == null:
 		return
-	card.visible = visible
+	_operator_base_visible_by_key[operator_key] = visible
+	var filtered_visible := visible and _operator_matches_deploy_filter(operator_key)
+	if card.visible != filtered_visible:
+		card.visible = filtered_visible
 	call_deferred("_refresh_deploy_deck_scroll_content")
 
 
@@ -1336,6 +1361,139 @@ func _setup_deploy_deck_scroll() -> void:
 	if not _deck_scroll.resized.is_connected(_refresh_deploy_deck_scroll_content):
 		_deck_scroll.resized.connect(_refresh_deploy_deck_scroll_content)
 	_refresh_deploy_deck_scroll_content()
+
+
+func _setup_deploy_filter_bar() -> void:
+	if _deck_filter_bar == null or _all_deck_filter_button == null or _deck_filter_button_template == null:
+		return
+	_deploy_filter_buttons.clear()
+	_deploy_filter_buttons[DEPLOY_FILTER_ALL] = _all_deck_filter_button
+	_style_deploy_filter_button(_all_deck_filter_button)
+	_bind_deploy_filter_button_highlight(_all_deck_filter_button)
+	_all_deck_filter_button.pressed.connect(_select_deploy_filter.bind(DEPLOY_FILTER_ALL))
+	_deck_filter_button_template.visible = false
+	_style_deploy_filter_button(_deck_filter_button_template)
+	_deck_filter_bar.visible = false
+	_refresh_deploy_filter_button_states()
+
+
+func _style_deploy_filter_button(button: Button) -> void:
+	if button == null:
+		return
+	button.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
+	button.add_theme_color_override("font_hover_color", GameUiStyle.TEXT_INVERTED)
+	button.add_theme_color_override("font_pressed_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_focus_color", GameUiStyle.TEXT)
+	button.add_theme_color_override("font_disabled_color", GameUiStyle.TEXT_INVERTED_DIM)
+	button.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	button.add_theme_constant_override("shadow_offset_x", 0)
+	button.add_theme_constant_override("shadow_offset_y", 0)
+	button.add_theme_font_size_override("font_size", 12)
+
+
+func _rebuild_deploy_filter_buttons() -> void:
+	if _deck_filter_bar == null or _all_deck_filter_button == null or _deck_filter_button_template == null:
+		return
+	for child in _deck_filter_bar.get_children():
+		if child == _all_deck_filter_button or child == _deck_filter_button_template:
+			continue
+		child.queue_free()
+	_deploy_filter_buttons.clear()
+	_deploy_filter_buttons[DEPLOY_FILTER_ALL] = _all_deck_filter_button
+	var available_classes: Dictionary = {}
+	for raw_class: Variant in _operator_class_by_key.values():
+		var class_key := StringName(raw_class)
+		if class_key != StringName():
+			available_classes[class_key] = true
+	var class_keys: Array[StringName] = []
+	for class_key in DEPLOY_FILTER_CLASS_ORDER:
+		if available_classes.has(class_key):
+			class_keys.append(class_key)
+	for raw_class: Variant in available_classes.keys():
+		var class_key := StringName(raw_class)
+		if not class_keys.has(class_key):
+			class_keys.append(class_key)
+	if _deploy_filter_class != DEPLOY_FILTER_ALL and not available_classes.has(_deploy_filter_class):
+		_deploy_filter_class = DEPLOY_FILTER_ALL
+	for class_key in class_keys:
+		var button := _deck_filter_button_template.duplicate() as Button
+		if button == null:
+			continue
+		button.name = "%sDeckFilterButton" % String(class_key).capitalize()
+		button.unique_name_in_owner = false
+		button.visible = true
+		button.text = UiDisplayText.class_label(String(class_key))
+		button.set_meta("class_key", class_key)
+		button.pressed.connect(_select_deploy_filter.bind(class_key))
+		_style_deploy_filter_button(button)
+		_bind_deploy_filter_button_highlight(button)
+		_deck_filter_bar.add_child(button)
+		_deploy_filter_buttons[class_key] = button
+	_refresh_deploy_filter_button_states()
+
+
+func _select_deploy_filter(class_key: StringName) -> void:
+	if class_key == StringName():
+		class_key = DEPLOY_FILTER_ALL
+	_deploy_filter_class = class_key
+	_refresh_deploy_filter_button_states()
+	_apply_deploy_filter()
+
+
+func _refresh_deploy_filter_button_states() -> void:
+	for raw_class: Variant in _deploy_filter_buttons.keys():
+		var class_key := StringName(raw_class)
+		var button := _deploy_filter_buttons.get(class_key) as Button
+		if button == null:
+			continue
+		var active := class_key == _deploy_filter_class
+		button.set_pressed_no_signal(active)
+		var color := GameUiStyle.TEXT if active else GameUiStyle.TEXT_INVERTED_DIM
+		button.add_theme_color_override("font_color", color)
+		_apply_deploy_filter_button_highlight(button, active)
+
+
+func _bind_deploy_filter_button_highlight(button: Button) -> void:
+	if button == null:
+		return
+	button.mouse_entered.connect(_apply_deploy_filter_button_highlight.bind(button, true))
+	button.mouse_exited.connect(_apply_deploy_filter_button_highlight.bind(button, false))
+
+
+func _apply_deploy_filter_button_highlight(button: Button, highlighted: bool) -> void:
+	if button == null:
+		return
+	var class_key := StringName(button.get_meta("class_key", DEPLOY_FILTER_ALL))
+	var active := class_key == _deploy_filter_class
+	button.modulate = Color(1.12, 1.12, 1.12, 1.0) if highlighted or active else Color.WHITE
+
+
+func _apply_deploy_filter() -> void:
+	for raw_operator_key: Variant in _cards_by_operator_key.keys():
+		var operator_key := StringName(raw_operator_key)
+		var card := _cards_by_operator_key.get(operator_key) as Control
+		if card == null:
+			continue
+		var base_visible := bool(_operator_base_visible_by_key.get(operator_key, true))
+		card.visible = base_visible and _operator_matches_deploy_filter(operator_key)
+	call_deferred("_refresh_deploy_deck_scroll_content")
+
+
+func _operator_matches_deploy_filter(operator_key: StringName) -> bool:
+	if _deploy_filter_class == DEPLOY_FILTER_ALL:
+		return true
+	return StringName(_operator_class_by_key.get(operator_key, StringName())) == _deploy_filter_class
+
+
+func _operator_class_from_info(operator_info: Dictionary) -> StringName:
+	var unit_id := StringName(operator_info.get("unit_id", ""))
+	if unit_id == StringName() or _data_repo == null or not _data_repo.has_method("get_unit_cfg"):
+		return StringName()
+	var raw_cfg: Variant = _data_repo.call("get_unit_cfg", unit_id)
+	if typeof(raw_cfg) != TYPE_DICTIONARY:
+		return StringName()
+	var cfg: Dictionary = raw_cfg
+	return StringName(cfg.get("class", ""))
 
 
 func _refresh_deploy_deck_scroll_content() -> void:

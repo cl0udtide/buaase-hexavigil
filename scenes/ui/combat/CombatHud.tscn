@@ -32,6 +32,7 @@
 [ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://kb88apl8fpb0" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
 [ext_resource type="StyleBox" uid="uid://kl122ddpky58" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
+[ext_resource type="StyleBox" uid="uid://73k1dy2pawjq" path="res://assets/ui/styles/frame_relic_filter_tab_base.tres" id="frame_deploy_filter_tab"]
 [ext_resource type="StyleBox" uid="uid://bc3i2gfnh5clh" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
 [ext_resource type="StyleBox" uid="uid://bgyy10d53mqo3" path="res://assets/ui/styles/frame_legend_row_base.tres" id="frame_legend_row_base_356x24"]
 [ext_resource type="StyleBox" uid="uid://tec7abejr2xj" path="res://assets/ui/styles/frame_resource_delta_badge.tres" id="frame_resource_delta_badge_48x22"]
@@ -1159,8 +1160,8 @@ custom_minimum_size = Vector2(80, 36)
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
-focus_mode = 0
 tooltip_text = "快捷键：M"
+focus_mode = 0
 theme_override_constants/h_separation = 4
 theme_override_constants/icon_max_width = 14
 theme_override_styles/normal = ExtResource("frame_wave_route_toggle_base_64x36")
@@ -1545,6 +1546,59 @@ offset_top = 820.0
 offset_right = 1500.0
 offset_bottom = 1066.0
 mouse_filter = 2
+
+[node name="DeckFilterBar" type="HBoxContainer" parent="HudChromeLayer/DeployDeckSlot" unique_id=1999422315]
+unique_name_in_owner = true
+z_index = 24
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -575.0
+offset_top = -35.0
+offset_right = -23.0
+offset_bottom = 6.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="AllDeckFilterButton" type="Button" parent="HudChromeLayer/DeployDeckSlot/DeckFilterBar" unique_id=448176513]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 32)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("frame_deploy_filter_tab")
+theme_override_styles/pressed = ExtResource("frame_deploy_filter_tab")
+theme_override_styles/hover = ExtResource("frame_deploy_filter_tab")
+theme_override_styles/disabled = ExtResource("frame_deploy_filter_tab")
+toggle_mode = true
+button_pressed = true
+text = "全部"
+metadata/class_key = &"all"
+metadata/audio_cue = &"ui_tab_switch"
+
+[node name="DeckFilterButtonTemplate" type="Button" parent="HudChromeLayer/DeployDeckSlot/DeckFilterBar" unique_id=1144580632]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(68, 32)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.62, 0.68, 0.7, 1)
+theme_override_colors/font_pressed_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = ExtResource("frame_deploy_filter_tab")
+theme_override_styles/pressed = ExtResource("frame_deploy_filter_tab")
+theme_override_styles/hover = ExtResource("frame_deploy_filter_tab")
+theme_override_styles/disabled = ExtResource("frame_deploy_filter_tab")
+toggle_mode = true
+text = "职业"
+metadata/audio_cue = &"ui_tab_switch"
 
 [node name="DeployDeck" type="Control" parent="HudChromeLayer/DeployDeckSlot" unique_id=1798001651]
 unique_name_in_owner = true
