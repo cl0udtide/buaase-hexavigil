@@ -21,6 +21,7 @@ EventBus="*uid://b0506ing5d1c6"
 RunState="*uid://wdlxhaqoexyf"
 DataRepo="*uid://pg4imtmvx82a"
 SceneRouter="*uid://c23sbq6pp8uj8"
+StoryDirector="*res://autoload/story_director.gd"
 
 [display]
 
