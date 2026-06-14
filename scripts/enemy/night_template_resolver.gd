@@ -102,7 +102,6 @@ static func resolve(pool_ids: Array, used_ids: Array, run_seed: int, day: int, w
 
 
 ## ---- 出怪口分配：lane 角色 -> 具体 spawn_key ----
-## 设计稿见 docs/superpowers/specs/2026-06-10-dynamic-spawn-gates-design.md §3-§4。
 ## 纯静态、确定性：同 (run_seed, day, wave_index) 输入永远得到同样结果，预览即契约。
 
 const LANE_MAIN: StringName = &"main"

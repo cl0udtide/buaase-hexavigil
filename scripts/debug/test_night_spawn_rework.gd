@@ -1,7 +1,6 @@
 extends SceneTree
 
 ## 夜晚出怪机制 · 九天三幕重构 回归测试。
-## 设计见 docs/superpowers/specs/2026-06-13-night-spawn-9day-rework-design.md。
 ## 随各步实现逐步补充断言；当前覆盖：第 1 步 DifficultyScale 全局强度系数。
 
 const DifficultyScale = preload("res://scripts/enemy/difficulty_scale.gd")
