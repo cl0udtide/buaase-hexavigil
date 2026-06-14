@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="220" viewBox="0 0 640 220">
+  <defs>
+    <linearGradient id="flow" x1="40" y1="110" x2="600" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7cf8ff" stop-opacity="0"/>
+      <stop offset="0.16" stop-color="#7cf8ff" stop-opacity="0.18"/>
+      <stop offset="0.34" stop-color="#fff7c6" stop-opacity="0.72"/>
+      <stop offset="0.52" stop-color="#61f1ff" stop-opacity="0.26"/>
+      <stop offset="0.7" stop-color="#ffd078" stop-opacity="0.54"/>
+      <stop offset="0.86" stop-color="#7cf8ff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#7cf8ff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="flare" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff9d0" stop-opacity="0.86"/>
+      <stop offset="0.28" stop-color="#9cfaff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#9cfaff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 104 C120 78 190 132 270 104 C350 76 420 102 496 72 C540 54 584 58 612 70" stroke="url(#flow)" stroke-width="5.2" opacity="0.58"/>
+    <path d="M82 138 C154 112 224 144 296 116 C374 88 440 120 572 84" stroke="url(#flow)" stroke-width="3.2" opacity="0.44"/>
+    <path d="M118 76 C206 50 276 80 344 66 C432 48 492 68 578 42" stroke="url(#flow)" stroke-width="1.7" opacity="0.34"/>
+  </g>
+  <g opacity="0.7">
+    <ellipse cx="170" cy="108" rx="30" ry="10" fill="url(#flare)"/>
+    <ellipse cx="322" cy="88" rx="36" ry="12" fill="url(#flare)"/>
+    <ellipse cx="492" cy="124" rx="34" ry="11" fill="url(#flare)"/>
+  </g>
+</svg>

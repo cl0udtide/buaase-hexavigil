@@ -74,7 +74,9 @@ func _apply_config(config: Dictionary) -> void:
 	_draggable = bool(config.get("draggable", false))
 	_selected = bool(config.get("selected", false))
 	var detail_text := String(config.get("detail", "")).strip_edges()
-	tooltip_text = String(config.get("disabled_reason", ""))
+	var disabled_reason := String(config.get("disabled_reason", "")).strip_edges()
+	var explicit_tooltip := String(config.get("tooltip", "")).strip_edges()
+	tooltip_text = explicit_tooltip if not explicit_tooltip.is_empty() else _compose_tooltip_text(detail_text, disabled_reason)
 	_title_label.text = String(config.get("title", ""))
 	_subtitle_label.text = String(config.get("subtitle", ""))
 	if _detail_label != null:
@@ -87,6 +89,15 @@ func _apply_config(config: Dictionary) -> void:
 	_cost_badge.visible = not _cost_label.text.strip_edges().is_empty()
 	_title_label.add_theme_color_override("font_color", config.get("title_color", GameUiStyle.TEXT) as Color)
 	_apply_style()
+
+
+func _compose_tooltip_text(detail_text: String, disabled_reason: String) -> String:
+	var parts: PackedStringArray = []
+	if not detail_text.is_empty():
+		parts.append(detail_text)
+	if not disabled_reason.is_empty():
+		parts.append(disabled_reason)
+	return "\n".join(parts)
 
 
 func _apply_icon_texture(config: Dictionary) -> void:

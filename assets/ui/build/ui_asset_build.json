@@ -261,19 +261,59 @@
       "content_margin_mode": "scale_from_template",
       "interpolation": "nearest"
     },
-    "frame_build_list_card_selected_overlay": {
+    "frame_bootstrap_button_base": {
       "kind": "stylebox_texture",
-      "source_png": "res://assets/ui/source/frame_build_list_card_selected_overlay.png",
-      "template_style": "res://assets/ui/templates/frame_build_list_card_selected_overlay.tres",
-      "output_png": "res://assets/ui/generated/frame_build_list_card_selected_overlay.png",
-      "output_style": "res://assets/ui/styles/frame_build_list_card_selected_overlay.tres",
+      "source_png": "res://assets/ui/source/frame_bootstrap_button_base.png",
+      "template_style": "res://assets/ui/templates/frame_button_base.tres",
+      "output_png": "res://assets/ui/generated/frame_bootstrap_button_base.png",
+      "output_style": "res://assets/ui/styles/frame_bootstrap_button_base.tres",
       "target_size": [
         280,
-        104
+        54
       ],
       "base_size": [
-        324,
-        216
+        687,
+        230
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_bootstrap_button_disabled_overlay": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_bootstrap_button_disabled_overlay.png",
+      "template_style": "res://assets/ui/templates/frame_button_disabled_overlay.tres",
+      "output_png": "res://assets/ui/generated/frame_bootstrap_button_disabled_overlay.png",
+      "output_style": "res://assets/ui/styles/frame_bootstrap_button_disabled_overlay.tres",
+      "target_size": [
+        280,
+        54
+      ],
+      "base_size": [
+        686,
+        229
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_bootstrap_button_primary_overlay": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_bootstrap_button_primary_overlay.png",
+      "template_style": "res://assets/ui/templates/frame_button_primary_overlay.tres",
+      "output_png": "res://assets/ui/generated/frame_bootstrap_button_primary_overlay.png",
+      "output_style": "res://assets/ui/styles/frame_bootstrap_button_primary_overlay.tres",
+      "target_size": [
+        280,
+        54
+      ],
+      "base_size": [
+        687,
+        230
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -374,6 +414,46 @@
       "base_size": [
         134,
         225
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_covenant_chip_active_overlay": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_covenant_chip_active_overlay.png",
+      "template_style": "res://assets/ui/templates/frame_covenant_chip_active_overlay.tres",
+      "output_png": "res://assets/ui/generated/frame_covenant_chip_active_overlay.png",
+      "output_style": "res://assets/ui/styles/frame_covenant_chip_active_overlay.tres",
+      "target_size": [
+        92,
+        44
+      ],
+      "base_size": [
+        980,
+        310
+      ],
+      "pre_scale": "auto_integer",
+      "max_pre_scale": 4,
+      "margin_mode": "scale_from_template",
+      "content_margin_mode": "scale_from_template",
+      "interpolation": "nearest"
+    },
+    "frame_covenant_chip_base": {
+      "kind": "stylebox_texture",
+      "source_png": "res://assets/ui/source/frame_covenant_chip_base.png",
+      "template_style": "res://assets/ui/templates/frame_covenant_chip_base.tres",
+      "output_png": "res://assets/ui/generated/frame_covenant_chip_base.png",
+      "output_style": "res://assets/ui/styles/frame_covenant_chip_base.tres",
+      "target_size": [
+        92,
+        44
+      ],
+      "base_size": [
+        980,
+        311
       ],
       "pre_scale": "auto_integer",
       "max_pre_scale": 4,
@@ -1108,8 +1188,8 @@
       "output_png": "res://assets/ui/generated/frame_sidebar_tab_selected_overlay.png",
       "output_style": "res://assets/ui/styles/frame_sidebar_tab_selected_overlay.tres",
       "target_size": [
-        160,
-        48
+        280,
+        104
       ],
       "base_size": [
         337,

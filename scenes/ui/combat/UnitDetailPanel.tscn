@@ -2,19 +2,19 @@
 
 [ext_resource type="Script" uid="uid://ddcsa4amltbei" path="res://scripts/ui/combat/unit_detail_panel.gd" id="1_5d67m"]
 [ext_resource type="StyleBox" uid="uid://c4x7cosstwm8p" path="res://assets/ui/styles/bar_progress_track.tres" id="7_progress_track"]
-[ext_resource type="StyleBox" uid="uid://tc185cjhbmy1" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_skill_desc_box.tres" id="13_skill_desc"]
 [ext_resource type="Texture2D" uid="uid://ce0cjpp6ufdht" path="res://assets/ui/generated/icon_confirm.png" id="18_iconconfirm"]
 [ext_resource type="Texture2D" uid="uid://b27wulgsekryb" path="res://assets/ui/generated/icon_cancel.png" id="19_iconcancel"]
 [ext_resource type="Texture2D" uid="uid://ck3mdlo5c2ihi" path="res://assets/ui/generated/icon_skill_ready.png" id="20_iconskillready"]
 [ext_resource type="Texture2D" uid="uid://cgwyuojbbko8v" path="res://assets/ui/generated/icon_retreat.png" id="22_iconretreat"]
 [ext_resource type="StyleBox" uid="uid://b3hiab03tpqan" path="res://assets/ui/styles/bar_progress_fill_hp.tres" id="bar_progress_fill_hp"]
 [ext_resource type="StyleBox" uid="uid://cc3dj3c2jp71d" path="res://assets/ui/styles/bar_progress_fill_sp.tres" id="bar_progress_fill_sp"]
-[ext_resource type="Script" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://boomw0rv0nhyr" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base"]
 [ext_resource type="StyleBox" uid="uid://dq3npkfyuft5f" path="res://assets/ui/styles/frame_button_danger_overlay.tres" id="frame_button_danger_overlay_344x44"]
 [ext_resource type="StyleBox" uid="uid://ddrng2704u0n2" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_344x60"]
-[ext_resource type="StyleBox" uid="uid://dnybvihnfg6a6" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_344x60"]
-[ext_resource type="StyleBox" uid="uid://bx00ntf4uefp3" path="res://assets/ui/styles/frame_detail_section_base.tres" id="frame_detail_section_base_344x230"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_button_primary_overlay.tres" id="frame_button_primary_overlay_344x60"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_detail_section_base.tres" id="frame_detail_section_base_344x230"]
 [ext_resource type="StyleBox" uid="uid://byqguax67qx2n" path="res://assets/ui/styles/frame_right_detail_sidebar_base.tres" id="frame_right_detail_sidebar_base_384x780"]
 [ext_resource type="StyleBox" uid="uid://cu0scjm0vlidp" path="res://assets/ui/styles/frame_skill_icon_backplate.tres" id="frame_skill_icon_backplate_64x64"]
 [ext_resource type="StyleBox" uid="uid://cn6ywhlkx1vx6" path="res://assets/ui/styles/frame_skill_icon_frame.tres" id="frame_skill_icon_frame_64x64"]
@@ -444,7 +444,7 @@ horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="CovenantStatRow" type="PanelContainer" parent="ContentMargin/MainVBox/StatsSection/StatsMargin/StatRows" unique_id=1066944900]
-custom_minimum_size = Vector2(132, 40)
+custom_minimum_size = Vector2(132, 30)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_unit_stat_row_132x40")
@@ -499,7 +499,7 @@ theme_override_constants/separation = -6
 
 [node name="SkillHeaderRow" type="HBoxContainer" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox" unique_id=966195898]
 layout_mode = 2
-theme_override_constants/separation = 52
+theme_override_constants/separation = 67
 
 [node name="SkillIconStack" type="Control" parent="ContentMargin/MainVBox/SkillSection/SkillMargin/SkillVBox/SkillHeaderRow" unique_id=417700747]
 unique_name_in_owner = true
@@ -575,7 +575,6 @@ clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-mouse_filter = 1
 theme_override_constants/margin_left = 9
 theme_override_constants/margin_right = 9
 

@@ -779,3 +779,110 @@ Create a narrative key art background for the victory page. The same watch line 
 Defeat page:
 Use only the milk dragon chief reference at assets/sprites/enemies/raw/milk_dragon_chief_redraw_source.png. Preserve the round yellow body, cream belly, laughing open mouth, tiny fangs, leafy tribal cloak/collar, skull and feather head ornament, rope/bone accessories, wooden staff with red spiral mark, and playful but threatening boss energy. Create a dynamic defeat illustration where the chief leads small follower creatures in a triumphant charge across a broken night defense line, with dust, splinters, torn banners, cracked barricades, and scattered stones. Keep the chief and followers in the left 60%; make the right 40% quiet smoky dark teal fog/ground for UI.
 ```
+
+## 32. 主菜单 Logo：HexaVigil 与 EX
+
+保存源图为：`source_sheet_32_main_menu_logo.png`
+
+裁剪顺序：
+
+1. `logo_main_title_hexavigil`
+2. `logo_main_ex_badge`
+
+这些资产用于替换 `MainMenu` 的文字标题。生成时把大标题和小 `EX` 分成两个互不接触的独立资产；运行时再把 `EX` 倾斜放在右下角并单独做动画。
+
+```text
+Use case: logo-brand
+Asset type: Godot main menu title logo source sheet, cropped into transparent PNG assets
+
+Create one polished two-part game title logo sheet on a flat solid #FF00FF chroma-key background. The sheet contains exactly two separate assets, arranged left-to-right with large spacing:
+
+1. A large title wordmark with the exact text "HexaVigil".
+2. A smaller badge or wordmark with the exact text "EX".
+
+The two parts must not touch each other. Keep generous #FF00FF padding around both parts for automatic crop detection.
+
+Style:
+stylized painterly fantasy strategy game UI logo, crisp opaque edges, clean readable letterforms, low-saturation fresh tactical fantasy, subtle hexagonal core motifs, fine bevels, mineral/glass inlay, restrained cyan/teal highlights, small warm amber accent lines.
+
+Text constraints:
+Spell exactly "HexaVigil" with capitalization H e x a V i g i l. Spell exactly "EX". Do not add any other letters, words, numbers, symbols, watermark, signature, fake UI, or background scenery.
+
+Chroma-key constraints:
+The background should be as close as possible to one uniform #FF00FF color, with no shadows, gradients, texture, anti-aliased background variation, or glow bleeding into the background. Logo pixels should be fully opaque. Do not use #FF00FF inside the logo art.
+
+Avoid:
+blurry text, misspelled words, pseudo-text, extra marks around the logo, photorealism, black-heavy metal logo, neon-only cyberpunk, parchment, beige/brown dominance, overcomplicated background.
+```
+
+## 33. 开始与结算按钮：底座与状态叠层
+
+保存源图为：`source_sheet_33_bootstrap_buttons.png`
+
+裁剪顺序：
+
+1. `frame_bootstrap_button_base`
+2. `frame_bootstrap_button_primary_overlay`
+3. `frame_bootstrap_button_disabled_overlay`
+
+这些资产用于 `MainMenu` 与 `Result` 页面按钮，不替换全局通用 `frame_button_*`。裁切后先写入 `assets/ui/source/` 中的同名源图，再通过 `scripts/tools/generate_ui_derived_assets.gd` 进行离线缩放，并从 `assets/ui/templates/` 中的九宫格模板派生正式 `assets/ui/generated/*.png` 与 `assets/ui/styles/*.tres`。不要直接跳过派生流程修改运行时 StyleBox。
+
+```text
+Use case: ui-mockup
+Asset type: Godot UI button StyleBox source sheet for a fantasy strategy tower-defense main menu and result screen
+
+Create one polished source sheet containing exactly three separate horizontal button UI assets on a flat chroma-key background. Arrange them left-to-right with large spacing and generous padding, no touching.
+
+Assets, left to right:
+
+1. frame_bootstrap_button_base: reusable MainMenu/Result button base, long horizontal low-beveled tactical fantasy button frame, empty center for runtime text.
+2. frame_bootstrap_button_primary_overlay: hover/primary overlay layer, same silhouette and dimensions as base, mostly transparent-looking decorative glow/highlight overlay with cyan and warm amber edge accents, no solid filled center.
+3. frame_bootstrap_button_disabled_overlay: disabled overlay layer, same silhouette and dimensions as base, muted cool gray/blue desaturation veil and subtle dim border, no text.
+
+Style:
+stylized painterly fantasy strategy UI, clean game-ready raster asset, crisp opaque edges, low-saturation fresh tactical fantasy palette, teal mineral/glass inlay, restrained cyan highlights, fine amber trim, subtle hexagonal motifs, elegant beveled corner caps, polished but not noisy.
+
+Nine-slice constraints:
+Each asset should be a wide horizontal button around 5:1 to 6:1 aspect ratio, with protected decorative corner caps and edges suitable for Godot `StyleBoxTexture`. Keep the center simple and stretch-safe. The three assets must have very similar dimensions and silhouette. No fixed text, no icons, no command-specific symbols.
+
+Chroma-key constraints:
+The background should be as close as possible to one uniform #FF00FF color, with no shadows, gradients, texture, anti-aliased background variation, or glow bleeding into the background. Do not use #FF00FF inside the assets. No cast shadow outside the button silhouettes.
+
+Avoid:
+text, numbers, icons, fake labels, watermark, signature, huge glow spilling into background, busy center details, photorealism, black-heavy metal style, neon cyberpunk, parchment, beige/brown dominance, one-note blue-only palette.
+```
+
+## 34. 盟约 Chip：未激活底板与激活叠层
+
+保存源图为：`source_sheet_34_covenant_chip.png`
+
+裁剪顺序：
+
+1. `frame_covenant_chip_base`
+2. `frame_covenant_chip_active_overlay`
+
+这些资产用于 `CombatHud/CovenantRow/CovenantChip`。`frame_covenant_chip_base` 是未激活盟约 chip 的底板；`frame_covenant_chip_active_overlay` 是激活状态叠层，运行时覆盖在同一 chip 上方。裁切后先写入 `assets/ui/source/` 中的同名源图，再通过 `scripts/tools/generate_ui_derived_assets.gd` 进行离线缩放，并从 `assets/ui/templates/` 中的九宫格模板派生正式 `assets/ui/generated/*.png` 与 `assets/ui/styles/*.tres`。不要直接跳过派生流程修改运行时 StyleBox。
+
+```text
+Use case: ui-mockup
+Asset type: Godot UI covenant status chip StyleBox source sheet for a fantasy strategy tower-defense HUD
+
+Create one polished source sheet containing exactly two separate compact horizontal chip UI assets on a flat chroma-key background. Arrange them left-to-right with large spacing and generous padding, no touching.
+
+Assets, left to right:
+
+1. frame_covenant_chip_base: reusable inactive covenant chip base, compact horizontal HUD badge frame, empty center for runtime covenant name.
+2. frame_covenant_chip_active_overlay: active covenant overlay layer, same silhouette and dimensions as the base, mostly transparent-looking status glow/edge accent overlay, no solid filled center and no copied full bottom plate.
+
+Style:
+stylized painterly fantasy strategy UI, clean game-ready raster asset, crisp opaque edges, low-saturation fresh tactical fantasy palette, teal mineral/glass inlay, restrained cyan highlights, subtle warm amber activation accents, fine etched linework, slight cut-corner or angled corner caps, polished but not noisy.
+
+Nine-slice constraints:
+Each asset should be a compact horizontal chip around 2:1 to 2.5:1 aspect ratio, suitable for Godot `StyleBoxTexture`. Keep all unique decoration in protected corners or short edge caps. The middle and long edges must be stretch-safe. The overlay must align exactly with the base silhouette and should only add activation light, rim highlight, or status energy; it must not contain text, icons, symbols, numbers, or a complete opaque base.
+
+Chroma-key constraints:
+The background should be as close as possible to one uniform #FF00FF color, with no shadows, gradients, texture, anti-aliased background variation, or glow bleeding into the background. Do not use #FF00FF inside the assets. No cast shadow outside the chip silhouettes.
+
+Avoid:
+text, numbers, covenant symbols, icons, fake labels, watermark, signature, badges in stretch zones, busy center details, photorealism, black-heavy metal style, neon-only cyberpunk, parchment, beige/brown dominance, one-note blue-only palette.
+```

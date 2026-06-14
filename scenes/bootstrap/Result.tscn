@@ -1,7 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://fp67jp30ihy0"]
+[gd_scene format=3 uid="uid://fp67jp30ihy0"]
 
 [ext_resource type="Script" uid="uid://c3unj44g783en" path="res://scripts/bootstrap/result_scene.gd" id="1_sfvb3"]
 [ext_resource type="PackedScene" uid="uid://dvwiq3vkovrcv" path="res://scenes/ui/ResultPanel.tscn" id="2_ec160"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_base.tres" id="3_button_base"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_primary_overlay.tres" id="4_button_hover"]
+[ext_resource type="StyleBox" uid="uid://b7utexdse0ut3" path="res://assets/ui/styles/frame_bootstrap_button_disabled_overlay.tres" id="5_button_disabled"]
+[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="6_button_state_overlay"]
 
 [node name="Result" type="Control" unique_id=2142801318]
 layout_mode = 3
@@ -56,14 +60,74 @@ layout_mode = 2
 
 [node name="RetryButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=139274410]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 52)
+custom_minimum_size = Vector2(280, 70)
 layout_mode = 2
 size_flags_horizontal = 4
+focus_mode = 0
+theme_override_styles/normal = ExtResource("3_button_base")
+theme_override_styles/pressed = ExtResource("3_button_base")
+theme_override_styles/hover = ExtResource("3_button_base")
+theme_override_styles/disabled = ExtResource("3_button_base")
 text = "再来一局"
+
+[node name="PrimaryOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/RetryButton" unique_id=325740005]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("4_button_hover")
+
+[node name="DisabledOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/RetryButton" unique_id=1098842843]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("5_button_disabled")
+
+[node name="ButtonStateOverlay" type="Node" parent="RightUiSlot/CenterContainer/VBoxContainer/RetryButton" unique_id=586020051]
+script = ExtResource("6_button_state_overlay")
 
 [node name="MenuButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=1223783814]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 52)
+custom_minimum_size = Vector2(280, 70)
 layout_mode = 2
 size_flags_horizontal = 4
+focus_mode = 0
+theme_override_styles/normal = ExtResource("3_button_base")
+theme_override_styles/pressed = ExtResource("3_button_base")
+theme_override_styles/hover = ExtResource("3_button_base")
+theme_override_styles/disabled = ExtResource("3_button_base")
 text = "返回菜单"
+
+[node name="PrimaryOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/MenuButton" unique_id=79527800]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("4_button_hover")
+
+[node name="DisabledOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/MenuButton" unique_id=418542308]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("5_button_disabled")
+
+[node name="ButtonStateOverlay" type="Node" parent="RightUiSlot/CenterContainer/VBoxContainer/MenuButton" unique_id=388746584]
+script = ExtResource("6_button_state_overlay")

@@ -100,6 +100,7 @@ const SUCCESS_SOFT := Color(0.070, 0.170, 0.105, 1.0)
 const VIOLET_SOFT := Color(0.120, 0.105, 0.190, 1.0)
 const BUTTON_ICON_MAX_WIDTH := 18
 const BUTTON_ICON_MAX_WIDTH_COMPACT := 14
+const TOOLTIP_STYLE_PATH := "res://assets/ui/styles/frame_tooltip_base.tres"
 
 static func texture_box(_path: String, fallback_fill: Color, fallback_border: Color, margin: float = 16.0) -> StyleBox:
 	return flat_panel(fallback_fill, fallback_border, 1.0, minf(maxf(margin * 0.35, 5.0), 8.0))
@@ -574,6 +575,10 @@ static func scroll_track_horizontal() -> StyleBox:
 
 
 static func tooltip() -> StyleBox:
+	if ResourceLoader.exists(TOOLTIP_STYLE_PATH):
+		var style := load(TOOLTIP_STYLE_PATH) as StyleBox
+		if style != null:
+			return style
 	return frame_box(UiFrameSpec.TOOLTIP, BG_GLASS, STROKE_SOFT)
 
 

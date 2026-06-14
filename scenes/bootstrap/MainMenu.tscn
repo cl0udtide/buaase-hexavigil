@@ -1,7 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://cmig1vsmvy2ld"]
+[gd_scene format=3 uid="uid://cmig1vsmvy2ld"]
 
 [ext_resource type="Script" uid="uid://b34pdpjgqu06l" path="res://scripts/bootstrap/main_menu_scene.gd" id="1_3dsqt"]
-[ext_resource type="Texture2D" path="res://assets/story/backgrounds/page_start_defense.png" id="2_start_bg"]
+[ext_resource type="Texture2D" uid="uid://cs26gts6bljq8" path="res://assets/story/backgrounds/page_start_defense.png" id="2_start_bg"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_base.tres" id="3_button_base"]
+[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_bootstrap_button_primary_overlay.tres" id="4_button_hover"]
+[ext_resource type="StyleBox" uid="uid://b7utexdse0ut3" path="res://assets/ui/styles/frame_bootstrap_button_disabled_overlay.tres" id="5_button_disabled"]
+[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="6_button_state_overlay"]
+[ext_resource type="Texture2D" uid="uid://3h0v6svfmxuh" path="res://assets/ui/generated/logo_main_title_hexavigil.png" id="7_logo_title"]
+[ext_resource type="Texture2D" uid="uid://dl588slu7ovtv" path="res://assets/ui/generated/logo_main_ex_badge.png" id="8_logo_ex"]
+[ext_resource type="Texture2D" uid="uid://wsku46823egh" path="res://assets/ui/generated/logo_main_title_fx.svg" id="9_logo_fx"]
+[ext_resource type="Texture2D" uid="uid://b42c26oprsmk" path="res://assets/ui/generated/logo_main_title_fx_flow.svg" id="10_logo_fx_flow"]
+[ext_resource type="Texture2D" uid="uid://bxsdcbsim5aj2" path="res://assets/ui/generated/logo_main_title_fx_spark.svg" id="11_logo_fx_spark"]
+[ext_resource type="Texture2D" uid="uid://biltwp5fd6vyi" path="res://assets/ui/generated/logo_main_title_fx_aura.svg" id="12_logo_fx_aura"]
 
 [node name="MainMenu" type="Control" unique_id=1052527302]
 layout_mode = 3
@@ -12,7 +22,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_3dsqt")
 
-[node name="Background" type="TextureRect" parent="." unique_id=2202899578]
+[node name="Background" type="TextureRect" parent="." unique_id=-2092067718]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,29 +60,206 @@ layout_mode = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2078786049]
-layout_mode = 2
-text = "HexaVigil"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="SubtitleLabel" type="Label" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=827243283]
-layout_mode = 2
-text = "昼夜防线指挥"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="StartButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2140411556]
+[node name="LogoRoot" type="Control" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=811307633]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 54)
+custom_minimum_size = Vector2(500, 186)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "开始行动"
+mouse_filter = 2
 
-[node name="TutorialButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer"]
+[node name="LogoPulseLayer" type="Control" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot" unique_id=828683767]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 86)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleLogoTexture" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot/LogoPulseLayer" unique_id=1522208988]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 6.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_logo_title")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LogoFxAura" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot/LogoPulseLayer" unique_id=1503894791]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -42.0
+offset_top = -20.0
+offset_right = 42.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_logo_fx_aura")
+expand_mode = 1
+
+[node name="LogoFxStatic" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot/LogoPulseLayer" unique_id=1421929404]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -28.0
+offset_top = -16.0
+offset_right = 28.0
+offset_bottom = 18.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_logo_fx")
+expand_mode = 1
+
+[node name="LogoFxFlowA" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot/LogoPulseLayer" unique_id=587741340]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -128.0
+offset_top = -24.0
+offset_right = -72.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_logo_fx_flow")
+expand_mode = 1
+
+[node name="LogoFxFlowB" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot/LogoPulseLayer" unique_id=286118304]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = -36.0
+offset_top = 8.0
+offset_right = 484.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+rotation = -0.09
+mouse_filter = 2
+texture = ExtResource("10_logo_fx_flow")
+expand_mode = 1
+
+[node name="LogoFxSpark" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot/LogoPulseLayer" unique_id=564510037]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -34.0
+offset_top = -16.0
+offset_right = 34.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_logo_fx_spark")
+expand_mode = 1
+
+[node name="ExLogoTexture" type="TextureRect" parent="RightUiSlot/CenterContainer/VBoxContainer/LogoRoot" unique_id=588609695]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 82)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -52.0
+offset_top = -86.0
+offset_right = 44.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("8_logo_ex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TutorialButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=1865240832]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 70)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-text = "新手教程\n第一天演习"
+theme_override_styles/normal = ExtResource("3_button_base")
+theme_override_styles/pressed = ExtResource("3_button_base")
+theme_override_styles/hover = ExtResource("3_button_base")
+theme_override_styles/disabled = ExtResource("3_button_base")
+text = "序章 \\ 新手教程"
+
+[node name="PrimaryOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/TutorialButton" unique_id=1920611340]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("4_button_hover")
+
+[node name="DisabledOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/TutorialButton" unique_id=1083474788]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("5_button_disabled")
+
+[node name="ButtonStateOverlay" type="Node" parent="RightUiSlot/CenterContainer/VBoxContainer/TutorialButton" unique_id=2066092721]
+script = ExtResource("6_button_state_overlay")
+
+[node name="StartButton" type="Button" parent="RightUiSlot/CenterContainer/VBoxContainer" unique_id=2140411556]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 70)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_styles/normal = ExtResource("3_button_base")
+theme_override_styles/pressed = ExtResource("3_button_base")
+theme_override_styles/hover = ExtResource("3_button_base")
+theme_override_styles/disabled = ExtResource("3_button_base")
+text = "开始游戏"
+
+[node name="PrimaryOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/StartButton" unique_id=429762889]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("4_button_hover")
+
+[node name="DisabledOverlay" type="Panel" parent="RightUiSlot/CenterContainer/VBoxContainer/StartButton" unique_id=911403867]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("5_button_disabled")
+
+[node name="ButtonStateOverlay" type="Node" parent="RightUiSlot/CenterContainer/VBoxContainer/StartButton" unique_id=1560524357]
+script = ExtResource("6_button_state_overlay")
