@@ -533,7 +533,7 @@ func _configure_layout_nodes() -> void:
 	_active_prompt = _prompt_label
 
 
-func _set_descendant_mouse_filter(root: Node, filter: int) -> void:
+func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> void:
 	for child in root.get_children():
 		if child is Control:
 			(child as Control).mouse_filter = filter
