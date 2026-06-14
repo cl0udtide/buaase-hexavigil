@@ -23,6 +23,9 @@ const DEFAULT_TYPE_SPEED := 38.0
 const FF_TYPE_SPEED := 100000.0   # 快进时打字机近乎瞬显
 const FF_LINE_SEC := 0.05         # 快进时每句停留秒数
 const BUBBLE_DEFAULT_POS := Vector2(670.0, 96.0)   # 顶部居中漂浮（1920 宽近似）
+const DIALOG_BLIP_PATH := "res://assets/audio/sfx/dialog_blip_neutral.ogg"
+const DIALOG_BLIP_MIN_SECONDS := 0.18
+const DIALOG_BLIP_MAX_SECONDS := 8.0
 
 var _lines: Array = []
 var _settings: Dictionary = {}
@@ -40,6 +43,8 @@ var _current_gated := false      # 当前句是否"等事件"门控（点击不�
 var _gate_key := StringName()
 var _ff_timer := 0.0
 var _fade_tween: Tween
+var _dialog_blip_player: AudioStreamPlayer
+var _dialog_blip_stop_token := 0
 
 @onready var _background: ColorRect = %Background
 @onready var _left_portrait: TextureRect = %LeftPortrait
@@ -62,6 +67,7 @@ var _bubble_prompt: Label
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_setup_dialog_blip_player()
 	_build_bg_image()
 	_build_bubble()
 	_configure_layout_nodes()
@@ -230,6 +236,7 @@ func _show_line(line: Dictionary) -> void:
 	if _active_prompt != null:
 		_active_prompt.text = "点击继续"
 	line_started.emit(_current_index)
+	_play_dialog_blip_for_current_line()
 	if not _typing:
 		_finish_typing()
 
@@ -283,6 +290,7 @@ func _place_bubble(line: Dictionary) -> void:
 # ---- 打字机收尾 ----
 func _finish_typing() -> void:
 	_typing = false
+	_stop_dialog_blip()
 	if _active_text_label != null:
 		_active_text_label.visible_characters = -1
 	_visible_chars_float = float(_line_char_count)
@@ -296,6 +304,7 @@ func _finish_typing() -> void:
 func _finish_dialog() -> void:
 	_typing = false
 	_current_gated = false
+	_stop_dialog_blip()
 	dialog_finished.emit()
 	_start_panel_fade(0.0, Callable(self, "_hide_after_fade"))
 
@@ -451,6 +460,48 @@ func _start_panel_fade(target_alpha: float, callback: Callable = Callable()) -> 
 	_fade_tween.tween_property(self, "modulate:a", target_alpha, 0.18)
 	if callback.is_valid():
 		_fade_tween.tween_callback(callback)
+
+
+func _setup_dialog_blip_player() -> void:
+	_dialog_blip_player = AudioStreamPlayer.new()
+	_dialog_blip_player.name = "DialogBlipPlayer"
+	_dialog_blip_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	if ResourceLoader.exists(DIALOG_BLIP_PATH):
+		_dialog_blip_player.stream = load(DIALOG_BLIP_PATH) as AudioStream
+	add_child(_dialog_blip_player)
+
+
+func _play_dialog_blip_for_current_line() -> void:
+	if _dialog_blip_player == null or _dialog_blip_player.stream == null:
+		return
+	if _line_char_count <= 0:
+		_stop_dialog_blip()
+		return
+	var duration := _dialog_blip_duration_for_chars(_line_char_count, _type_speed)
+	_dialog_blip_stop_token += 1
+	var token := _dialog_blip_stop_token
+	_dialog_blip_player.stop()
+	_dialog_blip_player.play(0.0)
+	_stop_dialog_blip_after(duration, token)
+
+
+func _stop_dialog_blip_after(duration: float, token: int) -> void:
+	if duration > 0.0 and get_tree() != null:
+		await get_tree().create_timer(duration, true).timeout
+	if token == _dialog_blip_stop_token:
+		_stop_dialog_blip()
+
+
+func _stop_dialog_blip() -> void:
+	_dialog_blip_stop_token += 1
+	if _dialog_blip_player != null:
+		_dialog_blip_player.stop()
+
+
+func _dialog_blip_duration_for_chars(char_count: int, type_speed: float) -> float:
+	if char_count <= 0 or type_speed <= 0.0:
+		return 0.0
+	return clampf(float(char_count) / type_speed, DIALOG_BLIP_MIN_SECONDS, DIALOG_BLIP_MAX_SECONDS)
 
 
 # ---- 程序化构建 ----

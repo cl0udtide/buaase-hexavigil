@@ -40,6 +40,16 @@ func _run() -> void:
 	_expect(panel.get_node_or_null("BackgroundImage") != null, "_ready 已构建背景图层")
 	_expect(panel.has_method("play_story"), "有 play_story 接口")
 
+	var blip_player := panel.get_node_or_null("DialogBlipPlayer") as AudioStreamPlayer
+	_expect(blip_player != null, "dialog blip player is created")
+	_expect(blip_player != null and blip_player.stream != null, "dialog blip stream is loaded")
+	_expect(blip_player != null and blip_player.process_mode == Node.PROCESS_MODE_ALWAYS, "dialog blip runs while paused")
+	_expect(panel.has_method("_dialog_blip_duration_for_chars"), "dialog blip duration helper exists")
+	_expect(is_equal_approx(float(panel.call("_dialog_blip_duration_for_chars", 0, 38.0)), 0.0), "empty line has no blip")
+	_expect(is_equal_approx(float(panel.call("_dialog_blip_duration_for_chars", 2, 38.0)), 0.18), "short line clamps to minimum blip")
+	_expect(is_equal_approx(float(panel.call("_dialog_blip_duration_for_chars", 38, 38.0)), 1.0), "line length maps to type duration")
+	_expect(is_equal_approx(float(panel.call("_dialog_blip_duration_for_chars", 999, 38.0)), 8.0), "long line clamps to source length")
+
 	panel.dialog_started.connect(func() -> void: _started += 1)
 	panel.line_started.connect(func(_i: int) -> void: _lines_seen += 1)
 	panel.dialog_finished.connect(func() -> void: _finished = true)

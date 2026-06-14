@@ -130,6 +130,7 @@ var sfx_cooldowns := {
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_players()
 	_load_settings()
 	_apply_volumes()
@@ -277,10 +278,12 @@ func get_volume_state() -> Dictionary:
 func _setup_players() -> void:
 	_bgm_player = AudioStreamPlayer.new()
 	_bgm_player.name = "BgmPlayer"
+	_bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_bgm_player)
 	for index in range(SFX_POOL_SIZE):
 		var player := AudioStreamPlayer.new()
 		player.name = "SfxPlayer%d" % (index + 1)
+		player.process_mode = Node.PROCESS_MODE_ALWAYS
 		add_child(player)
 		_sfx_players.append(player)
 
