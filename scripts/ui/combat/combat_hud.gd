@@ -31,8 +31,6 @@ const SPEED_ACTIVE_OVERLAY_ALPHA := 0.72
 const BULLET_TIME_OVERLAY_ALPHA := 1.0
 const MESSAGE_NORMAL_ICON := &"top_enemy_queue"
 const MESSAGE_WARNING_ICON := &"button_close"
-const DEPLOY_SCROLLBAR_THICKNESS := 26.0
-const DEPLOY_SCROLLBAR_MIN_GRAB := 64
 const DEPLOY_SCROLLBAR_STEP := 48
 const WAVE_PREVIEW_NORMAL_HEIGHT := 316.0
 const WAVE_PREVIEW_COMPACT_HEIGHT := 208.0
@@ -117,8 +115,6 @@ var _wave_summary_label: Label
 var _wave_spawn_cards_box: VBoxContainer
 var _wave_spawn_card_template: PanelContainer
 var _wave_enemy_card_template: PanelContainer
-var _wave_warning_row: Control
-var _wave_warning_label: Label
 @onready var _night_affix_row: PanelContainer = get_node_or_null("HudChromeLayer/NightAffixRow") as PanelContainer
 @onready var _night_affix_label: Label = get_node_or_null("HudChromeLayer/NightAffixRow/NightAffixMargin/NightAffixLabel") as Label
 var _wave_countdown_row: PanelContainer
@@ -540,8 +536,6 @@ func set_wave_preview_data(data: Dictionary, show_panel: bool = true) -> void:
 	else:
 		_wave_summary_label.text = "合计来袭 %d · 活跃出怪口 %d" % [total_count, active_spawn_count]
 	_rebuild_wave_spawn_cards_by_wave(data.get("waves", []), spawn_order, entries, data.get("key_enemies", []))
-	_wave_warning_label.text = _format_wave_warning_text(data)
-	_wave_warning_row.visible = not _wave_warning_label.text.strip_edges().is_empty()
 	_apply_right_column_visibility()
 
 
@@ -751,10 +745,8 @@ func _bind_wave_preview_nodes() -> void:
 	_wave_spawn_cards_box = %WaveSpawnCardsBox
 	_wave_spawn_card_template = %WaveSpawnCardTemplate
 	_wave_enemy_card_template = %WaveEnemyCardTemplate
-	_wave_warning_row = %WaveWarningRow
-	_wave_warning_label = %WaveWarningLabel
 	_wave_preview_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_wave_preview_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_wave_preview_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	GameUiStyle.apply_scroll_style(_wave_preview_scroll)
 	_wave_preview_label.visible = false
 	_style_wave_preview_static_nodes()
@@ -762,8 +754,6 @@ func _bind_wave_preview_nodes() -> void:
 		_wave_spawn_card_template.visible = false
 	if _wave_enemy_card_template != null:
 		_wave_enemy_card_template.visible = false
-	if _wave_warning_row != null:
-		_wave_warning_row.visible = false
 
 
 func _set_wave_preview_v2_visible(visible: bool) -> void:
@@ -775,12 +765,10 @@ func _set_wave_preview_v2_visible(visible: bool) -> void:
 		_wave_summary_label.visible = visible
 	if _wave_spawn_cards_box != null:
 		_wave_spawn_cards_box.visible = visible
-	if _wave_warning_row != null:
-		_wave_warning_row.visible = visible and _wave_warning_label != null and not _wave_warning_label.text.strip_edges().is_empty()
 
 
 func _style_wave_preview_static_nodes() -> void:
-	for label in [_wave_level_name_label, _wave_desc_label, _wave_summary_label, _wave_warning_label]:
+	for label in [_wave_level_name_label, _wave_desc_label, _wave_summary_label]:
 		if label == null:
 			continue
 		label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
@@ -792,8 +780,6 @@ func _style_wave_preview_static_nodes() -> void:
 		_wave_desc_label.add_theme_color_override("font_color", GameUiStyle.TEXT_INVERTED_DIM)
 	if _wave_summary_label != null:
 		_wave_summary_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
-	if _wave_warning_label != null:
-		_wave_warning_label.add_theme_color_override("font_color", GameUiStyle.AMBER)
 
 
 func _make_wave_label(node_name: String, font_size: int, color: Color, autowrap: bool) -> Label:
@@ -1043,34 +1029,6 @@ func _key_enemy_lookup(raw_key_enemies: Variant) -> Dictionary:
 	for raw_enemy: Variant in raw_key_enemies:
 		lookup[StringName(raw_enemy)] = true
 	return lookup
-
-
-func _format_wave_warning_text(data: Dictionary) -> String:
-	var routes: Array = data.get("routes", [])
-	var warnings := PackedStringArray()
-	for raw_affix: Variant in data.get("affixes", []):
-		if typeof(raw_affix) != TYPE_DICTIONARY:
-			continue
-		var affix: Dictionary = raw_affix
-		var affix_name := String(affix.get("name", "")).strip_edges()
-		var affix_desc := String(affix.get("desc", "")).strip_edges()
-		if affix_name.is_empty():
-			continue
-		warnings.append("夜晚词缀【%s】%s" % [affix_name, affix_desc])
-	for route_variant: Variant in routes:
-		if typeof(route_variant) != TYPE_DICTIONARY:
-			continue
-		var route: Dictionary = route_variant
-		var status := StringName(route.get("status", &"ok"))
-		if status != &"no_path" and status != &"core_enclosed":
-			continue
-		var message := String(route.get("message", "路线异常"))
-		if not warnings.has(message):
-			warnings.append(message)
-	var hover_cell: Vector2i = data.get("hover_cell", Vector2i(-9999, -9999))
-	if hover_cell != Vector2i(-9999, -9999):
-		warnings.append("预览阻挡：%s" % str(hover_cell))
-	return "；".join(warnings)
 
 
 ## 当晚词缀清单（含事件临时追加项），白天与夜间常显，由 controller 驱动；
@@ -1363,7 +1321,7 @@ func _setup_deploy_deck_scroll() -> void:
 	if _deck_scroll == null:
 		push_warning("Deploy deck ScrollContainer is missing; expected DeployDeck/DeckMargin/ScrollContainer.")
 		return
-	_deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	_deck_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_deck_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	_deck_scroll.clip_contents = true
@@ -1371,15 +1329,6 @@ func _setup_deploy_deck_scroll() -> void:
 	GameUiStyle.apply_scroll_style(_deck_scroll)
 	if not _deck_scroll.resized.is_connected(_refresh_deploy_deck_scroll_content):
 		_deck_scroll.resized.connect(_refresh_deploy_deck_scroll_content)
-	var horizontal_bar := _deck_scroll.get_h_scroll_bar()
-	if horizontal_bar != null:
-		horizontal_bar.custom_minimum_size.y = DEPLOY_SCROLLBAR_THICKNESS
-		horizontal_bar.add_theme_constant_override("scroll_width", int(DEPLOY_SCROLLBAR_THICKNESS))
-		horizontal_bar.add_theme_constant_override("minimum_grab_thickness", DEPLOY_SCROLLBAR_MIN_GRAB)
-		horizontal_bar.mouse_filter = Control.MOUSE_FILTER_STOP
-	var vertical_bar := _deck_scroll.get_v_scroll_bar()
-	if vertical_bar != null:
-		vertical_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_refresh_deploy_deck_scroll_content()
 
 
