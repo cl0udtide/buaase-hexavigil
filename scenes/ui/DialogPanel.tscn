@@ -105,7 +105,7 @@ theme_override_constants/separation = 10
 
 [node name="SpeakerPlate" type="PanelContainer" parent="TextBox/TextMargin/VBoxContainer" unique_id=376653536]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 63)
+custom_minimum_size = Vector2(149, 63)
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
@@ -115,7 +115,7 @@ theme_override_styles/panel = ExtResource("frame_dialog_speaker_plate_base_240x4
 layout_mode = 2
 theme_override_constants/margin_left = 23
 theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 12
+theme_override_constants/margin_right = 31
 theme_override_constants/margin_bottom = 6
 
 [node name="SpeakerLabel" type="Label" parent="TextBox/TextMargin/VBoxContainer/SpeakerPlate/SpeakerMargin" unique_id=2119867560]
@@ -125,8 +125,6 @@ theme_override_colors/font_color = Color(0.894118, 0.92549, 0.941176, 1)
 theme_override_font_sizes/font_size = 26
 text = "角色名"
 vertical_alignment = 1
-autowrap_mode = 0
-text_overrun_behavior = 0
 
 [node name="TextLabel" type="RichTextLabel" parent="TextBox/TextMargin/VBoxContainer" unique_id=647628848]
 unique_name_in_owner = true
