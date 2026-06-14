@@ -66,6 +66,7 @@ var _bullet_time_suspended := false
 @onready var _enemy_manager: Node = get_node_or_null("../../Managers/EnemyManager")
 @onready var _building_manager: Node = get_node_or_null("../../Managers/BuildingManager")
 @onready var _random_event_manager: Node = get_node_or_null("../../Managers/RandomEventManager")
+@onready var _cheat_manager: Node = get_node_or_null("../../Managers/CheatManager")
 
 
 func _ready() -> void:
@@ -230,6 +231,8 @@ func _connect_events() -> void:
 		event_bus.build_action_result.connect(_on_build_action_result)
 	if _unit_manager != null and _unit_manager.has_signal("operator_redeploy_completed"):
 		_unit_manager.connect(&"operator_redeploy_completed", Callable(self, "_on_operator_redeploy_completed"))
+	if _cheat_manager != null and _cheat_manager.has_signal("cheat_action_result"):
+		_cheat_manager.connect(&"cheat_action_result", Callable(self, "_on_cheat_action_result"))
 
 
 func _bootstrap_hud() -> void:
@@ -1180,6 +1183,16 @@ func _on_random_event_triggered(_event_id: StringName, _cell: Vector2i) -> void:
 	_refresh_wave_preview()
 	_show_night_affix_banner()
 	_refresh_event_count_line()
+
+
+func _on_cheat_action_result(result: Dictionary) -> void:
+	var message := String(result.get("message", ""))
+	if message.is_empty():
+		return
+	_show_message(message, StringName(), not bool(result.get("ok", false)))
+	_refresh_top_hud()
+	_update_operator_cards()
+	_force_wave_preview_refresh()
 
 
 func _on_night_wave_started(wave_index: int, wave_count: int) -> void:

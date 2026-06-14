@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://du5fca5ikd0i2" path="res://scripts/combat/covenant_manager.gd" id="20_covenant"]
 [ext_resource type="PackedScene" uid="uid://ea07qr350arq" path="res://scenes/ui/ActionPanel.tscn" id="21_ipajp"]
 [ext_resource type="Script" uid="uid://35bp8k53g7ig" path="res://scripts/core/tutorial_manager.gd" id="22_tutorial_manager"]
+[ext_resource type="Script" path="res://scripts/core/cheat_manager.gd" id="23_cheat_manager"]
 [ext_resource type="PackedScene" uid="uid://b2yodajglfar0" path="res://scenes/ui/BuildPanel.tscn" id="23_esr4c"]
 [ext_resource type="PackedScene" uid="uid://c0oceoqeshmf3" path="res://scenes/ui/EventPanel.tscn" id="29_rpato"]
 [ext_resource type="PackedScene" uid="uid://d2uqqs7dick5f" path="res://scenes/ui/BlessingPanel.tscn" id="31_nqblw"]
@@ -117,6 +118,9 @@ script = ExtResource("19_audio_manager")
 
 [node name="TutorialManager" type="Node" parent="Managers" unique_id=1124644753]
 script = ExtResource("22_tutorial_manager")
+
+[node name="CheatManager" type="Node" parent="Managers" unique_id=1020769462]
+script = ExtResource("23_cheat_manager")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1627445374]
 
