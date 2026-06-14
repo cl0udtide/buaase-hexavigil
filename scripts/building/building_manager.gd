@@ -1,6 +1,7 @@
 extends Node
 
 const AppRefs = preload("res://scripts/common/app_refs.gd")
+const GameplaySettings = preload("res://scripts/core/gameplay_settings.gd")
 
 const WALL_NORTH := 1
 const WALL_EAST := 2
@@ -709,6 +710,8 @@ func _is_target_within_building_range(origin: Vector2i, target: Vector2i, radius
 
 func _sync_building_aura_outline(actor: Node, effect_radius: int, effect_type: StringName, cfg: Dictionary, active_outline_ids: Dictionary) -> void:
 	if actor == null or not is_instance_valid(actor) or effect_radius <= 0:
+		return
+	if not GameplaySettings.is_show_building_aura_ranges_enabled():
 		return
 	if _map_root == null or not _map_root.has_method("set_range_outline"):
 		return

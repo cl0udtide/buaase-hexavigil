@@ -9,6 +9,8 @@ signal cheat_panel_requested
 @export var audio_manager_path: NodePath
 
 const PANEL_WIDTH := 420.0
+const AUTO_SKILL_SHORTCUT_LABEL := "S"
+const BUILDING_RANGE_SHORTCUT_LABEL := "V"
 
 @onready var _master_slider: HSlider = %MasterSlider
 @onready var _music_slider: HSlider = %MusicSlider
@@ -18,6 +20,7 @@ const PANEL_WIDTH := 420.0
 @onready var _sfx_value_label: Label = %SfxValueLabel
 @onready var _close_button: Button = get_node_or_null("%CloseButton") as Button
 @onready var _auto_skill_button: Button = get_node_or_null("%AutoSkillButton") as Button
+@onready var _building_range_button: Button = get_node_or_null("%BuildingRangeButton") as Button
 @onready var _cheat_open_button: Button = get_node_or_null("%CheatOpenButton") as Button
 @onready var _content_margin: MarginContainer = get_node_or_null("ContentMargin") as MarginContainer
 
@@ -32,6 +35,7 @@ func _ready() -> void:
 		_close_button.pressed.connect(func() -> void: close_requested.emit())
 	_bind_sliders()
 	_bind_auto_skill_toggle()
+	_bind_building_range_toggle()
 	_bind_cheat_button()
 	refresh_from_audio_manager()
 	refresh_from_gameplay_settings()
@@ -58,12 +62,14 @@ func refresh_from_audio_manager() -> void:
 
 
 func refresh_from_gameplay_settings() -> void:
-	if _auto_skill_button == null:
-		return
 	_updating = true
-	_auto_skill_button.button_pressed = GameplaySettings.is_auto_skill_cast_enabled()
+	if _auto_skill_button != null:
+		_auto_skill_button.button_pressed = GameplaySettings.is_auto_skill_cast_enabled()
+	if _building_range_button != null:
+		_building_range_button.button_pressed = GameplaySettings.is_show_building_aura_ranges_enabled()
 	_updating = false
 	_refresh_auto_skill_button()
+	_refresh_building_range_button()
 
 
 func show_panel() -> void:
@@ -94,6 +100,12 @@ func _bind_auto_skill_toggle() -> void:
 	if _auto_skill_button == null:
 		return
 	_auto_skill_button.toggled.connect(_on_auto_skill_toggled)
+
+
+func _bind_building_range_toggle() -> void:
+	if _building_range_button == null:
+		return
+	_building_range_button.toggled.connect(_on_building_range_toggled)
 
 
 func _bind_cheat_button() -> void:
@@ -133,6 +145,26 @@ func _on_auto_skill_toggled(enabled: bool) -> void:
 	_refresh_auto_skill_button()
 
 
+func _on_building_range_toggled(enabled: bool) -> void:
+	if _updating:
+		return
+	GameplaySettings.set_show_building_aura_ranges_enabled(enabled)
+	_refresh_building_range_button()
+
+
+func toggle_auto_skill_from_shortcut() -> void:
+	if _auto_skill_button == null:
+		return
+	_auto_skill_button.button_pressed = not _auto_skill_button.button_pressed
+
+
+func toggle_building_range_from_shortcut() -> void:
+	if _building_range_button == null:
+		GameplaySettings.set_show_building_aura_ranges_enabled(not GameplaySettings.is_show_building_aura_ranges_enabled())
+		return
+	_building_range_button.button_pressed = not _building_range_button.button_pressed
+
+
 func _refresh_value_labels() -> void:
 	_master_value_label.text = _format_percent(_master_slider.value)
 	_music_value_label.text = _format_percent(_music_slider.value)
@@ -144,7 +176,14 @@ func _refresh_auto_skill_button() -> void:
 	if _auto_skill_button == null:
 		return
 	_auto_skill_button.text = "开启" if _auto_skill_button.button_pressed else "关闭"
-	_auto_skill_button.tooltip_text = "开启后，普通手动技能会在攻击范围内有目标时自动释放"
+	_auto_skill_button.tooltip_text = "快捷键 %s：开启后，普通手动技能会在攻击范围内有目标时自动释放" % AUTO_SKILL_SHORTCUT_LABEL
+
+
+func _refresh_building_range_button() -> void:
+	if _building_range_button == null:
+		return
+	_building_range_button.text = "显示" if _building_range_button.button_pressed else "隐藏"
+	_building_range_button.tooltip_text = "快捷键 %s：控制未选中建筑时是否默认显示建筑生效范围；点击建筑时仍会显示范围" % BUILDING_RANGE_SHORTCUT_LABEL
 
 
 func _apply_panel_size() -> void:

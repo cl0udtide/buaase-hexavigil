@@ -273,6 +273,23 @@ func _handle_overlay_shortcut(event: InputEvent) -> void:
 	if key_event.keycode == KEY_R:
 		toggle_relic_panel()
 		get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_1 or key_event.keycode == KEY_KP_1:
+		speed_1_pressed.emit()
+		get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_2 or key_event.keycode == KEY_KP_2:
+		speed_2_pressed.emit()
+		get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_SPACE:
+		pause_pressed.emit()
+		get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_S:
+		if _settings_panel != null and _settings_panel.has_method("toggle_auto_skill_from_shortcut"):
+			_settings_panel.call("toggle_auto_skill_from_shortcut")
+			get_viewport().set_input_as_handled()
+	elif key_event.keycode == KEY_V:
+		if _settings_panel != null and _settings_panel.has_method("toggle_building_range_from_shortcut"):
+			_settings_panel.call("toggle_building_range_from_shortcut")
+			get_viewport().set_input_as_handled()
 	elif key_event.keycode == KEY_ESCAPE and close_top_panel():
 		get_viewport().set_input_as_handled()
 
