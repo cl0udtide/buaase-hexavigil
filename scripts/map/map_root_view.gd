@@ -806,7 +806,9 @@ func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: floa
 	draw_colored_polygon(points, color)
 
 
-## 画各出怪口的覆盖面（按口异色、半透明填格），返回编号信息（编号在迷雾之后单独画）。
+## 画各出怪口的覆盖面：半透明填充（多口重叠自然叠亮）+ 每口沿自己覆盖区边界画轮廓。
+## 关键：不画逐格描边——否则后画的口会整片盖掉先画的，看着像只显示一个；改沿"边界"
+## 描轮廓后，两口重叠时两条轮廓都在、互不遮盖。返回编号信息（编号在迷雾之后单独画）。
 func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	var label_infos: Array[Dictionary] = []
 	if _wave_route_previews.is_empty():
@@ -814,12 +816,16 @@ func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	for index in range(_wave_route_previews.size()):
 		var route: Dictionary = _wave_route_previews[index]
 		var color := _get_route_color(route, index)
+		var cover_set: Dictionary = {}
 		for cell_variant: Variant in route.get("coverage", []):
-			var cell: Vector2i = cell_variant
+			cover_set[cell_variant] = true
+		for cell_variant2: Variant in cover_set.keys():
+			var cell: Vector2i = cell_variant2
 			if not map_manager.is_inside(cell):
 				continue
 			var rect := Rect2(Vector2(float(cell.x), float(cell.y)) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
-			_draw_coverage_cell(rect, color)
+			draw_rect(rect.grow(-1.0), Color(color.r, color.g, color.b, 0.14))
+		_draw_coverage_outline(map_manager, cover_set, color)
 		var centerline: Array = route.get("centerline", [])
 		if not centerline.is_empty():
 			var label_info := _make_route_label_info(map_manager, centerline, _get_route_offset(index), color, route)
@@ -828,11 +834,30 @@ func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	return label_infos
 
 
-## 单格覆盖染色：半透明填充 + 描边；多口重叠区因 alpha 叠加而更显著。
-func _draw_coverage_cell(rect: Rect2, color: Color) -> void:
-	var inner := rect.grow(-2.0)
-	draw_rect(inner, Color(color.r, color.g, color.b, 0.16))
-	draw_rect(inner, Color(color.r, color.g, color.b, 0.5), false, 1.5)
+## 沿覆盖区域边界描该口颜色的轮廓：只画"邻格不在本覆盖集"的那几条格边。
+func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Color) -> void:
+	var line_color := Color(color.r, color.g, color.b, 0.88)
+	for cell_variant: Variant in cover_set.keys():
+		var cell: Vector2i = cell_variant
+		if not map_manager.is_inside(cell):
+			continue
+		var base := Vector2(float(cell.x), float(cell.y)) * CELL_SIZE
+		for dir: Vector2i in [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]:
+			if cover_set.has(cell + dir):
+				continue
+			var seg_a := base
+			var seg_b := base
+			if dir == Vector2i.RIGHT:
+				seg_a = base + Vector2(CELL_SIZE, 0.0)
+				seg_b = base + Vector2(CELL_SIZE, CELL_SIZE)
+			elif dir == Vector2i.LEFT:
+				seg_b = base + Vector2(0.0, CELL_SIZE)
+			elif dir == Vector2i.DOWN:
+				seg_a = base + Vector2(0.0, CELL_SIZE)
+				seg_b = base + Vector2(CELL_SIZE, CELL_SIZE)
+			else:
+				seg_b = base + Vector2(CELL_SIZE, 0.0)
+			draw_line(seg_a, seg_b, line_color, 3.0, true)
 
 
 func _make_route_label_info(map_manager: Node, path: Array, offset: Vector2, color: Color, route: Dictionary) -> Dictionary:

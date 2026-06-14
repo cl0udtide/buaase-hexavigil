@@ -72,6 +72,17 @@ func _scenarios() -> Array:
 				"............",
 			],
 		},
+		{
+			"name": "E. 双出怪口·覆盖重叠（验证两口都显示、非只显一个）",
+			"agents": 28, "frames": 80, "snaps": 0,
+			"map": [
+				"S...........",
+				"............",
+				"......C.....",
+				"............",
+				"S...........",
+			],
+		},
 	]
 
 
@@ -99,13 +110,21 @@ func _run_scenario(sc: Dictionary) -> void:
 	print("【对照·无修复(允许回头)】到核心 %d/%d，摇摆/卡住 %d 只" % [no_fix["reached"], n, no_fix["stuck"]])
 	if no_fix["stuck"] > with_fix["stuck"] or no_fix["reached"] < with_fix["reached"]:
 		print("  → 该地形复现了摇摆，不回头修复有效。")
+	if gates.size() >= 2:
+		print("  各口覆盖叠加（A=口1 B=口2 X=两口都扫到 → 重叠时两个都在，非只显一个）:")
+		print(_render_coverage(with_fix["trails"], core, units, walls, w, h))
 
 
 func _simulate(dist: Dictionary, front: Dictionary, core: Vector2i, gates: Array, units: Dictionary, n: int, half: int, max_frames: int, snaps: int, w: int, h: int, walls: Dictionary, use_prev: bool) -> Dictionary:
 	var phases := _phases(n)
 	var agents: Array = []
+	var trails: Array = []
+	for _g in gates:
+		trails.append({})
 	for i in range(n):
-		agents.append({"cell": gates[i % gates.size()], "phase": float(phases[i]), "prev": INVALID, "reached": false})
+		var gi: int = i % gates.size()
+		agents.append({"cell": gates[gi], "phase": float(phases[i]), "prev": INVALID, "reached": false, "gate": gi})
+		(trails[gi] as Dictionary)[gates[gi]] = true
 	var snap_at := {}
 	if snaps > 0:
 		for s in range(snaps):
@@ -146,6 +165,7 @@ func _simulate(dist: Dictionary, front: Dictionary, core: Vector2i, gates: Array
 			if nxt != a["cell"]:
 				a["prev"] = a["cell"]
 				a["cell"] = nxt
+				(trails[int(a["gate"])] as Dictionary)[nxt] = true
 			if a["cell"] == core:
 				a["reached"] = true
 	if all_done_frame >= 0:
@@ -157,7 +177,7 @@ func _simulate(dist: Dictionary, front: Dictionary, core: Vector2i, gates: Array
 			reached += 1
 		else:
 			stuck += 1
-	return {"reached": reached, "stuck": stuck, "frames_used": frames_used, "max_width": max_width}
+	return {"reached": reached, "stuck": stuck, "frames_used": frames_used, "max_width": max_width, "trails": trails}
 
 
 func _render(agents: Array, core: Vector2i, gates: Array, units: Dictionary, walls: Dictionary, w: int, h: int) -> String:
@@ -188,6 +208,34 @@ func _render(agents: Array, core: Vector2i, gates: Array, units: Dictionary, wal
 				row += "S"
 			else:
 				row += "."
+		lines.append("    " + row)
+	return "\n".join(lines)
+
+
+func _render_coverage(trails: Array, core: Vector2i, units: Dictionary, walls: Dictionary, w: int, h: int) -> String:
+	var letters := "AB"
+	var lines: Array = []
+	for y in range(h):
+		var row := ""
+		for x in range(w):
+			var c := Vector2i(x, y)
+			if walls.has(c):
+				row += "#"
+			elif c == core:
+				row += "C"
+			else:
+				var present: Array = []
+				for gi in range(mini(trails.size(), 2)):
+					if (trails[gi] as Dictionary).has(c):
+						present.append(gi)
+				if present.size() >= 2:
+					row += "X"
+				elif present.size() == 1:
+					row += letters[present[0]]
+				elif units.has(c):
+					row += "U"
+				else:
+					row += "."
 		lines.append("    " + row)
 	return "\n".join(lines)
 
