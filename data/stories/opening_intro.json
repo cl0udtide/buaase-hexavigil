@@ -2,34 +2,67 @@
 	"id": "opening_intro",
 	"trigger": "run_start",
 	"replay": "always",
-	"settings": { "type_speed": 38 },
+	"settings": { "type_speed": 36 },
 	"lines": [
 		{
 			"skin": "vn",
-			"background": "#0b0e12",
-			"speaker": "守夜干员",
+			"background": "#0c0f14",
+			"speaker": "干员 A",
 			"side": "left",
 			"portrait": "unit:blaze",
-			"text": "天一黑，它们就从地图边缘涌进来。"
+			"text": "master，核心已经种下，现在四周的黑潮都已经被驱散了。"
 		},
 		{
 			"skin": "vn",
-			"speaker": "守夜干员",
-			"side": "left",
-			"portrait": "unit:blaze",
-			"text": "我们要守住的，只有这一座核心。"
-		},
-		{
-			"skin": "vn",
-			"speaker": "核心 AI",
+			"background": "map",
+			"speaker": "干员 B",
 			"side": "right",
 			"portrait": "unit:ceobe",
-			"text": "九个夜晚。撑过去，增援就到。"
+			"text": "跋涉了这么久，终于可以稍事歇息了。"
+		},
+		{
+			"skin": "vn",
+			"background": "map",
+			"speaker": "干员 A",
+			"side": "left",
+			"portrait": "unit:blaze",
+			"text": "不要松懈，黑潮已经吞没了整个帝国，核心对于黑潮造物来说是致命的诱惑。一旦太阳下山，他们一定会袭击我们，摧毁核心。"
 		},
 		{
 			"skin": "bubble",
 			"anchor": "core",
-			"text": "这就是核心——它被摧毁，防线就结束了。"
+			"clear": "all",
+			"speaker": "干员 A",
+			"portrait": "unit:blaze",
+			"text": "master，核心正在抽取地脉的能量，只需要九天九夜的时间，核心就能够建立黑潮造物无法侵入的永久结界。"
+		},
+		{
+			"skin": "bubble",
+			"anchor": "core",
+			"speaker": "干员 A",
+			"portrait": "unit:blaze",
+			"text": "到那时，我们才拥有休养生息，重建帝国的根基。"
+		},
+		{
+			"skin": "bubble",
+			"anchor": "core",
+			"speaker": "干员 B",
+			"portrait": "unit:ceobe",
+			"text": "明白，在接下来的白天，我们使用核心力量去驱散一些远处的黑潮，收集资源吧。"
+		},
+		{
+			"skin": "bubble",
+			"anchor": "core",
+			"speaker": "干员 B",
+			"portrait": "unit:ceobe",
+			"text": "master，指挥布防的位置就交给你了。"
+		},
+		{
+			"skin": "bubble",
+			"anchor": "core",
+			"speaker": "干员 A",
+			"portrait": "unit:blaze",
+			"text": "我们已经使用核心发布了魔法信标，接下来，可能会有很多的有识之士前来加入我们。在夜晚的时候漂亮地消灭敌人，打响名声吧！"
 		}
 	]
 }
