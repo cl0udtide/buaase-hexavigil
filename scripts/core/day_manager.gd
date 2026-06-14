@@ -10,7 +10,7 @@ const EXPLORE_AP_COST := 2
 const EVENT_TRIGGER_AP_COST := 2
 const RESOURCE_COLLECT_AP_COST := 1
 const WOOD_RESOURCE_COLLECT_AMOUNT := 2
-const DEFAULT_RESOURCE_COLLECT_AMOUNT := 1
+const DEFAULT_RESOURCE_COLLECT_AMOUNT := 2
 
 @onready var _map_manager: Node = get_node_or_null("../MapManager")
 @onready var _random_event_manager: Node = get_node_or_null("../RandomEventManager")

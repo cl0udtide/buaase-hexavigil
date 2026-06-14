@@ -24,7 +24,7 @@
   {
     "id": "stone_quarry",
     "name": "石矿场",
-    "desc": "每天产出 4 石材",
+    "desc": "每天产出 5 石材",
     "sort_order": 20,
     "icon_text": "石",
     "building_type": "resource",
@@ -38,7 +38,7 @@
     "blocks_path": false,
     "effect_radius": 0,
     "effect_type": "collect_stone",
-    "effect_value": 4,
+    "effect_value": 5,
     "place_rule": "stone_resource_only",
     "scene_key": "building_actor",
     "icon_path": "res://assets/ui/generated/icon_building_stone_quarry.png"
@@ -46,7 +46,7 @@
   {
     "id": "mana_extractor",
     "name": "魔力矿场",
-    "desc": "每天产出 4 魔力矿",
+    "desc": "每天产出 5 魔力矿",
     "sort_order": 30,
     "icon_text": "魔",
     "building_type": "resource",
@@ -60,7 +60,7 @@
     "blocks_path": false,
     "effect_radius": 0,
     "effect_type": "collect_mana",
-    "effect_value": 4,
+    "effect_value": 5,
     "place_rule": "mana_resource_only",
     "scene_key": "building_actor",
     "icon_path": "res://assets/ui/generated/icon_building_mana_extractor.png"

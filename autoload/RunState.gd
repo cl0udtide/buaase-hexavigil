@@ -3,10 +3,10 @@ extends Node
 const AppRefs = preload("res://scripts/common/app_refs.gd")
 const OperatorProgression = preload("res://scripts/combat/operator_progression.gd")
 
-const DEFAULT_ACTION_POINTS := 30
-const DEFAULT_INITIAL_PRESTIGE := 8
+const DEFAULT_ACTION_POINTS := 40
+const DEFAULT_INITIAL_PRESTIGE := 16
 const DEFAULT_CORE_HP := 10
-const DEFAULT_DEPLOY_LIMIT := 4
+const DEFAULT_DEPLOY_LIMIT := 5
 const DEPLOY_LIMIT_INCREASE_DAYS := 2
 const OPERATOR_SELL_PRESTIGE := 1
 # 定向升星价目（按当前星级索引）。占位定价，刻意高于商店合成期望：应急定向通道，不是合成主路径。
@@ -63,9 +63,9 @@ func reset_for_new_run(seed: int, mode: StringName = RUN_MODE_STANDARD) -> void:
 	day = 0
 	action_points = DEFAULT_ACTION_POINTS
 	prestige = DEFAULT_INITIAL_PRESTIGE
-	wood = 3
-	stone = 2
-	mana = 1
+	wood = 6
+	stone = 5
+	mana = 3
 	core_hp = DEFAULT_CORE_HP
 	core_hp_max = DEFAULT_CORE_HP
 	deploy_limit = DEFAULT_DEPLOY_LIMIT

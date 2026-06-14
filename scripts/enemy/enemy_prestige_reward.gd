@@ -3,6 +3,8 @@ class_name EnemyPrestigeReward
 
 const LATE_REWARD_START_DAY := 4
 const LATE_REWARD_REDUCTION := 2
+const ENDGAME_REWARD_START_DAY := 6
+const ENDGAME_REWARD_EXTRA_REDUCTION := 2
 const MIN_REWARD := 1
 
 
@@ -11,7 +13,10 @@ static func base_for_day(raw_reward: int, day: int) -> int:
 		return 0
 	if day < LATE_REWARD_START_DAY:
 		return raw_reward
-	var adjusted_reward: int = raw_reward - LATE_REWARD_REDUCTION
+	var reduction := LATE_REWARD_REDUCTION
+	if day >= ENDGAME_REWARD_START_DAY:
+		reduction += ENDGAME_REWARD_EXTRA_REDUCTION
+	var adjusted_reward: int = raw_reward - reduction
 	return MIN_REWARD if adjusted_reward < MIN_REWARD else adjusted_reward
 
 
