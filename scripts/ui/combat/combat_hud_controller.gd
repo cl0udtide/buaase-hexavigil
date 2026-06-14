@@ -944,8 +944,15 @@ func _play_bullet_time_cue() -> void:
 func _on_pause_pressed() -> void:
 	if not _are_time_controls_enabled():
 		return
+	if get_tree().paused:
+		get_tree().paused = false
+		Engine.time_scale = _normal_time_scale
+		_refresh_time_controls()
+		return
 	_bullet_time_suspended = true
 	_clear_detail_selection()
+	if not _bullet_time_active and Engine.time_scale > 0.0:
+		_normal_time_scale = Engine.time_scale
 	_exit_bullet_time()
 	get_tree().paused = true
 	_refresh_time_controls()

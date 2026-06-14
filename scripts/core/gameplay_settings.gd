@@ -4,9 +4,11 @@ extends RefCounted
 const SETTINGS_PATH := "user://gameplay_settings.cfg"
 const SETTINGS_SECTION := "gameplay"
 const DEFAULT_AUTO_SKILL_CAST := false
+const DEFAULT_SHOW_BUILDING_AURA_RANGES := true
 
 static var _loaded := false
 static var _auto_skill_cast_enabled := DEFAULT_AUTO_SKILL_CAST
+static var _show_building_aura_ranges := DEFAULT_SHOW_BUILDING_AURA_RANGES
 
 
 static func is_auto_skill_cast_enabled() -> bool:
@@ -22,6 +24,19 @@ static func set_auto_skill_cast_enabled(enabled: bool) -> void:
 	_save_settings()
 
 
+static func is_show_building_aura_ranges_enabled() -> bool:
+	_ensure_loaded()
+	return _show_building_aura_ranges
+
+
+static func set_show_building_aura_ranges_enabled(enabled: bool) -> void:
+	_ensure_loaded()
+	if _show_building_aura_ranges == enabled:
+		return
+	_show_building_aura_ranges = enabled
+	_save_settings()
+
+
 static func _ensure_loaded() -> void:
 	if _loaded:
 		return
@@ -29,11 +44,14 @@ static func _ensure_loaded() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SETTINGS_PATH) != OK:
 		_auto_skill_cast_enabled = DEFAULT_AUTO_SKILL_CAST
+		_show_building_aura_ranges = DEFAULT_SHOW_BUILDING_AURA_RANGES
 		return
 	_auto_skill_cast_enabled = bool(cfg.get_value(SETTINGS_SECTION, "auto_skill_cast", DEFAULT_AUTO_SKILL_CAST))
+	_show_building_aura_ranges = bool(cfg.get_value(SETTINGS_SECTION, "show_building_aura_ranges", DEFAULT_SHOW_BUILDING_AURA_RANGES))
 
 
 static func _save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value(SETTINGS_SECTION, "auto_skill_cast", _auto_skill_cast_enabled)
+	cfg.set_value(SETTINGS_SECTION, "show_building_aura_ranges", _show_building_aura_ranges)
 	cfg.save(SETTINGS_PATH)

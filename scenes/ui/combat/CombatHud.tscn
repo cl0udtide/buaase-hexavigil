@@ -7,7 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dt2d2gea25boo" path="res://scenes/ui/combat/UnitDetailPanel.tscn" id="5_w2pd7"]
 [ext_resource type="PackedScene" uid="uid://s77oiy0amfv8" path="res://scenes/ui/relic/RelicPanel.tscn" id="7_nkwv8"]
 [ext_resource type="Script" uid="uid://wfh31hvbgi12" path="res://scripts/ui/audio_settings_panel.gd" id="9_7wb5u"]
-[ext_resource type="Script" path="res://scripts/ui/cheat_panel.gd" id="10_cheat_panel"]
+[ext_resource type="Script" uid="uid://hbhlgncvkln2" path="res://scripts/ui/cheat_panel.gd" id="10_cheat_panel"]
 [ext_resource type="Texture2D" uid="uid://c021jrk5jeuwx" path="res://assets/ui/generated/frame_slider_handle.png" id="26_sliderhandle"]
 [ext_resource type="Texture2D" uid="uid://nkhvnstaq2rn" path="res://assets/ui/generated/icon_settings_gear.png" id="27_iconsettings"]
 [ext_resource type="Texture2D" uid="uid://d0f3i3gyl2gnc" path="res://assets/ui/generated/icon_phase_day.png" id="28_iconphase"]
@@ -29,7 +29,7 @@
 [ext_resource type="Texture2D" uid="uid://ck3mdlo5c2ihi" path="res://assets/ui/generated/icon_skill_ready.png" id="44_iconskillready"]
 [ext_resource type="StyleBox" uid="uid://rwxknafk5tyq" path="res://assets/ui/styles/bar_progress_fill_core.tres" id="bar_progress_fill_core"]
 [ext_resource type="StyleBox" uid="uid://bvmvitgj8xblm" path="res://assets/ui/styles/bar_progress_track.tres" id="bar_progress_track"]
-[ext_resource type="Script" uid="uid://b0q41sl3iq5me" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
+[ext_resource type="Script" uid="uid://sbshr7wbuef4" path="res://scripts/ui/button_state_overlay.gd" id="button_state_overlay"]
 [ext_resource type="StyleBox" uid="uid://kb88apl8fpb0" path="res://assets/ui/styles/frame_button_base.tres" id="frame_button_base_compact"]
 [ext_resource type="StyleBox" uid="uid://kl122ddpky58" path="res://assets/ui/styles/frame_button_disabled_overlay.tres" id="frame_button_disabled_overlay_72x72"]
 [ext_resource type="StyleBox" uid="uid://bc3i2gfnh5clh" path="res://assets/ui/styles/frame_legend_panel_base.tres" id="frame_legend_panel_base_384x144"]
@@ -592,6 +592,7 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 custom_minimum_size = Vector2(46, 0)
 layout_mode = 2
+tooltip_text = "快捷键：空格"
 focus_mode = 0
 theme_override_constants/icon_max_width = 16
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
@@ -608,6 +609,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 size_flags_horizontal = 4
+tooltip_text = "快捷键：1"
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_speed_button")
@@ -620,6 +622,7 @@ flat = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(49, 0)
 layout_mode = 2
+tooltip_text = "快捷键：2"
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_speed_button")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_speed_button")
@@ -1012,9 +1015,9 @@ text_overrun_behavior = 3
 [node name="RelicStripSlot" type="Control" parent="HudChromeLayer" unique_id=1533235313]
 unique_name_in_owner = true
 anchors_preset = 0
-offset_left = 3.0
+offset_left = 15.0
 offset_top = 84.0
-offset_right = 834.0
+offset_right = 846.0
 offset_bottom = 128.0
 mouse_filter = 2
 
@@ -1024,9 +1027,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -1.0
 offset_top = -4.0
-offset_right = -1.0
 offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -2059,11 +2060,11 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="AutoSkillLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent" unique_id=1090735183]
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
-text = "自动释放技能"
+text = "自动释放技能（S）"
 vertical_alignment = 1
 
 [node name="AutoSkillSpacer" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent" unique_id=822459207]
@@ -2114,6 +2115,119 @@ mouse_filter = 2
 theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
 
 [node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/AutoSkillRow/RowMargin/RowContent/AutoSkillButton" unique_id=1352742178]
+script = ExtResource("button_state_overlay")
+
+[node name="BuildingRangeRow" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=2016619721]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="RowBase" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow" unique_id=2016619722]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 136.0
+offset_top = 13.0
+offset_right = 136.0
+offset_bottom = 13.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.48000002, 0.52)
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_settings_row_base_392x48")
+
+[node name="RowMargin" type="MarginContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow" unique_id=2016619723]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 23
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 6
+
+[node name="RowContent" type="HBoxContainer" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin" unique_id=2016619724]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RangeIcon" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent" unique_id=2016619725]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IconTexture" type="TextureRect" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent/RangeIcon" unique_id=2016619726]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("43_iconmaprange")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BuildingRangeLabel" type="Label" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent" unique_id=2016619727]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.65)
+text = "默认显示建筑范围（V）"
+vertical_alignment = 1
+
+[node name="BuildingRangeSpacer" type="Control" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent" unique_id=2016619728]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BuildingRangeButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent" unique_id=2016619729]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_pressed_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_hover_color = Color(0.93, 0.97, 0.99, 1)
+theme_override_colors/font_disabled_color = Color(0.47, 0.52, 0.55, 1)
+theme_override_styles/normal = ExtResource("frame_button_base_compact")
+theme_override_styles/pressed = ExtResource("frame_button_base_compact")
+theme_override_styles/hover = ExtResource("frame_button_base_compact")
+theme_override_styles/disabled = ExtResource("frame_button_base_compact")
+toggle_mode = true
+button_pressed = true
+text = "显示"
+
+[node name="PrimaryOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent/BuildingRangeButton" unique_id=2016619730]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 8.0
+offset_right = -4.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_button_highlight")
+
+[node name="DisabledOverlay" type="Panel" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent/BuildingRangeButton" unique_id=2016619731]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("frame_button_disabled_overlay_72x72")
+
+[node name="ButtonStateOverlay" type="Node" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox/BuildingRangeRow/RowMargin/RowContent/BuildingRangeButton" unique_id=2016619732]
 script = ExtResource("button_state_overlay")
 
 [node name="CheatOpenButton" type="Button" parent="PopupLayer/SettingsPanelSlot/AudioSettingsPanel/ContentMargin/MainVBox" unique_id=2016619720]
