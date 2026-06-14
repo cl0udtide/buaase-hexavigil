@@ -806,26 +806,41 @@ func _draw_arrow_head(tip: Vector2, direction: Vector2, color: Color, size: floa
 	draw_colored_polygon(points, color)
 
 
-## 画各出怪口的覆盖面：半透明填充（多口重叠自然叠亮）+ 每口沿自己覆盖区边界画轮廓。
-## 关键：不画逐格描边——否则后画的口会整片盖掉先画的，看着像只显示一个；改沿"边界"
-## 描轮廓后，两口重叠时两条轮廓都在、互不遮盖。返回编号信息（编号在迷雾之后单独画）。
+## 覆盖面预览（按格汇总，整图只画一遍，杜绝"后画的口盖掉先画的"）：
+## 先算每个格被哪些口覆盖 → 单口格填该口色、多口格填混色并加深；再每口沿自己边界描轮廓、
+## 按口序逐层向内缩一圈，于是【即便两口完全重合】也呈同心彩环、能数出几个口、谁也盖不住谁。
 func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	var label_infos: Array[Dictionary] = []
 	if _wave_route_previews.is_empty():
 		return label_infos
+	# 1) 按格汇总：cell -> [route_index, ...]
+	var cell_routes: Dictionary = {}
+	for index in range(_wave_route_previews.size()):
+		for cell_variant: Variant in _wave_route_previews[index].get("coverage", []):
+			var arr: Array = cell_routes.get(cell_variant, [])
+			arr.append(index)
+			cell_routes[cell_variant] = arr
+	# 2) 单遍填充：单口=该口色，多口=混色加深（永不互相遮盖）
+	for cell_variant2: Variant in cell_routes.keys():
+		var cell: Vector2i = cell_variant2
+		if not map_manager.is_inside(cell):
+			continue
+		var idxs: Array = cell_routes[cell_variant2]
+		var rect := Rect2(Vector2(float(cell.x), float(cell.y)) * CELL_SIZE, Vector2.ONE * CELL_SIZE).grow(-1.0)
+		if idxs.size() == 1:
+			var col := _get_route_color(_wave_route_previews[int(idxs[0])], int(idxs[0]))
+			draw_rect(rect, Color(col.r, col.g, col.b, 0.16))
+		else:
+			var mixed := _mix_route_colors(idxs)
+			draw_rect(rect, Color(mixed.r, mixed.g, mixed.b, 0.34))
+	# 3) 每口轮廓：按 index 向内缩一圈，完全重合时呈同心环
 	for index in range(_wave_route_previews.size()):
 		var route: Dictionary = _wave_route_previews[index]
 		var color := _get_route_color(route, index)
 		var cover_set: Dictionary = {}
-		for cell_variant: Variant in route.get("coverage", []):
-			cover_set[cell_variant] = true
-		for cell_variant2: Variant in cover_set.keys():
-			var cell: Vector2i = cell_variant2
-			if not map_manager.is_inside(cell):
-				continue
-			var rect := Rect2(Vector2(float(cell.x), float(cell.y)) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
-			draw_rect(rect.grow(-1.0), Color(color.r, color.g, color.b, 0.14))
-		_draw_coverage_outline(map_manager, cover_set, color)
+		for cell_variant3: Variant in route.get("coverage", []):
+			cover_set[cell_variant3] = true
+		_draw_coverage_outline(map_manager, cover_set, color, float(index) * 2.5)
 		var centerline: Array = route.get("centerline", [])
 		if not centerline.is_empty():
 			var label_info := _make_route_label_info(map_manager, centerline, _get_route_offset(index), color, route)
@@ -834,9 +849,24 @@ func _draw_wave_route_lines(map_manager: Node) -> Array[Dictionary]:
 	return label_infos
 
 
-## 沿覆盖区域边界描该口颜色的轮廓：只画"邻格不在本覆盖集"的那几条格边。
-func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Color) -> void:
-	var line_color := Color(color.r, color.g, color.b, 0.88)
+func _mix_route_colors(idxs: Array) -> Color:
+	var r := 0.0
+	var g := 0.0
+	var b := 0.0
+	for i: Variant in idxs:
+		var c := _get_route_color(_wave_route_previews[int(i)], int(i))
+		r += c.r
+		g += c.g
+		b += c.b
+	var n := float(maxi(idxs.size(), 1))
+	return Color(r / n, g / n, b / n, 1.0)
+
+
+## 沿覆盖区域边界描该口颜色的轮廓（只画"邻格不在本集"的格边），向内缩 inset 像素以便多口同心。
+func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Color, inset: float) -> void:
+	var line_color := Color(color.r, color.g, color.b, 0.9)
+	var lo := inset
+	var hi := CELL_SIZE - inset
 	for cell_variant: Variant in cover_set.keys():
 		var cell: Vector2i = cell_variant
 		if not map_manager.is_inside(cell):
@@ -848,16 +878,18 @@ func _draw_coverage_outline(map_manager: Node, cover_set: Dictionary, color: Col
 			var seg_a := base
 			var seg_b := base
 			if dir == Vector2i.RIGHT:
-				seg_a = base + Vector2(CELL_SIZE, 0.0)
-				seg_b = base + Vector2(CELL_SIZE, CELL_SIZE)
+				seg_a = base + Vector2(hi, lo)
+				seg_b = base + Vector2(hi, hi)
 			elif dir == Vector2i.LEFT:
-				seg_b = base + Vector2(0.0, CELL_SIZE)
+				seg_a = base + Vector2(lo, lo)
+				seg_b = base + Vector2(lo, hi)
 			elif dir == Vector2i.DOWN:
-				seg_a = base + Vector2(0.0, CELL_SIZE)
-				seg_b = base + Vector2(CELL_SIZE, CELL_SIZE)
+				seg_a = base + Vector2(lo, hi)
+				seg_b = base + Vector2(hi, hi)
 			else:
-				seg_b = base + Vector2(CELL_SIZE, 0.0)
-			draw_line(seg_a, seg_b, line_color, 3.0, true)
+				seg_a = base + Vector2(lo, lo)
+				seg_b = base + Vector2(hi, lo)
+			draw_line(seg_a, seg_b, line_color, 2.5, true)
 
 
 func _make_route_label_info(map_manager: Node, path: Array, offset: Vector2, color: Color, route: Dictionary) -> Dictionary:
