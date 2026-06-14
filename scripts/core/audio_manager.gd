@@ -46,6 +46,7 @@ const SFX_NIGHT_START := &"night_start"
 const SFX_WAVE_START := &"wave_start"
 const SFX_WAVE_ADVANCE := &"wave_advance"
 const SFX_RESULT_DEFEAT := &"result_defeat"
+const SFX_RESULT_VICTORY := &"result_victory"
 
 const FADE_SECONDS := 1.8
 const NIGHT_START_SFX_DELAY := 0.22
@@ -104,7 +105,8 @@ var sfx_paths := {
 	SFX_NIGHT_START: "res://assets/audio/sfx/night_start.ogg",
 	SFX_WAVE_START: "res://assets/audio/sfx/wave_start.ogg",
 	SFX_WAVE_ADVANCE: "res://assets/audio/sfx/wave_advance.ogg",
-	SFX_RESULT_DEFEAT: "res://assets/audio/sfx/result_defeat.ogg"
+	SFX_RESULT_DEFEAT: "res://assets/audio/sfx/result_defeat.ogg",
+	SFX_RESULT_VICTORY: "res://assets/audio/sfx/result_victory.ogg"
 }
 
 var _bgm_player: AudioStreamPlayer
@@ -415,6 +417,8 @@ func _get_sfx_volume_scale(sfx_key: StringName) -> float:
 			return 1.62
 		SFX_RESULT_DEFEAT:
 			return 1.2
+		SFX_RESULT_VICTORY:
+			return 1.18
 		SFX_ENEMY_DEATH_SMALL:
 			return randf_range(0.78, 0.96)
 		SFX_ENEMY_DEATH_LARGE:
@@ -463,8 +467,7 @@ func _on_night_wave_started(wave_index: int, _wave_count: int) -> void:
 func _on_run_ending(win: bool, _delay_seconds: float) -> void:
 	_night_bgm_request_id += 1
 	stop_bgm()
-	if not win:
-		play_detached_sfx(SFX_RESULT_DEFEAT)
+	play_detached_sfx(SFX_RESULT_VICTORY if win else SFX_RESULT_DEFEAT)
 
 
 func _on_run_ended(_win: bool) -> void:

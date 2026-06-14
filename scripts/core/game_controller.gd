@@ -6,6 +6,7 @@ const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolv
 
 const CORE_DESTROYED_RESULT_DELAY := 2.0
 const DEFEAT_RESULT_HIT_DELAY := 1.656
+const VICTORY_RESULT_HIT_DELAY := 1.35
 const NIGHT_START_TRANSITION_DELAY := 5.25
 const RUN_END_AUDIO_DELAY := 1.9
 
@@ -123,7 +124,10 @@ func enter_blessing() -> void:
 func end_run(win: bool) -> void:
 	if _run_end_requested:
 		return
-	_end_run_after_delay(win, RUN_END_AUDIO_DELAY)
+	if win:
+		_end_run_after_delay(win, VICTORY_RESULT_HIT_DELAY)
+	else:
+		_end_run_after_delay(win, RUN_END_AUDIO_DELAY)
 
 
 func _set_result_phase() -> void:
