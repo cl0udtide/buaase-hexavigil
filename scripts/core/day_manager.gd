@@ -7,7 +7,7 @@ const GATE_SEAL_AP_COST := 6
 const GATE_SEALS_PER_DAY := 1
 
 const EXPLORE_AP_COST := 2
-const EVENT_TRIGGER_AP_COST := 2
+const EVENT_TRIGGER_AP_COST := 10
 const RESOURCE_COLLECT_AP_COST := 1
 const WOOD_RESOURCE_COLLECT_AMOUNT := 2
 const DEFAULT_RESOURCE_COLLECT_AMOUNT := 2
@@ -100,6 +100,30 @@ func try_trigger_event(cell: Vector2i, choice_id: StringName = StringName()) -> 
 	if String(result.get("message", "")).is_empty():
 		result["message"] = "事件已处理"
 	return result
+
+
+## 进入事件：地图事件弹窗里的「触发」按钮调用——校验并预扣行动力，
+## 不在此应用效果/移除事件点（具体效果由事件详情面板的选项决定，且不再额外扣行动力）。
+func try_enter_event(cell: Vector2i) -> Dictionary:
+	var run_state = AppRefs.run_state()
+	if run_state == null:
+		return ActionResult.err(&"RUN_STATE_MISSING", "RunState 尚未初始化")
+	if run_state.phase != GameEnums.PHASE_DAY:
+		return ActionResult.err(&"INVALID_PHASE", "只有白天才能处理事件")
+	if _map_manager == null or not _map_manager.has_method("is_inside"):
+		return ActionResult.err(&"MAP_UNAVAILABLE", "地图尚未初始化")
+	if not _map_manager.is_inside(cell):
+		return ActionResult.err(&"OUT_OF_MAP", "目标格子不在地图内")
+	if not _map_manager.is_discovered(cell):
+		return ActionResult.err(&"NOT_DISCOVERED", "只能处理已探索区域的事件")
+	if _random_event_manager == null:
+		return ActionResult.err(&"EVENT_UNAVAILABLE", "事件系统尚未初始化")
+	if _random_event_manager.has_method("get_event_id_at_cell") and _random_event_manager.get_event_id_at_cell(cell) == StringName():
+		return ActionResult.err(&"NO_EVENT", "该格子没有可触发事件")
+	var ap_result: Dictionary = run_state.consume_action_points(EVENT_TRIGGER_AP_COST)
+	if not ap_result.get("ok", false):
+		return ap_result
+	return ActionResult.ok({"cell": cell, "ap_cost": EVENT_TRIGGER_AP_COST})
 
 
 func try_collect_resource(cell: Vector2i) -> Dictionary:

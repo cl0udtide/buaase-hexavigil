@@ -1,6 +1,6 @@
 extends SceneTree
 
-## 契约事件系统（黑市/赌局/商队）的 headless 回归：
+## 随机事件系统（奇怪的商人 / 奸商 / 持石 / 人才市场 / 祭坛 等）的 headless 回归：
 ## 运行：Godot --headless --path . --script scripts/debug/test_contract_events.gd
 
 var _failures: int = 0
@@ -48,10 +48,12 @@ func _run() -> void:
 		var event_bus = root.get_node_or_null("EventBus")
 		_expect(event_bus != null, "EventBus exists")
 		if event_bus != null and not open_cells.is_empty():
-			event_bus.request_open_event_panel.emit(open_cells[0])
+			# 新链路：地图小弹窗的「触发事件」按钮预扣行动力后 emit request_show_event_detail，
+			# 才打开事件详情面板（request_open_event_panel 现在只开 map_interaction_popup 小弹窗）。
+			event_bus.request_show_event_detail.emit(open_cells[0])
 			await process_frame
 			_expect(modal_layer.visible, "ModalLayer opens with event panel")
-			_expect(event_panel.is_visible_in_tree(), "event panel renders after bubble click signal")
+			_expect(event_panel.is_visible_in_tree(), "event panel renders after detail request signal")
 			if event_panel.has_method("hide_event"):
 				event_panel.hide_event()
 				await process_frame
@@ -87,39 +89,43 @@ func _run() -> void:
 			combat_hud.toggle_relic_panel()
 			_expect(popup_layer != null and not popup_layer.visible, "PopupLayer hides after relic panel closes")
 
-	# 黑市：先结算核心上限 -2，再获得一件稀有遗物；遗物可能再次影响核心上限。
+	# 奇怪的商人·全都要（event_phoebe_all）：核心生命上限减半，并获得普通+稀有遗物。
+	run_state.core_hp_max = 20
+	var core_max_before: int = int(run_state.core_hp_max)
 	var relics_before: int = (run_state.buffs as Array).size()
-	var deal: Dictionary = event_manager.apply_event(&"event_black_market_deal")
-	_expect(deal.get("ok", false), "black market deal applies")
-	_expect((run_state.buffs as Array).size() == relics_before + 1, "black market grants a relic")
+	var deal: Dictionary = event_manager.apply_event(&"event_phoebe_all")
+	_expect(deal.get("ok", false), "phoebe all deal applies")
+	_expect((run_state.buffs as Array).size() >= relics_before + 1, "phoebe all grants at least one relic")
+	_expect(int(run_state.core_hp_max) < core_max_before, "core max hp halved")
 	var summary := String((deal.get("payload", {}) as Dictionary).get("effect_payload", {}).get("summary", ""))
-	_expect(summary.contains("核心生命上限 -2"), "deal summary mentions core cost")
+	_expect(summary.contains("核心生命上限减半"), "deal summary mentions core halve")
 
-	# 商队：前置不足时整体取消；满足后双向兑换。
+	# 奸商·买魔力矿（event_kroos_buy，requires prestige 8）：前置不足时整体取消；满足后 8 声望换 3 魔力矿。
 	run_state.prestige = 0
-	var buy_fail: Dictionary = event_manager.apply_event(&"event_caravan_buy")
-	_expect(not buy_fail.get("ok", false), "caravan buy fails without prestige")
-	run_state.prestige = 5
+	var buy_fail: Dictionary = event_manager.apply_event(&"event_kroos_buy")
+	_expect(not buy_fail.get("ok", false), "kroos buy fails without prestige")
+	run_state.prestige = 8
 	var mana_before: int = run_state.mana
-	var buy_ok: Dictionary = event_manager.apply_event(&"event_caravan_buy")
-	_expect(buy_ok.get("ok", false), "caravan buy applies")
-	_expect(run_state.prestige == 1 and run_state.mana == mana_before + 3, "caravan buy trades prestige for mana")
+	var buy_ok: Dictionary = event_manager.apply_event(&"event_kroos_buy")
+	_expect(buy_ok.get("ok", false), "kroos buy applies")
+	_expect(run_state.prestige == 0 and run_state.mana == mana_before + 3, "kroos buy trades 8 prestige for 3 mana")
 
-	# 赌局：追加一条词缀（day1 走回退池）并激活赌约。
+	# 持石的好处（event_stone_take）：追加一条随机夜晚词缀（day1 走回退池）并激活不漏怪赌约。
 	var affixes_before: int = (run_state.night_affix_ids as Array).size()
-	var wager: Dictionary = event_manager.apply_event(&"event_war_wager_accept")
-	_expect(wager.get("ok", false), "war wager applies")
-	_expect((run_state.night_affix_ids as Array).size() == affixes_before + 1, "wager adds a night affix")
+	var wager: Dictionary = event_manager.apply_event(&"event_stone_take")
+	_expect(wager.get("ok", false), "stone take applies")
+	_expect((run_state.night_affix_ids as Array).size() == affixes_before + 1, "stone take adds a night affix")
 	_expect(bool(run_state.night_wager_active), "wager flag is active")
 
 	# 今晚词缀横幅在白天也要可见：事件追加词缀后（random_event_triggered）立即刷新显示。
 	var banner_bus = root.get_node_or_null("EventBus")
 	_expect(banner_bus != null, "EventBus exists for banner refresh")
 	if banner_bus != null:
-		banner_bus.random_event_triggered.emit(&"event_war_wager", Vector2i(-1, -1))
+		banner_bus.random_event_triggered.emit(&"event_stone", Vector2i(-1, -1))
 		await process_frame
 	var hud_for_banner := game.get_node_or_null("UI/ScreenLayout/CombatHudSlot/CombatHud") as Control
-	var affix_row: Control = hud_for_banner.get_node_or_null("NightAffixRow") as Control if hud_for_banner != null else null
+	# 词缀横幅在 CombatHud 的 HudChromeLayer 下（CombatHud 直接子节点里没有 NightAffixRow）。
+	var affix_row: Control = hud_for_banner.get_node_or_null("HudChromeLayer/NightAffixRow") as Control if hud_for_banner != null else null
 	_expect(affix_row != null and affix_row.visible, "affix banner visible during day after event adds affix")
 	var banner_event_panel := game.get_node_or_null("UI/ModalLayer/EventPanelSlot/EventPanel")
 	if banner_event_panel != null and banner_event_panel.has_method("hide_event"):
@@ -135,20 +141,32 @@ func _run() -> void:
 		_expect(int(run_state.pending_extra_blessings) == 1, "clean night pays extra blessing")
 		_expect(not bool(run_state.night_wager_active), "wager resets after settlement")
 
-	# 每日刷新：day1 保底 2 个事件点；活跃上限 4。
-	_expect((event_manager.get_event_cells() as Array).size() == 2, "day1 spawns exactly 2 event points")
-	event_manager._spawn_daily_events(2)
-	event_manager._spawn_daily_events(3)
-	event_manager._spawn_daily_events(4)
-	_expect((event_manager.get_event_cells() as Array).size() <= 4, "active event points capped at 4")
+	# 开局铺设：第 1 天一次性把本局母事件各投放一个到全图随机合法平地，取代旧的每日刷新/活跃上限。
+	var run_event_cells: Array = event_manager.get_event_cells()
+	var max_event_points := int(event_manager.get_max_active_event_points())
+	_expect(run_event_cells.size() >= 1 and run_event_cells.size() <= max_event_points, "day1 spawns the run event set (1..mother count)")
+	# 落点都应是非隐藏母事件，且每个母事件至多投放一个（铺设不重复）。
+	var spawn_counts: Dictionary = {}
+	var all_mother := true
+	for raw_cell: Variant in run_event_cells:
+		var spawned_id: StringName = event_manager.get_event_id_at_cell(raw_cell as Vector2i)
+		if bool(event_manager.get_event_cfg(spawned_id).get("hidden_in_map_pool", false)):
+			all_mother = false
+		spawn_counts[spawned_id] = int(spawn_counts.get(spawned_id, 0)) + 1
+	_expect(all_mother, "spawned events are all non-hidden mother events")
+	var no_duplicate_spawn := true
+	for spawned_id: Variant in spawn_counts.keys():
+		if int(spawn_counts[spawned_id]) > 1:
+			no_duplicate_spawn = false
+	_expect(no_duplicate_spawn, "each mother event spawns at most once")
 
-	# 雇佣兵营地：声望换随机干员。
-	run_state.prestige = 10
+	# 人才市场·中端（event_market_mid，requires prestige 6）：6 声望随机得三名 4 费干员。
+	run_state.prestige = 6
 	var roster_before: int = (run_state.get_owned_operators() as Array).size()
-	var hire: Dictionary = event_manager.apply_event(&"event_mercenary_hire_mid")
-	_expect(hire.get("ok", false), "mercenary hire applies")
-	_expect((run_state.get_owned_operators() as Array).size() == roster_before + 1, "mercenary hire grants an operator")
-	_expect(run_state.prestige == 8, "mercenary hire costs 2 prestige")
+	var hire: Dictionary = event_manager.apply_event(&"event_market_mid")
+	_expect(hire.get("ok", false), "market mid applies")
+	_expect((run_state.get_owned_operators() as Array).size() == roster_before + 3, "market mid grants three operators")
+	_expect(run_state.prestige == 0, "market mid costs 6 prestige")
 
 	# 祭坛：动态选项 + 灌注 = 干员实例获得盟约，魔力矿扣减。
 	run_state.add_owned_operator(&"guard_t1", "测试斯卡蒂")

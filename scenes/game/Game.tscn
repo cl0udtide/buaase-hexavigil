@@ -236,13 +236,13 @@ autowrap_mode = 2
 
 [node name="TriggerEventButton" type="Button" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/EventSection" unique_id=732597728]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(108, 32)
+custom_minimum_size = Vector2(84, 45)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = ExtResource("frame_event_choice_button_base_108x32")
-theme_override_styles/pressed = ExtResource("frame_event_choice_button_base_108x32")
-theme_override_styles/hover = ExtResource("frame_event_choice_button_base_108x32")
-theme_override_styles/disabled = ExtResource("frame_event_choice_button_base_108x32")
+theme_override_styles/normal = ExtResource("41_button_base")
+theme_override_styles/pressed = ExtResource("41_button_base")
+theme_override_styles/hover = ExtResource("41_button_base")
+theme_override_styles/disabled = ExtResource("41_button_base")
 text = "触发事件"
 
 [node name="PrimaryOverlay" type="Panel" parent="UI/FloatingLayer/MapInteractionPopup/ContentMargin/VBoxContainer/EventSection/TriggerEventButton" unique_id=308629027]

@@ -127,6 +127,7 @@
     "image": "res://assets/story/events/event_kroos.png",
     "desc": "一直跟随着大部队的一个商人突然找到了你，告诉你她囤了一大批的资源，问你想不想要交易。",
     "effect_type": "contract",
+    "persistent": true,
     "choices": [
       {
         "id": "buy",
