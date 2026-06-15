@@ -20,6 +20,7 @@ func _init() -> void:
 	_test_nine_day_schedule()
 	_test_min_day_filter()
 	_test_third_boss_data()
+	_test_nine_day_boss_finale()
 	if _failures == 0:
 		print("NIGHT SPAWN REWORK TESTS PASSED")
 		quit(0)
@@ -175,7 +176,7 @@ func _test_third_boss_data() -> void:
 		var fire: Dictionary = p2.get("fire_rain", {})
 		_expect(not fire.is_empty(), "P2 has fire_rain")
 		_expect(float(fire.get("damage_per_sec", 0.0)) > 0.0, "fire_rain damage_per_sec > 0")
-	# boss 模板池含三只 + frostbeak min_day=4 引用凑凑企鹅。
+	# boss 模板池含三只 + frostbeak min_day=9 引用凑凑企鹅。
 	var templates: Variant = _load_json("res://data/wave_templates.json")
 	var boss_count := 0
 	var frost: Dictionary = {}
@@ -190,8 +191,36 @@ func _test_third_boss_data() -> void:
 				frost = t
 	_expect(boss_count == 3, "3 boss templates (got %d)" % boss_count)
 	_expect(not frost.is_empty(), "frostbeak_carnival template exists")
-	_expect(int(frost.get("min_day", 1)) == 4, "frostbeak min_day == 4")
+	_expect(int(frost.get("min_day", 1)) == 9, "frostbeak min_day == 9 (只在 d9 终战登场)")
 	_expect((frost.get("key_enemies", []) as Array).has("coucou_penguin"), "frostbeak references coucou_penguin")
+
+
+## d9 终战：三 Boss 连战（爱国者 → 奶龙 → 凑凑企鹅），固定顺序、无独立小怪波；d3/d6 boss 池排除凑凑企鹅。
+func _test_nine_day_boss_finale() -> void:
+	var d9 := NightTemplateResolver.wave_tiers_for_day(9)
+	_expect(d9.size() == 3, "day 9 has 3 waves (got %d)" % d9.size())
+	for tier in d9:
+		_expect(tier == &"boss", "day 9 every wave is boss (got %s)" % tier)
+	# 固定整夜计划：爱国者 → 奶龙 → 凑凑企鹅，顺序恒定。
+	var plan := NightTemplateResolver.resolve_night_plan({}, [], 12345, 9)
+	_expect(plan.size() == 3, "day 9 fixed plan has 3 waves (got %d)" % plan.size())
+	if plan.size() == 3:
+		_expect(plan[0] == &"twilight_triumph", "day9 wave1 = patriot (twilight_triumph)")
+		_expect(plan[1] == &"fiends_carnival", "day9 wave2 = nailoong (fiends_carnival)")
+		_expect(plan[2] == &"frostbeak_carnival", "day9 wave3 = coucou_penguin (frostbeak_carnival)")
+	# 固定计划与随机种子/局内 used 无关（演出顺序恒定）。
+	var plan_other := NightTemplateResolver.resolve_night_plan({}, [&"twilight_triumph", &"fiends_carnival"], 999, 9)
+	_expect(plan_other == plan, "day9 fixed plan ignores seed/used")
+	# d3/d6 boss 池经 min_day 过滤后不含凑凑企鹅，前两个小 boss 只会是爱国者/奶龙。
+	var boss_entries := [
+		{"id": &"twilight_triumph", "min_day": 1},
+		{"id": &"fiends_carnival", "min_day": 1},
+		{"id": &"frostbeak_carnival", "min_day": 9},
+	]
+	var d3_pool := NightTemplateResolver.filter_template_ids_by_min_day(boss_entries, 3)
+	_expect(not d3_pool.has(&"frostbeak_carnival"), "day3 boss pool excludes coucou_penguin")
+	var d6_pool := NightTemplateResolver.filter_template_ids_by_min_day(boss_entries, 6)
+	_expect(not d6_pool.has(&"frostbeak_carnival"), "day6 boss pool excludes coucou_penguin")
 
 
 func _load_json(path: String) -> Variant:

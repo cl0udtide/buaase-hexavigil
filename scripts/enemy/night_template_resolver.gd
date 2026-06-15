@@ -5,7 +5,8 @@ class_name NightTemplateResolver
 const TOTAL_DAYS := 9
 
 ## day -> 每晚各波的档位序列。调整单局天数或夜晚节奏时改这张表。
-## 九天三幕：每幕 3 天，幕末（d3/d6/d9）末波为 boss；boss 晚少配 adds（数量系数已配合）。
+## 九天三幕：每幕 3 天，幕末（d3/d6/d9）含 boss 波；boss 晚少配 adds（数量系数已配合）。
+## d9 终战为三 Boss 连战（见 FIXED_NIGHT_PLAN_BY_DAY），故三波皆 boss、无独立小怪波。
 const WAVE_TIERS_BY_DAY := {
 	1: [&"early"],
 	2: [&"early", &"early"],
@@ -15,10 +16,16 @@ const WAVE_TIERS_BY_DAY := {
 	6: [&"late", &"boss"],
 	7: [&"late", &"late"],
 	8: [&"mid", &"late", &"late"],
-	9: [&"late", &"late", &"boss"],
+	9: [&"boss", &"boss", &"boss"],
 }
 const DEFAULT_WAVE_TIERS: Array = [&"late", &"late"]
 const DEFAULT_TIER: StringName = &"late"
+
+## 固定整夜计划：某些天直接指定整夜波次模板（按声明顺序，绕过随机抽取），保证演出顺序恒定。
+## d9 终战：爱国者(twilight_triumph) → 奶龙(fiends_carnival) → 凑凑企鹅(frostbeak_carnival) 三 Boss 连战，把节奏推到最高潮。
+const FIXED_NIGHT_PLAN_BY_DAY := {
+	9: [&"twilight_triumph", &"fiends_carnival", &"frostbeak_carnival"],
+}
 
 
 static func wave_tiers_for_day(day: int) -> Array[StringName]:
@@ -65,6 +72,8 @@ static func tier_for_day(day: int) -> StringName:
 ## 解析整夜计划：按当日档位序列逐波抽模板，夜内与局内均不重复（池耗尽时回退允许重复）。
 ## pools: Dictionary[StringName tier -> Array[StringName] template_ids]，由调用方从 DataRepo 组装。
 static func resolve_night_plan(pools: Dictionary, used_ids: Array, run_seed: int, day: int) -> Array[StringName]:
+	if FIXED_NIGHT_PLAN_BY_DAY.has(day):
+		return _fixed_night_plan(day)
 	var plan: Array[StringName] = []
 	var combined_used: Array = []
 	for raw_used: Variant in used_ids:
@@ -79,6 +88,17 @@ static func resolve_night_plan(pools: Dictionary, used_ids: Array, run_seed: int
 		plan.append(template_id)
 		if not combined_used.has(template_id):
 			combined_used.append(template_id)
+	return plan
+
+
+## 取某天的固定整夜计划：按 FIXED_NIGHT_PLAN_BY_DAY 声明顺序返回模板 id（去掉空项）。
+## 与随机种子/局内 used 无关，保证整夜演出顺序恒定。
+static func _fixed_night_plan(day: int) -> Array[StringName]:
+	var plan: Array[StringName] = []
+	for raw_id: Variant in FIXED_NIGHT_PLAN_BY_DAY.get(day, []):
+		var id := StringName(raw_id)
+		if id != StringName():
+			plan.append(id)
 	return plan
 
 
