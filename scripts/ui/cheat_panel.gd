@@ -315,7 +315,10 @@ func _make_grant_relic_row() -> Control:
 	row.add_child(_relic_option)
 	row.add_child(_make_connected_button("获得", "_on_grant_relic_pressed"))
 	root.add_child(row)
-	root.add_child(_make_connected_button("获得全部遗物", "_on_grant_all_relics_pressed"))
+	root.add_child(_make_action_row([
+		{"text": "获得全部遗物", "method": "_on_grant_all_relics_pressed"},
+		{"text": "获得全部正常遗物", "method": "_on_grant_all_normal_relics_pressed"}
+	]))
 	return root
 
 
@@ -528,6 +531,10 @@ func _on_grant_relic_pressed() -> void:
 
 func _on_grant_all_relics_pressed() -> void:
 	_call_cheat("grant_all_relics")
+
+
+func _on_grant_all_normal_relics_pressed() -> void:
+	_call_cheat("grant_all_normal_relics")
 
 
 func _on_spawn_event_pressed() -> void:
