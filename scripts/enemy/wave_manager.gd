@@ -70,7 +70,7 @@ func resolve_night_plan(run_seed: int, day: int, used_ids: Array) -> Array[Strin
 	return NightTemplateResolver.resolve_night_plan(pools, used_ids, run_seed, day)
 
 
-## 按模板 min_day 过滤当天某档池（凑凑企鹅 min_day=4，幕一不登场）。
+## 按模板 min_day 过滤当天某档池（凑凑企鹅 min_day=9，仅 d9 终战登场；d3/d6 boss 池只有爱国者/奶龙）。
 func _filter_pool_by_min_day(ids: Array, day: int) -> Array:
 	var data_repo = AppRefs.data_repo()
 	if data_repo == null or not data_repo.has_method("get_wave_template_cfg"):
