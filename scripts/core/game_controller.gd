@@ -7,6 +7,7 @@ const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolv
 const CORE_DESTROYED_RESULT_DELAY := 2.0
 const DEFEAT_RESULT_HIT_DELAY := 1.656
 const VICTORY_RESULT_HIT_DELAY := 1.35
+const BOSS_DEATH_RESULT_DELAY := 2.85
 const NIGHT_START_TRANSITION_DELAY := 5.25
 const RUN_END_AUDIO_DELAY := 1.9
 
@@ -21,6 +22,7 @@ const RUN_END_AUDIO_DELAY := 1.9
 
 var _run_end_requested := false
 var _night_start_transitioning := false
+var _last_boss_death_msec := -1000000
 
 
 func _ready() -> void:
@@ -29,6 +31,7 @@ func _ready() -> void:
 		event_bus.request_start_night.connect(_on_request_start_night)
 		event_bus.night_cleared.connect(_on_night_cleared)
 		event_bus.core_destroyed.connect(_on_core_destroyed)
+		event_bus.enemy_died.connect(_on_enemy_died)
 		event_bus.blessing_chosen.connect(_on_blessing_chosen)
 		event_bus.core_damaged.connect(_on_core_damaged_for_wager)
 
@@ -125,7 +128,7 @@ func end_run(win: bool) -> void:
 	if _run_end_requested:
 		return
 	if win:
-		_end_run_after_delay(win, VICTORY_RESULT_HIT_DELAY)
+		_end_run_after_delay(win, _victory_result_delay())
 	else:
 		_end_run_after_delay(win, RUN_END_AUDIO_DELAY)
 
@@ -228,6 +231,15 @@ func _on_core_destroyed() -> void:
 	_end_run_after_delay(false, DEFEAT_RESULT_HIT_DELAY)
 
 
+func _on_enemy_died(_enemy_runtime_id: int, enemy_id: StringName) -> void:
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or not data_repo.has_method("get_enemy_cfg"):
+		return
+	var cfg: Dictionary = data_repo.get_enemy_cfg(enemy_id)
+	if StringName(cfg.get("behavior_type", "normal")) == &"boss":
+		_last_boss_death_msec = Time.get_ticks_msec()
+
+
 func _on_blessing_chosen(buff_id: StringName) -> void:
 	var run_state = AppRefs.run_state()
 	var buff_manager := get_node_or_null("../BuffManager")
@@ -253,3 +265,10 @@ func _on_core_damaged_for_wager(_amount: int, _current: int, _max_value: int) ->
 
 func _is_tutorial_run(run_state: Node) -> bool:
 	return run_state != null and run_state.has_method("is_tutorial_run") and run_state.is_tutorial_run()
+
+
+func _victory_result_delay() -> float:
+	var elapsed := float(Time.get_ticks_msec() - _last_boss_death_msec) / 1000.0
+	if elapsed >= 0.0 and elapsed < BOSS_DEATH_RESULT_DELAY:
+		return maxf(VICTORY_RESULT_HIT_DELAY, BOSS_DEATH_RESULT_DELAY - elapsed)
+	return VICTORY_RESULT_HIT_DELAY

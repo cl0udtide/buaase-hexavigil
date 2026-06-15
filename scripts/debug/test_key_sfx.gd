@@ -21,6 +21,7 @@ func _run() -> void:
 	_test_enemy_death_tiering(audio_manager)
 	_test_enemy_death_variation(audio_manager)
 	_test_sfx_gain_policy(audio_manager)
+	_test_boss_long_cue_policy(audio_manager)
 	_test_sfx_prewarm_cache(audio_manager)
 	_test_boss_nailoong_voice_pool(audio_manager)
 	await _test_boss_voice_pause_policy(audio_manager)
@@ -28,6 +29,7 @@ func _run() -> void:
 	_test_core_destroyed_result_delay()
 	_test_night_transition_delay()
 	_test_run_end_audio_delay()
+	_test_boss_death_result_delay()
 	_test_core_destroyed_emits_once()
 	_test_event_handlers_exist(audio_manager)
 	audio_manager.queue_free()
@@ -121,6 +123,20 @@ func _test_sfx_gain_policy(audio_manager: Node) -> void:
 	_expect(float(AudioManagerScript.BOSS_RANDOM_VOICE_MAX_COOLDOWN) > float(AudioManagerScript.BOSS_RANDOM_VOICE_MIN_COOLDOWN), "boss random voice cooldown has random range")
 	_expect(float(AudioManagerScript.BOSS_PHASE_TWO_RANDOM_VOICE_MIN_COOLDOWN) >= 4.0, "phase two boss voice cooldown keeps a safe lower bound")
 	_expect(float(AudioManagerScript.BOSS_PHASE_TWO_RANDOM_VOICE_MAX_COOLDOWN) < float(AudioManagerScript.BOSS_RANDOM_VOICE_MAX_COOLDOWN), "phase two boss voice cooldown is more frequent")
+	_expect(float(AudioManagerScript.BOSS_RANDOM_VOICE_AFTER_INTRO_GRACE) > float(AudioManagerScript.BOSS_NAILOONG_INTRO_ROAR_SECONDS), "boss random voice waits beyond intro roar")
+
+
+func _test_boss_long_cue_policy(audio_manager: Node) -> void:
+	var sfx_cursor_before := int(audio_manager.get("_sfx_cursor"))
+	audio_manager.call("_on_enemy_spawned", 7001, &"milk_dragon_chief", Vector2i.ZERO)
+	audio_manager.call("_on_boss_phase_transition_started", 7001, &"milk_dragon_chief", 2)
+	audio_manager.call("_on_enemy_died", 7001, &"milk_dragon_chief")
+	_expect(int(audio_manager.get("_sfx_cursor")) == sfx_cursor_before, "boss nailoong long cues do not consume pooled sfx players")
+	var detached_player := root.find_child("DetachedResultSfxPlayer", true, false) as AudioStreamPlayer
+	_expect(detached_player != null and detached_player.process_mode == Node.PROCESS_MODE_ALWAYS, "boss detached long cue runs while paused")
+	_expect(float(AudioManagerScript.BOSS_INTRO_BGM_DELAY) >= float(AudioManagerScript.BOSS_NAILOONG_INTRO_ROAR_SECONDS), "boss bgm waits for intro roar")
+	_expect(float(AudioManagerScript.BOSS_RANDOM_VOICE_AFTER_PHASE_GRACE) > float(AudioManagerScript.BOSS_NAILOONG_PHASE_ROAR_SECONDS), "boss random voice waits beyond phase roar")
+	_expect(float(GameControllerScript.BOSS_DEATH_RESULT_DELAY) >= float(AudioManagerScript.BOSS_NAILOONG_DEATH_SECONDS), "result waits for boss death voice")
 
 
 func _test_sfx_prewarm_cache(audio_manager: Node) -> void:
@@ -175,6 +191,7 @@ func _test_core_destroyed_result_delay() -> void:
 	_expect(float(GameControllerScript.CORE_DESTROYED_RESULT_DELAY) >= 1.8, "core destroyed waits before result scene")
 	_expect(is_equal_approx(float(GameControllerScript.DEFEAT_RESULT_HIT_DELAY), 1.656), "defeat result scene aligns to hit time")
 	_expect(is_equal_approx(float(GameControllerScript.VICTORY_RESULT_HIT_DELAY), 1.35), "victory result scene aligns to hit time")
+	_expect(float(GameControllerScript.BOSS_DEATH_RESULT_DELAY) >= 2.7, "boss death result delay protects long death voice")
 
 
 func _test_night_transition_delay() -> void:
@@ -183,6 +200,17 @@ func _test_night_transition_delay() -> void:
 
 func _test_run_end_audio_delay() -> void:
 	_expect(float(GameControllerScript.RUN_END_AUDIO_DELAY) >= 1.8, "run end waits for bgm fade before result scene")
+
+
+func _test_boss_death_result_delay() -> void:
+	var game_controller: Node = GameControllerScript.new()
+	root.add_child(game_controller)
+	game_controller.set("_last_boss_death_msec", Time.get_ticks_msec())
+	var delay := float(game_controller.call("_victory_result_delay"))
+	_expect(delay >= float(GameControllerScript.BOSS_DEATH_RESULT_DELAY) - 0.1, "recent boss death extends victory result delay")
+	game_controller.set("_last_boss_death_msec", -1000000)
+	_expect(is_equal_approx(float(game_controller.call("_victory_result_delay")), float(GameControllerScript.VICTORY_RESULT_HIT_DELAY)), "normal victory result delay stays aligned")
+	game_controller.queue_free()
 
 
 func _test_core_destroyed_emits_once() -> void:
