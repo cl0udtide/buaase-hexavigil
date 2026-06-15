@@ -4,16 +4,10 @@ const AppRefs = preload("res://scripts/common/app_refs.gd")
 const CovenantDefs = preload("res://scripts/combat/covenant_defs.gd")
 const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolver.gd")
 
-# --- 每日事件刷新 ---
-# 开局保底 2 个事件点，此后每天 1-2 个；囤而不触发的活跃上限 4 个。
-const DAY_ONE_EVENT_SPAWNS := 2
-const DAILY_EVENT_SPAWN_MIN := 1
-const DAILY_EVENT_SPAWN_MAX := 2
-const MAX_ACTIVE_EVENT_POINTS := 4
-# 落点优先级：探索前沿的迷雾（距已探索区 ≤4 格）> 任意迷雾 > 已探索空地。
-const FRONTIER_RADIUS := 4
-const CORE_SAFE_RADIUS := 4
-const SPAWN_SAFE_RADIUS := 2
+# --- 开局事件铺设 ---
+# 开局（第 1 天）一次性把所有设计好的母事件各投放一个，落点为全图随机合法平地。
+const CORE_SAFE_RADIUS := 4          # 事件不落在核心安全区（切比雪夫 ≤4）内
+const SPAWN_SAFE_RADIUS := 2         # 事件远离出怪口
 
 # --- 祭坛事件 ---
 const ALTAR_EVENT_ID: StringName = &"event_altar"
@@ -40,7 +34,9 @@ func _ready() -> void:
 
 
 func _on_day_started(day: int) -> void:
-	_spawn_daily_events(day)
+	# 本局事件在第 1 天一次性铺好，之后不再刷新（常驻事件留在图上）。
+	if day == 1:
+		_spawn_run_events()
 
 
 func setup_events(event_points: Array) -> void:
@@ -86,15 +82,25 @@ func get_active_event_count() -> int:
 	return _events_by_cell.size()
 
 
-## 活跃事件点上限（每日刷新到此值即停止；供 HUD 显示与达上限提示）。
+## 本局事件总数（= 所有母事件数；供 HUD 与测试参考）。
 func get_max_active_event_points() -> int:
-	return MAX_ACTIVE_EVENT_POINTS
+	var data_repo = AppRefs.data_repo()
+	return data_repo.get_all_event_ids().size() if data_repo != null and data_repo.has_method("get_all_event_ids") else 0
 
 
 func mark_event_triggered(cell: Vector2i) -> void:
+	# 常驻事件（如奸商）触发后保留在地图上，可反复使用。
+	if _is_persistent_event(get_event_id_at_cell(cell)):
+		return
 	_events_by_cell.erase(cell)
 	_altar_offers_by_cell.erase(cell)
 	_refresh_map()
+
+
+func _is_persistent_event(event_id: StringName) -> bool:
+	if event_id == StringName():
+		return false
+	return bool(get_event_cfg(event_id).get("persistent", false))
 
 
 func get_event_cfg_at_cell(cell: Vector2i) -> Dictionary:
@@ -428,59 +434,79 @@ func _resolve_choice_event_id(event_id: StringName, choice_id: StringName) -> Di
 
 
 # ---------------------------------------------------------------------------
-# 每日事件刷新
+# 开局事件铺设
 # ---------------------------------------------------------------------------
-func _spawn_daily_events(day: int) -> void:
+## 开局（第 1 天）一次性把所有设计好的母事件各投放一个到全图随机合法平地。
+func _spawn_run_events() -> void:
 	var run_state = AppRefs.run_state()
 	var data_repo = AppRefs.data_repo()
 	if run_state == null or data_repo == null or _map_manager == null:
 		return
+	var event_ids: Array = data_repo.get_all_event_ids()
+	if event_ids.is_empty():
+		return
 	var rng := RandomNumberGenerator.new()
-	rng.seed = abs(("events|%d|%d" % [int(run_state.random_seed), day]).hash())
-	var spawn_count := DAY_ONE_EVENT_SPAWNS if day <= 1 else rng.randi_range(DAILY_EVENT_SPAWN_MIN, DAILY_EVENT_SPAWN_MAX)
-	var spawned := false
-	for _index in range(spawn_count):
-		if _events_by_cell.size() >= MAX_ACTIVE_EVENT_POINTS:
-			break
-		var cell := _pick_event_spawn_cell(rng)
-		if cell.x < 0:
-			break
-		var event_id := _pick_event_for_day(day, rng)
-		if event_id == StringName():
-			break
-		_events_by_cell[cell] = event_id
-		_spawned_event_ids[event_id] = true
-		spawned = true
-	if spawned:
-		_refresh_map()
+	rng.seed = abs(("run_events|%d" % int(run_state.random_seed)).hash())
+	var cells := _pick_run_event_cells(event_ids.size(), rng)
+	var count := mini(cells.size(), event_ids.size())
+	for i in range(count):
+		_events_by_cell[cells[i]] = event_ids[i]
+		_spawned_event_ids[event_ids[i]] = true
+	_refresh_map()
 
 
-## 候选落点分级：探索前沿迷雾 > 任意迷雾 > 已探索空地；均需远离核心与刷怪点。
-func _pick_event_spawn_cell(rng: RandomNumberGenerator) -> Vector2i:
+## 全图所有合法平地随机挑选落点（远离核心安全区与出怪口，不限方向与距离）。
+func _pick_run_event_cells(count: int, rng: RandomNumberGenerator) -> Array[Vector2i]:
 	var width: int = int(_map_manager.width)
 	var height: int = int(_map_manager.height)
 	var core_cell: Vector2i = _map_manager.get_core_cell() if _map_manager.has_method("get_core_cell") else Vector2i(-99, -99)
 	var spawn_cells: Array = _map_manager.get_spawn_cells() if _map_manager.has_method("get_spawn_cells") else []
-	var frontier: Array[Vector2i] = []
-	var fog: Array[Vector2i] = []
-	var discovered: Array[Vector2i] = []
+	var candidates: Array[Vector2i] = []
 	for y in range(1, height - 1):
 		for x in range(1, width - 1):
 			var cell := Vector2i(x, y)
-			if _events_by_cell.has(cell):
-				continue
-			if not _is_valid_event_cell(cell, core_cell, spawn_cells):
-				continue
-			if _map_manager.is_discovered(cell):
-				discovered.append(cell)
-			elif _is_near_discovered(cell):
-				frontier.append(cell)
-			else:
-				fog.append(cell)
-	var pool: Array[Vector2i] = frontier if not frontier.is_empty() else (fog if not fog.is_empty() else discovered)
-	if pool.is_empty():
+			if _is_valid_event_cell(cell, core_cell, spawn_cells):
+				candidates.append(cell)
+	var chosen: Array[Vector2i] = []
+	var chosen_set: Dictionary = {}
+	_fill_from_pool(chosen, chosen_set, candidates, count, rng)
+	return chosen
+
+
+## 调试用：在已探索的合法事件格随机投放指定事件，返回落点（无可用格时返回 -1,-1）。
+func debug_spawn_event_in_discovered(event_id: StringName) -> Vector2i:
+	if _map_manager == null or event_id == StringName():
 		return Vector2i(-1, -1)
-	return pool[rng.randi() % pool.size()]
+	var width: int = int(_map_manager.width)
+	var height: int = int(_map_manager.height)
+	var core_cell: Vector2i = _map_manager.get_core_cell() if _map_manager.has_method("get_core_cell") else Vector2i(-99, -99)
+	var spawn_cells: Array = _map_manager.get_spawn_cells() if _map_manager.has_method("get_spawn_cells") else []
+	var candidates: Array[Vector2i] = []
+	for y in range(1, height - 1):
+		for x in range(1, width - 1):
+			var cell := Vector2i(x, y)
+			if _events_by_cell.has(cell) or not _map_manager.is_discovered(cell):
+				continue
+			if _is_valid_event_cell(cell, core_cell, spawn_cells):
+				candidates.append(cell)
+	if candidates.is_empty():
+		return Vector2i(-1, -1)
+	var cell: Vector2i = candidates.pick_random()
+	_events_by_cell[cell] = event_id
+	_refresh_map()
+	return cell
+
+
+## 从 pool 里用给定 rng 随机挑未选中的格子填入 chosen，直到达到 count 或 pool 取尽。
+func _fill_from_pool(chosen: Array[Vector2i], chosen_set: Dictionary, pool: Array[Vector2i], count: int, rng: RandomNumberGenerator) -> void:
+	while chosen.size() < count and not pool.is_empty():
+		var idx := rng.randi() % pool.size()
+		var cell: Vector2i = pool[idx]
+		pool.remove_at(idx)
+		if chosen_set.has(cell):
+			continue
+		chosen.append(cell)
+		chosen_set[cell] = true
 
 
 func _is_valid_event_cell(cell: Vector2i, core_cell: Vector2i, spawn_cells: Array) -> bool:
@@ -496,48 +522,6 @@ func _is_valid_event_cell(cell: Vector2i, core_cell: Vector2i, spawn_cells: Arra
 		if max(absi(cell.x - spawn_cell.x), absi(cell.y - spawn_cell.y)) <= SPAWN_SAFE_RADIUS:
 			return false
 	return true
-
-
-func _is_near_discovered(cell: Vector2i) -> bool:
-	for dy in range(-FRONTIER_RADIUS, FRONTIER_RADIUS + 1):
-		for dx in range(-FRONTIER_RADIUS, FRONTIER_RADIUS + 1):
-			if dx == 0 and dy == 0:
-				continue
-			if _map_manager.is_discovered(cell + Vector2i(dx, dy)):
-				return true
-	return false
-
-
-## 按 min_day/max_day 门控 + weight 加权抽事件；优先抽本局没刷过的。
-func _pick_event_for_day(day: int, rng: RandomNumberGenerator) -> StringName:
-	var data_repo = AppRefs.data_repo()
-	if data_repo == null:
-		return StringName()
-	var fresh: Array[Dictionary] = []
-	var all_valid: Array[Dictionary] = []
-	for event_id in data_repo.get_all_event_ids():
-		var cfg: Dictionary = data_repo.get_event_cfg(event_id)
-		if day < int(cfg.get("min_day", 1)) or day > int(cfg.get("max_day", 99)):
-			continue
-		if float(cfg.get("weight", 1.0)) <= 0.0:
-			continue
-		cfg["id"] = event_id
-		all_valid.append(cfg)
-		if not _spawned_event_ids.has(event_id):
-			fresh.append(cfg)
-	var pool := fresh if not fresh.is_empty() else all_valid
-	if pool.is_empty():
-		return StringName()
-	var total_weight := 0.0
-	for cfg in pool:
-		total_weight += float(cfg.get("weight", 1.0))
-	var roll := rng.randf() * total_weight
-	var cursor := 0.0
-	for cfg in pool:
-		cursor += float(cfg.get("weight", 1.0))
-		if roll <= cursor:
-			return StringName(cfg.get("id", ""))
-	return StringName((pool.back() as Dictionary).get("id", ""))
 
 
 # ---------------------------------------------------------------------------

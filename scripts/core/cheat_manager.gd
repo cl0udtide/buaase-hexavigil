@@ -18,7 +18,7 @@ const MAX_DEBUG_DAY := 9
 @onready var _enemy_manager: Node = get_node_or_null("../EnemyManager")
 @onready var _wave_manager: Node = get_node_or_null("../WaveManager")
 
-var _cheats_enabled := false
+var _cheats_enabled := true
 var _infinite_action_points := false
 var _infinite_resources := false
 var _infinite_core_hp := false
@@ -127,6 +127,22 @@ func reveal_all_fog() -> Dictionary:
 	if event_bus != null and not revealed.is_empty():
 		event_bus.fog_revealed.emit(revealed)
 	return _ok("迷雾已全开", {"revealed": revealed.size()})
+
+
+## 在已探索区域随机投放指定事件（调试用）。
+func spawn_event(event_id: StringName) -> Dictionary:
+	if not _ensure_enabled():
+		return _disabled_error()
+	var random_event_manager := get_node_or_null("../RandomEventManager")
+	if random_event_manager == null or not random_event_manager.has_method("debug_spawn_event_in_discovered"):
+		return _err(&"EVENT_MANAGER_MISSING", "事件管理器不可用")
+	var data_repo = AppRefs.data_repo()
+	if data_repo == null or event_id == StringName() or data_repo.get_event_cfg(event_id).is_empty():
+		return _err(&"EVENT_NOT_FOUND", "找不到指定事件")
+	var cell: Vector2i = random_event_manager.debug_spawn_event_in_discovered(event_id)
+	if cell.x < 0:
+		return _err(&"NO_DISCOVERED_CELL", "没有可投放的已探索空地（先探索一些区域）")
+	return _ok("已在 (%d, %d) 投放事件" % [cell.x, cell.y], {"cell": cell, "event_id": event_id})
 
 
 func go_next_day() -> Dictionary:

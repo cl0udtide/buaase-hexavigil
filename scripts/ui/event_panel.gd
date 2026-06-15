@@ -37,7 +37,7 @@ func _ready() -> void:
 	hide_event()
 	var event_bus = AppRefs.event_bus()
 	if event_bus != null:
-		event_bus.request_open_event_panel.connect(_on_request_open_event_panel)
+		event_bus.request_show_event_detail.connect(_on_request_open_event_panel)
 		event_bus.random_event_triggered.connect(_on_random_event_triggered)
 
 
@@ -177,13 +177,13 @@ func _on_choice_pressed(choice: Dictionary) -> void:
 	var choice_id := StringName(choice.get("id", ""))
 	var result: Dictionary
 	if not _event_consumed:
-		# 首次：消耗行动力 + 移除事件点，并执行目标页效果。
-		var day_manager := _get_day_manager()
-		if day_manager == null or not day_manager.has_method("try_trigger_event"):
+		# 首次：行动力已在事件弹窗的「触发」按钮预扣，这里只执行目标页效果 + 移除事件点（不再扣行动力）。
+		var random_event_manager := _get_random_event_manager()
+		if random_event_manager == null or not random_event_manager.has_method("apply_event_for_cell"):
 			_result_label.text = "事件系统尚未初始化"
 			_set_choices_disabled(false)
 			return
-		result = day_manager.try_trigger_event(_current_cell, choice_id)
+		result = random_event_manager.apply_event_for_cell(_current_cell, choice_id)
 		if result.get("ok", false):
 			_event_consumed = true
 	else:
