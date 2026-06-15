@@ -51,6 +51,10 @@ const SFX_WAVE_START := &"wave_start"
 const SFX_WAVE_ADVANCE := &"wave_advance"
 const SFX_RESULT_DEFEAT := &"result_defeat"
 const SFX_RESULT_VICTORY := &"result_victory"
+const SFX_EVENT_PINKDRAGON_TALK := &"event_pinkdragon_talk"
+const SFX_EVENT_PINKDRAGON_SHOO := &"event_pinkdragon_shoo"
+
+const EVENT_PINKDRAGON := &"event_pinkdragon"
 const SFX_BOSS_NAILOONG_INTRO_ROAR := &"boss_nailoong_intro_roar"
 const SFX_BOSS_NAILOONG_PHASE_ROAR := &"boss_nailoong_phase_roar"
 const SFX_BOSS_NAILOONG_DEATH := &"boss_nailoong_death"
@@ -179,6 +183,8 @@ var sfx_paths := {
 	SFX_WAVE_ADVANCE: "res://assets/audio/sfx/wave_advance.ogg",
 	SFX_RESULT_DEFEAT: "res://assets/audio/sfx/result_defeat.ogg",
 	SFX_RESULT_VICTORY: "res://assets/audio/sfx/result_victory.ogg",
+	SFX_EVENT_PINKDRAGON_TALK: "res://assets/audio/sfx/event_pinkdragon_talk.ogg",
+	SFX_EVENT_PINKDRAGON_SHOO: "res://assets/audio/sfx/event_pinkdragon_shoo.ogg",
 	SFX_BOSS_NAILOONG_INTRO_ROAR: "res://assets/audio/sfx/boss_nailoong_intro_roar.ogg",
 	SFX_BOSS_NAILOONG_PHASE_ROAR: "res://assets/audio/sfx/boss_nailoong_phase_roar.ogg",
 	SFX_BOSS_NAILOONG_DEATH: "res://assets/audio/sfx/boss_nailoong_death.ogg",
@@ -221,6 +227,8 @@ var sfx_cooldowns := {
 	SFX_BUILDING_HIT: 0.12,
 	SFX_ENEMY_DEATH_SMALL: 0.08,
 	SFX_ENEMY_DEATH_LARGE: 0.15,
+	SFX_EVENT_PINKDRAGON_TALK: 0.25,
+	SFX_EVENT_PINKDRAGON_SHOO: 0.25,
 }
 
 
@@ -434,6 +442,7 @@ func _bind_events() -> void:
 	event_bus.build_action_result.connect(_on_build_action_result)
 	event_bus.fog_revealed.connect(_on_fog_revealed)
 	event_bus.random_event_triggered.connect(_on_random_event_triggered)
+	event_bus.random_event_choice_selected.connect(_on_random_event_choice_selected)
 	event_bus.resource_collected.connect(_on_resource_collected)
 	event_bus.unit_removed.connect(_on_unit_removed)
 	event_bus.enemy_spawned.connect(_on_enemy_spawned)
@@ -657,6 +666,16 @@ func _on_fog_revealed(_cells: Array[Vector2i]) -> void:
 
 func _on_random_event_triggered(_event_id: StringName, _cell: Vector2i) -> void:
 	play_event_trigger_sfx()
+
+
+func _on_random_event_choice_selected(event_id: StringName, _cell: Vector2i, choice_id: StringName, result: Dictionary) -> void:
+	if event_id != EVENT_PINKDRAGON or not bool(result.get("ok", false)):
+		return
+	match choice_id:
+		&"talk":
+			play_sfx(SFX_EVENT_PINKDRAGON_TALK)
+		&"shoo":
+			play_sfx(SFX_EVENT_PINKDRAGON_SHOO)
 
 
 func _on_resource_collected(_cell: Vector2i, _resource_type: StringName, _amount: int) -> void:
