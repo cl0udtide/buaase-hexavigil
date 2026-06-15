@@ -22,6 +22,8 @@ func _run() -> void:
 	_test_enemy_death_variation(audio_manager)
 	_test_sfx_gain_policy(audio_manager)
 	_test_sfx_prewarm_cache(audio_manager)
+	_test_boss_nailoong_voice_pool(audio_manager)
+	await _test_boss_voice_pause_policy(audio_manager)
 	_test_audio_process_mode(audio_manager)
 	_test_core_destroyed_result_delay()
 	_test_night_transition_delay()
@@ -46,12 +48,23 @@ func _test_sfx_paths(audio_manager: Node) -> void:
 		&"wave_advance": "res://assets/audio/sfx/wave_advance.ogg",
 		&"result_defeat": "res://assets/audio/sfx/result_defeat.ogg",
 		&"result_victory": "res://assets/audio/sfx/result_victory.ogg",
+		&"boss_nailoong_intro_roar": "res://assets/audio/sfx/boss_nailoong_intro_roar.ogg",
+		&"boss_nailoong_phase_roar": "res://assets/audio/sfx/boss_nailoong_phase_roar.ogg",
+		&"boss_nailoong_death": "res://assets/audio/sfx/boss_nailoong_death.ogg",
+		&"boss_nailoong_voice1": "res://assets/audio/sfx/boss_nailoong_voice1.ogg",
+		&"boss_nailoong_voice2": "res://assets/audio/sfx/boss_nailoong_voice2.ogg",
+		&"boss_nailoong_voice3": "res://assets/audio/sfx/boss_nailoong_voice3.ogg",
+		&"boss_nailoong_phase2_laugh": "res://assets/audio/sfx/boss_nailoong_phase2_laugh.ogg",
 	}
 	for key_variant: Variant in expected_paths.keys():
 		var key := StringName(key_variant)
 		var path := String(expected_paths[key])
 		_expect(String(sfx_paths.get(key, "")) == path, "%s maps to %s" % [key, path])
 		_expect(ResourceLoader.exists(path), "%s resource exists" % path)
+	var bgm_paths: Dictionary = audio_manager.get("bgm_paths")
+	var boss_bgm_path := "res://assets/audio/bgm/boss_nailoong.ogg"
+	_expect(String(bgm_paths.get(&"boss_nailoong", "")) == boss_bgm_path, "boss nailoong bgm path is registered")
+	_expect(ResourceLoader.exists(boss_bgm_path), "%s resource exists" % boss_bgm_path)
 
 
 func _test_enemy_death_tiering(audio_manager: Node) -> void:
@@ -100,8 +113,14 @@ func _test_sfx_gain_policy(audio_manager: Node) -> void:
 	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"wave_advance")) >= 1.6, "wave advance gets foreground gain")
 	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"result_defeat")) >= 1.15, "defeat result gets foreground gain")
 	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"result_victory")) >= 1.15, "victory result gets foreground gain")
+	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"boss_nailoong_intro_roar")) >= 1.2, "boss intro roar gets foreground gain")
+	_expect(float(audio_manager.call("_get_sfx_volume_scale", &"boss_nailoong_phase_roar")) >= 1.2, "boss phase roar gets foreground gain")
 	_expect(float(audio_manager.call("_get_sfx_pitch_scale", &"wave_start")) > 1.0, "wave start gets sharper pitch")
 	_expect(float(audio_manager.call("_get_sfx_pitch_scale", &"wave_advance")) > 1.0, "wave advance gets sharper pitch")
+	_expect(float(AudioManagerScript.BOSS_RANDOM_VOICE_MIN_COOLDOWN) >= 7.0, "boss random voice cooldown has a safe lower bound")
+	_expect(float(AudioManagerScript.BOSS_RANDOM_VOICE_MAX_COOLDOWN) > float(AudioManagerScript.BOSS_RANDOM_VOICE_MIN_COOLDOWN), "boss random voice cooldown has random range")
+	_expect(float(AudioManagerScript.BOSS_PHASE_TWO_RANDOM_VOICE_MIN_COOLDOWN) >= 4.0, "phase two boss voice cooldown keeps a safe lower bound")
+	_expect(float(AudioManagerScript.BOSS_PHASE_TWO_RANDOM_VOICE_MAX_COOLDOWN) < float(AudioManagerScript.BOSS_RANDOM_VOICE_MAX_COOLDOWN), "phase two boss voice cooldown is more frequent")
 
 
 func _test_sfx_prewarm_cache(audio_manager: Node) -> void:
@@ -110,6 +129,34 @@ func _test_sfx_prewarm_cache(audio_manager: Node) -> void:
 	for key in [&"core_hit", &"core_destroyed", &"building_hit", &"building_destroyed"]:
 		var path := String(sfx_paths.get(key, ""))
 		_expect(stream_cache.has(path), "%s is prewarmed" % key)
+
+
+func _test_boss_nailoong_voice_pool(audio_manager: Node) -> void:
+	audio_manager.set("_boss_nailoong_phase", 1)
+	var phase_one_pool: Array = audio_manager.call("_get_boss_nailoong_voice_pool")
+	_expect(phase_one_pool.size() == 3, "phase one nailoong voice pool has three random voices")
+	_expect(not phase_one_pool.has(&"boss_nailoong_phase2_laugh"), "phase one pool excludes phase2 laugh")
+	audio_manager.set("_boss_nailoong_phase", 2)
+	var phase_two_pool: Array = audio_manager.call("_get_boss_nailoong_voice_pool")
+	_expect(phase_two_pool.size() == 5, "phase two nailoong voice pool adds weighted laugh")
+	_expect(phase_two_pool.has(&"boss_nailoong_phase2_laugh"), "phase two pool includes phase2 laugh")
+	_expect(is_equal_approx(float(AudioManagerScript.BOSS_PHASE_TWO_PITCH_SCALE), 1.15), "phase two boss bgm pitch is tense enough")
+
+
+func _test_boss_voice_pause_policy(audio_manager: Node) -> void:
+	var boss_voice_player := audio_manager.get("_boss_voice_player") as AudioStreamPlayer
+	_expect(boss_voice_player != null and boss_voice_player.process_mode == Node.PROCESS_MODE_ALWAYS, "boss voice player exists")
+	var accepted_unpaused := bool(audio_manager.call("_play_boss_voice_sfx", &"boss_nailoong_voice1"))
+	await process_frame
+	_expect(accepted_unpaused, "boss voice accepts playback while unpaused")
+	root.get_tree().paused = true
+	audio_manager.call("_update_boss_voice_pause_state")
+	await process_frame
+	_expect(boss_voice_player != null and not boss_voice_player.playing, "boss voice stops when game pauses")
+	var accepted_paused := bool(audio_manager.call("_play_boss_voice_sfx", &"boss_nailoong_voice1"))
+	await process_frame
+	_expect(not accepted_paused, "boss voice will not start while paused")
+	root.get_tree().paused = false
 
 
 func _test_audio_process_mode(audio_manager: Node) -> void:
@@ -172,6 +219,8 @@ func _test_event_handlers_exist(audio_manager: Node) -> void:
 		"_on_run_ending",
 		"_on_building_destroyed",
 		"_on_enemy_died",
+		"_on_enemy_spawned",
+		"_on_boss_phase_transition_started",
 		"_on_night_started",
 		"_on_night_wave_started",
 		"_on_run_ending",
