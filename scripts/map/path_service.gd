@@ -272,7 +272,10 @@ func find_path_preview(start_cell: Vector2i, end_cell: Vector2i, path_mode: Stri
 	var status: StringName = &"ok"
 	var message := ""
 
-	if path.is_empty() and path_mode == PATH_MODE_NORMAL and is_core_enclosed_by_path_blockers(end_cell, extra_blocked_cells):
+	# normal 路被墙/高台封死时，只要拆墙路（demolisher）仍能到核心就改走拆墙——
+	# 与运行时 recalc_path、出怪覆盖预览（compute_coverage）同口径。木墙/高台是建筑、不改地形
+	# walkable，demolisher 场只认天然地形且恒连通，故玩家用墙堵路属合法玩法（怪被堵即拆墙），不应判死路。
+	if path.is_empty() and path_mode == PATH_MODE_NORMAL:
 		var demolisher_path: Array[Vector2i] = find_path(start_cell, end_cell, PATH_MODE_DEMOLISHER)
 		if not demolisher_path.is_empty():
 			path = demolisher_path
@@ -308,36 +311,6 @@ func get_cell_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringNa
 
 func has_path(start_cell: Vector2i, end_cell: Vector2i, path_mode: StringName = PATH_MODE_NORMAL, extra_blocked_cells: Dictionary = {}) -> bool:
 	return not find_path(start_cell, end_cell, path_mode, extra_blocked_cells).is_empty()
-
-
-func is_core_enclosed_by_path_blockers(core_cell: Vector2i, extra_blocked_cells: Dictionary = {}) -> bool:
-	if _map_manager == null or not _map_manager.is_inside(core_cell):
-		return false
-	if not _grid_ready:
-		rebuild_from_map()
-	var blocked_cells := _get_blocked_cells_for_mode(PATH_MODE_NORMAL, extra_blocked_cells)
-	var queue: Array[Vector2i] = [core_cell]
-	var visited: Dictionary = {core_cell: true}
-	var head := 0
-	var found_path_blocker := false
-	while head < queue.size():
-		var current: Vector2i = queue[head]
-		head += 1
-		if _is_edge_cell(current):
-			return false
-		for direction in CARDINAL_DIRECTIONS:
-			var neighbor: Vector2i = current + direction
-			if not _map_manager.is_inside(neighbor) or visited.has(neighbor):
-				continue
-			var data: CellData = _map_manager.get_cell_data(neighbor)
-			if data == null or not data.walkable:
-				continue
-			if blocked_cells.get(neighbor, false):
-				found_path_blocker = true
-				continue
-			visited[neighbor] = true
-			queue.append(neighbor)
-	return found_path_blocker
 
 
 func set_cell_blocked(cell: Vector2i, blocked: bool) -> void:
@@ -412,10 +385,6 @@ func _is_building_destroyed(building: Node) -> bool:
 		return bool(building.is_destroyed())
 	var current_hp_variant: Variant = building.get("current_hp")
 	return current_hp_variant != null and int(current_hp_variant) <= 0
-
-
-func _is_edge_cell(cell: Vector2i) -> bool:
-	return cell.x <= 0 or cell.y <= 0 or cell.x >= int(_map_manager.width) - 1 or cell.y >= int(_map_manager.height) - 1
 
 
 func _pop_best_open_cell(open_set: Array[Vector2i], end_cell: Vector2i, f_score: Dictionary) -> Vector2i:
