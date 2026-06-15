@@ -47,7 +47,7 @@
 [ext_resource type="StyleBox" uid="uid://bqqi1kb0fb862" path="res://assets/ui/styles/frame_wave_enemy_row_base.tres" id="frame_wave_enemy_row_base_150x126"]
 [ext_resource type="StyleBox" uid="uid://b4e2bmo4rr72e" path="res://assets/ui/styles/frame_wave_preview_base.tres" id="frame_wave_preview_base_384x156"]
 [ext_resource type="StyleBox" uid="uid://c2akb4lo04irv" path="res://assets/ui/styles/frame_wave_route_toggle_base.tres" id="frame_wave_route_toggle_base_64x36"]
-[ext_resource type="StyleBox" path="res://assets/ui/styles/frame_wave_spawn_card_base.tres" id="frame_wave_spawn_card_base_328x132"]
+[ext_resource type="StyleBox" uid="uid://204unbldwsbl" path="res://assets/ui/styles/frame_wave_spawn_card_base.tres" id="frame_wave_spawn_card_base_328x132"]
 [ext_resource type="StyleBox" uid="uid://dx8awq3trhvot" path="res://assets/ui/styles/frame_wave_warning_row_base.tres" id="frame_wave_warning_row_base_328x38"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_button_highlight"]
@@ -1061,9 +1061,9 @@ unique_name_in_owner = true
 z_index = 40
 layout_mode = 0
 offset_left = 795.0
-offset_top = 94.0
+offset_top = 89.0
 offset_right = 1125.0
-offset_bottom = 131.102
+offset_bottom = 126.1836
 theme_override_styles/panel = ExtResource("frame_wave_warning_row_base_328x38")
 
 [node name="NightAffixMargin" type="MarginContainer" parent="HudChromeLayer/NightAffixRow" unique_id=104602004]
@@ -1205,7 +1205,7 @@ script = ExtResource("button_state_overlay")
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "今夜"
 vertical_alignment = 1
 autowrap_mode = 3
