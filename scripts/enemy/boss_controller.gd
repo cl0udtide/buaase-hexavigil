@@ -167,6 +167,7 @@ func _start_phase_transition(next_phase_cfg: Dictionary) -> void:
 		if _owner_actor.has_method("clear_blocked"):
 			_owner_actor.clear_blocked()
 	_play_phase_transition_effect()
+	_emit_phase_transition_started()
 	_debug_log("敌人 %s#%d 第%d阶段血量耗尽，进入 %.1f 秒无敌转阶段" % [_debug_name(), _runtime_id(), _boss_phase - 1, _phase_transition_timer])
 
 
@@ -202,6 +203,16 @@ func _play_phase_transition_effect() -> void:
 		Vector2(0.0, -8.0),
 		26
 	)
+
+
+func _emit_phase_transition_started() -> void:
+	var event_bus: Node = AppRefs.event_bus()
+	if event_bus == null:
+		return
+	var enemy_id := StringName()
+	if _owner_actor != null and is_instance_valid(_owner_actor):
+		enemy_id = StringName(_owner_actor.get("enemy_id"))
+	event_bus.boss_phase_transition_started.emit(_runtime_id(), enemy_id, _boss_phase)
 
 
 func _play_phase_enter_area_effect(radius: int) -> void:
