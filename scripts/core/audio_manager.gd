@@ -60,14 +60,18 @@ const FADE_SECONDS := 1.8
 const NIGHT_START_SFX_DELAY := 0.22
 const NIGHT_START_BGM_DELAY := 1.5
 const BOSS_NAILOONG_ID := &"milk_dragon_chief"
-const BOSS_INTRO_BGM_DELAY := 0.8
+const BOSS_NAILOONG_INTRO_ROAR_SECONDS := 4.07
+const BOSS_NAILOONG_PHASE_ROAR_SECONDS := 2.25
+const BOSS_NAILOONG_DEATH_SECONDS := 2.70
+const BOSS_INTRO_BGM_DELAY := BOSS_NAILOONG_INTRO_ROAR_SECONDS
 const BOSS_PHASE_TWO_PITCH_SCALE := 1.15
 const BOSS_PHASE_PITCH_TWEEN_SECONDS := 0.8
 const BOSS_RANDOM_VOICE_MIN_COOLDOWN := 7.5
 const BOSS_RANDOM_VOICE_MAX_COOLDOWN := 14.0
 const BOSS_PHASE_TWO_RANDOM_VOICE_MIN_COOLDOWN := 4.5
 const BOSS_PHASE_TWO_RANDOM_VOICE_MAX_COOLDOWN := 8.0
-const BOSS_RANDOM_VOICE_AFTER_INTRO_GRACE := 4.0
+const BOSS_RANDOM_VOICE_AFTER_INTRO_GRACE := BOSS_NAILOONG_INTRO_ROAR_SECONDS + 0.5
+const BOSS_RANDOM_VOICE_AFTER_PHASE_GRACE := BOSS_NAILOONG_PHASE_ROAR_SECONDS + 0.5
 const BOSS_RANDOM_VOICE_WAIT_STEP := 0.25
 const SFX_POOL_SIZE := 8
 const SFX_GLOBAL_VOLUME_SCALE := 1.18
@@ -292,6 +296,7 @@ func play_detached_sfx(sfx_key: StringName) -> void:
 		return
 	var player := AudioStreamPlayer.new()
 	player.name = DETACHED_SFX_PLAYER_NAME
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
 	player.stream = stream
 	player.pitch_scale = _get_sfx_pitch_scale(sfx_key)
 	player.volume_db = _linear_to_db(_base_sfx_linear_volume() * clampf(_get_sfx_volume_scale(sfx_key), 0.0, SFX_MAX_VOLUME_SCALE))
@@ -590,7 +595,7 @@ func _on_enemy_spawned(_enemy_runtime_id: int, enemy_id: StringName, _cell: Vect
 	_boss_nailoong_active = true
 	_boss_nailoong_phase = 1
 	stop_bgm()
-	play_sfx(SFX_BOSS_NAILOONG_INTRO_ROAR)
+	play_detached_sfx(SFX_BOSS_NAILOONG_INTRO_ROAR)
 	_play_boss_nailoong_bgm_after_intro(request_id)
 	_start_boss_nailoong_voice_loop(BOSS_RANDOM_VOICE_AFTER_INTRO_GRACE)
 
@@ -607,7 +612,8 @@ func _on_boss_phase_transition_started(_enemy_runtime_id: int, enemy_id: StringN
 	if enemy_id != BOSS_NAILOONG_ID:
 		return
 	_boss_nailoong_phase = maxi(phase, _boss_nailoong_phase)
-	play_sfx(SFX_BOSS_NAILOONG_PHASE_ROAR)
+	play_detached_sfx(SFX_BOSS_NAILOONG_PHASE_ROAR)
+	_start_boss_nailoong_voice_loop(BOSS_RANDOM_VOICE_AFTER_PHASE_GRACE)
 	if phase >= 2:
 		_set_bgm_pitch_scale(BOSS_PHASE_TWO_PITCH_SCALE, BOSS_PHASE_PITCH_TWEEN_SECONDS)
 
@@ -615,7 +621,7 @@ func _on_boss_phase_transition_started(_enemy_runtime_id: int, enemy_id: StringN
 func _on_enemy_died(_enemy_runtime_id: int, enemy_id: StringName) -> void:
 	if enemy_id == BOSS_NAILOONG_ID:
 		_stop_boss_nailoong_voice_loop()
-		play_sfx(SFX_BOSS_NAILOONG_DEATH)
+		play_detached_sfx(SFX_BOSS_NAILOONG_DEATH)
 		return
 	play_sfx(get_enemy_death_sfx_key(enemy_id))
 
@@ -658,6 +664,8 @@ func _set_bgm_pitch_scale(value: float, tween_seconds: float = 0.0) -> void:
 
 func _start_boss_nailoong_voice_loop(initial_delay: float = 0.0) -> void:
 	_boss_voice_request_id += 1
+	if _boss_voice_player != null:
+		_boss_voice_player.stop()
 	_play_boss_nailoong_voice_loop(_boss_voice_request_id, initial_delay)
 
 
