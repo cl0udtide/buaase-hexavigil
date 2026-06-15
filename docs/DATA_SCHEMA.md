@@ -444,7 +444,8 @@ Boss 多阶段规则：
 | 第 6 夜 | `late`, `boss` |
 | 第 7 夜 | `late`, `late` |
 | 第 8 夜 | `mid`, `late`, `late` |
-| 第 9 夜 | `late`, `late`, `boss` |
+| 第 9 夜 | `boss`, `boss`, `boss` |
+- 终战（d9）为三 Boss 连战，由 `night_template_resolver.gd` 的 `FIXED_NIGHT_PLAN_BY_DAY` 固定顺序：爱国者 → 奶龙 → 凑凑企鹅（绕过随机抽取）。故 d3/d6 的 Boss 池只有爱国者/奶龙，凑凑企鹅模板 `frostbeak_carnival` 的 `min_day=9` 仅在终战登场。
 - 波间节奏由 `scripts/enemy/wave_manager.gd` 维护：上一波清场后 12 秒开下一波；残敌拖延超过 45 秒则强制开下一波。
 
 记录示例：

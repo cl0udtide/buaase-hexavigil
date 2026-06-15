@@ -603,7 +603,7 @@
     "name": "凑凑寒潮",
     "desc": "绒甲裹着寒雾压上来，物理硬砍只会被反噬；它身边的术士无人机与高阶术师专挑缝隙点火。",
     "tier": "boss",
-    "min_day": 4,
+    "min_day": 9,
     "key_enemies": [
       "coucou_penguin"
     ],
