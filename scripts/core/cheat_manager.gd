@@ -280,6 +280,28 @@ func grant_all_relics() -> Dictionary:
 	return final_result
 
 
+## 仅发放常规遗物：跳过 event_only 事件遗物（如企鹅创可贴会让凑凑企鹅跳过二阶段）。
+func grant_all_normal_relics() -> Dictionary:
+	if not _ensure_enabled():
+		return _disabled_error()
+	var data_repo = AppRefs.data_repo()
+	var run_state = AppRefs.run_state()
+	if data_repo == null or run_state == null:
+		return _err(&"APP_REFS_MISSING", "运行时服务不可用")
+	var count := 0
+	for buff_id in data_repo.get_all_buff_ids():
+		if run_state.has_buff(buff_id):
+			continue
+		if bool(data_repo.get_buff_cfg(buff_id).get("event_only", false)):
+			continue
+		var result := grant_relic(buff_id)
+		if bool(result.get("ok", false)):
+			count += 1
+	var final_result := ActionResult.ok({"count": count}, "已添加 %d 件常规遗物" % count)
+	_report(final_result)
+	return final_result
+
+
 func _on_action_points_changed(_value: int) -> void:
 	if _cheats_enabled and _infinite_action_points:
 		_refill_action_points()
