@@ -72,6 +72,7 @@ func _bind_events() -> void:
 	if event_bus == null:
 		return
 	event_bus.map_cell_clicked.connect(_on_map_cell_clicked)
+	event_bus.request_open_event_panel.connect(_on_request_event_popup)
 	event_bus.phase_changed.connect(_on_phase_changed)
 	event_bus.day_started.connect(_on_day_started)
 	event_bus.action_points_changed.connect(_on_action_points_changed)
@@ -96,6 +97,26 @@ func _on_map_cell_clicked(cell: Vector2i) -> void:
 	if not _refresh_content():
 		hide()
 		return
+	_show_for_current_cell()
+
+
+## 点击事件点：弹出与采集/封堵同款的小弹窗，只显示「触发事件（消耗行动力）」按钮。
+## 行动力在此按钮预扣；确认后再打开事件详情面板展示选项（选项不再额外扣行动力）。
+func _on_request_event_popup(cell: Vector2i) -> void:
+	if _current_phase != GameEnums.PHASE_DAY:
+		hide()
+		return
+	_current_cell = cell
+	_message_label.text = ""
+	if not _has_event_at_cell(cell):
+		hide()
+		return
+	_title_label.text = "随机事件"
+	_set_gate_section_visible(false)
+	_resource_section.visible = false
+	_building_section.visible = false
+	_clear_building_range_preview()
+	_refresh_event_section(cell)
 	_show_for_current_cell()
 
 
@@ -138,16 +159,13 @@ func _refresh_content() -> bool:
 
 
 func _refresh_event_section(cell: Vector2i) -> void:
-	var event_cfg := _get_event_cfg_at_cell(cell)
-	var has_event := not event_cfg.is_empty()
+	var has_event := _has_event_at_cell(cell)
 	_event_section.visible = has_event
 	if not has_event:
 		return
 	var run_state = AppRefs.run_state()
 	var enough_ap: bool = run_state != null and int(run_state.action_points) >= EVENT_TRIGGER_AP_COST
-	var event_name := String(event_cfg.get("name", event_cfg.get("id", "Event")))
-	var event_desc := String(event_cfg.get("desc", ""))
-	_event_info_label.text = "%s\n%s\n消耗行动力：%d" % [event_name, event_desc, EVENT_TRIGGER_AP_COST]
+	_event_info_label.text = "触发消耗行动力 %d" % EVENT_TRIGGER_AP_COST
 	_trigger_event_button.disabled = _current_phase != GameEnums.PHASE_DAY or not enough_ap
 
 
@@ -318,16 +336,19 @@ func _fit_to_content() -> void:
 
 func _on_trigger_event_pressed() -> void:
 	var day_manager := _get_day_manager()
-	if day_manager == null or not day_manager.has_method("try_trigger_event"):
+	if day_manager == null or not day_manager.has_method("try_enter_event"):
 		return
-	var result: Dictionary = day_manager.try_trigger_event(_current_cell)
-	_message_label.text = _format_event_result(result)
+	# 预扣行动力；成功则打开事件详情面板展示选项，并关闭本弹窗。
+	var result: Dictionary = day_manager.try_enter_event(_current_cell)
 	if result.get("ok", false):
-		_title_label.text = "事件已处理"
-		_event_section.visible = false
-		_fit_to_content()
+		var event_bus = AppRefs.event_bus()
+		if event_bus != null:
+			event_bus.request_show_event_detail.emit(_current_cell)
+		hide()
 	else:
-		_refresh_or_hide()
+		_message_label.text = String(result.get("message", "无法触发事件"))
+		_refresh_event_section(_current_cell)
+		_fit_to_content()
 
 
 func _on_collect_pressed() -> void:

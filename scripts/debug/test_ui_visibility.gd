@@ -87,37 +87,37 @@ func _test_blessing_slot_sources(run_state: Node, buff_manager: Node, data_repo:
 # --- 2. 事件 requires 预检 ---
 func _test_event_requirement_preview(run_state: Node, random_event_manager: Node) -> void:
 	_expect(random_event_manager.has_method("preview_choice_requirements"), "manager exposes requires preview")
-	# event_smuggler_caravan: buy_mana -> event_caravan_buy(requires prestige 4)
-	#                         sell_mana -> event_caravan_sell(requires mana 3)
+	# event_kroos（奸商）：buy -> event_kroos_buy(requires prestige 8)
+	#                     sell -> event_kroos_sell(requires mana 3)
 	run_state.prestige = 0
 	run_state.mana = 0
-	var buy: Dictionary = random_event_manager.preview_choice_requirements(&"event_smuggler_caravan", &"buy_mana")
-	_expect(not bool(buy.get("ok", true)), "buy_mana blocked when prestige=0")
-	_expect(String(buy.get("reason", "")).find("4") >= 0, "buy reason mentions missing 4 (got '%s')" % String(buy.get("reason", "")))
+	var buy: Dictionary = random_event_manager.preview_choice_requirements(&"event_kroos", &"buy")
+	_expect(not bool(buy.get("ok", true)), "buy blocked when prestige=0")
+	_expect(String(buy.get("reason", "")).find("8") >= 0, "buy reason mentions missing 8 (got '%s')" % String(buy.get("reason", "")))
 	var buy_short: Array = buy.get("shortfalls", [])
 	_expect(buy_short.size() == 1, "buy has one shortfall")
 	if buy_short.size() == 1:
 		var sf: Dictionary = buy_short[0]
 		_expect(String(sf.get("key", "")) == "prestige", "buy shortfall is prestige")
-		_expect(int(sf.get("missing", 0)) == 4, "buy missing amount is 4")
+		_expect(int(sf.get("missing", 0)) == 8, "buy missing amount is 8")
 
 	# 资源足够后应放行。
-	run_state.prestige = 5
-	var buy_ok: Dictionary = random_event_manager.preview_choice_requirements(&"event_smuggler_caravan", &"buy_mana")
-	_expect(bool(buy_ok.get("ok", false)), "buy_mana allowed when prestige=5")
+	run_state.prestige = 8
+	var buy_ok: Dictionary = random_event_manager.preview_choice_requirements(&"event_kroos", &"buy")
+	_expect(bool(buy_ok.get("ok", false)), "buy allowed when prestige=8")
 	_expect((buy_ok.get("shortfalls", []) as Array).is_empty(), "no shortfalls when affordable")
 
-	# sell_mana 缺魔力矿。
+	# sell 缺魔力矿。
 	run_state.mana = 1
-	var sell: Dictionary = random_event_manager.preview_choice_requirements(&"event_smuggler_caravan", &"sell_mana")
-	_expect(not bool(sell.get("ok", true)), "sell_mana blocked when mana=1")
+	var sell: Dictionary = random_event_manager.preview_choice_requirements(&"event_kroos", &"sell")
+	_expect(not bool(sell.get("ok", true)), "sell blocked when mana=1")
 	_expect(String(sell.get("reason", "")).find("魔力矿") >= 0, "sell reason mentions 魔力矿")
-	run_state.mana = 5
-	var sell_ok: Dictionary = random_event_manager.preview_choice_requirements(&"event_smuggler_caravan", &"sell_mana")
-	_expect(bool(sell_ok.get("ok", false)), "sell_mana allowed when mana=5")
+	run_state.mana = 3
+	var sell_ok: Dictionary = random_event_manager.preview_choice_requirements(&"event_kroos", &"sell")
+	_expect(bool(sell_ok.get("ok", false)), "sell allowed when mana=3")
 
-	# 无 requires 的选项恒满足（黑市离开）。
-	var leave: Dictionary = random_event_manager.preview_choice_requirements(&"event_black_market", &"leave")
+	# 无 requires 的选项恒满足（奸商离开）。
+	var leave: Dictionary = random_event_manager.preview_choice_requirements(&"event_kroos", &"leave")
 	_expect(bool(leave.get("ok", false)), "requirement-free choice is always ok")
 	run_state.prestige = 0
 	run_state.mana = 0
@@ -127,12 +127,13 @@ func _test_event_requirement_preview(run_state: Node, random_event_manager: Node
 func _test_active_event_count(random_event_manager: Node) -> void:
 	_expect(random_event_manager.has_method("get_active_event_count"), "manager exposes active event count")
 	_expect(random_event_manager.has_method("get_max_active_event_points"), "manager exposes max event points")
-	_expect(int(random_event_manager.get_max_active_event_points()) == 4, "max active event points is 4")
+	_expect(int(random_event_manager.get_max_active_event_points()) > 0, "max active event points reflects mother event count")
 	random_event_manager.clear_events()
 	_expect(int(random_event_manager.get_active_event_count()) == 0, "count is 0 after clear")
+	# 用非常驻母事件铺设，触发后应被移除使计数下降（常驻事件如 event_kroos 不会）。
 	random_event_manager.setup_events([
-		{"cell": Vector2i(5, 5), "event_id": "event_black_market"},
-		{"cell": Vector2i(6, 6), "event_id": "event_smuggler_caravan"},
+		{"cell": Vector2i(5, 5), "event_id": "event_phoebe"},
+		{"cell": Vector2i(6, 6), "event_id": "event_market"},
 	])
 	_expect(int(random_event_manager.get_active_event_count()) == 2, "count is 2 after setup of 2")
 	random_event_manager.mark_event_triggered(Vector2i(5, 5))

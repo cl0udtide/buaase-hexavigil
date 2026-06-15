@@ -27,6 +27,7 @@ var _day_spin_box: SpinBox
 var _unit_option: OptionButton
 var _unit_star_option: OptionButton
 var _relic_option: OptionButton
+var _event_option: OptionButton
 var _message_label: Label
 
 
@@ -204,6 +205,7 @@ func _build_controls() -> void:
 	_body.add_child(_make_day_row())
 	_body.add_child(_make_grant_unit_row())
 	_body.add_child(_make_grant_relic_row())
+	_body.add_child(_make_spawn_event_row())
 	_message_label = Label.new()
 	_message_label.custom_minimum_size = Vector2(0.0, 42.0)
 	_message_label.add_theme_font_size_override("font_size", 13)
@@ -317,6 +319,22 @@ func _make_grant_relic_row() -> Control:
 	return root
 
 
+func _make_spawn_event_row() -> Control:
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 6)
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	row.add_theme_constant_override("separation", 8)
+	row.add_child(_make_label("事件", 70.0))
+	_event_option = OptionButton.new()
+	_event_option.custom_minimum_size = Vector2(350.0, 34.0)
+	_event_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(_event_option)
+	row.add_child(_make_connected_button("投放到已探索区", "_on_spawn_event_pressed"))
+	root.add_child(row)
+	return root
+
+
 func _make_connected_button(text_value: String, method_name: String) -> Button:
 	var button := _make_button(text_value)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -394,6 +412,15 @@ func _populate_cheat_options() -> void:
 			_relic_option.add_item(label)
 			_relic_option.set_item_metadata(_relic_option.get_item_count() - 1, buff_id)
 		_select_option_metadata(_relic_option, selected_relic)
+	if _event_option != null:
+		var selected_event: Variant = _selected_option_metadata(_event_option)
+		_event_option.clear()
+		for event_id: StringName in data_repo.get_all_event_ids():
+			var cfg: Dictionary = data_repo.get_event_cfg(event_id)
+			var label := "%s (%s)" % [String(cfg.get("name", event_id)), String(event_id)]
+			_event_option.add_item(label)
+			_event_option.set_item_metadata(_event_option.get_item_count() - 1, event_id)
+		_select_option_metadata(_event_option, selected_event)
 
 
 func _selected_option_metadata(option: OptionButton) -> Variant:
@@ -501,6 +528,13 @@ func _on_grant_relic_pressed() -> void:
 
 func _on_grant_all_relics_pressed() -> void:
 	_call_cheat("grant_all_relics")
+
+
+func _on_spawn_event_pressed() -> void:
+	if _cheat_manager == null or not _cheat_manager.has_method("spawn_event"):
+		return
+	var event_id := StringName(_selected_option_metadata(_event_option))
+	_report_cheat_result(_cheat_manager.spawn_event(event_id))
 
 
 func _call_cheat(method_name: String) -> void:

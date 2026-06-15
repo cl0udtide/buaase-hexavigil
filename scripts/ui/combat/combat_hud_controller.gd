@@ -100,19 +100,14 @@ func _refresh_wave_countdown() -> void:
 	_combat_hud.set_wave_countdown(float(_wave_manager.get_seconds_to_next_wave()))
 
 
-## 活跃事件点计数："事件点 X/上限"，达上限时给警示提示。
+## 当前地图上未处理的事件点数（常驻事件触发后仍计入）。
 func _refresh_event_count_line() -> void:
 	if _combat_hud == null or not _combat_hud.has_method("set_event_count_line"):
 		return
 	if _random_event_manager == null or not _random_event_manager.has_method("get_active_event_count"):
 		return
 	var count := int(_random_event_manager.get_active_event_count())
-	var limit := int(_random_event_manager.get_max_active_event_points()) if _random_event_manager.has_method("get_max_active_event_points") else 4
-	var at_limit := count >= limit
-	var text := "事件点 %d/%d" % [count, limit]
-	if at_limit:
-		text += "（已满，先去处理）"
-	_combat_hud.set_event_count_line(text, at_limit)
+	_combat_hud.set_event_count_line("事件点 %d" % count, false)
 
 
 func _unhandled_input(event: InputEvent) -> void:
