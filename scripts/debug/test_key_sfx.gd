@@ -26,6 +26,7 @@ func _run() -> void:
 	_test_boss_long_cue_policy(audio_manager)
 	_test_pooled_sfx_reuse_policy(audio_manager)
 	_test_sfx_prewarm_cache(audio_manager)
+	_test_pinkdragon_choice_cues(audio_manager)
 	_test_boss_nailoong_voice_pool(audio_manager)
 	await _test_boss_voice_pause_policy(audio_manager)
 	_test_audio_process_mode(audio_manager)
@@ -54,6 +55,8 @@ func _test_sfx_paths(audio_manager: Node) -> void:
 		&"wave_advance": "res://assets/audio/sfx/wave_advance.ogg",
 		&"result_defeat": "res://assets/audio/sfx/result_defeat.ogg",
 		&"result_victory": "res://assets/audio/sfx/result_victory.ogg",
+		&"event_pinkdragon_talk": "res://assets/audio/sfx/event_pinkdragon_talk.ogg",
+		&"event_pinkdragon_shoo": "res://assets/audio/sfx/event_pinkdragon_shoo.ogg",
 		&"boss_nailoong_intro_roar": "res://assets/audio/sfx/boss_nailoong_intro_roar.ogg",
 		&"boss_nailoong_phase_roar": "res://assets/audio/sfx/boss_nailoong_phase_roar.ogg",
 		&"boss_nailoong_death": "res://assets/audio/sfx/boss_nailoong_death.ogg",
@@ -188,6 +191,18 @@ func _test_boss_long_cue_policy(audio_manager: Node) -> void:
 	_expect(detached_player != null and detached_player.process_mode == Node.PROCESS_MODE_ALWAYS, "penguin detached long cue runs while paused")
 
 
+func _test_pinkdragon_choice_cues(audio_manager: Node) -> void:
+	var last_played: Dictionary = audio_manager.get("_last_sfx_played_msec")
+	last_played.clear()
+	audio_manager.call("_on_random_event_choice_selected", &"event_pinkdragon", Vector2i.ZERO, &"talk", {"ok": true})
+	_expect(last_played.has(&"event_pinkdragon_talk"), "pinkdragon talk choice plays laugh cue")
+	last_played.clear()
+	audio_manager.call("_on_random_event_choice_selected", &"event_pinkdragon", Vector2i.ZERO, &"shoo", {"ok": true})
+	_expect(last_played.has(&"event_pinkdragon_shoo"), "pinkdragon shoo choice plays cry cue")
+	last_played.clear()
+	audio_manager.call("_on_random_event_choice_selected", &"event_pinkdragon", Vector2i.ZERO, &"talk", {"ok": false})
+	audio_manager.call("_on_random_event_choice_selected", &"event_stone", Vector2i.ZERO, &"take", {"ok": true})
+	_expect(last_played.is_empty(), "pinkdragon choice cues ignore failed and unrelated choices")
 func _test_boss_nailoong_voice_pool(audio_manager: Node) -> void:
 	audio_manager.set("_boss_nailoong_phase", 1)
 	var phase_one_pool: Array = audio_manager.call("_get_boss_nailoong_voice_pool")
@@ -348,6 +363,7 @@ func _test_event_handlers_exist(audio_manager: Node) -> void:
 		"_stop_boss_nailoong_voice_loop",
 		"_on_night_started",
 		"_on_night_wave_started",
+		"_on_random_event_choice_selected",
 		"_on_run_ending",
 		"_play_night_start_sfx_after_click",
 		"play_detached_sfx",
