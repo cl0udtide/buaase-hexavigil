@@ -6,6 +6,7 @@ const NightTemplateResolver = preload("res://scripts/enemy/night_template_resolv
 const BGM_DAY := &"day"
 const BGM_NIGHT := &"night"
 const BGM_BOSS := &"boss"
+const BGM_BOSS_NAILOONG := &"boss_nailoong"
 
 const SFX_UNIT_DEPLOY := &"unit_deploy"
 const SFX_UNIT_REMOVED := &"unit_removed"
@@ -47,10 +48,27 @@ const SFX_WAVE_START := &"wave_start"
 const SFX_WAVE_ADVANCE := &"wave_advance"
 const SFX_RESULT_DEFEAT := &"result_defeat"
 const SFX_RESULT_VICTORY := &"result_victory"
+const SFX_BOSS_NAILOONG_INTRO_ROAR := &"boss_nailoong_intro_roar"
+const SFX_BOSS_NAILOONG_PHASE_ROAR := &"boss_nailoong_phase_roar"
+const SFX_BOSS_NAILOONG_DEATH := &"boss_nailoong_death"
+const SFX_BOSS_NAILOONG_VOICE1 := &"boss_nailoong_voice1"
+const SFX_BOSS_NAILOONG_VOICE2 := &"boss_nailoong_voice2"
+const SFX_BOSS_NAILOONG_VOICE3 := &"boss_nailoong_voice3"
+const SFX_BOSS_NAILOONG_PHASE2_LAUGH := &"boss_nailoong_phase2_laugh"
 
 const FADE_SECONDS := 1.8
 const NIGHT_START_SFX_DELAY := 0.22
 const NIGHT_START_BGM_DELAY := 1.5
+const BOSS_NAILOONG_ID := &"milk_dragon_chief"
+const BOSS_INTRO_BGM_DELAY := 0.8
+const BOSS_PHASE_TWO_PITCH_SCALE := 1.15
+const BOSS_PHASE_PITCH_TWEEN_SECONDS := 0.8
+const BOSS_RANDOM_VOICE_MIN_COOLDOWN := 7.5
+const BOSS_RANDOM_VOICE_MAX_COOLDOWN := 14.0
+const BOSS_PHASE_TWO_RANDOM_VOICE_MIN_COOLDOWN := 4.5
+const BOSS_PHASE_TWO_RANDOM_VOICE_MAX_COOLDOWN := 8.0
+const BOSS_RANDOM_VOICE_AFTER_INTRO_GRACE := 4.0
+const BOSS_RANDOM_VOICE_WAIT_STEP := 0.25
 const SFX_POOL_SIZE := 8
 const SFX_GLOBAL_VOLUME_SCALE := 1.18
 const SFX_MAX_VOLUME_SCALE := 1.75
@@ -64,7 +82,8 @@ var sfx_volume := 0.85
 
 var bgm_paths := {
 	BGM_DAY: "res://assets/audio/bgm/day_1.ogg",
-	BGM_NIGHT: "res://assets/audio/bgm/night_1.ogg"
+	BGM_NIGHT: "res://assets/audio/bgm/night_1.ogg",
+	BGM_BOSS_NAILOONG: "res://assets/audio/bgm/boss_nailoong.ogg"
 }
 var sfx_paths := {
 	SFX_UNIT_DEPLOY: "res://assets/audio/sfx/unit_deploy.ogg",
@@ -106,17 +125,30 @@ var sfx_paths := {
 	SFX_WAVE_START: "res://assets/audio/sfx/wave_start.ogg",
 	SFX_WAVE_ADVANCE: "res://assets/audio/sfx/wave_advance.ogg",
 	SFX_RESULT_DEFEAT: "res://assets/audio/sfx/result_defeat.ogg",
-	SFX_RESULT_VICTORY: "res://assets/audio/sfx/result_victory.ogg"
+	SFX_RESULT_VICTORY: "res://assets/audio/sfx/result_victory.ogg",
+	SFX_BOSS_NAILOONG_INTRO_ROAR: "res://assets/audio/sfx/boss_nailoong_intro_roar.ogg",
+	SFX_BOSS_NAILOONG_PHASE_ROAR: "res://assets/audio/sfx/boss_nailoong_phase_roar.ogg",
+	SFX_BOSS_NAILOONG_DEATH: "res://assets/audio/sfx/boss_nailoong_death.ogg",
+	SFX_BOSS_NAILOONG_VOICE1: "res://assets/audio/sfx/boss_nailoong_voice1.ogg",
+	SFX_BOSS_NAILOONG_VOICE2: "res://assets/audio/sfx/boss_nailoong_voice2.ogg",
+	SFX_BOSS_NAILOONG_VOICE3: "res://assets/audio/sfx/boss_nailoong_voice3.ogg",
+	SFX_BOSS_NAILOONG_PHASE2_LAUGH: "res://assets/audio/sfx/boss_nailoong_phase2_laugh.ogg"
 }
 
 var _bgm_player: AudioStreamPlayer
+var _boss_voice_player: AudioStreamPlayer
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_cursor := 0
 var _current_bgm_key := StringName()
 var _fade_tween: Tween
+var _pitch_tween: Tween
 var _stream_cache := {}
 var _last_sfx_played_msec := {}
 var _night_bgm_request_id := 0
+var _boss_voice_request_id := 0
+var _boss_nailoong_active := false
+var _boss_nailoong_phase := 1
+var _was_tree_paused := false
 var sfx_cooldowns := {
 	SFX_IMPACT_PHYSICAL: 0.045,
 	SFX_IMPACT_ARTS: 0.055,
@@ -134,8 +166,24 @@ func _ready() -> void:
 	_setup_players()
 	_load_settings()
 	_apply_volumes()
-	_prewarm_sfx([SFX_CORE_HIT, SFX_CORE_DESTROYED, SFX_BUILDING_HIT, SFX_BUILDING_DESTROYED])
+	_prewarm_sfx([
+		SFX_CORE_HIT,
+		SFX_CORE_DESTROYED,
+		SFX_BUILDING_HIT,
+		SFX_BUILDING_DESTROYED,
+		SFX_BOSS_NAILOONG_INTRO_ROAR,
+		SFX_BOSS_NAILOONG_PHASE_ROAR,
+		SFX_BOSS_NAILOONG_DEATH,
+		SFX_BOSS_NAILOONG_VOICE1,
+		SFX_BOSS_NAILOONG_VOICE2,
+		SFX_BOSS_NAILOONG_VOICE3,
+		SFX_BOSS_NAILOONG_PHASE2_LAUGH,
+	])
 	_bind_events()
+
+
+func _process(_delta: float) -> void:
+	_update_boss_voice_pause_state()
 
 
 func play_day_bgm() -> void:
@@ -173,7 +221,10 @@ func play_bgm(bgm_key: StringName) -> void:
 	_current_bgm_key = bgm_key
 	if _fade_tween != null:
 		_fade_tween.kill()
+	if _pitch_tween != null:
+		_pitch_tween.kill()
 	_bgm_player.stream = stream
+	_bgm_player.pitch_scale = 1.0
 	_bgm_player.volume_db = -80.0
 	_bgm_player.play()
 	_fade_tween = create_tween()
@@ -280,6 +331,10 @@ func _setup_players() -> void:
 	_bgm_player.name = "BgmPlayer"
 	_bgm_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_bgm_player)
+	_boss_voice_player = AudioStreamPlayer.new()
+	_boss_voice_player.name = "BossVoicePlayer"
+	_boss_voice_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_boss_voice_player)
 	for index in range(SFX_POOL_SIZE):
 		var player := AudioStreamPlayer.new()
 		player.name = "SfxPlayer%d" % (index + 1)
@@ -307,6 +362,8 @@ func _bind_events() -> void:
 	event_bus.random_event_triggered.connect(_on_random_event_triggered)
 	event_bus.resource_collected.connect(_on_resource_collected)
 	event_bus.unit_removed.connect(_on_unit_removed)
+	event_bus.enemy_spawned.connect(_on_enemy_spawned)
+	event_bus.boss_phase_transition_started.connect(_on_boss_phase_transition_started)
 	event_bus.enemy_died.connect(_on_enemy_died)
 	event_bus.shop_action_result.connect(_on_shop_action_result)
 	event_bus.blessing_chosen.connect(_on_blessing_chosen)
@@ -422,6 +479,10 @@ func _get_sfx_volume_scale(sfx_key: StringName) -> float:
 			return 1.2
 		SFX_RESULT_VICTORY:
 			return 1.18
+		SFX_BOSS_NAILOONG_INTRO_ROAR:
+			return 1.28
+		SFX_BOSS_NAILOONG_PHASE_ROAR:
+			return 1.24
 		SFX_ENEMY_DEATH_SMALL:
 			return randf_range(0.78, 0.96)
 		SFX_ENEMY_DEATH_LARGE:
@@ -431,6 +492,7 @@ func _get_sfx_volume_scale(sfx_key: StringName) -> float:
 
 func _on_day_started(_day: int) -> void:
 	_night_bgm_request_id += 1
+	_stop_boss_nailoong_voice_loop()
 	play_day_bgm()
 
 
@@ -469,6 +531,7 @@ func _on_night_wave_started(wave_index: int, _wave_count: int) -> void:
 
 func _on_run_ending(win: bool, _delay_seconds: float) -> void:
 	_night_bgm_request_id += 1
+	_stop_boss_nailoong_voice_loop()
 	stop_bgm()
 	play_detached_sfx(SFX_RESULT_VICTORY if win else SFX_RESULT_DEFEAT)
 
@@ -519,7 +582,41 @@ func _on_unit_removed(_unit_runtime_id: int, _reason: int) -> void:
 	play_sfx(SFX_UNIT_REMOVED)
 
 
+func _on_enemy_spawned(_enemy_runtime_id: int, enemy_id: StringName, _cell: Vector2i) -> void:
+	if enemy_id != BOSS_NAILOONG_ID:
+		return
+	_night_bgm_request_id += 1
+	var request_id := _night_bgm_request_id
+	_boss_nailoong_active = true
+	_boss_nailoong_phase = 1
+	stop_bgm()
+	play_sfx(SFX_BOSS_NAILOONG_INTRO_ROAR)
+	_play_boss_nailoong_bgm_after_intro(request_id)
+	_start_boss_nailoong_voice_loop(BOSS_RANDOM_VOICE_AFTER_INTRO_GRACE)
+
+
+func _play_boss_nailoong_bgm_after_intro(request_id: int) -> void:
+	if BOSS_INTRO_BGM_DELAY > 0.0 and get_tree() != null:
+		await get_tree().create_timer(BOSS_INTRO_BGM_DELAY).timeout
+	if not is_inside_tree() or request_id != _night_bgm_request_id:
+		return
+	play_bgm(BGM_BOSS_NAILOONG)
+
+
+func _on_boss_phase_transition_started(_enemy_runtime_id: int, enemy_id: StringName, phase: int) -> void:
+	if enemy_id != BOSS_NAILOONG_ID:
+		return
+	_boss_nailoong_phase = maxi(phase, _boss_nailoong_phase)
+	play_sfx(SFX_BOSS_NAILOONG_PHASE_ROAR)
+	if phase >= 2:
+		_set_bgm_pitch_scale(BOSS_PHASE_TWO_PITCH_SCALE, BOSS_PHASE_PITCH_TWEEN_SECONDS)
+
+
 func _on_enemy_died(_enemy_runtime_id: int, enemy_id: StringName) -> void:
+	if enemy_id == BOSS_NAILOONG_ID:
+		_stop_boss_nailoong_voice_loop()
+		play_sfx(SFX_BOSS_NAILOONG_DEATH)
+		return
 	play_sfx(get_enemy_death_sfx_key(enemy_id))
 
 
@@ -544,6 +641,110 @@ func _on_unit_skill_cast(_unit_runtime_id: int, _unit_id: StringName) -> void:
 
 func _on_audio_cue_requested(cue_key: StringName) -> void:
 	play_sfx(cue_key)
+
+
+func _set_bgm_pitch_scale(value: float, tween_seconds: float = 0.0) -> void:
+	if _bgm_player == null:
+		return
+	var target := maxf(value, 0.01)
+	if _pitch_tween != null:
+		_pitch_tween.kill()
+	if tween_seconds <= 0.0:
+		_bgm_player.pitch_scale = target
+		return
+	_pitch_tween = create_tween()
+	_pitch_tween.tween_property(_bgm_player, "pitch_scale", target, tween_seconds)
+
+
+func _start_boss_nailoong_voice_loop(initial_delay: float = 0.0) -> void:
+	_boss_voice_request_id += 1
+	_play_boss_nailoong_voice_loop(_boss_voice_request_id, initial_delay)
+
+
+func _stop_boss_nailoong_voice_loop() -> void:
+	_boss_voice_request_id += 1
+	_boss_nailoong_active = false
+	_boss_nailoong_phase = 1
+	if _boss_voice_player != null:
+		_boss_voice_player.stop()
+
+
+func _play_boss_nailoong_voice_loop(request_id: int, initial_delay: float) -> void:
+	await _wait_for_boss_voice_seconds(request_id, maxf(initial_delay, 0.0))
+	while is_inside_tree() and request_id == _boss_voice_request_id and _boss_nailoong_active:
+		await _wait_until_tree_unpaused(request_id)
+		if not is_inside_tree() or request_id != _boss_voice_request_id or not _boss_nailoong_active:
+			return
+		var pool := _get_boss_nailoong_voice_pool()
+		if not pool.is_empty():
+			_play_boss_voice_sfx(pool[randi() % pool.size()])
+		var cooldown := _next_boss_nailoong_voice_cooldown()
+		await _wait_for_boss_voice_seconds(request_id, cooldown)
+
+
+func _get_boss_nailoong_voice_pool() -> Array[StringName]:
+	var pool: Array[StringName] = [
+		SFX_BOSS_NAILOONG_VOICE1,
+		SFX_BOSS_NAILOONG_VOICE2,
+		SFX_BOSS_NAILOONG_VOICE3,
+	]
+	if _boss_nailoong_phase >= 2:
+		pool.append(SFX_BOSS_NAILOONG_PHASE2_LAUGH)
+		pool.append(SFX_BOSS_NAILOONG_PHASE2_LAUGH)
+	return pool
+
+
+func _next_boss_nailoong_voice_cooldown() -> float:
+	if _boss_nailoong_phase >= 2:
+		return randf_range(BOSS_PHASE_TWO_RANDOM_VOICE_MIN_COOLDOWN, BOSS_PHASE_TWO_RANDOM_VOICE_MAX_COOLDOWN)
+	return randf_range(BOSS_RANDOM_VOICE_MIN_COOLDOWN, BOSS_RANDOM_VOICE_MAX_COOLDOWN)
+
+
+func _play_boss_voice_sfx(sfx_key: StringName) -> bool:
+	if _boss_voice_player == null or _is_tree_paused():
+		return false
+	var path := String(sfx_paths.get(sfx_key, ""))
+	if path.is_empty():
+		return false
+	var stream := _load_stream(path)
+	if stream == null:
+		push_warning("Missing boss voice SFX stream for key: %s" % sfx_key)
+		return false
+	_boss_voice_player.stop()
+	_boss_voice_player.stream = stream
+	_boss_voice_player.pitch_scale = _get_sfx_pitch_scale(sfx_key)
+	_boss_voice_player.volume_db = _linear_to_db(_base_sfx_linear_volume() * clampf(_get_sfx_volume_scale(sfx_key), 0.0, SFX_MAX_VOLUME_SCALE))
+	_boss_voice_player.play()
+	return true
+
+
+func _wait_for_boss_voice_seconds(request_id: int, seconds: float) -> void:
+	var remaining := maxf(seconds, 0.0)
+	while remaining > 0.0 and is_inside_tree() and request_id == _boss_voice_request_id and _boss_nailoong_active:
+		if not _is_tree_paused():
+			remaining -= BOSS_RANDOM_VOICE_WAIT_STEP
+		if get_tree() == null:
+			return
+		await get_tree().create_timer(BOSS_RANDOM_VOICE_WAIT_STEP).timeout
+
+
+func _wait_until_tree_unpaused(request_id: int) -> void:
+	while _is_tree_paused() and is_inside_tree() and request_id == _boss_voice_request_id and _boss_nailoong_active:
+		if get_tree() == null:
+			return
+		await get_tree().create_timer(BOSS_RANDOM_VOICE_WAIT_STEP).timeout
+
+
+func _update_boss_voice_pause_state() -> void:
+	var paused := _is_tree_paused()
+	if paused and not _was_tree_paused and _boss_voice_player != null:
+		_boss_voice_player.stop()
+	_was_tree_paused = paused
+
+
+func _is_tree_paused() -> bool:
+	var tree := get_tree()
+	return tree != null and tree.paused
 
 
 func get_enemy_death_sfx_key(enemy_id: StringName) -> StringName:
