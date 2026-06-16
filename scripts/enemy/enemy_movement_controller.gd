@@ -220,7 +220,7 @@ func _derive_phase() -> float:
 
 
 func _path_service() -> Node:
-	return _owner_actor.get_node_or_null("../../../Managers/PathService") if _owner_actor != null else null
+	return _owner_actor.get_path_service() if _owner_actor != null else null
 
 
 func _next_step_cell() -> Vector2i:
@@ -299,15 +299,15 @@ func _update_crowd_offset() -> void:
 func _get_unblocked_peers_in_cell(cell: Vector2i) -> Array:
 	var peers: Array = []
 	var enemy_manager: Node = _owner_actor.get_enemy_manager() if _owner_actor != null else null
-	if enemy_manager == null or not enemy_manager.has_method("get_all_enemies"):
+	if enemy_manager == null or not enemy_manager.has_method("get_enemies_in_cell"):
 		return peers
-	for enemy in enemy_manager.get_all_enemies():
+	# 直接查按格索引取同格敌人，不再每帧全场扫敌（O(N²)→O(N)）。
+	for enemy in enemy_manager.get_enemies_in_cell(cell):
 		if enemy == null or not is_instance_valid(enemy):
 			continue
 		if enemy.has_method("is_blocked") and enemy.is_blocked():
 			continue
-		if enemy.has_method("get_current_cell") and enemy.get_current_cell() == cell:
-			peers.append(enemy)
+		peers.append(enemy)
 	return peers
 
 
