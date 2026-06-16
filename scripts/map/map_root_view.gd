@@ -198,6 +198,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_range_outline_time += delta
 	_tick_range_outline_effects(delta)
+	# 拖动地图时只平移相机（相机移动本身不触发 _draw，整张图已画好，GPU 直接平移即可），
+	# 跳过 hover/sparkle 的 queue_redraw：否则拖动时鼠标移动使 hover 格每帧变化 → 每帧重画整图，
+	# 迷雾清空后 900 格全部要画，会明显卡顿。
+	if _is_dragging:
+		return
 	var sparkle_bucket := int(_range_outline_time * SPARKLE_REDRAW_HZ)
 	if sparkle_bucket != _sparkle_bucket:
 		_sparkle_bucket = sparkle_bucket
