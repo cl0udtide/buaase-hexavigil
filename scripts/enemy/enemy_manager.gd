@@ -6,6 +6,10 @@ const EnemyPrestigeReward = preload("res://scripts/enemy/enemy_prestige_reward.g
 
 var _next_runtime_id := 1
 var _enemies_by_runtime_id: Dictionary = {}
+# 按格敌人索引（cell→Array[敌人]）：拥挤/阻挡判定每帧需查"同格/邻格有哪些敌人"，
+# 原本每个 actor 每帧全场扫敌是 O(N²)。此处按帧惰性重建一次快照，同帧复用 → 降为 O(N)。
+var _cell_index: Dictionary = {}
+var _cell_index_frame: int = -1
 
 @onready var _enemy_root: Node = get_node_or_null("../../World/EnemyRoot")
 
@@ -70,6 +74,29 @@ func get_enemy_by_runtime_id(enemy_runtime_id: int) -> Node:
 
 func get_all_enemies() -> Array:
 	return _enemies_by_runtime_id.values()
+
+
+## 返回与 cell 同格的敌人（含被阻挡者）。按帧惰性构建索引：同一帧内多次调用复用同一快照，
+## 把"每个敌人每帧全场扫敌"的 O(N²) 拥挤/阻挡查询降为 O(N)。返回内部数组引用，调用方只读勿改。
+func get_enemies_in_cell(cell: Vector2i) -> Array:
+	_ensure_cell_index()
+	return _cell_index.get(cell, [])
+
+
+func _ensure_cell_index() -> void:
+	var frame := Engine.get_process_frames()
+	if frame == _cell_index_frame:
+		return
+	_cell_index_frame = frame
+	_cell_index.clear()
+	for enemy in _enemies_by_runtime_id.values():
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		var cell: Vector2i = enemy.get_current_cell() if enemy.has_method("get_current_cell") else enemy.current_cell
+		if _cell_index.has(cell):
+			(_cell_index[cell] as Array).append(enemy)
+		else:
+			_cell_index[cell] = [enemy]
 
 
 func get_alive_enemy_count() -> int:

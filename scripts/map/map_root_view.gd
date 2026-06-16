@@ -205,8 +205,8 @@ func _process(delta: float) -> void:
 	var map_manager := _get_map_manager()
 	if map_manager == null:
 		return
-	if _has_visible_event_bubbles(map_manager):
-		queue_redraw()
+	# 事件气泡是脉动动画，复用上方 sparkle 的 3Hz 重绘节拍即可（每次 _draw 的 Pass 4 都会刷新气泡），
+	# 不再因"地图上存在事件气泡"而每帧全图 queue_redraw——这是前期无战斗负载也掉帧的主因。
 	var hovered: Vector2i = map_manager.world_to_cell(get_global_mouse_position())
 	var hovered_event := _get_event_bubble_cell_at_world(get_global_mouse_position(), map_manager)
 	if hovered_event != _hovered_event_cell:
@@ -1077,21 +1077,6 @@ func _get_visible_event_cells(map_manager: Node) -> Array[Vector2i]:
 		if _has_event_at_cell(cell):
 			cells.append(cell)
 	return cells
-
-
-func _has_visible_event_bubbles(map_manager: Node) -> bool:
-	if map_manager == null:
-		return false
-	var event_cells: Array = map_manager.get_all_cells()
-	if _random_event_manager == null:
-		_random_event_manager = get_node_or_null("../../Managers/RandomEventManager")
-	if _random_event_manager != null and _random_event_manager.has_method("get_event_cells"):
-		event_cells = _random_event_manager.get_event_cells()
-	for raw_cell in event_cells:
-		var cell: Vector2i = raw_cell
-		if map_manager.is_discovered(cell) and _has_event_at_cell(cell):
-			return true
-	return false
 
 
 func _get_event_bubble_cell_at_world(world_position: Vector2, map_manager: Node) -> Vector2i:
