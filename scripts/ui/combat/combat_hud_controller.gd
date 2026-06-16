@@ -79,13 +79,22 @@ func _ready() -> void:
 	call_deferred("_bootstrap_hud")
 
 
-func _process(_delta: float) -> void:
+const HUD_REFRESH_INTERVAL := 0.12
+var _hud_refresh_accum := HUD_REFRESH_INTERVAL
+
+
+func _process(delta: float) -> void:
+	# 拖拽预览/选中范围/子弹时间必须每帧跟手；其余 HUD 显示信息（顶栏数值、干员卡、敌情预览、倒计时）
+	# 降到 ~8Hz 刷新，玩家无感，但避免每帧重建字符串、每帧重算敌情预览。这些是与敌人数无关的固定开销。
 	_update_deploy_drag()
-	_update_operator_cards()
-	_refresh_top_hud()
-	_refresh_detail_panel()
-	_refresh_wave_preview()
-	_refresh_wave_countdown()
+	_hud_refresh_accum += delta
+	if _hud_refresh_accum >= HUD_REFRESH_INTERVAL:
+		_hud_refresh_accum = 0.0
+		_update_operator_cards()
+		_refresh_top_hud()
+		_refresh_detail_panel()
+		_refresh_wave_preview()
+		_refresh_wave_countdown()
 	if _selected_unit_runtime_id >= 0:
 		_refresh_attack_range_preview()
 	_sync_bullet_time_from_selection()

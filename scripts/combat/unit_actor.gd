@@ -108,6 +108,11 @@ var _registered_range_outline_ids: Array[StringName] = []
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
 var _attack_lunge_tween: Tween = null
+# 常驻 Manager 引用缓存：原本每帧每单位多次按字符串路径 get_node 解析，首次取到后缓存复用。
+var _cached_map_manager: Node = null
+var _cached_unit_manager: Node = null
+var _cached_enemy_manager: Node = null
+var _cached_building_manager: Node = null
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _skill_behavior: Node = get_node_or_null("%SkillBehavior")
@@ -619,7 +624,9 @@ func refresh_relic_effects() -> void:
 
 
 func get_map_manager() -> Node:
-	return get_node_or_null("../../../Managers/MapManager")
+	if _cached_map_manager == null or not is_instance_valid(_cached_map_manager):
+		_cached_map_manager = get_node_or_null("../../../Managers/MapManager")
+	return _cached_map_manager
 
 
 func get_map_root() -> Node:
@@ -627,11 +634,15 @@ func get_map_root() -> Node:
 
 
 func get_unit_manager() -> Node:
-	return get_node_or_null("../../../Managers/UnitManager")
+	if _cached_unit_manager == null or not is_instance_valid(_cached_unit_manager):
+		_cached_unit_manager = get_node_or_null("../../../Managers/UnitManager")
+	return _cached_unit_manager
 
 
 func get_building_manager() -> Node:
-	return get_node_or_null("../../../Managers/BuildingManager")
+	if _cached_building_manager == null or not is_instance_valid(_cached_building_manager):
+		_cached_building_manager = get_node_or_null("../../../Managers/BuildingManager")
+	return _cached_building_manager
 
 
 ## 落点是否为“高台面”：自然高台地形，或同格存活的人工高台建筑（ranged_deployable）。
@@ -657,7 +668,9 @@ func get_covenant_manager() -> Node:
 
 
 func get_enemy_manager() -> Node:
-	return get_node_or_null("../../../Managers/EnemyManager")
+	if _cached_enemy_manager == null or not is_instance_valid(_cached_enemy_manager):
+		_cached_enemy_manager = get_node_or_null("../../../Managers/EnemyManager")
+	return _cached_enemy_manager
 
 
 # 坚守 3 人均摊：把理想伤害平均分给所有存活坚守干员（各自结算自身减伤）。
@@ -1427,10 +1440,27 @@ func _can_start_blocking(enemy: Node) -> bool:
 
 func _collect_block_candidates() -> Array:
 	var candidates: Array = []
-	for enemy in get_all_enemies():
+	for enemy in _nearby_block_enemies():
 		if _can_start_blocking(enemy):
 			_insert_block_candidate(candidates, enemy)
 	return candidates
+
+
+## 阻挡候选只可能落在 block 半径内，按 EnemyManager 的按格索引查 current_cell 周围邻域，
+## 不再每帧全场扫敌。邻域半径按 block_radius 向上取整（默认 0.7071 格 → 3×3）；
+## 邻域外的敌人距离必然超出 block 半径，会被 _can_start_blocking 的精确距离判定排除，行为一致。
+## EnemyManager 不支持按格索引时回退到全体敌人，保证健壮。
+func _nearby_block_enemies() -> Array:
+	var enemy_manager := get_enemy_manager()
+	if enemy_manager == null or not enemy_manager.has_method("get_enemies_in_cell"):
+		return get_all_enemies()
+	var reach: int = max(int(ceil(float(cfg.get("block_radius_tiles", BLOCK_RADIUS_TILES)))), 1)
+	var nearby: Array = []
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			for enemy in enemy_manager.get_enemies_in_cell(current_cell + Vector2i(dx, dy)):
+				nearby.append(enemy)
+	return nearby
 
 
 func _insert_block_candidate(candidates: Array, enemy: Node) -> void:

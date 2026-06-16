@@ -69,6 +69,13 @@ var _regen_effect_cooldown := 0.0
 var _idle_motion_root: Node2D = null
 var _idle_motion_tween: Tween = null
 var _attack_lunge_tween: Tween = null
+# 常驻 Manager 引用缓存：原本每帧每敌人多次按字符串路径 get_node 解析，终战敌人多时开销可观。
+# Manager 在 actor 生命周期内路径稳定，首次取到后缓存复用。
+var _cached_map_manager: Node = null
+var _cached_enemy_manager: Node = null
+var _cached_unit_manager: Node = null
+var _cached_building_manager: Node = null
+var _cached_path_service: Node = null
 
 @onready var _status_view: Node = get_node_or_null("%StatusView")
 @onready var _visual_root: Node2D = get_node_or_null("%VisualRoot") as Node2D
@@ -523,19 +530,33 @@ func _refresh_fog_visibility() -> void:
 
 
 func get_map_manager() -> Node:
-	return get_node_or_null("../../../Managers/MapManager")
+	if _cached_map_manager == null or not is_instance_valid(_cached_map_manager):
+		_cached_map_manager = get_node_or_null("../../../Managers/MapManager")
+	return _cached_map_manager
 
 
 func get_enemy_manager() -> Node:
-	return get_node_or_null("../../../Managers/EnemyManager")
+	if _cached_enemy_manager == null or not is_instance_valid(_cached_enemy_manager):
+		_cached_enemy_manager = get_node_or_null("../../../Managers/EnemyManager")
+	return _cached_enemy_manager
 
 
 func get_unit_manager() -> Node:
-	return get_node_or_null("../../../Managers/UnitManager")
+	if _cached_unit_manager == null or not is_instance_valid(_cached_unit_manager):
+		_cached_unit_manager = get_node_or_null("../../../Managers/UnitManager")
+	return _cached_unit_manager
 
 
 func get_building_manager() -> Node:
-	return get_node_or_null("../../../Managers/BuildingManager")
+	if _cached_building_manager == null or not is_instance_valid(_cached_building_manager):
+		_cached_building_manager = get_node_or_null("../../../Managers/BuildingManager")
+	return _cached_building_manager
+
+
+func get_path_service() -> Node:
+	if _cached_path_service == null or not is_instance_valid(_cached_path_service):
+		_cached_path_service = get_node_or_null("../../../Managers/PathService")
+	return _cached_path_service
 
 
 func _get_effect_root() -> Node:
