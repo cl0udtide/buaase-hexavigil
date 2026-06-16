@@ -1128,12 +1128,15 @@ func _refresh_wave_preview() -> void:
 		int(preview.get("wave_count", 1)),
 		(preview.get("affixes", []) as Array).size()
 	]
-	if signature != _last_wave_preview_signature:
-		_last_wave_preview_signature = signature
-		var routes: Array[Dictionary] = _build_wave_route_previews(preview, hard_blocked_cells, soft_blocked_cells)
-		_set_wave_routes(routes)
-	else:
-		_apply_wave_route_visibility()
+	# 敌情签名未变（白天稳定期、拖动地图时 day/phase/阻挡格/波次都不变）：直接返回。
+	# 否则每次刷新都会 _apply_wave_route_visibility → map.set_wave_route_previews → 全图 queue_redraw，
+	# 外加重复 _set_wave_preview_data 重建面板——这是拖动地图时残留的 ~8Hz 全图重绘脉冲来源。
+	# 路线显隐切换由 set_wave_route_preview_enabled() 主动 _force_wave_preview_refresh，不依赖此处轮询。
+	if signature == _last_wave_preview_signature:
+		return
+	_last_wave_preview_signature = signature
+	var routes: Array[Dictionary] = _build_wave_route_previews(preview, hard_blocked_cells, soft_blocked_cells)
+	_set_wave_routes(routes)
 	_set_wave_preview_data(preview, _latest_wave_routes, hover_cell, true)
 
 
